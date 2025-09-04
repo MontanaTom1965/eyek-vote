@@ -50,6 +50,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore-compat.js"></script>
   <script>
+    // --- Firebase setup ---
     const firebaseConfig = {
       apiKey: "AIzaSyDGbC08WxruYIDPhZSlDlU-7Kzq-7mHENk",
       authDomain: "eyek-vote.firebaseapp.com",
@@ -61,22 +62,68 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
+    // --- Session + Singer ---
     const params = new URLSearchParams(location.search);
-    const sid = params.get('sid') || "TEST";
+    const sid    = params.get('sid')    || "TEST";
     const singer = params.get('singer') || "this singer";
 
     // Two-line header
     document.querySelector('h1').innerHTML =
       `You’re voting for ${singer}.<br>Did they earn an Encore?`;
 
-    function cast(choice){
-      db.collection('votes').add({
-        sid, singer, choice,
-        ts: firebase.firestore.FieldValue.serverTimestamp()
-      }).then(()=> alert("Vote received!"))
-        .catch(err=> alert("Error: "+err.message));
+    // --- Stable device id (per browser) ---
+    function getDeviceId() {
+      const KEY = 'eyek_device_id';
+      let id = localStorage.getItem(KEY);
+      if (!id) {
+        id = Math.random().toString(36).slice(2,10) + Date.now().toString(36);
+        localStorage.setItem(KEY, id);
+      }
+      return id;
+    }
+    const deviceId = getDeviceId();
+
+    // --- One-vote-per-device guard (per sid) ---
+    const votedKey = `eyek_voted_${sid}`;
+    function lockUI() {
+      document.querySelectorAll('button').forEach(b => b.disabled = true);
+      const p = document.createElement('p');
+      p.textContent = "Thanks—your vote was recorded.";
+      p.style.marginTop = "10px";
+      document.querySelector('.container').appendChild(p);
+    }
+    if (localStorage.getItem(votedKey)) lockUI();
+
+    // --- Cast vote (one doc per device per sid) ---
+    async function cast(choice){
+      if (localStorage.getItem(votedKey)) return;
+
+      const docRef = db.collection('sessions')
+                       .doc(sid)
+                       .collection('votes')
+                       .doc(deviceId);
+
+      try {
+        const snap = await docRef.get();
+        if (snap.exists) {
+          // Already voted on this device
+          localStorage.setItem(votedKey, '1');
+          return lockUI();
+        }
+        await docRef.set({
+          singer,
+          choice,  // 'encore' | 'one_more' | 'next_time'
+          ua: navigator.userAgent,
+          ts: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        localStorage.setItem(votedKey, '1');
+        lockUI();
+      } catch (err) {
+        alert("Vote failed: " + err.message);
+      }
     }
 
+    // --- Button events ---
     document.querySelector('.encore').onclick   = ()=>cast('encore');
     document.querySelector('.one-more').onclick = ()=>cast('one_more');
     document.querySelector('.next-time').onclick= ()=>cast('next_time');
