@@ -5,28 +5,138 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Host Dashboard | Earn Your Encore Karaoke</title>
   <style>
-    body { margin:0; font-family:system-ui, sans-serif; background:#0e0d2b; color:#fff; display:flex; justify-content:center; align-items:center; min-height:100vh; }
-    .container { max-width:600px; text-align:center; }
-    h1 { color:#ffd24a; margin-bottom:20px; }
-    button { margin:10px; padding:16px 24px; font-size:1.1rem; border:none; border-radius:6px; cursor:pointer; }
-    .open { background:#27ae60; color:#fff; }
-    .lock { background:#c0392b; color:#fff; }
-    .reset { background:#f39c12; color:#fff; }
-    .chart { margin-top:30px; background:#1e1d3a; border-radius:8px; padding:20px; }
+    :root{
+      --bg:#0e0d2b; --panel:#1e1d3a; --gold:#ffd24a; --teal:#c9fffa;
+      --btn:#2a2954; --btnTxt:#fff;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:#fff}
+    .wrap{max-width:920px;margin:0 auto;padding:28px}
+    h1{margin:0 0 8px;color:var(--gold)}
+    p.sub{margin:0 0 20px;color:var(--teal);opacity:.95}
+    .panel{background:var(--panel);border-radius:14px;padding:16px;margin:14px 0}
+    label{display:block;margin:10px 0 6px;font-weight:600}
+    input[type="text"]{width:100%;padding:12px 14px;border-radius:8px;border:0;background:#141335;color:#fff}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+    button{border:0;border-radius:8px;padding:12px 16px;background:var(--btn);color:var(--btnTxt);cursor:pointer}
+    .linkbox{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;margin-top:10px}
+    .qr{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+    .qr img{width:160px;height:160px;background:#fff;border-radius:8px;padding:8px}
+    .small{font-size:12px;color:#a7caca}
+    a.preview{color:#9ee7ff;text-decoration:underline}
+    @media (max-width:760px){.row{grid-template-columns:1fr}}
   </style>
 </head>
 <body>
-  <div class="container">
+  <div class="wrap">
     <h1>Host Dashboard</h1>
-    <p>Control the audience voting here:</p>
-    <button class="open">✅ Open Voting</button>
-    <button class="lock">🔒 Lock Voting</button>
-    <button class="reset">♻️ Reset Votes</button>
+    <p class="sub">Generate links for the TV screen and phone voting. Type the singer’s name, create a session code, and go.</p>
 
-    <div class="chart">
-      <h2>Live Results (placeholder)</h2>
-      <p>Encore: 0 | One More: 0 | Next Time: 0</p>
+    <div class="panel">
+      <div class="row">
+        <div>
+          <label for="singer">Singer Name</label>
+          <input id="singer" type="text" placeholder="e.g., Ashley" />
+        </div>
+        <div>
+          <label for="sid">Session Code (sid)</label>
+          <div class="actions" style="margin:0">
+            <input id="sid" type="text" placeholder="e.g., ABC123" />
+          </div>
+          <div class="actions">
+            <button id="genSid">Generate Code</button>
+            <button id="clear">Clear</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <label>Links</label>
+      <div class="linkbox">
+        <input id="screenLink" type="text" readonly />
+        <button data-copy="#screenLink">Copy</button>
+      </div>
+      <div class="linkbox">
+        <input id="voteLink" type="text" readonly />
+        <button data-copy="#voteLink">Copy</button>
+      </div>
+      <div class="qr" style="margin-top:12px">
+        <div>
+          <img id="qr" alt="QR to vote link" />
+        </div>
+        <div class="small">
+          <div><strong>How to use:</strong></div>
+          <div>• Open <a class="preview" id="openScreen" target="_blank" rel="noopener">the Screen link</a> on your TV.</div>
+          <div>• The QR here matches the Vote link. Print or screenshot as backup.</div>
+          <div>• Change name/code → links & QR update automatically.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel small">
+      Tip: Use a new session code for each singer’s second song (e.g., press “Generate Code”).
     </div>
   </div>
+
+  <script>
+    const BASE = 'https://vote.earnyourencorekaraoke.com';
+    const $ = sel => document.querySelector(sel);
+
+    const singerEl = $('#singer');
+    const sidEl    = $('#sid');
+    const screenEl = $('#screenLink');
+    const voteEl   = $('#voteLink');
+    const qrImg    = $('#qr');
+    const openScreenA = $('#openScreen');
+
+    function makeSid(){
+      return Math.random().toString(36).slice(2,8).toUpperCase();
+    }
+
+    function updateLinks(){
+      const singer = encodeURIComponent((singerEl.value || 'this singer').trim());
+      const sid    = encodeURIComponent((sidEl.value || 'TEST').trim());
+
+      const screenURL = `${BASE}/screen/?sid=${sid}&singer=${singer}`;
+      const voteURL   = `${BASE}/vote/?sid=${sid}&singer=${singer}`;
+
+      screenEl.value = screenURL;
+      voteEl.value   = voteURL;
+      openScreenA.href = screenURL;
+
+      // QR for the vote link (Google Charts for now; swap later if you prefer)
+      const size = 200;
+      qrImg.src = `https://chart.googleapis.com/chart?cht=qr&chs=${size}x${size}&chl=${encodeURIComponent(voteURL)}`;
+    }
+
+    // Copy buttons
+    document.addEventListener('click', async (e)=>{
+      const btn = e.target.closest('button[data-copy]');
+      if(!btn) return;
+      const inputSel = btn.getAttribute('data-copy');
+      const input = document.querySelector(inputSel);
+      try {
+        await navigator.clipboard.writeText(input.value);
+        btn.textContent = 'Copied!';
+        setTimeout(()=> btn.textContent = 'Copy', 1200);
+      } catch {
+        alert('Copy failed—please copy manually.');
+      }
+    });
+
+    // Generate + Clear
+    $('#genSid').addEventListener('click', ()=>{ sidEl.value = makeSid(); updateLinks(); });
+    $('#clear').addEventListener('click', ()=>{ singerEl.value=''; sidEl.value=''; updateLinks(); });
+
+    // Live updates as you type
+    singerEl.addEventListener('input', updateLinks);
+    sidEl.addEventListener('input', updateLinks);
+
+    // Init with a fresh code so you're ready to go
+    sidEl.value = makeSid();
+    updateLinks();
+  </script>
 </body>
 </html>
