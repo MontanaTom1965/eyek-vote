@@ -24,5 +24,14 @@
       Your vote is anonymous. Thanks for playing!
     </p>
   </div>
+<script>
+  // Read singer name from the URL
+  const params  = new URLSearchParams(location.search);
+  const singer  = params.get('singer') || "this singer";
+
+  // Update the header text
+  const header  = document.querySelector('h1');
+  header.textContent = `You’re voting for ${singer}. Did they earn an Encore?`;
+</script>
 </body>
 </html>
