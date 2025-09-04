@@ -142,6 +142,21 @@
     document.querySelector('.encore').onclick   = ()=>cast('encore');
     document.querySelector('.one-more').onclick = ()=>cast('one_more');
     document.querySelector('.next-time').onclick= ()=>cast('next_time');
+
+    const params = new URLSearchParams(location.search);
+const sid    = params.get('sid')    || "TEST";
+const singer = params.get('singer') || "this singer";
+const showId = params.get('show')   || null;
+
+// ... later, where we "ensure session doc exists":
+db.collection('sessions').doc(sid).set({
+  singer,
+  status: 'open',
+  touchedAt: firebase.firestore.FieldValue.serverTimestamp(),
+  // NEW:
+  ...(showId ? { showId } : {})
+}, { merge: true })
+
   </script>
 </body>
 </html>
