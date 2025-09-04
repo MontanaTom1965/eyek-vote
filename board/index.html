@@ -19,26 +19,35 @@
     .small { font-size:12px; color:#bcd; margin-top:6px; }
     .err { color:#ffb3b3; margin-top:10px; display:none; }
     .center { text-align:center; }
-    .inputRow { display:flex; gap:8px; justify-content:center; margin-top:12px; }
+    .inputRow { display:flex; gap:8px; justify-content:center; margin-top:12px; flex-wrap:wrap; }
     input[type="text"] { padding:10px; border:0; border-radius:8px; background:#141335; color:#fff; width:320px; }
     button { border:0; border-radius:8px; padding:10px 14px; background:#2a2954; color:#fff; cursor:pointer; }
+    .controls { display:flex; gap:8px; align-items:center; justify-content:flex-end; }
+    .muted { color:#bcd; font-size:12px; }
+    .linkish a { color:#9ee7ff; word-break:break-all; }
   </style>
 </head>
 <body>
   <div class="wrap">
+    <div class="controls">
+      <span class="muted">Auto-refresh:</span>
+      <button id="toggleAuto">On (10s)</button>
+    </div>
+
     <h1>KJ Board</h1>
-    <p class="sub">Show results for <code id="showLabel"></code>. (Open with <code>?show=YYYY-MM-DD_Venue</code> or use the box below.)</p>
+    <p class="sub">Show results for <code id="showLabel"></code>. (Open with <code>?show=YYYY-MM-DD_Venue</code> or enter below.)</p>
 
     <div id="chooser" class="panel center" style="display:none">
       <div>Enter Show ID to load results:</div>
       <div class="inputRow">
-        <input id="showInput" type="text" placeholder="e.g., 2025-09-04_Show">
+        <input id="showInput" type="text" placeholder="e.g., 2025-09-04_MyPlace">
         <button id="loadBtn">Load</button>
       </div>
-      <div class="small">Tip: This will be remembered for next time.</div>
+      <div class="small">Tip: We’ll remember this for next time.</div>
     </div>
 
     <div id="err" class="err"></div>
+    <div id="indexHint" class="panel linkish" style="display:none"></div>
 
     <div class="row" id="results" style="display:none">
       <div class="panel col">
@@ -61,6 +70,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore-compat.js"></script>
   <script>
+    // --- Config (same as your other pages) ---
     const firebaseConfig = {
       apiKey: "AIzaSyDGbC08WxruYIDPhZSlDlU-7Kzq-7mHENk",
       authDomain: "eyek-vote.firebaseapp.com",
@@ -72,11 +82,12 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
+    // --- UI refs ---
     const qs = new URLSearchParams(location.search);
     let show = qs.get('show') || localStorage.getItem('eyek_last_show') || '';
-
     const showLabel = document.getElementById('showLabel');
     const errEl = document.getElementById('err');
+    const indexHint = document.getElementById('indexHint');
     const chooser = document.getElementById('chooser');
     const results = document.getElementById('results');
     const listEncore = document.getElementById('listEncore');
@@ -84,6 +95,12 @@
     const listNextTime = document.getElementById('listNextTime');
     const showInput = document.getElementById('showInput');
     const loadBtn = document.getElementById('loadBtn');
+    const toggleAutoBtn = document.getElementById('toggleAuto');
+
+    // --- Auto refresh control ---
+    let AUTO_MS = 10000;
+    let autoOn = true;
+    let tm = null;
 
     function setShow(id){
       show = (id || '').trim();
@@ -95,18 +112,67 @@
       showLabel.textContent = show;
     }
 
-    async function loadShow(showId){
-      errEl.style.display = 'none'; errEl.textContent = '';
-      results.style.display = 'none';
+    function startAuto(){
+      if (!autoOn) return;
+      stopAuto();
+      tm = setInterval(()=> safeLoadShow(show), AUTO_MS);
+      toggleAutoBtn.textContent = 'On (10s)';
+    }
+    function stopAuto(){
+      if (tm) { clearInterval(tm); tm = null; }
+    }
+    toggleAutoBtn.addEventListener('click', ()=>{
+      autoOn = !autoOn;
+      if (autoOn) startAuto(); else { stopAuto(); toggleAutoBtn.textContent = 'Off'; }
+    });
+
+    function clearLists(){
       listEncore.innerHTML = ''; listOneMore.innerHTML = ''; listNextTime.innerHTML = '';
+    }
+    function showResults(showIt){
+      results.style.display = showIt ? 'grid' : 'none';
+    }
+    function showErr(msg){ errEl.style.display='block'; errEl.textContent = msg||''; }
+    function hideErr(){ errEl.style.display='none'; errEl.textContent=''; }
+    function showIndexHint(link){
+      indexHint.style.display = 'block';
+      indexHint.innerHTML = `
+        <div><strong>Index required:</strong> This query needs a Firestore index.</div>
+        <div>Click to create: <a href="${link}" target="_blank" rel="noopener">${link}</a></div>
+        <div class="small">After it shows “Ready”, this page will auto-retry.</div>
+      `;
+    }
+    function hideIndexHint(){ indexHint.style.display = 'none'; indexHint.innerHTML=''; }
 
-      const sessionsSnap = await db.collection('sessions')
+    // Extract a "create index" link from Firestore error message (if present)
+    function extractIndexLink(message){
+      const match = message && message.match(/https:\/\/console\.firebase\.google\.com\/[^\s)]+/);
+      return match ? match[0] : null;
+    }
+
+    async function loadShow(showId){
+      hideErr(); hideIndexHint(); showResults(false); clearLists();
+
+      const sessionsQ = db.collection('sessions')
         .where('showId', '==', showId)
-        .orderBy('createdAt','asc')
-        .get();
+        .orderBy('createdAt','asc');
 
-      results.style.display = 'grid';
+      let sessionsSnap;
+      try {
+        sessionsSnap = await sessionsQ.get();
+      } catch (e) {
+        if (e && (e.code === 'failed-precondition' || /index/i.test(e.message))) {
+          const link = extractIndexLink(e.message);
+          if (link) showIndexHint(link);
+          else showErr('This query requires a Firestore index (showId + createdAt ascending). Create it in Firestore → Indexes.');
+          throw e; // bubble to safeLoadShow for retry rhythm
+        } else {
+          showErr(e.message || 'Failed to load sessions.');
+          throw e;
+        }
+      }
 
+      showResults(true);
       if (sessionsSnap.empty) return;
 
       for (const doc of sessionsSnap.docs) {
@@ -137,24 +203,45 @@
       }
     }
 
-    // UI wiring
+    // Wrapper that retries politely if index missing
+    let retryBackoffMs = 5000;
+    async function safeLoadShow(showId){
+      if (!showId) return;
+      try {
+        await loadShow(showId);
+        retryBackoffMs = 5000; // reset on success
+      } catch (e) {
+        // If index missing, we'll just wait and try again (user probably clicked the link)
+        if (e && (e.code === 'failed-precondition' || /index/i.test(e.message))) {
+          // backoff a bit to avoid hammering during index build
+          setTimeout(()=> safeLoadShow(showId), retryBackoffMs);
+          retryBackoffMs = Math.min(retryBackoffMs * 1.5, 30000);
+          return;
+        }
+        // Other errors: show message but keep auto-refresh going
+      }
+    }
+
+    // Initial wiring
     loadBtn.addEventListener('click', ()=>{
       const id = showInput.value.trim();
       if (!id) return;
       setShow(id);
       chooser.style.display = 'none';
-      loadShow(show).catch(e => { errEl.style.display='block'; errEl.textContent=e.message; });
+      safeLoadShow(show);
+      startAuto();
     });
 
-    // Init
     if (show) {
       showLabel.textContent = show;
-      loadShow(show).catch(e => { errEl.style.display='block'; errEl.textContent=e.message; });
+      safeLoadShow(show);
+      startAuto();
     } else {
       chooser.style.display = 'block';
       showInput.focus();
+      toggleAutoBtn.textContent = 'Off'; // off until a show is chosen
+      autoOn = false;
     }
   </script>
 </body>
 </html>
-
