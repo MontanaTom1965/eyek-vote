@@ -44,11 +44,9 @@
     <div class="small">Counts shown as Encore/OneMore/Maybe (e.g., 7/3/2).</div>
   </div>
 
-  <!-- Firebase (compat) -->
   <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore-compat.js"></script>
   <script>
-    // Config (same as your other pages)
     const firebaseConfig = {
       apiKey: "AIzaSyDGbC08WxruYIDPhZSlDlU-7Kzq-7mHENk",
       authDomain: "eyek-vote.firebaseapp.com",
@@ -75,7 +73,6 @@
     }
 
     async function loadShow(showId){
-      // 1) Get all sessions in this show
       const sessionsSnap = await db.collection('sessions')
         .where('showId', '==', showId)
         .orderBy('createdAt','asc')
@@ -83,7 +80,6 @@
 
       if (sessionsSnap.empty) return;
 
-      // 2) For each session, tally votes
       for (const doc of sessionsSnap.docs) {
         const sid = doc.id;
         const data = doc.data();
@@ -104,15 +100,11 @@
         const li = document.createElement('li');
         li.innerHTML = `<span>${singer} <span class="pill">${pill}</span></span><span class="pill">${sid}</span>`;
 
-        // Winner(s) (ties allowed)
         const max = Math.max(encore, one, nextt);
         if (max > 0) {
           if (encore===max)   listEncore.appendChild(li.cloneNode(true));
           if (one===max)      listOneMore.appendChild(li.cloneNode(true));
           if (nextt===max)    listNextTime.appendChild(li.cloneNode(true));
-        } else {
-          // No votes: choose where to show (or skip). Default: One More list (comment out if not desired)
-          // listOneMore.appendChild(li.cloneNode(true));
         }
       }
     }
