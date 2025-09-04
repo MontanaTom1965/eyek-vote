@@ -5,28 +5,10 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Vote | Earn Your Encore Karaoke</title>
   <style>
-    body {
-      margin:0;
-      font-family:system-ui,sans-serif;
-      display:flex;
-      justify-content:center;
-      align-items:center;
-      min-height:100vh;
-      background:#0e0d2b;
-      color:#fff;
-    }
+    body { margin:0; font-family:system-ui,sans-serif; display:flex; justify-content:center; align-items:center; min-height:100vh; background:#0e0d2b; color:#fff; }
     .container { text-align:center; max-width:600px; }
     h1 { color:#ffd24a; margin-bottom:20px; line-height:1.4; }
-    button {
-      display:block;
-      width:100%;
-      margin:12px 0;
-      padding:20px;
-      font-size:1.2rem;
-      border:none;
-      border-radius:8px;
-      cursor:pointer;
-    }
+    button { display:block; width:100%; margin:12px 0; padding:20px; font-size:1.2rem; border:none; border-radius:8px; cursor:pointer; }
     .encore { background:#27ae60; color:#fff; }
     .one-more { background:#f39c12; color:#fff; }
     .next-time { background:#c0392b; color:#fff; }
@@ -46,11 +28,9 @@
     <p id="err" class="err"></p>
   </div>
 
-  <!-- Firebase (compat) -->
   <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore-compat.js"></script>
   <script>
-    // --- Firebase setup ---
     const firebaseConfig = {
       apiKey: "AIzaSyDGbC08WxruYIDPhZSlDlU-7Kzq-7mHENk",
       authDomain: "eyek-vote.firebaseapp.com",
@@ -62,20 +42,15 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // --- Params ---
     const params = new URLSearchParams(location.search);
     const sid    = params.get('sid')    || "TEST";
     const singer = params.get('singer') || "this singer";
+    const showId = params.get('show')   || null;
     const reset  = params.get('reset')  === '1';
 
-    // Two-line header
-    document.querySelector('h1').innerHTML =
-      `You’re voting for ${singer}.<br>Did they earn an Encore?`;
-
-    // Optional test helper: ?reset=1 clears this sid's local flag
+    document.querySelector('h1').innerHTML = `You’re voting for ${singer}.<br>Did they earn an Encore?`;
     if (reset) localStorage.removeItem(`eyek_voted_${sid}`);
 
-    // --- Stable device id (per browser) ---
     function getDeviceId() {
       const KEY = 'eyek_device_id';
       let id = localStorage.getItem(KEY);
@@ -87,7 +62,6 @@
     }
     const deviceId = getDeviceId();
 
-    // --- One-vote-per-device guard (per sid) ---
     const votedKey = `eyek_voted_${sid}`;
     const msgEl = document.getElementById('msg');
     const errEl = document.getElementById('err');
@@ -100,23 +74,19 @@
       lockUI("Looks like you already voted in this round.");
     }
 
-    // Ensure session doc exists (helps with stricter rules)
     db.collection('sessions').doc(sid).set({
       singer,
       status: 'open',
-      touchedAt: firebase.firestore.FieldValue.serverTimestamp()
+      touchedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      ...(showId ? { showId } : {})
     }, { merge: true }).catch(err => {
       errEl.style.display = 'block';
       errEl.textContent = 'Setup error: ' + err.message;
-      console.error('Session set error:', err);
     });
 
-    // --- Cast vote (one doc per device per sid) ---
     async function cast(choice){
       if (localStorage.getItem(votedKey)) return;
-
       const docRef = db.collection('sessions').doc(sid).collection('votes').doc(deviceId);
-
       try {
         const snap = await docRef.get();
         if (snap.exists) {
@@ -125,7 +95,7 @@
         }
         await docRef.set({
           singer,
-          choice,  // 'encore' | 'one_more' | 'next_time'
+          choice,
           ua: navigator.userAgent,
           ts: firebase.firestore.FieldValue.serverTimestamp()
         });
@@ -134,29 +104,12 @@
       } catch (err) {
         errEl.style.display = 'block';
         errEl.textContent = 'Vote failed: ' + err.message;
-        console.error('Vote write error:', err);
       }
     }
 
-    // Buttons
     document.querySelector('.encore').onclick   = ()=>cast('encore');
     document.querySelector('.one-more').onclick = ()=>cast('one_more');
     document.querySelector('.next-time').onclick= ()=>cast('next_time');
-
-    const params = new URLSearchParams(location.search);
-const sid    = params.get('sid')    || "TEST";
-const singer = params.get('singer') || "this singer";
-const showId = params.get('show')   || null;
-
-// ... later, where we "ensure session doc exists":
-db.collection('sessions').doc(sid).set({
-  singer,
-  status: 'open',
-  touchedAt: firebase.firestore.FieldValue.serverTimestamp(),
-  // NEW:
-  ...(showId ? { showId } : {})
-}, { merge: true })
-
   </script>
 </body>
 </html>
