@@ -33,5 +33,24 @@
     const header  = document.querySelector('h1');
     header.textContent = `You’re voting for ${singer}. Did they earn an Encore?`;
   </script>
+<script type="module">
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
+
+  // Your web app's Firebase configuration
+  const firebaseConfig = {
+    apiKey: "AIzaSyDGbC08WxruYIDPhZSlDlU-7Kzq-7mHENk",
+    authDomain: "eyek-vote.firebaseapp.com",
+    projectId: "eyek-vote",
+    storageBucket: "eyek-vote.firebasestorage.app",
+    messagingSenderId: "954696683994",
+    appId: "1:954696683994:web:21a84298a94648ff0230e3"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+</script>
 </body>
 </html>
