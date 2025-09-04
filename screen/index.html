@@ -87,6 +87,10 @@
     const sidParam = new URLSearchParams(location.search).get('sid') || 'TEST';
     const voteURL = `${BASE}/vote/?sid=${encodeURIComponent(sidParam)}`;
 
+    const singer = new URLSearchParams(location.search).get('singer') || "this singer";
+  const header = document.querySelector('h1');
+  header.textContent = `Did ${singer} earn an Encore?`;
+
     // Build a QR image via Google Charts (simple, no dependencies)
     // You can swap to a local JS QR lib later (e.g., qrious) if you prefer.
     const qrImg = document.getElementById('qr');
