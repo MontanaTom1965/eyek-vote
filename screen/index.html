@@ -112,6 +112,20 @@
         el.textContent = 'Live tally error: ' + err.message;
         console.error('Tally listener error:', err);
       });
+    const params = new URLSearchParams(location.search);
+const sid    = params.get('sid')    || "TEST";
+const singer = params.get('singer') || "this singer";
+const showId = params.get('show')   || null;
+
+// ... where we "init session":
+db.collection('sessions').doc(sid).set({
+  singer,
+  status: 'open',
+  createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+  // NEW:
+  ...(showId ? { showId } : {})
+}, { merge: true })
+
   </script>
 </body>
 </html>
