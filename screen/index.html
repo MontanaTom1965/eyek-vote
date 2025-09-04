@@ -41,7 +41,7 @@
         <div class="link" id="voteLink"></div>
       </div>
 
-      <!-- Placeholder vote bars -->
+      <!-- Live bars -->
       <div class="panel">
         <div class="bar">
           <label>🔥 Encore</label>
@@ -64,33 +64,83 @@
     <footer>Earn Your Encore Karaoke — An Interactive Upgrade for Karaoke Night!</footer>
   </div>
 
-  <script>
-    const BASE   = 'https://vote.earnyourencorekaraoke.com';
-    const params = new URLSearchParams(location.search);
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore-compat.js"></script>
 
-    // Grab sid + singer from the URL
+  <script>
+    // 🔹 Replace with your actual Firebase config
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT.firebaseapp.com",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_PROJECT.appspot.com",
+      messagingSenderId: "YOUR_SENDER_ID",
+      appId: "YOUR_APP_ID"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // Params
+    const params = new URLSearchParams(location.search);
     const sid    = params.get('sid')    || 'TEST';
     const singer = params.get('singer') || 'this singer';
 
-    // Update header text with singer name
-    const header = document.querySelector('h1');
-    header.textContent = `Did ${singer} earn an Encore?`;
+    // Update header with singer name
+    document.querySelector('h1').textContent = `Did ${singer} earn an Encore?`;
 
-    // Build vote link
+    // Build vote link + QR
+    const BASE = 'https://vote.earnyourencorekaraoke.com';
     const voteURL = `${BASE}/vote/?sid=${encodeURIComponent(sid)}&singer=${encodeURIComponent(singer)}`;
-
-    // Generate QR code
-    const qrImg = document.getElementById('qr');
-    qrImg.src = `https://chart.googleapis.com/chart?cht=qr&chs=280x280&chl=${encodeURIComponent(voteURL)}`;
-
-    // Show link under QR (backup if camera fails)
     document.getElementById('voteLink').textContent = voteURL;
+    document.getElementById('qr').src = `https://chart.googleapis.com/chart?cht=qr&chs=280x280&chl=${encodeURIComponent(voteURL)}`;
 
-    // --- Fake votes for demo (press 1,2,3 keys) ---
+    // Live vote counts
     let encore=0, one=0, nextt=0;
     function render() {
       const total = encore + one + nextt || 1;
-      document.getElementById('barEncore').style.width = (encore/total*100)+'%';
-      document.getElementById('barOneMore').style.width = (one/total*100)+'%';
+      document.getElementById('barEncore').style.width   = (encore/total*100)+'%';
+      document.getElementById('barOneMore').style.width  = (one/total*100)+'%';
       document.getElementById('barNextTime').style.width = (nextt/total*100)+'%';
-      document.getElementById('pctEncore').textContent   = `${encore}
+      document.getElementById('pctEncore').textContent   = `${encore} vote${encore===1?'':'s'}`;
+      document.getElementById('pctOneMore').textContent  = `${one} vote${one===1?'':'s'}`;
+      document.getElementById('pctNextTime').textContent = `${nextt} vote${nextt===1?'':'s'}`;
+    }
+
+    // Listen to votes in Firestore
+    db.collection('votes')
+      .where('sid','==',sid)
+      .onSnapshot(snap => {
+        encore = one = nextt = 0;
+        snap.forEach(doc => {
+          const v = doc.data().choice;
+          if (v === 'encore')    encore++;
+          if (v === 'one_more')  one++;
+          if (v === 'next_time') nextt++;
+        });
+        render();
+      });
+  </script>
+  <script type="module">
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
+
+  // Your web app's Firebase configuration
+  const firebaseConfig = {
+    apiKey: "AIzaSyDGbC08WxruYIDPhZSlDlU-7Kzq-7mHENk",
+    authDomain: "eyek-vote.firebaseapp.com",
+    projectId: "eyek-vote",
+    storageBucket: "eyek-vote.firebasestorage.app",
+    messagingSenderId: "954696683994",
+    appId: "1:954696683994:web:21a84298a94648ff0230e3"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+</script>
+</body>
+</html>
+
