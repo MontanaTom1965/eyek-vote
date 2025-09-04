@@ -13,13 +13,17 @@
     input { width:100%; padding:10px; border:0; border-radius:6px; background:#141335; color:#fff; }
     button { margin-top:10px; padding:10px 16px; border:0; border-radius:6px; background:#2a2954; color:#fff; cursor:pointer; }
     .linkbox { display:grid; grid-template-columns:1fr auto; gap:8px; align-items:center; margin:8px 0; }
-    .qr img { width:180px; height:180px; }
+    .qrrow { display:flex; gap:16px; align-items:center; flex-wrap:wrap; }
+    .qr img { width:180px; height:180px; background:#fff; border-radius:8px; padding:8px; }
+    .caption { line-height:1.35; font-size:14px; color:#dfe; }
     .small { font-size:13px; color:#ccc; margin-top:8px; }
+    a { color:#9ee7ff; }
   </style>
 </head>
 <body>
   <div class="wrap">
     <h1>Host Dashboard</h1>
+
     <div class="panel">
       <label for="singer">Singer Name</label>
       <input id="singer" type="text" placeholder="e.g., Ashley">
@@ -27,7 +31,9 @@
       <input id="sid" type="text" placeholder="e.g., ABC123">
       <button id="genSid">Generate Code</button>
     </div>
+
     <div class="panel">
+      <label>Links</label>
       <div class="linkbox">
         <input id="screenLink" type="text" readonly>
         <button data-copy="#screenLink">Copy</button>
@@ -36,58 +42,77 @@
         <input id="voteLink" type="text" readonly>
         <button data-copy="#voteLink">Copy</button>
       </div>
-      <div class="qr">
-        <img id="qr" alt="QR for vote link">
+
+      <div class="qrrow" style="margin-top:10px">
+        <div class="qr"><img id="qr" alt="QR for vote link"></div>
+        <div class="caption">
+          <div id="previewTitleTop">You’re voting for this singer.</div>
+          <div id="previewTitleBottom">Did they earn an Encore?</div>
+          <div class="small" style="margin-top:10px">
+            Open the <a id="openScreen" href="#" target="_blank" rel="noopener">Screen link</a> on your TV.
+            The QR matches the Vote link.
+          </div>
+        </div>
       </div>
-      <div class="small">Open the <a id="openScreen" href="#" target="_blank">Screen link</a> on your TV.</div>
     </div>
   </div>
 
   <script>
     const BASE = 'https://vote.earnyourencorekaraoke.com';
     const singerEl = document.getElementById('singer');
-    const sidEl = document.getElementById('sid');
+    const sidEl    = document.getElementById('sid');
     const screenEl = document.getElementById('screenLink');
-    const voteEl = document.getElementById('voteLink');
-    const qrImg = document.getElementById('qr');
+    const voteEl   = document.getElementById('voteLink');
+    const qrImg    = document.getElementById('qr');
     const openScreenA = document.getElementById('openScreen');
+    const previewTop    = document.getElementById('previewTitleTop');
+    const previewBottom = document.getElementById('previewTitleBottom');
 
-    // Generate a random session code
-    function makeSid() { 
-      return Math.random().toString(36).substring(2,8).toUpperCase(); 
+    function makeSid() {
+      return Math.random().toString(36).substring(2,8).toUpperCase();
     }
 
-    // Update links + QR code
     function updateLinks() {
-      const singer = encodeURIComponent(singerEl.value || 'this singer');
-      const sid = encodeURIComponent(sidEl.value || 'TEST');
+      const singerRaw = (singerEl.value || 'this singer').trim();
+      const sidRaw    = (sidEl.value    || 'TEST').trim();
+
+      const singer = encodeURIComponent(singerRaw);
+      const sid    = encodeURIComponent(sidRaw);
+
       const screenURL = `${BASE}/screen/?sid=${sid}&singer=${singer}`;
-      const voteURL = `${BASE}/vote/?sid=${sid}&singer=${singer}`;
+      const voteURL   = `${BASE}/vote/?sid=${sid}&singer=${singer}`;
+
       screenEl.value = screenURL;
-      voteEl.value = voteURL;
+      voteEl.value   = voteURL;
       openScreenA.href = screenURL;
+
+      // QR (vote link)
       qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(voteURL)}`;
+
+      // Two-line caption next to QR
+      previewTop.textContent = `You’re voting for ${singerRaw}.`;
+      previewBottom.textContent = `Did they earn an Encore?`;
     }
 
-    document.getElementById('genSid').addEventListener('click', ()=>{
+    // Copy buttons
+    document.addEventListener('click', e => {
+      const btn = e.target.closest('button[data-copy]');
+      if (!btn) return;
+      const inp = document.querySelector(btn.dataset.copy);
+      navigator.clipboard.writeText(inp.value || '');
+      btn.textContent = 'Copied!';
+      setTimeout(() => btn.textContent = 'Copy', 1000);
+    });
+
+    // Events
+    document.getElementById('genSid').addEventListener('click', () => {
       sidEl.value = makeSid();
       updateLinks();
     });
     singerEl.addEventListener('input', updateLinks);
     sidEl.addEventListener('input', updateLinks);
 
-    // copy to clipboard
-    document.addEventListener('click', e=>{
-      if(e.target.dataset.copy){
-        const sel = e.target.dataset.copy;
-        const inp = document.querySelector(sel);
-        navigator.clipboard.writeText(inp.value);
-        e.target.textContent = "Copied!";
-        setTimeout(()=>e.target.textContent="Copy",1000);
-      }
-    });
-
-    // init with a random SID
+    // Init
     sidEl.value = makeSid();
     updateLinks();
   </script>
