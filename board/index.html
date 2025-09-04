@@ -18,16 +18,29 @@
     .pill { font-size:12px; opacity:0.9; }
     .small { font-size:12px; color:#bcd; margin-top:6px; }
     .err { color:#ffb3b3; margin-top:10px; display:none; }
+    .center { text-align:center; }
+    .inputRow { display:flex; gap:8px; justify-content:center; margin-top:12px; }
+    input[type="text"] { padding:10px; border:0; border-radius:8px; background:#141335; color:#fff; width:320px; }
+    button { border:0; border-radius:8px; padding:10px 14px; background:#2a2954; color:#fff; cursor:pointer; }
   </style>
 </head>
 <body>
   <div class="wrap">
     <h1>KJ Board</h1>
-    <p class="sub">Show results for <code id="showLabel"></code>. (Open this via <code>?show=YYYY-MM-DD_Venue</code>)</p>
+    <p class="sub">Show results for <code id="showLabel"></code>. (Open with <code>?show=YYYY-MM-DD_Venue</code> or use the box below.)</p>
+
+    <div id="chooser" class="panel center" style="display:none">
+      <div>Enter Show ID to load results:</div>
+      <div class="inputRow">
+        <input id="showInput" type="text" placeholder="e.g., 2025-09-04_Show">
+        <button id="loadBtn">Load</button>
+      </div>
+      <div class="small">Tip: This will be remembered for next time.</div>
+    </div>
 
     <div id="err" class="err"></div>
 
-    <div class="row">
+    <div class="row" id="results" style="display:none">
       <div class="panel col">
         <h2>🔥 Encore</h2>
         <ul id="listEncore"></ul>
@@ -44,6 +57,7 @@
     <div class="small">Counts shown as Encore/OneMore/Maybe (e.g., 7/3/2).</div>
   </div>
 
+  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore-compat.js"></script>
   <script>
@@ -58,25 +72,40 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    const show = new URLSearchParams(location.search).get('show');
+    const qs = new URLSearchParams(location.search);
+    let show = qs.get('show') || localStorage.getItem('eyek_last_show') || '';
+
     const showLabel = document.getElementById('showLabel');
     const errEl = document.getElementById('err');
+    const chooser = document.getElementById('chooser');
+    const results = document.getElementById('results');
     const listEncore = document.getElementById('listEncore');
     const listOneMore = document.getElementById('listOneMore');
     const listNextTime = document.getElementById('listNextTime');
+    const showInput = document.getElementById('showInput');
+    const loadBtn = document.getElementById('loadBtn');
 
-    if (!show) {
-      err('Missing ?show=… in URL.');
-    } else {
+    function setShow(id){
+      show = (id || '').trim();
+      if (!show) return;
+      localStorage.setItem('eyek_last_show', show);
+      const url = new URL(location.href);
+      url.searchParams.set('show', show);
+      history.replaceState(null, '', url.toString());
       showLabel.textContent = show;
-      loadShow(show).catch(e => err(e.message));
     }
 
     async function loadShow(showId){
+      errEl.style.display = 'none'; errEl.textContent = '';
+      results.style.display = 'none';
+      listEncore.innerHTML = ''; listOneMore.innerHTML = ''; listNextTime.innerHTML = '';
+
       const sessionsSnap = await db.collection('sessions')
         .where('showId', '==', showId)
         .orderBy('createdAt','asc')
         .get();
+
+      results.style.display = 'grid';
 
       if (sessionsSnap.empty) return;
 
@@ -96,7 +125,6 @@
 
         const total = encore+one+nextt;
         const pill = total ? `${encore}/${one}/${nextt}` : '0/0/0';
-
         const li = document.createElement('li');
         li.innerHTML = `<span>${singer} <span class="pill">${pill}</span></span><span class="pill">${sid}</span>`;
 
@@ -109,7 +137,24 @@
       }
     }
 
-    function err(m){ errEl.style.display='block'; errEl.textContent = m; }
+    // UI wiring
+    loadBtn.addEventListener('click', ()=>{
+      const id = showInput.value.trim();
+      if (!id) return;
+      setShow(id);
+      chooser.style.display = 'none';
+      loadShow(show).catch(e => { errEl.style.display='block'; errEl.textContent=e.message; });
+    });
+
+    // Init
+    if (show) {
+      showLabel.textContent = show;
+      loadShow(show).catch(e => { errEl.style.display='block'; errEl.textContent=e.message; });
+    } else {
+      chooser.style.display = 'block';
+      showInput.focus();
+    }
   </script>
 </body>
 </html>
+
