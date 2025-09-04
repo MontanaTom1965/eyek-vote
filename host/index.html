@@ -3,118 +3,153 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Host Dashboard | Earn Your Encore Karaoke</title>
+  <title>KJ Board | Earn Your Encore Karaoke</title>
   <style>
     body { margin:0; font-family:system-ui,sans-serif; background:#0e0d2b; color:#fff; }
-    .wrap { max-width:920px; margin:0 auto; padding:28px; }
-    h1 { color:#ffd24a; }
+    .wrap { max-width:1100px; margin:0 auto; padding:24px; }
+    h1 { color:#ffd24a; margin:0 0 10px; }
+    p.sub { color:#bfe; margin:0 0 16px; }
     .panel { background:#1e1d3a; border-radius:12px; padding:16px; margin:16px 0; }
-    label { font-weight:600; margin:10px 0 4px; display:block; }
-    input { width:100%; padding:10px; border:0; border-radius:6px; background:#141335; color:#fff; }
-    button { margin-top:10px; padding:10px 16px; border:0; border-radius:6px; background:#2a2954; color:#fff; cursor:pointer; }
-    .linkbox { display:grid; grid-template-columns:1fr auto; gap:8px; align-items:center; margin:8px 0; }
-    .qrrow { display:flex; gap:16px; align-items:center; flex-wrap:wrap; }
-    .qr img { width:180px; height:180px; background:#fff; border-radius:8px; padding:8px; }
-    .caption { line-height:1.35; font-size:14px; color:#dfe; }
-    .small { font-size:13px; color:#ccc; margin-top:8px; }
-    a { color:#9ee7ff; }
+    .row { display:grid; grid-template-columns: 1fr 1fr 1fr; gap:16px; }
+    @media (max-width:900px){ .row { grid-template-columns:1fr; } }
+    .col h2 { margin:0 0 8px; font-size:18px; }
+    .col ul { list-style:none; padding:0; margin:0; }
+    .col li { background:#141335; border-radius:8px; padding:10px 12px; margin:8px 0; display:flex; justify-content:space-between; gap:12px; }
+    .pill { font-size:12px; opacity:0.9; }
+    .ok { color:#7bed9f; }
+    .maybe { color:#f3c56b; }
+    .no { color:#ff9aa2; }
+    .controls { display:grid; grid-template-columns: 1fr auto; gap:8px; align-items:start; }
+    textarea { width:100%; min-height:90px; border:0; border-radius:8px; padding:10px; background:#141335; color:#fff; }
+    button { border:0; border-radius:8px; padding:10px 14px; background:#2a2954; color:#fff; cursor:pointer; }
+    .small { font-size:12px; color:#bcd; margin-top:6px; }
+    .err { color:#ffb3b3; margin-top:10px; display:none; }
+    .note { font-size:13px; color:#9ee7ff; margin-top:8px; }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <h1>Host Dashboard</h1>
+    <h1>KJ Board</h1>
+    <p class="sub">Paste SIDs (one per line) or add them to the URL like <code>?sids=ABC123,DEF456</code>. This page tallies each round and lists singers by outcome.</p>
 
     <div class="panel">
-      <label for="singer">Singer Name</label>
-      <input id="singer" type="text" placeholder="e.g., Ashley">
-      <label for="sid">Session Code</label>
-      <input id="sid" type="text" placeholder="e.g., ABC123">
-      <button id="genSid">Generate Code</button>
+      <div class="controls">
+        <textarea id="sidInput" placeholder="ABC123
+DEF456
+GHI789"></textarea>
+        <div>
+          <button id="loadBtn">Load Results</button>
+          <div class="small">Tip: Save this page with your show’s SIDs so you can reload quickly.</div>
+        </div>
+      </div>
+      <div id="err" class="err"></div>
+      <div class="note">Outcome rule: winner = most votes among 🔥 Encore / 🤔 One More Shot / ❌ Maybe Next Time. Ties → shown under both winners.</div>
     </div>
 
-    <div class="panel">
-      <label>Links</label>
-      <div class="linkbox">
-        <input id="screenLink" type="text" readonly>
-        <button data-copy="#screenLink">Copy</button>
+    <div class="row">
+      <div class="panel col">
+        <h2>🔥 Encore</h2>
+        <ul id="listEncore"></ul>
       </div>
-      <div class="linkbox">
-        <input id="voteLink" type="text" readonly>
-        <button data-copy="#voteLink">Copy</button>
+      <div class="panel col">
+        <h2>🤔 One More Shot</h2>
+        <ul id="listOneMore"></ul>
       </div>
-
-      <div class="qrrow" style="margin-top:10px">
-        <div class="qr"><img id="qr" alt="QR for vote link"></div>
-        <div class="caption">
-          <div id="previewTitleTop">You’re voting for this singer.</div>
-          <div id="previewTitleBottom">Did they earn an Encore?</div>
-          <div class="small" style="margin-top:10px">
-            Open the <a id="openScreen" href="#" target="_blank" rel="noopener">Screen link</a> on your TV.
-            The QR matches the Vote link.
-          </div>
-        </div>
+      <div class="panel col">
+        <h2>❌ Maybe Next Time</h2>
+        <ul id="listNextTime"></ul>
       </div>
     </div>
   </div>
 
+  <!-- Firebase (compat) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore-compat.js"></script>
   <script>
-    const BASE = 'https://vote.earnyourencorekaraoke.com';
-    const singerEl = document.getElementById('singer');
-    const sidEl    = document.getElementById('sid');
-    const screenEl = document.getElementById('screenLink');
-    const voteEl   = document.getElementById('voteLink');
-    const qrImg    = document.getElementById('qr');
-    const openScreenA = document.getElementById('openScreen');
-    const previewTop    = document.getElementById('previewTitleTop');
-    const previewBottom = document.getElementById('previewTitleBottom');
+    // --- Your Firebase config (same as vote/screen) ---
+    const firebaseConfig = {
+      apiKey: "AIzaSyDGbC08WxruYIDPhZSlDlU-7Kzq-7mHENk",
+      authDomain: "eyek-vote.firebaseapp.com",
+      projectId: "eyek-vote",
+      storageBucket: "eyek-vote.firebasestorage.app",
+      messagingSenderId: "954696683994",
+      appId: "1:954696683994:web:21a84298a94648ff0230e3"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
 
-    function makeSid() {
-      return Math.random().toString(36).substring(2,8).toUpperCase();
+    // --- UI refs ---
+    const sidInput = document.getElementById('sidInput');
+    const listEncore = document.getElementById('listEncore');
+    const listOneMore = document.getElementById('listOneMore');
+    const listNextTime = document.getElementById('listNextTime');
+    const errEl = document.getElementById('err');
+
+    // Load SIDs from ?sids=ABC,DEF,...
+    (function initFromQuery(){
+      const p = new URLSearchParams(location.search);
+      const s = p.get('sids');
+      if (s) sidInput.value = s.split(',').join('\n');
+    })();
+
+    document.getElementById('loadBtn').addEventListener('click', loadAll);
+
+    async function loadAll(){
+      errEl.style.display = 'none'; errEl.textContent = '';
+      listEncore.innerHTML = ''; listOneMore.innerHTML = ''; listNextTime.innerHTML = '';
+
+      const sids = sidInput.value.split(/\s+/).map(x=>x.trim()).filter(Boolean);
+      if (!sids.length) { err('Please paste at least one SID.'); return; }
+
+      for (const sid of sids) {
+        try {
+          // Read the session (for singer name)
+          const sDoc = await db.collection('sessions').doc(sid).get();
+          const singer = (sDoc.exists && sDoc.data().singer) ? sDoc.data().singer : '(unknown singer)';
+
+          // Tally votes in this session
+          const snap = await db.collection('sessions').doc(sid).collection('votes').get();
+          let encore=0, one=0, nextt=0;
+          snap.forEach(d => {
+            const v = d.data().choice;
+            if (v==='encore')    encore++;
+            if (v==='one_more')  one++;
+            if (v==='next_time') nextt++;
+          });
+
+          const total = encore+one+nextt;
+          const pill = total ? `${encore}/${one}/${nextt}` : '0/0/0';
+
+          // Decide winners (plural if tie)
+          const max = Math.max(encore, one, nextt);
+          const winners = [];
+          if (encore===max && max>0) winners.push('encore');
+          if (one===max    && max>0) winners.push('one');
+          if (nextt===max  && max>0) winners.push('next');
+
+          // Build line item
+          const li = document.createElement('li');
+          li.innerHTML = `<span>${singer} <span class="pill">${pill}</span></span><span class="pill">${sid}</span>`;
+
+          if (winners.includes('encore'))   listEncore.appendChild(li.cloneNode(true));
+          if (winners.includes('one'))      listOneMore.appendChild(li.cloneNode(true));
+          if (winners.includes('next'))     listNextTime.appendChild(li.cloneNode(true));
+
+          // If no votes yet, show them under nothing; or choose a default:
+          if (!winners.length) {
+            // Uncomment one of these if desired:
+            // listOneMore.appendChild(li.cloneNode(true)); // default to One More when no votes
+            // listNextTime.appendChild(li.cloneNode(true));
+          }
+
+        } catch(e) {
+          err(`SID ${sid}: ${e.message}`);
+          console.error('Board load error for SID', sid, e);
+        }
+      }
     }
 
-    function updateLinks() {
-      const singerRaw = (singerEl.value || 'this singer').trim();
-      const sidRaw    = (sidEl.value    || 'TEST').trim();
-
-      const singer = encodeURIComponent(singerRaw);
-      const sid    = encodeURIComponent(sidRaw);
-
-      const screenURL = `${BASE}/screen/?sid=${sid}&singer=${singer}`;
-      const voteURL   = `${BASE}/vote/?sid=${sid}&singer=${singer}`;
-
-      screenEl.value = screenURL;
-      voteEl.value   = voteURL;
-      openScreenA.href = screenURL;
-
-      // QR (vote link)
-      qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(voteURL)}`;
-
-      // Two-line caption next to QR
-      previewTop.textContent = `You’re voting for ${singerRaw}.`;
-      previewBottom.textContent = `Did they earn an Encore?`;
-    }
-
-    // Copy buttons
-    document.addEventListener('click', e => {
-      const btn = e.target.closest('button[data-copy]');
-      if (!btn) return;
-      const inp = document.querySelector(btn.dataset.copy);
-      navigator.clipboard.writeText(inp.value || '');
-      btn.textContent = 'Copied!';
-      setTimeout(() => btn.textContent = 'Copy', 1000);
-    });
-
-    // Events
-    document.getElementById('genSid').addEventListener('click', () => {
-      sidEl.value = makeSid();
-      updateLinks();
-    });
-    singerEl.addEventListener('input', updateLinks);
-    sidEl.addEventListener('input', updateLinks);
-
-    // Init
-    sidEl.value = makeSid();
-    updateLinks();
+    function err(m){ errEl.style.display='block'; errEl.textContent = m; }
   </script>
 </body>
 </html>
