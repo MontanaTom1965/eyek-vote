@@ -1,0 +1,135 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Screen | Earn Your Encore Karaoke</title>
+  <style>
+    :root {
+      --bg: #0e0d2b;
+      --panel: #1e1d3a;
+      --gold: #ffd24a;
+      --teal: #c9fffa;
+      --ok: #27ae60;
+      --maybe: #f39c12;
+      --no: #c0392b;
+    }
+    * { box-sizing: border-box; }
+    body { margin:0; background:var(--bg); color:#fff; font-family:system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 28px; }
+    header { text-align:center; margin-bottom: 20px; }
+    h1 { margin: 0 0 8px; color: var(--gold); font-size: clamp(22px, 3.5vw, 40px); }
+    p.sub { margin: 0; color: var(--teal); font-size: clamp(14px, 2.2vw, 18px); opacity: 0.95; }
+    .screen { display:grid; grid-template-columns: 320px 1fr; gap: 24px; align-items: center; }
+    .panel { background: var(--panel); border-radius: 14px; padding: 16px; }
+    .qr { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; }
+    .qr img { width: 100%; max-width: 280px; height:auto; border-radius: 10px; background:#fff; padding:10px; }
+    .link { font-size: 14px; word-break: break-all; color:#ddd; text-align:center; }
+    .btnrow { display:flex; gap:8px; justify-content:center; }
+    button { border:0; border-radius:8px; padding:10px 14px; cursor:pointer; background:#2a2954; color:#fff; }
+    .meter { padding: 16px; }
+    .bar { background:#141335; border-radius:10px; padding:10px; margin:10px 0 16px; }
+    .bar label { display:block; font-weight:600; margin-bottom:6px; }
+    .track { width:100%; background:#0f0e2a; border-radius:8px; height:22px; overflow:hidden; }
+    .fill { height:22px; width:0%; transition: width 400ms ease; }
+    .fill.ok { background: var(--ok); }
+    .fill.maybe { background: var(--maybe); }
+    .fill.no { background: var(--no); }
+    .pct { font-size:13px; opacity:0.9; margin-top:6px; }
+    footer { margin-top: 10px; text-align:center; font-size:12px; color:#9ec8c8; opacity:0.9; }
+    @media (max-width: 860px) { .screen { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Did this singer earn an Encore?</h1>
+      <p class="sub">Scan the code to vote: 🔥 Encore · 🤔 One More Shot · ❌ Maybe Next Time</p>
+    </header>
+
+    <div class="screen">
+      <!-- QR / Controls -->
+      <div class="panel qr">
+        <img id="qr" alt="QR code to vote" />
+        <div class="link" id="voteLink"></div>
+        <div class="btnrow">
+          <button id="copyLink">Copy Link</button>
+          <button id="newCode">New Session Code</button>
+        </div>
+      </div>
+
+      <!-- Meters (placeholder; we’ll wire these later) -->
+      <div class="panel meter">
+        <div class="bar">
+          <label>🔥 Encore</label>
+          <div class="track"><div class="fill ok" id="barEncore"></div></div>
+          <div class="pct" id="pctEncore">0 votes</div>
+        </div>
+        <div class="bar">
+          <label>🤔 One More Shot</label>
+          <div class="track"><div class="fill maybe" id="barOneMore"></div></div>
+          <div class="pct" id="pctOneMore">0 votes</div>
+        </div>
+        <div class="bar">
+          <label>❌ Maybe Next Time</label>
+          <div class="track"><div class="fill no" id="barNextTime"></div></div>
+          <div class="pct" id="pctNextTime">0 votes</div>
+        </div>
+      </div>
+    </div>
+
+    <footer>Earn Your Encore Karaoke — An Interactive Upgrade for Karaoke Night!</footer>
+  </div>
+
+  <script>
+    // --- CONFIG ---
+    const BASE = 'https://vote.earnyourencorekaraoke.com';
+    const sidParam = new URLSearchParams(location.search).get('sid') || 'TEST';
+    const voteURL = `${BASE}/vote/?sid=${encodeURIComponent(sidParam)}`;
+
+    // Build a QR image via Google Charts (simple, no dependencies)
+    // You can swap to a local JS QR lib later (e.g., qrious) if you prefer.
+    const qrImg = document.getElementById('qr');
+    const qrSize = 300;
+    qrImg.src = `https://chart.googleapis.com/chart?cht=qr&chs=${qrSize}x${qrSize}&chl=${encodeURIComponent(voteURL)}`;
+
+    // Show link under the QR (handy for older phones)
+    const linkEl = document.getElementById('voteLink');
+    linkEl.textContent = voteURL;
+
+    // Copy button
+    document.getElementById('copyLink').onclick = async () => {
+      try { await navigator.clipboard.writeText(voteURL); alert('Vote link copied!'); }
+      catch { alert('Copy failed—please copy manually.'); }
+    };
+
+    // Quick session-code helper (generates a new code in the address bar)
+    document.getElementById('newCode').onclick = () => {
+      const code = Math.random().toString(36).slice(2, 8).toUpperCase();
+      const next = `${location.origin}${location.pathname}?sid=${code}`;
+      location.href = next;
+    };
+
+    // --- Placeholder tally demo (for looks only; remove when wired to backend) ---
+    // You can click anywhere to "simulate" some incoming votes.
+    let encore = 0, one = 0, nextt = 0;
+    function render() {
+      const total = encore + one + nextt || 1;
+      document.getElementById('barEncore').style.width = (encore/total*100)+'%';
+      document.getElementById('barOneMore').style.width = (one/total*100)+'%';
+      document.getElementById('barNextTime').style.width = (nextt/total*100)+'%';
+      document.getElementById('pctEncore').textContent = `${encore} vote${encore===1?'':'s'}`;
+      document.getElementById('pctOneMore').textContent = `${one} vote${one===1?'':'s'}`;
+      document.getElementById('pctNextTime').textContent = `${nextt} vote${nextt===1?'':'s'}`;
+    }
+    render();
+    // Demo: press 1/2/3 keys to simulate votes while you’re testing
+    window.addEventListener('keydown', (e) => {
+      if (e.key==='1') { encore++; }
+      if (e.key==='2') { one++; }
+      if (e.key==='3') { nextt++; }
+      render();
+    });
+  </script>
+</body>
+</html>
