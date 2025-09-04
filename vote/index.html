@@ -5,10 +5,32 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Vote | Earn Your Encore Karaoke</title>
   <style>
-    body { margin:0; font-family:system-ui,sans-serif; display:flex; justify-content:center; align-items:center; min-height:100vh; background:#0e0d2b; color:#fff; }
+    body {
+      margin:0;
+      font-family:system-ui,sans-serif;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      min-height:100vh;
+      background:#0e0d2b;
+      color:#fff;
+    }
     .container { text-align:center; max-width:600px; }
-    h1 { color:#ffd24a; margin-bottom:20px; }
-    button { display:block; width:100%; margin:12px 0; padding:20px; font-size:1.2rem; border:none; border-radius:8px; cursor:pointer; }
+    h1 {
+      color:#ffd24a;
+      margin-bottom:20px;
+      line-height:1.4;
+    }
+    button {
+      display:block;
+      width:100%;
+      margin:12px 0;
+      padding:20px;
+      font-size:1.2rem;
+      border:none;
+      border-radius:8px;
+      cursor:pointer;
+    }
     .encore { background:#27ae60; color:#fff; }
     .one-more { background:#f39c12; color:#fff; }
     .next-time { background:#c0392b; color:#fff; }
@@ -42,7 +64,10 @@
     const params = new URLSearchParams(location.search);
     const sid = params.get('sid') || "TEST";
     const singer = params.get('singer') || "this singer";
-    document.querySelector('h1').textContent = `You’re voting for ${singer}. Did they earn an Encore?`;
+
+    // Two-line header
+    document.querySelector('h1').innerHTML =
+      `You’re voting for ${singer}.<br>Did they earn an Encore?`;
 
     function cast(choice){
       db.collection('votes').add({
