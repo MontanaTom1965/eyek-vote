@@ -7,11 +7,12 @@
   <style>
     body { margin:0; font-family:system-ui, sans-serif; display:flex; justify-content:center; align-items:center; min-height:100vh; background:#0e0d2b; color:#fff; }
     .container { text-align:center; max-width:600px; }
-    h1 { color:#ffd24a; }
+    h1 { color:#ffd24a; margin-bottom:20px; }
     button { display:block; width:100%; margin:12px 0; padding:20px; font-size:1.2rem; border:none; border-radius:8px; cursor:pointer; }
     .encore { background:#27ae60; color:#fff; }
     .one-more { background:#f39c12; color:#fff; }
     .next-time { background:#c0392b; color:#fff; }
+    p.note { margin-top:20px; font-size:0.9rem; color:#ccc; }
   </style>
 </head>
 <body>
@@ -20,18 +21,17 @@
     <button class="encore">🔥 Encore!</button>
     <button class="one-more">🤔 One More Shot</button>
     <button class="next-time">❌ Maybe Next Time</button>
-    <p style="margin-top:20px;font-size:0.9rem;color:#ccc;">
-      Your vote is anonymous. Thanks for playing!
-    </p>
+    <p class="note">Your vote is anonymous. Thanks for playing!</p>
   </div>
-<script>
-  // Read singer name from the URL
-  const params  = new URLSearchParams(location.search);
-  const singer  = params.get('singer') || "this singer";
 
-  // Update the header text
-  const header  = document.querySelector('h1');
-  header.textContent = `You’re voting for ${singer}. Did they earn an Encore?`;
-</script>
+  <script>
+    // Read singer name from the URL
+    const params  = new URLSearchParams(location.search);
+    const singer  = params.get('singer') || "this singer";
+
+    // Update header text with singer name
+    const header  = document.querySelector('h1');
+    header.textContent = `You’re voting for ${singer}. Did they earn an Encore?`;
+  </script>
 </body>
 </html>
