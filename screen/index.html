@@ -19,16 +19,18 @@
     .fill.maybe { background:#f39c12; }
     .fill.no { background:#c0392b; }
     .pct { font-size:13px; margin-top:4px; }
+    .err { margin-top:10px; color:#ffb3b3; font-size:13px; text-align:center; display:none; }
     @media (max-width: 860px) { .screen { grid-template-columns:1fr; } }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <h1>Did this singer earn an Encore?</h1>
+    <h1>Did this singer earn an Encore?<br>Cast your vote now!</h1>
     <div class="screen">
       <div class="panel qr">
         <img id="qr" alt="QR">
         <div class="link" id="voteLink"></div>
+        <div id="screenErr" class="err"></div>
       </div>
       <div class="panel">
         <div class="bar"><label>🔥 Encore</label><div class="track"><div class="fill ok" id="barEncore"></div></div><div class="pct" id="pctEncore">0 votes</div></div>
@@ -42,6 +44,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore-compat.js"></script>
   <script>
+    // --- Firebase setup (your real config) ---
     const firebaseConfig = {
       apiKey: "AIzaSyDGbC08WxruYIDPhZSlDlU-7Kzq-7mHENk",
       authDomain: "eyek-vote.firebaseapp.com",
@@ -53,19 +56,34 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
+    // --- Params ---
     const params = new URLSearchParams(location.search);
-    const sid = params.get('sid') || "TEST";
+    const sid    = params.get('sid')    || "TEST";
     const singer = params.get('singer') || "this singer";
 
-    // Two-line header for readability
+    // Header
     document.querySelector('h1').innerHTML =
       `Did ${singer} earn an Encore?<br>Cast your vote now!`;
 
+    // Vote link + QR
     const BASE = 'https://vote.earnyourencorekaraoke.com';
     const voteURL = `${BASE}/vote/?sid=${encodeURIComponent(sid)}&singer=${encodeURIComponent(singer)}`;
     document.getElementById('voteLink').textContent = voteURL;
     document.getElementById('qr').src = `https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=${encodeURIComponent(voteURL)}`;
 
+    // --- Ensure session doc exists (safe merge) ---
+    db.collection('sessions').doc(sid).set({
+      singer,
+      status: 'open',
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true }).catch(err => {
+      const el = document.getElementById('screenErr');
+      el.style.display = 'block';
+      el.textContent = 'Session init error: ' + err.message;
+      console.error('Session init error:', err);
+    });
+
+    // --- Live tally from sessions/{sid}/votes ---
     let encore=0, one=0, nextt=0;
     function render(){
       const total = encore+one+nextt || 1;
@@ -77,16 +95,23 @@
       document.getElementById('pctNextTime').textContent= `${nextt} vote${nextt===1?'':'s'}`;
     }
 
-    db.collection('votes').where('sid','==',sid).onSnapshot(snap=>{
-      encore=one=nextt=0;
-      snap.forEach(doc=>{
-        const v=doc.data().choice;
-        if(v==='encore') encore++;
-        if(v==='one_more') one++;
-        if(v==='next_time') nextt++;
+    db.collection('sessions').doc(sid).collection('votes')
+      .orderBy('ts','asc')
+      .onSnapshot(snap=>{
+        encore=one=nextt=0;
+        snap.forEach(doc=>{
+          const v=doc.data().choice;
+          if(v==='encore') encore++;
+          if(v==='one_more') one++;
+          if(v==='next_time') nextt++;
+        });
+        render();
+      }, err=>{
+        const el = document.getElementById('screenErr');
+        el.style.display = 'block';
+        el.textContent = 'Live tally error: ' + err.message;
+        console.error('Tally listener error:', err);
       });
-      render();
-    });
   </script>
 </body>
 </html>
