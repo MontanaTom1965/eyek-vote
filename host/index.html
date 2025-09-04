@@ -5,141 +5,91 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Host Dashboard | Earn Your Encore Karaoke</title>
   <style>
-    : root{
-      --bg:#0e0d2b; --panel:#1e1d3a; --gold:#ffd24a; --teal:#c9fffa;
-      --btn:#2a2954; --btnTxt:#fff;
-    }
-    *{box-sizing:border-box}
-    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:#fff}
-    .wrap{max-width:920px;margin:0 auto;padding:28px}
-    h1{margin:0 0 8px;color:var(--gold)}
-    p.sub{margin:0 0 20px;color:var(--teal);opacity:.95}
-    .panel{background:var(--panel);border-radius:14px;padding:16px;margin:14px 0}
-    label{display:block;margin:10px 0 6px;font-weight:600}
-    input[type="text"]{width:100%;padding:12px 14px;border-radius:8px;border:0;background:#141335;color:#fff}
-    .row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-    .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
-    button{border:0;border-radius:8px;padding:12px 16px;background:var(--btn);color:var(--btnTxt);cursor:pointer}
-    .linkbox{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;margin-top:10px}
-    .qr{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
-    .qr img{width:160px;height:160px;background:#fff;border-radius:8px;padding:8px}
-    .small{font-size:12px;color:#a7caca}
-    a.preview{color:#9ee7ff;text-decoration:underline}
-    @media (max-width:760px){.row{grid-template-columns:1fr}}
+    body { margin:0; font-family:system-ui,sans-serif; background:#0e0d2b; color:#fff; }
+    .wrap { max-width:920px; margin:0 auto; padding:28px; }
+    h1 { color:#ffd24a; }
+    .panel { background:#1e1d3a; border-radius:12px; padding:16px; margin:16px 0; }
+    label { font-weight:600; margin:10px 0 4px; display:block; }
+    input { width:100%; padding:10px; border:0; border-radius:6px; background:#141335; color:#fff; }
+    button { margin-top:10px; padding:10px 16px; border:0; border-radius:6px; background:#2a2954; color:#fff; cursor:pointer; }
+    .linkbox { display:grid; grid-template-columns:1fr auto; gap:8px; align-items:center; margin:8px 0; }
+    .qr img { width:180px; height:180px; }
+    .small { font-size:13px; color:#ccc; margin-top:8px; }
   </style>
 </head>
 <body>
   <div class="wrap">
     <h1>Host Dashboard</h1>
-    <p class="sub">Generate links for the TV screen and phone voting. Type the singer’s name, create a session code, and go.</p>
-
     <div class="panel">
-      <div class="row">
-        <div>
-          <label for="singer">Singer Name</label>
-          <input id="singer" type="text" placeholder="e.g., Ashley" />
-        </div>
-        <div>
-          <label for="sid">Session Code (sid)</label>
-          <div class="actions" style="margin:0">
-            <input id="sid" type="text" placeholder="e.g., ABC123" />
-          </div>
-          <div class="actions">
-            <button id="genSid">Generate Code</button>
-            <button id="clear">Clear</button>
-          </div>
-        </div>
-      </div>
+      <label for="singer">Singer Name</label>
+      <input id="singer" type="text" placeholder="e.g., Ashley">
+      <label for="sid">Session Code</label>
+      <input id="sid" type="text" placeholder="e.g., ABC123">
+      <button id="genSid">Generate Code</button>
     </div>
-
     <div class="panel">
-      <label>Links</label>
       <div class="linkbox">
-        <input id="screenLink" type="text" readonly />
+        <input id="screenLink" type="text" readonly>
         <button data-copy="#screenLink">Copy</button>
       </div>
       <div class="linkbox">
-        <input id="voteLink" type="text" readonly />
+        <input id="voteLink" type="text" readonly>
         <button data-copy="#voteLink">Copy</button>
       </div>
-      <div class="qr" style="margin-top:12px">
-        <div>
-          <div id="qr"></div>
-        </div>
-        <div class="small">
-          <div><strong>How to use:</strong></div>
-          <div>• Open <a class="preview" id="openScreen" target="_blank" rel="noopener">the Screen link</a> on your TV.</div>
-          <div>• The QR here matches the Vote link. Print or screenshot as backup.</div>
-          <div>• Change name/code → links & QR update automatically.</div>
-        </div>
+      <div class="qr">
+        <img id="qr" alt="QR for vote link">
       </div>
-    </div>
-
-    <div class="panel small">
-      Tip: Use a new session code for each singer’s second song (e.g., press “Generate Code”).
+      <div class="small">Open the <a id="openScreen" href="#" target="_blank">Screen link</a> on your TV.</div>
     </div>
   </div>
 
   <script>
     const BASE = 'https://vote.earnyourencorekaraoke.com';
-    const $ = sel => document.querySelector(sel);
+    const singerEl = document.getElementById('singer');
+    const sidEl = document.getElementById('sid');
+    const screenEl = document.getElementById('screenLink');
+    const voteEl = document.getElementById('voteLink');
+    const qrImg = document.getElementById('qr');
+    const openScreenA = document.getElementById('openScreen');
 
-    const singerEl = $('#singer');
-    const sidEl    = $('#sid');
-    const screenEl = $('#screenLink');
-    const voteEl   = $('#voteLink');
-    const qrImg    = $('#qr');
-    const openScreenA = $('#openScreen');
-
-    function makeSid(){
-      return Math.random().toString(36).slice(2,8).toUpperCase();
+    // Generate a random session code
+    function makeSid() { 
+      return Math.random().toString(36).substring(2,8).toUpperCase(); 
     }
 
-    function updateLinks(){
-      const singer = encodeURIComponent((singerEl.value || 'this singer').trim());
-      const sid    = encodeURIComponent((sidEl.value || 'TEST').trim());
-
+    // Update links + QR code
+    function updateLinks() {
+      const singer = encodeURIComponent(singerEl.value || 'this singer');
+      const sid = encodeURIComponent(sidEl.value || 'TEST');
       const screenURL = `${BASE}/screen/?sid=${sid}&singer=${singer}`;
-      const voteURL   = `${BASE}/vote/?sid=${sid}&singer=${singer}`;
-
+      const voteURL = `${BASE}/vote/?sid=${sid}&singer=${singer}`;
       screenEl.value = screenURL;
-      voteEl.value   = voteURL;
+      voteEl.value = voteURL;
       openScreenA.href = screenURL;
-
-      // QR for the vote link (Google Charts for now; swap later if you prefer)
-      const size = 200;
-      qrImg.src = `https://chart.googleapis.com/chart?cht=qr&chs=${size}x${size}&chl=${encodeURIComponent(voteURL)}`;
+      qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(voteURL)}`;
     }
 
-    // Copy buttons
-    document.addEventListener('click', async (e)=>{
-      const btn = e.target.closest('button[data-copy]');
-      if(!btn) return;
-      const inputSel = btn.getAttribute('data-copy');
-      const input = document.querySelector(inputSel);
-      try {
-        await navigator.clipboard.writeText(input.value);
-        btn.textContent = 'Copied!';
-        setTimeout(()=> btn.textContent = 'Copy', 1200);
-      } catch {
-        alert('Copy failed—please copy manually.');
-      }
+    document.getElementById('genSid').addEventListener('click', ()=>{
+      sidEl.value = makeSid();
+      updateLinks();
     });
-
-    // Generate + Clear
-    $('#genSid').addEventListener('click', ()=>{ sidEl.value = makeSid(); updateLinks(); });
-    $('#clear').addEventListener('click', ()=>{ singerEl.value=''; sidEl.value=''; updateLinks(); });
-
-    // Live updates as you type
     singerEl.addEventListener('input', updateLinks);
     sidEl.addEventListener('input', updateLinks);
 
-    // Init with a fresh code so you're ready to go
+    // copy to clipboard
+    document.addEventListener('click', e=>{
+      if(e.target.dataset.copy){
+        const sel = e.target.dataset.copy;
+        const inp = document.querySelector(sel);
+        navigator.clipboard.writeText(inp.value);
+        e.target.textContent = "Copied!";
+        setTimeout(()=>e.target.textContent="Copy",1000);
+      }
+    });
+
+    // init with a random SID
     sidEl.value = makeSid();
     updateLinks();
   </script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"
-        integrity="sha512-Mi1LQj4h3+XrYh9wB0xqf0gYv3mRr0H8l3oK2cMZ8nJ1u2XGx3u2Yx0kX8sx1q6m4yXxvC2rQqk8b2r1N5z4YQ=="
-        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 </body>
 </html>
