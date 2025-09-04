@@ -127,6 +127,11 @@
     document.querySelector('.encore').onclick   = ()=>cast('encore');
     document.querySelector('.one-more').onclick = ()=>cast('one_more');
     document.querySelector('.next-time').onclick= ()=>cast('next_time');
+
+    // Optional: allow ?reset=1 to clear "already voted" for this sid on this device
+if (params.get('reset') === '1') {
+  localStorage.removeItem(`eyek_voted_${sid}`);
+}
   </script>
 </body>
 </html>
