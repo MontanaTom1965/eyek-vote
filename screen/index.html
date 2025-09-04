@@ -7,7 +7,7 @@
   <style>
     body { margin:0; background:#0e0d2b; color:#fff; font-family:system-ui,sans-serif; }
     .wrap { max-width:1100px; margin:0 auto; padding:28px; }
-    h1 { color:#ffd24a; text-align:center; }
+    h1 { color:#ffd24a; text-align:center; line-height:1.4; }
     .screen { display:grid; grid-template-columns: 320px 1fr; gap:24px; align-items:center; }
     .panel { background:#1e1d3a; border-radius:14px; padding:16px; }
     .qr img { width:100%; max-width:280px; background:#fff; padding:10px; border-radius:10px; }
@@ -19,6 +19,7 @@
     .fill.maybe { background:#f39c12; }
     .fill.no { background:#c0392b; }
     .pct { font-size:13px; margin-top:4px; }
+    @media (max-width: 860px) { .screen { grid-template-columns:1fr; } }
   </style>
 </head>
 <body>
@@ -55,7 +56,10 @@
     const params = new URLSearchParams(location.search);
     const sid = params.get('sid') || "TEST";
     const singer = params.get('singer') || "this singer";
-    document.querySelector('h1').textContent = `Did ${singer} earn an Encore?`;
+
+    // Two-line header for readability
+    document.querySelector('h1').innerHTML =
+      `Did ${singer} earn an Encore?<br>Cast your vote now!`;
 
     const BASE = 'https://vote.earnyourencorekaraoke.com';
     const voteURL = `${BASE}/vote/?sid=${encodeURIComponent(sid)}&singer=${encodeURIComponent(singer)}`;
