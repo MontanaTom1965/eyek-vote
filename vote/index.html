@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Vote | Earn Your Encore Karaoke</title>
   <style>
-    body { margin:0; font-family:system-ui, sans-serif; display:flex; justify-content:center; align-items:center; min-height:100vh; background:#0e0d2b; color:#fff; }
+    body { margin:0; font-family:system-ui,sans-serif; display:flex; justify-content:center; align-items:center; min-height:100vh; background:#0e0d2b; color:#fff; }
     .container { text-align:center; max-width:600px; }
     h1 { color:#ffd24a; margin-bottom:20px; }
     button { display:block; width:100%; margin:12px 0; padding:20px; font-size:1.2rem; border:none; border-radius:8px; cursor:pointer; }
@@ -24,33 +24,37 @@
     <p class="note">Your vote is anonymous. Thanks for playing!</p>
   </div>
 
+  <!-- Firebase (compat) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore-compat.js"></script>
   <script>
-    // Read singer name from the URL
-    const params  = new URLSearchParams(location.search);
-    const singer  = params.get('singer') || "this singer";
+    const firebaseConfig = {
+      apiKey: "AIzaSyDGbC08WxruYIDPhZSlDlU-7Kzq-7mHENk",
+      authDomain: "eyek-vote.firebaseapp.com",
+      projectId: "eyek-vote",
+      storageBucket: "eyek-vote.firebasestorage.app",
+      messagingSenderId: "954696683994",
+      appId: "1:954696683994:web:21a84298a94648ff0230e3"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
 
-    // Update header text with singer name
-    const header  = document.querySelector('h1');
-    header.textContent = `You’re voting for ${singer}. Did they earn an Encore?`;
+    const params = new URLSearchParams(location.search);
+    const sid = params.get('sid') || "TEST";
+    const singer = params.get('singer') || "this singer";
+    document.querySelector('h1').textContent = `You’re voting for ${singer}. Did they earn an Encore?`;
+
+    function cast(choice){
+      db.collection('votes').add({
+        sid, singer, choice,
+        ts: firebase.firestore.FieldValue.serverTimestamp()
+      }).then(()=> alert("Vote received!"))
+        .catch(err=> alert("Error: "+err.message));
+    }
+
+    document.querySelector('.encore').onclick   = ()=>cast('encore');
+    document.querySelector('.one-more').onclick = ()=>cast('one_more');
+    document.querySelector('.next-time').onclick= ()=>cast('next_time');
   </script>
-<script type="module">
-  // Import the functions you need from the SDKs you need
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
-  // TODO: Add SDKs for Firebase products that you want to use
-  // https://firebase.google.com/docs/web/setup#available-libraries
-
-  // Your web app's Firebase configuration
-  const firebaseConfig = {
-    apiKey: "AIzaSyDGbC08WxruYIDPhZSlDlU-7Kzq-7mHENk",
-    authDomain: "eyek-vote.firebaseapp.com",
-    projectId: "eyek-vote",
-    storageBucket: "eyek-vote.firebasestorage.app",
-    messagingSenderId: "954696683994",
-    appId: "1:954696683994:web:21a84298a94648ff0230e3"
-  };
-
-  // Initialize Firebase
-  const app = initializeApp(firebaseConfig);
-</script>
 </body>
 </html>
