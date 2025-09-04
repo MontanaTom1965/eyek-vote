@@ -16,11 +16,7 @@
       color:#fff;
     }
     .container { text-align:center; max-width:600px; }
-    h1 {
-      color:#ffd24a;
-      margin-bottom:20px;
-      line-height:1.4;
-    }
+    h1 { color:#ffd24a; margin-bottom:20px; line-height:1.4; }
     button {
       display:block;
       width:100%;
@@ -34,16 +30,20 @@
     .encore { background:#27ae60; color:#fff; }
     .one-more { background:#f39c12; color:#fff; }
     .next-time { background:#c0392b; color:#fff; }
-    p.note { margin-top:20px; font-size:0.9rem; color:#ccc; }
+    p.note { margin-top:14px; font-size:0.95rem; color:#cfe; }
+    p.msg  { margin-top:10px; font-size:0.95rem; color:#ccc; }
+    p.err  { margin-top:10px; font-size:0.95rem; color:#ffb3b3; display:none; }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>Did this singer earn an Encore?</h1>
+    <h1>You’re voting for this singer.<br>Did they earn an Encore?</h1>
     <button class="encore">🔥 Encore!</button>
     <button class="one-more">🤔 One More Shot</button>
     <button class="next-time">❌ Maybe Next Time</button>
-    <p class="note">Your vote is anonymous. Thanks for playing!</p>
+    <p class="note">One vote per device per round. Thanks for playing!</p>
+    <p id="msg" class="msg"></p>
+    <p id="err" class="err"></p>
   </div>
 
   <!-- Firebase (compat) -->
@@ -62,14 +62,18 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // --- Session + Singer ---
+    // --- Params ---
     const params = new URLSearchParams(location.search);
     const sid    = params.get('sid')    || "TEST";
     const singer = params.get('singer') || "this singer";
+    const reset  = params.get('reset')  === '1';
 
     // Two-line header
     document.querySelector('h1').innerHTML =
       `You’re voting for ${singer}.<br>Did they earn an Encore?`;
+
+    // Optional test helper: ?reset=1 clears this sid's local flag
+    if (reset) localStorage.removeItem(`eyek_voted_${sid}`);
 
     // --- Stable device id (per browser) ---
     function getDeviceId() {
@@ -85,30 +89,39 @@
 
     // --- One-vote-per-device guard (per sid) ---
     const votedKey = `eyek_voted_${sid}`;
-    function lockUI() {
+    const msgEl = document.getElementById('msg');
+    const errEl = document.getElementById('err');
+
+    function lockUI(text="Thanks—your vote was recorded.") {
       document.querySelectorAll('button').forEach(b => b.disabled = true);
-      const p = document.createElement('p');
-      p.textContent = "Thanks—your vote was recorded.";
-      p.style.marginTop = "10px";
-      document.querySelector('.container').appendChild(p);
+      msgEl.textContent = text;
     }
-    if (localStorage.getItem(votedKey)) lockUI();
+    if (localStorage.getItem(votedKey)) {
+      lockUI("Looks like you already voted in this round.");
+    }
+
+    // Ensure session doc exists (helps with stricter rules)
+    db.collection('sessions').doc(sid).set({
+      singer,
+      status: 'open',
+      touchedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true }).catch(err => {
+      errEl.style.display = 'block';
+      errEl.textContent = 'Setup error: ' + err.message;
+      console.error('Session set error:', err);
+    });
 
     // --- Cast vote (one doc per device per sid) ---
     async function cast(choice){
       if (localStorage.getItem(votedKey)) return;
 
-      const docRef = db.collection('sessions')
-                       .doc(sid)
-                       .collection('votes')
-                       .doc(deviceId);
+      const docRef = db.collection('sessions').doc(sid).collection('votes').doc(deviceId);
 
       try {
         const snap = await docRef.get();
         if (snap.exists) {
-          // Already voted on this device
           localStorage.setItem(votedKey, '1');
-          return lockUI();
+          return lockUI("You already voted in this round.");
         }
         await docRef.set({
           singer,
@@ -119,19 +132,16 @@
         localStorage.setItem(votedKey, '1');
         lockUI();
       } catch (err) {
-        alert("Vote failed: " + err.message);
+        errEl.style.display = 'block';
+        errEl.textContent = 'Vote failed: ' + err.message;
+        console.error('Vote write error:', err);
       }
     }
 
-    // --- Button events ---
+    // Buttons
     document.querySelector('.encore').onclick   = ()=>cast('encore');
     document.querySelector('.one-more').onclick = ()=>cast('one_more');
     document.querySelector('.next-time').onclick= ()=>cast('next_time');
-
-    // Optional: allow ?reset=1 to clear "already voted" for this sid on this device
-if (params.get('reset') === '1') {
-  localStorage.removeItem(`eyek_voted_${sid}`);
-}
   </script>
 </body>
 </html>
