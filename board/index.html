@@ -16,35 +16,16 @@
     .col ul { list-style:none; padding:0; margin:0; }
     .col li { background:#141335; border-radius:8px; padding:10px 12px; margin:8px 0; display:flex; justify-content:space-between; gap:12px; }
     .pill { font-size:12px; opacity:0.9; }
-    .ok { color:#7bed9f; }
-    .maybe { color:#f3c56b; }
-    .no { color:#ff9aa2; }
-    .controls { display:grid; grid-template-columns: 1fr auto; gap:8px; align-items:start; }
-    textarea { width:100%; min-height:90px; border:0; border-radius:8px; padding:10px; background:#141335; color:#fff; }
-    button { border:0; border-radius:8px; padding:10px 14px; background:#2a2954; color:#fff; cursor:pointer; }
     .small { font-size:12px; color:#bcd; margin-top:6px; }
     .err { color:#ffb3b3; margin-top:10px; display:none; }
-    .note { font-size:13px; color:#9ee7ff; margin-top:8px; }
   </style>
 </head>
 <body>
   <div class="wrap">
     <h1>KJ Board</h1>
-    <p class="sub">Paste SIDs (one per line) or add them to the URL like <code>?sids=ABC123,DEF456</code>. This page tallies each round and lists singers by outcome.</p>
+    <p class="sub">Show results for <code id="showLabel"></code>. (Open this via <code>?show=YYYY-MM-DD_Venue</code>)</p>
 
-    <div class="panel">
-      <div class="controls">
-        <textarea id="sidInput" placeholder="ABC123
-DEF456
-GHI789"></textarea>
-        <div>
-          <button id="loadBtn">Load Results</button>
-          <div class="small">Tip: Save this page with your show’s SIDs so you can reload quickly.</div>
-        </div>
-      </div>
-      <div id="err" class="err"></div>
-      <div class="note">Outcome rule: winner = most votes among 🔥 Encore / 🤔 One More Shot / ❌ Maybe Next Time. Ties → shown under both winners.</div>
-    </div>
+    <div id="err" class="err"></div>
 
     <div class="row">
       <div class="panel col">
@@ -60,13 +41,14 @@ GHI789"></textarea>
         <ul id="listNextTime"></ul>
       </div>
     </div>
+    <div class="small">Counts shown as Encore/OneMore/Maybe (e.g., 7/3/2).</div>
   </div>
 
   <!-- Firebase (compat) -->
   <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore-compat.js"></script>
   <script>
-    // --- Your Firebase config (same as vote/screen) ---
+    // Config (same as your other pages)
     const firebaseConfig = {
       apiKey: "AIzaSyDGbC08WxruYIDPhZSlDlU-7Kzq-7mHENk",
       authDomain: "eyek-vote.firebaseapp.com",
@@ -78,73 +60,59 @@ GHI789"></textarea>
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // --- UI refs ---
-    const sidInput = document.getElementById('sidInput');
+    const show = new URLSearchParams(location.search).get('show');
+    const showLabel = document.getElementById('showLabel');
+    const errEl = document.getElementById('err');
     const listEncore = document.getElementById('listEncore');
     const listOneMore = document.getElementById('listOneMore');
     const listNextTime = document.getElementById('listNextTime');
-    const errEl = document.getElementById('err');
 
-    // Load SIDs from ?sids=ABC,DEF,...
-    (function initFromQuery(){
-      const p = new URLSearchParams(location.search);
-      const s = p.get('sids');
-      if (s) sidInput.value = s.split(',').join('\n');
-    })();
+    if (!show) {
+      err('Missing ?show=… in URL.');
+    } else {
+      showLabel.textContent = show;
+      loadShow(show).catch(e => err(e.message));
+    }
 
-    document.getElementById('loadBtn').addEventListener('click', loadAll);
+    async function loadShow(showId){
+      // 1) Get all sessions in this show
+      const sessionsSnap = await db.collection('sessions')
+        .where('showId', '==', showId)
+        .orderBy('createdAt','asc')
+        .get();
 
-    async function loadAll(){
-      errEl.style.display = 'none'; errEl.textContent = '';
-      listEncore.innerHTML = ''; listOneMore.innerHTML = ''; listNextTime.innerHTML = '';
+      if (sessionsSnap.empty) return;
 
-      const sids = sidInput.value.split(/\s+/).map(x=>x.trim()).filter(Boolean);
-      if (!sids.length) { err('Please paste at least one SID.'); return; }
+      // 2) For each session, tally votes
+      for (const doc of sessionsSnap.docs) {
+        const sid = doc.id;
+        const data = doc.data();
+        const singer = data.singer || '(unknown singer)';
 
-      for (const sid of sids) {
-        try {
-          // Read the session (for singer name)
-          const sDoc = await db.collection('sessions').doc(sid).get();
-          const singer = (sDoc.exists && sDoc.data().singer) ? sDoc.data().singer : '(unknown singer)';
+        const votesSnap = await db.collection('sessions').doc(sid).collection('votes').get();
+        let encore=0, one=0, nextt=0;
+        votesSnap.forEach(vd => {
+          const v = vd.data().choice;
+          if (v==='encore')    encore++;
+          if (v==='one_more')  one++;
+          if (v==='next_time') nextt++;
+        });
 
-          // Tally votes in this session
-          const snap = await db.collection('sessions').doc(sid).collection('votes').get();
-          let encore=0, one=0, nextt=0;
-          snap.forEach(d => {
-            const v = d.data().choice;
-            if (v==='encore')    encore++;
-            if (v==='one_more')  one++;
-            if (v==='next_time') nextt++;
-          });
+        const total = encore+one+nextt;
+        const pill = total ? `${encore}/${one}/${nextt}` : '0/0/0';
 
-          const total = encore+one+nextt;
-          const pill = total ? `${encore}/${one}/${nextt}` : '0/0/0';
+        const li = document.createElement('li');
+        li.innerHTML = `<span>${singer} <span class="pill">${pill}</span></span><span class="pill">${sid}</span>`;
 
-          // Decide winners (plural if tie)
-          const max = Math.max(encore, one, nextt);
-          const winners = [];
-          if (encore===max && max>0) winners.push('encore');
-          if (one===max    && max>0) winners.push('one');
-          if (nextt===max  && max>0) winners.push('next');
-
-          // Build line item
-          const li = document.createElement('li');
-          li.innerHTML = `<span>${singer} <span class="pill">${pill}</span></span><span class="pill">${sid}</span>`;
-
-          if (winners.includes('encore'))   listEncore.appendChild(li.cloneNode(true));
-          if (winners.includes('one'))      listOneMore.appendChild(li.cloneNode(true));
-          if (winners.includes('next'))     listNextTime.appendChild(li.cloneNode(true));
-
-          // If no votes yet, show them under nothing; or choose a default:
-          if (!winners.length) {
-            // Uncomment one of these if desired:
-            // listOneMore.appendChild(li.cloneNode(true)); // default to One More when no votes
-            // listNextTime.appendChild(li.cloneNode(true));
-          }
-
-        } catch(e) {
-          err(`SID ${sid}: ${e.message}`);
-          console.error('Board load error for SID', sid, e);
+        // Winner(s) (ties allowed)
+        const max = Math.max(encore, one, nextt);
+        if (max > 0) {
+          if (encore===max)   listEncore.appendChild(li.cloneNode(true));
+          if (one===max)      listOneMore.appendChild(li.cloneNode(true));
+          if (nextt===max)    listNextTime.appendChild(li.cloneNode(true));
+        } else {
+          // No votes: choose where to show (or skip). Default: One More list (comment out if not desired)
+          // listOneMore.appendChild(li.cloneNode(true));
         }
       }
     }
