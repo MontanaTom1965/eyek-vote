@@ -70,7 +70,6 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore-compat.js"></script>
   <script>
-    // --- Config (same as your other pages) ---
     const firebaseConfig = {
       apiKey: "AIzaSyDGbC08WxruYIDPhZSlDlU-7Kzq-7mHENk",
       authDomain: "eyek-vote.firebaseapp.com",
@@ -82,7 +81,7 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // --- UI refs ---
+    // UI refs
     const qs = new URLSearchParams(location.search);
     let show = qs.get('show') || localStorage.getItem('eyek_last_show') || '';
     const showLabel = document.getElementById('showLabel');
@@ -97,7 +96,7 @@
     const loadBtn = document.getElementById('loadBtn');
     const toggleAutoBtn = document.getElementById('toggleAuto');
 
-    // --- Auto refresh control ---
+    // Auto-refresh
     let AUTO_MS = 10000;
     let autoOn = true;
     let tm = null;
@@ -118,9 +117,7 @@
       tm = setInterval(()=> safeLoadShow(show), AUTO_MS);
       toggleAutoBtn.textContent = 'On (10s)';
     }
-    function stopAuto(){
-      if (tm) { clearInterval(tm); tm = null; }
-    }
+    function stopAuto(){ if (tm) { clearInterval(tm); tm = null; } }
     toggleAutoBtn.addEventListener('click', ()=>{
       autoOn = !autoOn;
       if (autoOn) startAuto(); else { stopAuto(); toggleAutoBtn.textContent = 'Off'; }
@@ -129,9 +126,7 @@
     function clearLists(){
       listEncore.innerHTML = ''; listOneMore.innerHTML = ''; listNextTime.innerHTML = '';
     }
-    function showResults(showIt){
-      results.style.display = showIt ? 'grid' : 'none';
-    }
+    function showResults(showIt){ results.style.display = showIt ? 'grid' : 'none'; }
     function showErr(msg){ errEl.style.display='block'; errEl.textContent = msg||''; }
     function hideErr(){ errEl.style.display='none'; errEl.textContent=''; }
     function showIndexHint(link){
@@ -143,42 +138,47 @@
       `;
     }
     function hideIndexHint(){ indexHint.style.display = 'none'; indexHint.innerHTML=''; }
-
-    // Extract a "create index" link from Firestore error message (if present)
     function extractIndexLink(message){
       const match = message && message.match(/https:\/\/console\.firebase\.google\.com\/[^\s)]+/);
       return match ? match[0] : null;
     }
 
+    // Load show (no orderBy -> no index required). Sort client-side by createdAt || touchedAt.
     async function loadShow(showId){
       hideErr(); hideIndexHint(); showResults(false); clearLists();
 
-      const sessionsQ = db.collection('sessions')
-        .where('showId', '==', showId)
-        .orderBy('createdAt','asc');
-
       let sessionsSnap;
       try {
-        sessionsSnap = await sessionsQ.get();
+        sessionsSnap = await db.collection('sessions')
+          .where('showId','==', showId)
+          .get(); // no orderBy here
       } catch (e) {
         if (e && (e.code === 'failed-precondition' || /index/i.test(e.message))) {
           const link = extractIndexLink(e.message);
           if (link) showIndexHint(link);
-          else showErr('This query requires a Firestore index (showId + createdAt ascending). Create it in Firestore → Indexes.');
-          throw e; // bubble to safeLoadShow for retry rhythm
-        } else {
-          showErr(e.message || 'Failed to load sessions.');
+          else showErr('This query requires a Firestore index (showId + createdAt ascending).');
           throw e;
         }
+        showErr(e.message || 'Failed to load sessions.');
+        throw e;
       }
 
-      showResults(true);
-      if (sessionsSnap.empty) return;
+      if (sessionsSnap.empty) { showResults(true); return; }
 
-      for (const doc of sessionsSnap.docs) {
-        const sid = doc.id;
-        const data = doc.data();
-        const singer = data.singer || '(unknown singer)';
+      // Sort client-side: createdAt (if present) then touchedAt, oldest first
+      const sessions = sessionsSnap.docs
+        .map(d => ({ id: d.id, data: d.data() }))
+        .sort((a,b)=>{
+          const ta = (a.data.createdAt?.seconds ?? a.data.touchedAt?.seconds ?? 0);
+          const tb = (b.data.createdAt?.seconds ?? b.data.touchedAt?.seconds ?? 0);
+          return ta - tb;
+        });
+
+      showResults(true);
+
+      for (const s of sessions) {
+        const sid = s.id;
+        const singer = s.data.singer || '(unknown singer)';
 
         const votesSnap = await db.collection('sessions').doc(sid).collection('votes').get();
         let encore=0, one=0, nextt=0;
@@ -203,26 +203,35 @@
       }
     }
 
-    // Wrapper that retries politely if index missing
     let retryBackoffMs = 5000;
     async function safeLoadShow(showId){
       if (!showId) return;
       try {
         await loadShow(showId);
-        retryBackoffMs = 5000; // reset on success
+        retryBackoffMs = 5000;
       } catch (e) {
-        // If index missing, we'll just wait and try again (user probably clicked the link)
         if (e && (e.code === 'failed-precondition' || /index/i.test(e.message))) {
-          // backoff a bit to avoid hammering during index build
           setTimeout(()=> safeLoadShow(showId), retryBackoffMs);
           retryBackoffMs = Math.min(retryBackoffMs * 1.5, 30000);
           return;
         }
-        // Other errors: show message but keep auto-refresh going
       }
     }
 
-    // Initial wiring
+    // Init
+    const qsShow = new URLSearchParams(location.search).get('show');
+    if (qsShow) { localStorage.setItem('eyek_last_show', qsShow); show = qsShow; }
+    if (show) {
+      showLabel.textContent = show;
+      safeLoadShow(show);
+      startAuto();
+    } else {
+      chooser.style.display = 'block';
+      showInput.focus();
+      toggleAutoBtn.textContent = 'Off';
+      autoOn = false;
+    }
+
     loadBtn.addEventListener('click', ()=>{
       const id = showInput.value.trim();
       if (!id) return;
@@ -231,17 +240,6 @@
       safeLoadShow(show);
       startAuto();
     });
-
-    if (show) {
-      showLabel.textContent = show;
-      safeLoadShow(show);
-      startAuto();
-    } else {
-      chooser.style.display = 'block';
-      showInput.focus();
-      toggleAutoBtn.textContent = 'Off'; // off until a show is chosen
-      autoOn = false;
-    }
   </script>
 </body>
 </html>
