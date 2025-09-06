@@ -8,14 +8,27 @@
   <style>
     :root{
       --scale:1;
-      --bg:#0a0d14; --card:#111a30; --border:#2a3a60;
-      --text:#fff; --muted:#c9d3ea; --accent:#7bc4ff;
+
+      /* Brand purple theme */
+      --bg:#2F0658;
+      --card:#401073;
+      --border:#7E3CC0;
+      --text:#ffffff;
+      --muted:#E3D6F4;
+      --accent:#D9B6FF;
+
+      /* Category colors */
       --encore:#22c55e; --another:#f59e0b; --maybe:#ef4444;
-      --btn:#132046; --btnBorder:#3b4c7a;
+
+      --btn:#3d1a77; 
+      --btnBorder:#a17ae0;
     }
     *{box-sizing:border-box}
     html,body{height:100%}
-    html{background:var(--bg)}
+    html{background:
+      radial-gradient(1200px 600px at 15% -10%, #6A2BB3 0%, rgba(106,43,179,0) 60%),
+      radial-gradient(1000px 520px at 85% -10%, #4E1E8E 0%, rgba(78,30,142,0) 55%),
+      var(--bg)}
     body{
       margin:0; color:var(--text);
       font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu;
@@ -23,48 +36,63 @@
       display:flex; flex-direction:column;
     }
     .fatal{position:sticky; top:0; z-index:9999; background:#b91c1c; color:#fff; padding:.5em .8em; font-weight:900; display:none}
-    header{position:sticky; top:0; z-index:10; border-bottom:2px solid var(--border); background:linear-gradient(180deg,rgba(10,13,20,.92),rgba(10,13,20,.65)); backdrop-filter:blur(6px)}
+    header{
+      position:sticky; top:0; z-index:10; border-bottom:2px solid var(--border);
+      background:linear-gradient(180deg, rgba(64,16,115,.95), rgba(64,16,115,.70)); backdrop-filter:blur(6px)
+    }
     .wrap{max-width:1250px; margin:0 auto; width:100%}
     .bar{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 16px}
-    .title{font-size:1.0em; font-weight:800; color:#cfe1ff}
+    .title{font-size:1.0em; font-weight:800; color:#f5eaff}
     h1#eventHeading{margin:.2em 0; font-size:1.8em; letter-spacing:.3px}
     main{padding:18px}
     .grid{display:grid; gap:16px}
     .grid-2-1{grid-template-columns:3fr 1fr}
     @media (max-width:1100px){ .grid-2-1{grid-template-columns:1fr} }
-    .card{background:var(--card); border:2px solid var(--border); border-radius:16px; padding:16px; box-shadow:0 6px 24px rgba(0,0,0,.25)}
+
+    .card{
+      background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02)), var(--card);
+      border:2px solid var(--border); border-radius:16px; padding:16px; 
+      box-shadow:0 10px 34px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.06)
+    }
     h2{margin:.1em 0 .5em; font-size:1.2em}
     label{display:block; margin:.55em 0 .25em; font-weight:800}
     input{
       width:100%; padding:.65em .8em; border-radius:12px;
-      border:2px solid var(--border); background:#0f1732; color:#fff; font-size:1.02em;
+      border:2px solid var(--border); background:rgba(0,0,0,.22); color:#fff; font-size:1.02em;
     }
-    input:focus{outline:none; box-shadow:0 0 0 4px rgba(123,196,255,.25)}
+    input:focus{outline:none; box-shadow:0 0 0 4px rgba(217,182,255,.25)}
     .row{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
     .stack{display:flex; gap:10px; flex-wrap:wrap}
     .btn{
       appearance:none; padding:.75em 1em; border:2px solid var(--btnBorder); border-radius:12px;
-      background:#0f1732; color:#fff; font-weight:900; cursor:pointer; font-size:1.02em; letter-spacing:.2px;
+      background:var(--btn); color:#fff; font-weight:900; cursor:pointer; font-size:1.02em; letter-spacing:.2px;
       min-height:52px;
     }
     .btn[disabled]{opacity:.5; cursor:not-allowed}
-    .btn.primary{background:var(--accent); color:#06111e; border-color:#a9d9ff}
+    .btn.primary{background:var(--accent); color:#2f0658; border-color:#eedbff}
     .btn.good{background:var(--encore); color:#062; border-color:#6fe394}
     .btn.warn{background:var(--another); color:#231b00; border-color:#ffd28a}
     .btn.danger{background:var(--maybe); color:#2b0000; border-color:#ffb4b4}
-    .btn.ghost{background:#0f1732}
+    .btn.ghost{background:rgba(0,0,0,.22)}
+    .btn.small{min-height:38px; padding:.45em .7em; font-size:.9em}
+    .btn.tiny{min-height:26px; padding:.15em .45em; font-size:.7em; border-radius:10px}
     .hint{color:var(--muted); font-weight:600}
-    ul{list-style:none; margin:0; padding:0}
-    li{
+
+    /* Bulleted singer list */
+    aside ul{list-style:disc; margin:.2em 0 0 1.2em; padding:0}
+    aside li{
       display:flex; align-items:center; justify-content:space-between; gap:10px;
-      padding:.6em .7em; border:2px solid var(--border); border-radius:12px; background:#0f1732; margin:.45em 0;
+      padding:.25em 0; /* no card look */
     }
     .li-removed{opacity:.55}
-    .smallQR{display:flex; align-items:center; gap:12px; border:2px dashed var(--border); border-radius:12px; padding:10px; background:#0d142b}
-    /* ~25% of the older big QR */
+    .singerName{font-weight:900}
+    .meta{color:var(--muted); font-size:.8em; font-weight:700}
+
+    .smallQR{display:flex; align-items:center; gap:12px; border:2px dashed var(--border); border-radius:12px; padding:10px; background:rgba(0,0,0,.18)}
     .smallQR img{width:90px; height:90px; object-fit:contain; border-radius:10px}
     .controls .btn{min-width:200px}
-    .status{position:sticky; bottom:0; background:linear-gradient(180deg,rgba(10,13,20,.5),rgba(10,13,20,.95)); border-top:2px solid var(--border); padding:10px 16px; font-weight:800}
+
+    .status{position:sticky; bottom:0; background:linear-gradient(180deg, rgba(47,6,88,.3), rgba(47,6,88,.95)); border-top:2px solid var(--border); padding:10px 16px; font-weight:800}
     footer{margin:10px 0 20px}
     .zoomBar{display:flex; gap:10px; align-items:center; justify-content:center}
     .zoomBar .btn{min-width:0; padding:.45em .7em}
@@ -160,14 +188,14 @@
         </section>
       </div>
 
-      <!-- Sidebar: Singers (only those still in it) -->
+      <!-- Sidebar: Singers (bulleted list) -->
       <aside class="card">
         <h2>Singers</h2>
         <div class="row" style="margin:.25em 0 .5em">
           <label class="row"><input type="checkbox" id="showHidden" /> Show Removed!</label>
         </div>
         <ul id="singersSidebar"></ul>
-        <div class="hint" id="singersNote">Shows singers whose latest outcome is Encore or Another (not Removed).</div>
+        <div class="hint" id="singersNote">Shows singers still “in it” (excludes “Maybe” and Removed unless shown).</div>
       </aside>
     </div>
   </main>
@@ -186,7 +214,6 @@
 
   <!-- ========= CORE (no-module, compat builds) ========= -->
   <script>
-    // Error banner (always on) + A-/A+
     (function(){
       var fatalEl = document.getElementById('fatal');
       function showFatal(msg){ if(!msg) return; fatalEl.style.display='block'; fatalEl.textContent='Error: '+msg; }
@@ -232,7 +259,6 @@
       function setStatus(t){ $('statusBar').textContent='Status: ' + t; }
       function urlRoot(){ return location.origin + '/'; }
 
-      // Elements
       var eventHeading=$('eventHeading');
       var eventIdInput=$('eventId'), setBtn=$('setEventBtn');
       var broadcastEl=$('broadcastActive'), lockEventEl=$('lockEvent'), eventNote=$('eventNote');
@@ -246,19 +272,14 @@
 
       var showHiddenEl=$('showHidden'), singersSidebar=$('singersSidebar');
 
-      // Auth (anon)
       auth.signInAnonymously().catch(function(e){ setStatus('Auth error: ' + ((e&&e.message)||e)); });
 
-      // State
       var LS_EVENT='eyek_last_event';
       var STATE={ currentSingerId:null, currentSingerName:null, performanceId:null, performanceCloseAt:null, performanceStatus:'' };
-      var unsubSingers=null, unsubState=null, unsubPerf=null, unsubMeta=null;
-      var countdownTimer=null, autoCloseTimer=null;
       var perfOutcomeCache={}; // perfId -> outcome
-      var singerMap={}; // singerId -> {name, latestPerformanceId, removed}
-      var stillInIds=[];
+      var singerMap={};       // singerId -> {name, latestPerformanceId, removed}
+      var unsubSingersRealtime=null, unsubState=null, unsubPerf=null;
 
-      // Ask for event if missing
       (function(){
         var u=new URL(location.href), q=u.searchParams.get('eventId'), mem=localStorage.getItem(LS_EVENT);
         if(!q && !mem){
@@ -267,18 +288,15 @@
         }
       })();
 
-      // Restore toggles
       broadcastEl.checked=localStorage.getItem('eyek_broadcast_event')==='1';
       lockEventEl.checked=localStorage.getItem('eyek_lock_event')==='1';
       syncSetBtnDisabled();
       if(lockEventEl.checked) eventNote.textContent='Event locked — switching disabled.';
 
-      // Start event
       var START_EVENT=(new URL(location.href)).searchParams.get('eventId') || localStorage.getItem(LS_EVENT) || 'default';
       eventIdInput.value=START_EVENT;
       applyEvent(START_EVENT);
 
-      // Listeners
       setBtn.addEventListener('click', onClickSetEvent);
       eventIdInput.addEventListener('keydown', function(e){ if(e.key==='Enter') onClickSetEvent(); });
       lockEventEl.addEventListener('change', function(){
@@ -384,13 +402,11 @@
       function startCountdown(){ stopCountdown(); renderCountdown(); countdownTimer=setInterval(renderCountdown,250); }
       function stopCountdown(){ if(countdownTimer){ clearInterval(countdownTimer); countdownTimer=null; } countdownEl.textContent='—'; }
       function armAutoClose(){
-        if(autoCloseTimer){ clearTimeout(autoCloseTimer); autoCloseTimer=null; }
         if(!STATE.performanceCloseAt) return;
         var ms=Math.max(0,STATE.performanceCloseAt.toMillis()-Date.now());
-        autoCloseTimer=setTimeout(function(){ endVotingNow(); }, ms+300);
+        setTimeout(function(){ endVotingNow(); }, ms+300);
       }
 
-      // Watch performance
       function watchPerformance(eid, perfId){
         if(unsubPerf){ unsubPerf(); unsubPerf=null; }
         if(!perfId){
@@ -411,7 +427,6 @@
         }, function(err){ setStatus('Performance listener error: '+((err&&err.message)||err)); });
       }
 
-      // Watch state
       function watchState(eid){
         if(unsubState){ unsubState(); unsubState=null; }
         unsubState = db.collection('events').doc(eid).collection('state').doc('current').onSnapshot(function(snap){
@@ -424,32 +439,78 @@
         }, function(err){ setStatus('State listener error: '+((err&&err.message)||err)); });
       }
 
-      // Singers sidebar (only "still in it" + optional removed when toggled)
+      // ---- Singers (bulleted list) ----
+      function warmOutcome(eid, perfId){
+        if(!perfId) return Promise.resolve(null);
+        if(perfOutcomeCache[perfId]!==undefined) return Promise.resolve(perfOutcomeCache[perfId]);
+        return db.collection('events').doc(eid).collection('performances').doc(perfId).get()
+          .then(function(s){ var out=s.exists?(s.data().outcome||null):null; perfOutcomeCache[perfId]=out; return out; })
+          .catch(function(){ perfOutcomeCache[perfId]=null; return null; });
+      }
+
+      function loadSingersOnce(eid){
+        db.collection('events').doc(eid).collection('singers').get()
+          .then(async function(snap){
+            singerMap = {};
+            var warmPromises=[];
+            snap.forEach(function(d){
+              var x=d.data()||{};
+              singerMap[d.id] = {name:x.name||'', latestPerformanceId:x.latestPerformanceId||null, removed: !!x.removed};
+              if(x.latestPerformanceId) warmPromises.push(warmOutcome(eid, x.latestPerformanceId));
+            });
+            await Promise.all(warmPromises);
+            renderSingersSidebar();
+          })
+          .catch(function(){ singerMap={}; renderSingersSidebar(); });
+      }
+
+      function watchSingers(eid){
+        if(unsubSingersRealtime){ unsubSingersRealtime(); unsubSingersRealtime=null; }
+        loadSingersOnce(eid);
+        unsubSingersRealtime = db.collection('events').doc(eid).collection('singers').onSnapshot(function(snap){
+          snap.docChanges().forEach(function(ch){
+            var id=ch.doc.id, x=ch.doc.data()||{};
+            if (ch.type==='removed'){
+              delete singerMap[id];
+            }else{
+              singerMap[id] = {name:x.name||'', latestPerformanceId:x.latestPerformanceId||null, removed: !!x.removed};
+              if(x.latestPerformanceId && perfOutcomeCache[x.latestPerformanceId]===undefined){
+                warmOutcome(eid, x.latestPerformanceId).then(renderSingersSidebar);
+              }
+            }
+          });
+          renderSingersSidebar();
+        }, function(err){ setStatus('Realtime singers error: '+((err&&err.message)||err)); });
+      }
+
+      function wantSingerInSidebar(s){
+        // Include if not removed AND (no outcome yet OR outcome is encore/another).
+        var out=null;
+        if(s.latestPerformanceId){ out = perfOutcomeCache[s.latestPerformanceId] || null; }
+        return !s.removed && (out===null || out==='encore' || out==='another');
+      }
+
       function renderSingersSidebar(){
         var showRemoved = showHiddenEl.checked;
         var listEl = singersSidebar;
         listEl.innerHTML = '';
 
-        // Build list of singer IDs that are still in it: outcome in {'encore','another'} AND not removed
-        var items = [];
+        var items=[];
         Object.keys(singerMap).forEach(function(sid){
-          var s = singerMap[sid];
-          var outcome = null;
-          if (s.latestPerformanceId){
-            outcome = perfOutcomeCache[s.latestPerformanceId] || null;
-          }
-          var inIt = (outcome === 'encore' || outcome === 'another');
-          if (s.removed){
-            if (showRemoved) items.push({id:sid, name:s.name, outcome:outcome, removed:true});
-          }else if (inIt){
-            items.push({id:sid, name:s.name, outcome:outcome, removed:false});
+          var s=singerMap[sid];
+          var out=null; if(s.latestPerformanceId){ out=perfOutcomeCache[s.latestPerformanceId]||null; }
+          if(s.removed){
+            if(showRemoved) items.push({id:sid, name:s.name, outcome:out, removed:true});
+          }else{
+            if(out==='maybe' && !showRemoved) return; // hide “maybe” unless showing removed
+            items.push({id:sid, name:s.name, outcome:out, removed:false});
           }
         });
 
         items.sort(function(a,b){ return a.name.localeCompare(b.name, undefined, {sensitivity:'base'}); });
 
         if (!items.length){
-          var li=document.createElement('li'); li.textContent=showRemoved?'No singers.':'No singers in it yet.'; listEl.appendChild(li);
+          var li=document.createElement('li'); li.textContent=showRemoved?'No singers.':'No singers yet.'; listEl.appendChild(li);
           return;
         }
 
@@ -457,89 +518,42 @@
           var li=document.createElement('li'); if (it.removed) li.classList.add('li-removed');
 
           var left=document.createElement('div');
-          var badge = it.removed ? ' <span style="display:inline-block;border:2px solid #7a3a3a;border-radius:999px;padding:.05em .45em;color:#ffdddd;background:#3a0f0f;font-weight:800;margin-left:8px">REMOVED</span>' : '';
-          left.innerHTML='<div style="font-weight:900;display:flex;align-items:center;gap:6px">'+it.name+badge+'</div>'
-                        +'<div class="hint">Latest: '+(it.outcome||'—')+'</div>';
+          left.innerHTML='<span class="singerName">'+escapeHtml(it.name)+'</span>'
+                        +'<span class="meta"> — '+(it.outcome||'—')+'</span>';
 
           var right=document.createElement('div'); right.className='stack';
 
-          var bVote=document.createElement('button'); bVote.className='btn warn'; bVote.textContent='Vote now (30s)';
-          bVote.addEventListener('click', function(){
-            // Switch to this singer, then open voting
-            if(STATE.currentSingerName !== it.name){
-              // Find singerId by name (we already have sid)
-            }
-            announceOrReuseThenVote(it.id, it.name);
-          });
+          // Set Current (keep normal size for accessibility)
+          var bSet=document.createElement('button'); bSet.className='btn small good'; bSet.textContent='Set';
+          bSet.addEventListener('click', function(){ setCurrentSinger(it.id, it.name); });
 
+          // Remove / Restore (tiny)
           var bRemove=document.createElement('button');
           if (!it.removed){
-            bRemove.className='btn danger'; bRemove.textContent='Remove';
+            bRemove.className='btn tiny danger'; bRemove.title='Remove'; bRemove.textContent='✕';
             bRemove.addEventListener('click', function(){
               if (!confirm('Remove singer “'+it.name+'”? They will be hidden from lists and the Board.')) return;
               updateSingerRemoved(it.id, true);
             });
           }else{
-            bRemove.className='btn good'; bRemove.textContent='Restore';
+            bRemove.className='btn tiny good'; bRemove.title='Restore'; bRemove.textContent='↺';
             bRemove.addEventListener('click', function(){ updateSingerRemoved(it.id, false); });
           }
 
-          right.appendChild(bVote);
+          right.appendChild(bSet);
           right.appendChild(bRemove);
           li.appendChild(left); li.appendChild(right);
           listEl.appendChild(li);
         });
       }
 
-      function announceOrReuseThenVote(singerId, singerName){
-        // If this singer isn't current or has no open/perf, announce first, then open voting
-        if (STATE.currentSingerId !== singerId){
-          announceExisting(singerId, singerName).then(function(){ openVoting(30); });
-        }else{
-          if (!STATE.performanceId){
-            announceExisting(singerId, singerName).then(function(){ openVoting(30); });
-          }else{
-            openVoting(30);
-          }
-        }
+      function escapeHtml(s){
+        return String(s).replace(/[&<>"']/g, function(m){
+          return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m];
+        });
       }
 
-      function loadSingersOnce(eid){
-        db.collection('events').doc(eid).collection('singers').get()
-          .then(function(snap){
-            singerMap = {};
-            snap.forEach(function(d){
-              var x=d.data()||{};
-              singerMap[d.id] = {name:x.name||'', latestPerformanceId:x.latestPerformanceId||null, removed: !!x.removed};
-            });
-            // Also warm outcomes for any referenced latestPerformanceId
-            var perfIds = Object.values(singerMap).map(s=>s.latestPerformanceId).filter(Boolean);
-            if (perfIds.length){
-              // fetch outcomes
-              // (We rely on live perf watcher to keep them fresh; this is just an initial render)
-            }
-            renderSingersSidebar();
-          })
-          .catch(function(){ singerMap={}; renderSingersSidebar(); });
-      }
-
-      function watchSingers(eid){
-        if(unsubSingers){ unsubSingers(); unsubSingers=null; }
-        loadSingersOnce(eid);
-        unsubSingers = db.collection('events').doc(eid).collection('singers').onSnapshot(function(snap){
-          snap.docChanges().forEach(function(ch){
-            var id=ch.doc.id, x=ch.doc.data()||{};
-            if (ch.type==='removed'){
-              delete singerMap[id];
-            }else{
-              singerMap[id] = {name:x.name||'', latestPerformanceId:x.latestPerformanceId||null, removed: !!x.removed};
-            }
-          });
-          renderSingersSidebar();
-        }, function(err){ setStatus('Realtime singers error: '+((err&&err.message)||err)); });
-      }
-
-      // Update removed flag
+      // Actions
       function updateSingerRemoved(singerId, removed){
         var eid=getCurrentEventId();
         db.collection('events').doc(eid).collection('singers').doc(singerId).set(
@@ -552,7 +566,6 @@
         });
       }
 
-      // Add singer (auto-announce + show QR)
       function addSinger(){
         var name=(singerNameInput.value||'').trim();
         if(!name){ addSingerStatus.textContent='Please enter a singer name.'; return; }
@@ -574,7 +587,17 @@
         });
       }
 
-      // Flow
+      function setCurrentSinger(singerId, singerName){
+        var eid=getCurrentEventId();
+        if(STATE.currentSingerId===singerId && STATE.performanceId){
+          db.collection('events').doc(eid).collection('state').doc('current').set({
+            currentSingerId:singerId, currentSingerName:singerName, performanceId:STATE.performanceId, ts:Date.now()
+          }, {merge:true}).then(function(){ setStatus('Still current: '+singerName); });
+          return;
+        }
+        announceExisting(singerId, singerName).then(function(){ setStatus('Now performing: '+singerName); });
+      }
+
       function announceExisting(singerId,singerName){
         var eid=getCurrentEventId();
         return db.collection('events').doc(eid).collection('performances').add({
@@ -682,35 +705,6 @@
           if(msg.indexOf('permission')>=0 || msg.indexOf('already exists')>=0) setStatus('Already voted or window closed.');
           else setStatus('Error submitting vote.');
         });
-      }
-      window.hostCastVote=hostCastVote;
-
-      // Realtime wiring
-      function watchSingers(eid){
-        if(unsubSingers){ unsubSingers(); unsubSingers=null; }
-        loadSingersOnce(eid);
-        unsubSingers = db.collection('events').doc(eid).collection('singers').onSnapshot(function(snap){
-          snap.docChanges().forEach(function(ch){
-            var id=ch.doc.id, x=ch.doc.data()||{};
-            if (ch.type==='removed'){
-              delete singerMap[id];
-            }else{
-              singerMap[id] = {name:x.name||'', latestPerformanceId:x.latestPerformanceId||null, removed: !!x.removed};
-            }
-          });
-          renderSingersSidebar();
-        }, function(err){ setStatus('Realtime singers error: '+((err&&err.message)||err)); });
-      }
-      function watchState(eid){
-        if(unsubState){ unsubState(); unsubState=null; }
-        unsubState = db.collection('events').doc(eid).collection('state').doc('current').onSnapshot(function(snap){
-          if(!snap.exists){ STATE.currentSingerId=null; STATE.currentSingerName=null; nowPerfLabel.textContent='None'; watchPerformance(eid,null); return; }
-          var d=snap.data()||{};
-          STATE.currentSingerId=d.currentSingerId||null;
-          STATE.currentSingerName=d.currentSingerName||'(Unknown)';
-          nowPerfLabel.textContent=STATE.currentSingerName||'None';
-          watchPerformance(eid, d.performanceId || null);
-        }, function(err){ setStatus('State listener error: '+((err&&err.message)||err)); });
       }
     })();
   </script>
