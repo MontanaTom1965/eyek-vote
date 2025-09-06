@@ -1,4 +1,4 @@
-<!-- EYEK /host/index.html v2025-09-06.21 -->
+<!-- EYEK /host/index.html v2025-09-06.22 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -71,16 +71,17 @@
     .side h3{ margin:.2em 0 .6em }
     .singers{ list-style:disc; padding-left:1.2em; margin:0 }
     .singers li{
-      margin:.45em 0; display:flex; align-items:center; gap:8px; flex-wrap:wrap
+      margin:.45em 0; display:flex; align-items:center; gap:10px; flex-wrap:wrap
     }
     .singerNameBtn{
       background:none; border:none; color:#fff; font-weight:1000; cursor:pointer; padding:0;
       text-decoration:underline; text-underline-offset:3px;
+      font-size:1.22em; /* larger names */
     }
     .tag{ font-size:.85em; color:var(--muted); font-weight:800 }
     .removeBtn, .restoreBtn{
       margin-left:auto;
-      font-size:.9em; padding:.3em .55em; border-radius:10px; line-height:1;
+      font-size:.72em; padding:.2em .4em; border-radius:10px; line-height:1;
       border:2px solid var(--border); background:rgba(0,0,0,.15); color:#fff; cursor:pointer;
     }
     .removeBtn{ border-color:#dc2626 }
@@ -99,15 +100,23 @@
 
     .divider{ height:2px; background:var(--border); margin:12px 0 }
 
+    /* Voting controls + Host vote layout */
+    .controlsWrap{
+      display:flex; gap:16px; align-items:flex-start; justify-content:space-between; flex-wrap:wrap;
+    }
+    .hostVoteBox{ min-width: 280px; text-align:right }
+    .hostVoteBox .label{ display:block; font-weight:900; color:var(--muted); margin-bottom:6px; text-align:right }
+    .hostBtns{ display:flex; gap:8px; justify-content:flex-end; flex-wrap:wrap }
+    .hostBtn-enc{ background:var(--good); border-color:#16a34a; color:#fff }
+    .hostBtn-ano{ background:var(--warn); border-color:#d97706; color:#111 }
+    .hostBtn-may{ background:var(--bad);  border-color:#dc2626; color:#fff }
+
     /* Toast */
     .toast{
       position:fixed; left:50%; transform:translateX(-50%); bottom:18px;
       padding:.6em .9em; border-radius:10px; border:2px solid var(--border);
       background:rgba(0,0,0,.45); color:#fff; font-weight:1000; z-index:80; display:none;
     }
-
-    /* Hidden launcher anchors for multi-tab open */
-    .launchers{ position:absolute; left:-9999px; top:-9999px; width:1px; height:1px; overflow:hidden; }
   </style>
 </head>
 <body>
@@ -119,7 +128,7 @@
     <div class="layout">
       <!-- Sidebar: Singers -->
       <aside class="side card">
-        <h3>Singers <span class="tag">(still in it)</span></h3>
+        <h3>Singers</h3>
         <ul id="singerList" class="singers"><li class="tag">— none yet —</li></ul>
         <div class="divider"></div>
         <label><input type="checkbox" id="showRemovedChk" /> Show Removed!</label>
@@ -140,21 +149,10 @@
         <!-- Displays box -->
         <section class="card">
           <h2>Displays & Links</h2>
-          <div class="btn-row" style="margin-bottom:10px">
-            <button id="openAllDisplaysBtn" class="btn info">Open All Displays</button>
+          <div class="btn-row">
             <button id="openVoteBtn"   class="btn">Vote</button>
             <button id="openScreenBtn" class="btn">Screen</button>
             <button id="openBoardBtn"  class="btn">Board</button>
-          </div>
-          <div class="btn-row">
-            <button id="broadcastBtn" class="btn good" title="Set this event as active for screens that follow meta/active">Broadcast Active Event</button>
-          </div>
-
-          <!-- Hidden anchors used to open multiple tabs from one click -->
-          <div id="launchers" class="launchers" aria-hidden="true">
-            <a id="launchVote"   target="_blank" rel="noreferrer">vote</a>
-            <a id="launchScreen" target="_blank" rel="noreferrer">screen</a>
-            <a id="launchBoard"  target="_blank" rel="noreferrer">board</a>
           </div>
         </section>
 
@@ -183,11 +181,25 @@
           <div class="divider"></div>
 
           <h2>Voting Controls</h2>
-          <div class="btn-row">
-            <button id="voteNowBtn"    class="btn good">Vote Now (30s)</button>
-            <button id="extendBtn"     class="btn warn">Extend +15s</button>
-            <button id="endNowBtn"     class="btn bad">End Now</button>
+          <div class="controlsWrap">
+            <!-- Left: open/extend/end -->
+            <div class="btn-row">
+              <button id="voteNowBtn"    class="btn good">Vote Now (30s)</button>
+              <button id="extendBtn"     class="btn warn">Extend +15s</button>
+              <button id="endNowBtn"     class="btn bad">End Now</button>
+            </div>
+
+            <!-- Right: Host vote -->
+            <div class="hostVoteBox">
+              <span class="label">Host Vote</span>
+              <div class="hostBtns">
+                <button id="hostVoteEnc" class="btn hostBtn-enc" type="button" title="Encore!">Encore!</button>
+                <button id="hostVoteAno" class="btn hostBtn-ano" type="button" title="Another Shot!">Another Shot!</button>
+                <button id="hostVoteMay" class="btn hostBtn-may" type="button" title="Maybe Next Time!">Maybe Next Time!</button>
+              </div>
+            </div>
           </div>
+
           <div style="margin-top:8px" class="tag">Status: <span id="statusText">pending</span> · Time left: <span id="timeLeft">—</span></div>
         </section>
       </main>
@@ -218,13 +230,12 @@
     function $(id){ return document.getElementById(id); }
     var eventHeading=$('eventHeading'), eventPill=$('eventPill'), eventTitle=$('eventTitle'),
         eventIdInput=$('eventIdInput'), setEventBtn=$('setEventBtn'), lockEventChk=$('lockEventChk'),
-        openAllDisplaysBtn=$('openAllDisplaysBtn'), openVoteBtn=$('openVoteBtn'), openScreenBtn=$('openScreenBtn'), openBoardBtn=$('openBoardBtn'),
-        broadcastBtn=$('broadcastBtn'),
-        launchVote=$('launchVote'), launchScreen=$('launchScreen'), launchBoard=$('launchBoard'),
+        openVoteBtn=$('openVoteBtn'), openScreenBtn=$('openScreenBtn'), openBoardBtn=$('openBoardBtn'),
         singerNameInput=$('singerNameInput'), addSingerBtn=$('addSingerBtn'),
         singerList=$('singerList'), showRemovedChk=$('showRemovedChk'),
         nowSinger=$('nowSinger'), perfIdTag=$('perfIdTag'), qrImg=$('qrImg'),
         voteNowBtn=$('voteNowBtn'), extendBtn=$('extendBtn'), endNowBtn=$('endNowBtn'),
+        hostVoteEnc=$('hostVoteEnc'), hostVoteAno=$('hostVoteAno'), hostVoteMay=$('hostVoteMay'),
         statusText=$('statusText'), timeLeft=$('timeLeft'),
         toast=$('toast');
 
@@ -232,7 +243,7 @@
     var CURRENT={ eventId:null, performanceId:null, status:'pending', openAt:null, durationSec:0, closeAt:null, singerName:'—' };
     var unsubState=null, unsubPerf=null, unsubSingers=null;
     var countdownTimer=null;
-    var autoCloseTimer=null;   // NEW: auto close scheduler
+    var autoCloseTimer=null;
 
     /* --- Utils --- */
     function showToast(msg){ toast.textContent=msg||'Done'; toast.style.display='block'; setTimeout(()=>toast.style.display='none', 1800); }
@@ -244,6 +255,13 @@
       return d && d.closeAt ? d.closeAt : null;
     }
     function msLeft(){ if(!CURRENT.closeAt) return 0; return Math.max(0, CURRENT.closeAt.toMillis() - Date.now()); }
+    function getDeviceId(){
+      try{
+        var k='eyek_device_id', id=localStorage.getItem(k);
+        if(!id){ var a=new Uint8Array(16); crypto.getRandomValues(a); id=Array.from(a,b=>b.toString(16).padStart(2,'0')).join(''); localStorage.setItem(k,id); }
+        return id;
+      }catch(_){ return 'dev'; }
+    }
 
     function qrProvider1(d){ return 'https://api.qrserver.com/v1/create-qr-code/?size=120x120&data='+encodeURIComponent(d); }
     function qrProvider2(d){ return 'https://chart.googleapis.com/chart?cht=qr&chs=120x120&chl='+encodeURIComponent(d); }
@@ -272,6 +290,8 @@
       statusText.textContent = CURRENT.status;
       if(CURRENT.status==='open'){ var ms = msLeft(); var s = Math.max(0, Math.ceil(ms/1000)); timeLeft.textContent = s+'s'; }
       else{ timeLeft.textContent = '—'; }
+      var enableHost = (CURRENT.status==='open' && CURRENT.performanceId && CURRENT.eventId);
+      [hostVoteEnc, hostVoteAno, hostVoteMay].forEach(function(b){ b.disabled = !enableHost; });
     }
 
     function startCountdown(){
@@ -283,42 +303,27 @@
     }
     function stopCountdown(){ if(countdownTimer){ clearInterval(countdownTimer); } countdownTimer=null; }
 
-    /* --- Auto-close helpers (NEW) --- */
+    /* --- Auto-close helpers --- */
     function clearAutoClose(){ if(autoCloseTimer){ clearTimeout(autoCloseTimer); autoCloseTimer=null; } }
-
     function scheduleAutoClose(){
       clearAutoClose();
       if(CURRENT.status!=='open' || !CURRENT.performanceId || !CURRENT.eventId || !CURRENT.closeAt) return;
-
       var remaining = msLeft();
       if(remaining <= 200){
-        // Already expired: close immediately
         var ref = db.collection('events').doc(CURRENT.eventId).collection('performances').doc(CURRENT.performanceId);
-        ref.set({ status:'closed', closeAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true })
-           .catch(function(e){ console.warn('Auto-close write failed:', e && e.message ? e.message : e); });
+        ref.set({ status:'closed', closeAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true }).catch(()=>{});
         return;
       }
-
       autoCloseTimer = setTimeout(function(){
-        // Double-check at fire time (may have been extended)
         if(CURRENT.status!=='open'){ return; }
-        if(msLeft() > 0){
-          // Race with extend; reschedule once more
-          scheduleAutoClose();
-          return;
-        }
+        if(msLeft() > 0){ scheduleAutoClose(); return; }
         var ref = db.collection('events').doc(CURRENT.eventId).collection('performances').doc(CURRENT.performanceId);
-        ref.set({ status:'closed', closeAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true })
-           .catch(function(e){ console.warn('Auto-close write failed:', e && e.message ? e.message : e); });
-      }, remaining + 120); // a tiny cushion
+        ref.set({ status:'closed', closeAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true }).catch(()=>{});
+      }, remaining + 120);
     }
 
     /* --- Auth (anon) --- */
-    function ensureAuth(){
-      return auth.signInAnonymously().catch(function(e){
-        console.warn('Anon auth failed', e);
-      });
-    }
+    function ensureAuth(){ return auth.signInAnonymously().catch(()=>{}); }
 
     /* --- Event handling --- */
     function setEventFromInput(){
@@ -331,6 +336,8 @@
       saveEventId(eid);
       renderHeader();
       wireEvent(eid);
+      // Auto-broadcast active event (no button needed)
+      db.collection('meta').doc('active').set({ eventId:eid, updatedAt: firebase.firestore.FieldValue.serverTimestamp() }).catch(()=>{});
       showToast('Event set to: '+eid);
     }
     function lockEventUI(applyLock){
@@ -342,13 +349,11 @@
     }
 
     function wireEvent(eid){
-      // Unsubscribe previous
       if(unsubState){ unsubState(); unsubState=null; }
       if(unsubPerf){ unsubPerf(); unsubPerf=null; }
       if(unsubSingers){ unsubSingers(); unsubSingers=null; }
       clearAutoClose();
 
-      // State/current
       unsubState = db.collection('events').doc(eid).collection('state').doc('current')
         .onSnapshot(function(snap){
           var d=snap.data()||{};
@@ -360,7 +365,6 @@
           watchPerfDoc();
         });
 
-      // Singers (list)
       unsubSingers = db.collection('events').doc(eid).collection('singers')
         .orderBy('createdAt','asc')
         .onSnapshot(function(qs){
@@ -428,10 +432,10 @@
 
           if(CURRENT.status==='open' && CURRENT.closeAt){
             startCountdown();
-            scheduleAutoClose();     // NEW: arm auto-close each snapshot
+            scheduleAutoClose();
           } else {
             stopCountdown();
-            clearAutoClose();        // NEW: disarm when not open
+            clearAutoClose();
           }
         });
     }
@@ -443,7 +447,6 @@
       if(!CURRENT.eventId){ alert('Set the event first.'); return; }
       var eid = CURRENT.eventId;
 
-      // Create singer doc
       var singerRef = db.collection('events').doc(eid).collection('singers').doc();
       singerRef.set({
         singerId: singerRef.id,
@@ -474,7 +477,6 @@
         closeAt: null,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       }).then(function(){
-        // Point state/current to this performance
         return db.collection('events').doc(eid).collection('state').doc('current').set({
           performanceId: perfRef.id,
           currentSingerName: name || '(Unknown)',
@@ -512,7 +514,6 @@
         closeAt: null
       }, { merge:true }).then(function(){
         showToast('Voting opened (30s)');
-        // auto-close will arm when snapshot arrives
       }).catch(function(e){ alert('Error starting voting: ' + (e && e.message ? e.message : e)); });
     }
     function extendVote(){
@@ -522,7 +523,6 @@
         durationSec: firebase.firestore.FieldValue.increment(15)
       }, { merge:true }).then(function(){
         showToast('Extended +15s');
-        // snapshot will reschedule auto-close
       }).catch(function(e){ alert('Error extending: ' + (e && e.message ? e.message : e)); });
     }
     function endNow(){
@@ -533,8 +533,30 @@
         closeAt: firebase.firestore.FieldValue.serverTimestamp()
       }, { merge:true }).then(function(){
         showToast('Voting closed');
-        clearAutoClose(); // disarm any pending auto-close
+        clearAutoClose();
       }).catch(function(e){ alert('Error closing: ' + (e && e.message ? e.message : e)); });
+    }
+
+    /* --- Host vote --- */
+    function castHostVote(category){
+      if(!CURRENT.eventId || !CURRENT.performanceId){ alert('No performance selected.'); return; }
+      if(CURRENT.status!=='open'){ alert('Voting is not open.'); return; }
+      var deviceId = getDeviceId();
+      var voteId = CURRENT.performanceId + '__' + deviceId;
+      var ref = db.collection('events').doc(CURRENT.eventId).collection('votes').doc(voteId);
+      ref.set({
+        voteId: voteId,
+        eventId: CURRENT.eventId,
+        performanceId: CURRENT.performanceId,
+        singerId: null,
+        category: category,  // 'encore' | 'another' | 'maybe'
+        deviceId: deviceId,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      }, { merge:false }).then(function(){
+        showToast('Host voted: ' + category);
+      }).catch(function(e){
+        alert('Could not cast vote (maybe already voted on this device?): ' + (e && e.message ? e.message : e));
+      });
     }
 
     /* --- Displays --- */
@@ -544,28 +566,9 @@
       try{ var ls = localStorage.getItem('eyek_event_id'); if(ls && ls.trim()) return ls.trim(); }catch(_){}
       return '';
     }
-
     function openVote(){ var eid=getCurrentEventId(); if(!eid){ alert('Set event first.'); return; } window.open(urlRoot()+'vote/index.html?eventId='+encodeURIComponent(eid), '_blank'); }
     function openScreen(){ var eid=getCurrentEventId(); if(!eid){ alert('Set event first.'); return; } window.open(urlRoot()+'screen/index.html?eventId='+encodeURIComponent(eid), '_blank'); }
     function openBoard(){ var eid=getCurrentEventId(); if(!eid){ alert('Set event first.'); return; } window.open(urlRoot()+'board/index.html?eventId='+encodeURIComponent(eid), '_blank'); }
-
-    // Anchor-click multi-open (works around blockers better than window.open thrice)
-    function openAllDisplays(){
-      var eid=getCurrentEventId(); if(!eid){ alert('Set event first.'); return; }
-      var root = urlRoot();
-      launchVote.href   = root + 'vote/index.html?eventId='   + encodeURIComponent(eid);
-      launchScreen.href = root + 'screen/index.html?eventId=' + encodeURIComponent(eid);
-      launchBoard.href  = root + 'board/index.html?eventId='  + encodeURIComponent(eid);
-      launchVote.click(); setTimeout(()=>launchScreen.click(), 60); setTimeout(()=>launchBoard.click(), 120);
-      setTimeout(function(){ showToast('If not all tabs opened, enable pop-ups for this site.'); }, 400);
-    }
-
-    function broadcastActive(){
-      var eid=getCurrentEventId(); if(!eid){ alert('Set event first.'); return; }
-      db.collection('meta').doc('active').set({ eventId:eid, updatedAt: firebase.firestore.FieldValue.serverTimestamp() })
-        .then(function(){ showToast('Broadcasting event: '+eid); })
-        .catch(function(e){ alert('Error broadcasting: ' + (e && e.message ? e.message : e)); });
-    }
 
     /* --- Wire up --- */
     document.addEventListener('DOMContentLoaded', function(){
@@ -591,15 +594,17 @@
       extendBtn.addEventListener('click', extendVote);
       endNowBtn.addEventListener('click', endNow);
 
-      openAllDisplaysBtn.addEventListener('click', openAllDisplays);
+      hostVoteEnc.addEventListener('click', function(){ castHostVote('encore'); });
+      hostVoteAno.addEventListener('click', function(){ castHostVote('another'); });
+      hostVoteMay.addEventListener('click', function(){ castHostVote('maybe'); });
+
       openVoteBtn.addEventListener('click', openVote);
       openScreenBtn.addEventListener('click', openScreen);
       openBoardBtn.addEventListener('click', openBoard);
-      broadcastBtn.addEventListener('click', broadcastActive);
 
       try{ var L = localStorage.getItem('eyek_event_locked'); if(L==='1'){ eventIdInput.disabled=true; setEventBtn.disabled=true; lockEventChk.checked=true; } }catch(_){}
 
-      auth.signInAnonymously().then(function(){
+      ensureAuth().then(function(){
         if(saved){ wireEvent(saved); }
       });
     });
