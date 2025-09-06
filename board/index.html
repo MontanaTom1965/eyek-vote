@@ -18,7 +18,6 @@
       /* Category colors */
       --encore:#22c55e;
       --another:#f59e0b;
-      --maybe:#ef4444;
     }
     *{box-sizing:border-box}
     html,body{height:100%}
@@ -41,10 +40,9 @@
       display:inline-block; border:2px solid var(--border); border-radius:999px;
       padding:.2em .75em; color:#f5eaff; font-weight:900; background:rgba(127,60,192,.18)
     }
-    .sub{color:var(--muted); margin-top:6px}
 
     .grid{display:grid; gap:18px; grid-template-columns:1fr}
-    @media (min-width:1100px){ .grid{grid-template-columns:1fr 1fr 1fr} }
+    @media (min-width:1100px){ .grid{grid-template-columns:1fr 1fr} }
 
     .card{
       background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02)), var(--card);
@@ -69,14 +67,12 @@
     .empty{color:var(--muted); border:2px dashed var(--border); border-radius:12px; padding:.7em .9em; text-align:center}
     .encCol .hlabel{color:#d7ffe6}
     .anoCol .hlabel{color:#fff2d6}
-    .mayCol .hlabel{color:#ffe1e1}
   </style>
 </head>
 <body>
   <div class="wrap">
     <header>
       <h1>Encore Karaoke <span class="pill" id="eventPill">—</span></h1>
-      <div class="sub">Shows each singer’s latest result. Removed singers are hidden automatically.</div>
     </header>
 
     <main class="grid" style="margin-top:18px">
@@ -95,14 +91,6 @@
         </div>
         <div class="list" id="anoList"><div class="empty">No “Another Shot” yet.</div></div>
       </section>
-
-      <section class="card mayCol">
-        <div class="head">
-          <div class="hlabel">Maybe Next Time!</div>
-          <div class="badge" id="mayCount">0</div>
-        </div>
-        <div class="list" id="mayList"><div class="empty">No “Maybe Next Time” yet.</div></div>
-      </section>
     </main>
   </div>
 
@@ -112,7 +100,6 @@
 
   <script>
     (function(){
-      // Config
       var FIREBASE_CONFIG = {
         apiKey: "AIzaSyDGbC08WxruYIDPhZSlDlU-7Kzq-7mHENk",
         authDomain: "eyek-vote.firebaseapp.com",
@@ -122,26 +109,17 @@
       firebase.initializeApp(FIREBASE_CONFIG);
       var db=firebase.firestore();
 
-      // DOM helpers
       function $(id){ return document.getElementById(id); }
       var eventPill=$('eventPill');
-      var encList=$('encList'), anoList=$('anoList'), mayList=$('mayList');
-      var encCount=$('encCount'), anoCount=$('anoCount'), mayCount=$('mayCount');
+      var encList=$('encList'), anoList=$('anoList');
+      var encCount=$('encCount'), anoCount=$('anoCount');
 
-      // URL or follow meta.active
       var unsubMeta=null, unsubSingers=null;
       var EVENT_ID=null;
 
-      // Data caches
-      var singers={};// singerId -> {name, removed, latestPerformanceId}
-      var perfOutcomeCache={}; // perfId -> { outcome, closedAt, counts? }
+      var singers={};           // singerId -> {name, removed, latestPerformanceId}
+      var perfOutcomeCache={};  // perfId -> outcome
 
-      function labelOutcome(o){
-        if(o==='encore') return 'Encore!';
-        if(o==='another') return 'Another Shot!';
-        if(o==='maybe') return 'Maybe Next Time!';
-        return '—';
-      }
       function decideOutcomeStrict(e,a,m){
         e|=0;a|=0;m|=0;
         if(e>a && e>m) return 'encore';
@@ -172,7 +150,6 @@
         if(unsubSingers){ unsubSingers(); unsubSingers=null; }
         render(); // clear
 
-        // Live singers (per-singer removal respected)
         unsubSingers = db.collection('events').doc(eid).collection('singers')
           .onSnapshot(function(snap){
             var warms=[];
@@ -208,34 +185,27 @@
       }
 
       function render(){
-        // Buckets
-        var enc=[], ano=[], may=[];
+        var enc=[], ano=[];
         Object.keys(singers).forEach(function(sid){
           var s = singers[sid];
-          // Respect per-singer removed flag ONLY
-          if(s.removed) return;
-
+          if(s.removed) return; // respect per-singer remove
           var out=null;
           if(s.latestPerformanceId){ out = perfOutcomeCache[s.latestPerformanceId]; }
-          if(!out) return; // has not performed yet or outcome unknown
+          if(!out) return; // no performance yet
 
-          var item={ id:sid, name:s.name, out:out };
-          if(out==='encore') enc.push(item);
-          else if(out==='another') ano.push(item);
-          else if(out==='maybe') may.push(item);
+          if(out==='encore') enc.push({id:sid, name:s.name});
+          else if(out==='another') ano.push({id:sid, name:s.name});
+          // 'maybe' is intentionally not shown on the board
         });
 
-        // Sort alphabetically (or could sort by time if you prefer)
         var cmp=function(a,b){ return a.name.localeCompare(b.name, undefined, {sensitivity:'base'}); };
-        enc.sort(cmp); ano.sort(cmp); may.sort(cmp);
+        enc.sort(cmp); ano.sort(cmp);
 
         fillList(encList, enc);
         fillList(anoList, ano);
-        fillList(mayList, may);
 
         encCount.textContent = enc.length;
         anoCount.textContent = ano.length;
-        mayCount.textContent = may.length;
       }
 
       function fillList(container, arr){
@@ -247,8 +217,7 @@
         arr.forEach(function(it){
           var row=document.createElement('div'); row.className='row';
           var left=document.createElement('div');
-          left.innerHTML='<div class="name">'+escapeHtml(it.name)+'</div>'
-                        +'<div class="meta">'+labelOutcome(it.out)+'</div>';
+          left.innerHTML='<div class="name">'+escapeHtml(it.name)+'</div>';
           row.appendChild(left);
           container.appendChild(row);
         });
