@@ -1,4 +1,4 @@
-<!-- EYEK /screen/index.html v2025-09-06.18 -->
+<!-- EYEK /screen/index.html v2025-09-06.19 (MP3 loop) -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -201,35 +201,28 @@
         return (docData && docData.closeAt) ? docData.closeAt : null;
       }
 
-      /* -------- Sound: separate channels for SFX and Loop -------- */
-      var audioCtx=null, sfxGain=null, loopGain=null;
+      /* -------- Sound system -------- */
+      // Toggle state (persisted)
       var SOUND_KEY='eyek_sound';
       var soundEnabled = (localStorage.getItem(SOUND_KEY)==='1');
       function updateSoundBtn(){ soundBtn.textContent = soundEnabled ? '🔊' : '🔇'; }
       function showSoundHint(show){ soundHint.style.display = show ? 'block' : 'none'; }
       updateSoundBtn(); showSoundHint(!soundEnabled);
 
+      // SFX (ticks/fanfares) via WebAudio oscillators + tiny HTML beep fallback
+      var audioCtx=null, sfxGain=null;
       const FALLBACK_BEEP = 'data:audio/wav;base64,UklGRuwNAABXQVZFZm10IBAAAAABAAEAIlYAAESsAAACABAAZGF0YcgNAAAAADsWEys4PYpLIlVmWRNYPlFTRRM1gSHWC271r9/2FhJJQ4d7rF1UjYJm9hJ3x0yJH4d/0QY1y8r8BXeCBR6j8eYqk0J3cQvKcM8rQ0NtyPcY3tF7m9duT+38s0Gz8w2u2K5C3I9kWZQ/3rZ5m0C';
       function htmlBeep(delayMs=0, rate=1){
-        try{
-          setTimeout(function(){
-            var a = new Audio(FALLBACK_BEEP);
-            a.playbackRate = rate || 1;
-            a.play().catch(function(){});
-          }, delayMs|0);
-        }catch(_){}
+        try{ setTimeout(function(){ var a=new Audio(FALLBACK_BEEP); a.playbackRate=rate; a.play().catch(()=>{}); }, delayMs|0); }catch(_){}
       }
-
       async function ensureAudio(){
         try{
           if(!audioCtx){ audioCtx = new (window.AudioContext||window.webkitAudioContext)(); }
           if(!sfxGain){ sfxGain = audioCtx.createGain(); sfxGain.gain.value = 0.9; sfxGain.connect(audioCtx.destination); }
-          if(!loopGain){ loopGain = audioCtx.createGain(); loopGain.gain.value = 0.0; loopGain.connect(audioCtx.destination); }
           if(audioCtx.state==='suspended'){ await audioCtx.resume(); }
           return true;
         }catch(_){ return false; }
       }
-
       function sfxBeep(freq, duration, volume){
         if(!soundEnabled || !audioCtx || !sfxGain) return;
         var now = audioCtx.currentTime;
@@ -243,20 +236,6 @@
         osc.connect(gain).connect(sfxGain);
         osc.start(now); osc.stop(now + duration + 0.05);
       }
-      function loopBeep(freq, duration, volume){
-        if(!soundEnabled || !audioCtx || !loopGain) return;
-        var now = audioCtx.currentTime;
-        var osc = audioCtx.createOscillator();
-        var gain = audioCtx.createGain();
-        osc.type='triangle';
-        osc.frequency.setValueAtTime(freq, now);
-        gain.gain.setValueAtTime(0, now);
-        gain.gain.linearRampToValueAtTime(volume, now + 0.01);
-        gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
-        osc.connect(gain).connect(loopGain);
-        osc.start(now); osc.stop(now + duration + 0.05);
-      }
-
       function playTick(){ ensureAudio().then(function(){ sfxBeep(900, 0.12, 0.25); htmlBeep(0, 1.0); }); }
       function playFanfare(kind){
         ensureAudio().then(function(){
@@ -280,62 +259,72 @@
         });
       }
 
-      var voteLoopTimer=null, voteBeat=0;
+      // Ambient loop via your MP3 (replaces synthesized loop)
+      var loopAudio=null, loopFadeTimer=null;
+      var LOOP_URL = location.origin + '/screen/quiz-countdown.mp3'; // your uploaded file
+      function ensureLoop(){
+        if(!loopAudio){
+          loopAudio = new Audio(LOOP_URL);
+          loopAudio.loop = true;
+          loopAudio.preload = 'auto';
+          loopAudio.volume = 0.0;
+        }
+        return loopAudio;
+      }
+      function fadeLoop(to, ms){
+        if(!loopAudio) return;
+        try{ clearInterval(loopFadeTimer); }catch(_){}
+        var start = loopAudio.volume;
+        var steps = Math.max(1, Math.floor((ms||0)/50));
+        var i=0;
+        loopFadeTimer = setInterval(function(){
+          i++;
+          var v = start + (to - start) * (i/steps);
+          loopAudio.volume = Math.min(1, Math.max(0, v));
+          if(i>=steps){
+            clearInterval(loopFadeTimer);
+            if(to<=0){
+              try{ loopAudio.pause(); }catch(_){}
+            }
+          }
+        }, 50);
+      }
       function startVoteLoop(){
         if(!soundEnabled) return;
-        ensureAudio().then(function(){
-          // fade loop channel up
-          var now = audioCtx.currentTime;
-          loopGain.gain.cancelScheduledValues(now);
-          loopGain.gain.setValueAtTime(loopGain.gain.value, now);
-          loopGain.gain.linearRampToValueAtTime(0.35, now + 0.15);
-
-          if(voteLoopTimer) return;
-          voteBeat=0;
-          voteLoopTimer = setInterval(function(){
-            if(!soundEnabled || !audioCtx) return;
-            switch (voteBeat % 8){
-              case 0: loopBeep(784, 0.09, 0.08); break;   // G5
-              case 2: loopBeep(659, 0.08, 0.06); break;   // E5
-              case 4: loopBeep(880, 0.10, 0.09); break;   // A5
-              case 6: loopBeep(659, 0.08, 0.06); break;   // E5
-              default: break;
-            }
-            voteBeat++;
-          }, 450);
-        });
+        var a = ensureLoop();
+        try{
+          a.currentTime = 0;
+          a.play().then(function(){
+            fadeLoop(0.55, 200); // fade in to ~55%
+          }).catch(function(){
+            // Autoplay might be blocked until user clicks 🔊
+            showSoundHint(true);
+          });
+        }catch(_){}
       }
       function stopVoteLoop(){
-        if(audioCtx && loopGain){
-          var now = audioCtx.currentTime;
-          loopGain.gain.cancelScheduledValues(now);
-          loopGain.gain.setValueAtTime(loopGain.gain.value, now);
-          loopGain.gain.linearRampToValueAtTime(0.0, now + 0.12); // fade out
-        }
-        if(voteLoopTimer){ clearInterval(voteLoopTimer); voteLoopTimer=null; }
+        if(!loopAudio) return;
+        fadeLoop(0.0, 150); // quick fade out then pause
       }
 
+      // UI hooks for sound
       soundBtn.addEventListener('click', async function(){
         soundEnabled = !soundEnabled;
         localStorage.setItem(SOUND_KEY, soundEnabled ? '1':'0');
         updateSoundBtn(); showSoundHint(!soundEnabled);
         if(soundEnabled){
           await ensureAudio();
+          // a little confirmation chirp
           sfxBeep(880,0.14,0.28); htmlBeep(0,1.0);
-          setTimeout(()=>{ sfxBeep(880,0.14,0.28); htmlBeep(0,1.0); },180);
-          setTimeout(()=>{ sfxBeep(988,0.16,0.30); htmlBeep(0,1.1); },360);
-          if(CURRENT.status==='open') startVoteLoop();
+          setTimeout(()=>{ sfxBeep(988,0.16,0.30); htmlBeep(0,1.1); },200);
+          if(CURRENT.status==='open'){ startVoteLoop(); }
         }else{
           stopVoteLoop();
         }
       });
-
       window.addEventListener('pointerdown', function(){ if(soundEnabled) ensureAudio(); }, { once:true });
       window.addEventListener('keydown',     function(){ if(soundEnabled) ensureAudio(); }, { once:true });
-      document.addEventListener('visibilitychange', function(){
-        if(document.hidden){ stopVoteLoop(); }
-        else if(soundEnabled && CURRENT.status==='open'){ startVoteLoop(); }
-      });
+
       /* ---------------------------------- */
 
       function setBadge(status){
@@ -397,7 +386,6 @@
 
       function showWinnerBadge(kind, live, total){
         winnerBadge.className='winner';
-        ifpersist=false;
         if(!kind){
           winnerBadge.classList.add('win-neutral');
           winnerBadge.textContent = live ? 'Loading…' : '—';
@@ -527,13 +515,13 @@
               if(!unsubVotes) watchVotes(perfId);
               updateQr();
               hideFlashBanner();
-              startVoteLoop();                // ambience on
+              startVoteLoop();                // play your MP3 loop
             }else if(CURRENT.status==='closed'){
               setBadge('closed');
               stopCountdown();
               updateQr();
               renderBars();
-              stopVoteLoop();                 // ambience off
+              stopVoteLoop();                 // stop your MP3 loop
               var final = (d.outcome) || decideOutcomeStrict(COUNTS.encore, COUNTS.another, COUNTS.maybe);
               if(perfId !== lastFanfarePerfId){ playFanfare(final); lastFanfarePerfId = perfId; }
             }else{
@@ -541,7 +529,7 @@
               stopCountdown();
               updateQr();
               hideFlashBanner();
-              stopVoteLoop();                 // ambience off
+              stopVoteLoop();                 // stop your MP3 loop
             }
           });
       }
