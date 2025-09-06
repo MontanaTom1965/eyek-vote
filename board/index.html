@@ -69,7 +69,6 @@
     const debug      = document.getElementById("debug");
     const eventName  = document.getElementById("eventName");
 
-    // Resolve event
     function resolveEventId(cb){
       const u = new URL(location.href);
       const explicit = u.searchParams.get("eventId");
@@ -84,17 +83,13 @@
     function decideBucket(c){
       const e = c.encore|0, a = c.another|0, m = c.maybe|0;
       if (e===0 && a===0 && m===0) return null;
-
-      // Strict winners
       if (e>a && e>m) return "encore";
       if (a>e && a>m) return "another";
-      if (m>e && m>a) return null; // "Maybe" alone is not shown
-
-      // Ties (your rules)
+      if (m>e && m>a) return null; // "Maybe" not shown
       if (a===m && a>e) return "another";
       if (e===a && e>m) return "encore";
       if (e===m && e>a) return "another";
-      if (e===a && a===m && e>0) return "another"; // three-way
+      if (e===a && a===m && e>0) return "another";
       return null;
     }
 
@@ -112,7 +107,6 @@
       if (!eid){ eventName.textContent = "Event: (no active)"; return; }
       eventName.textContent = "Event: " + eid;
 
-      // Cache singers with their latestPerformanceId
       let singers = {}; // singerId -> {name, latestPerformanceId}
       onColSnapshot(query(collection(db,"events",eid,"singers")), (snap)=>{
         singers = {};
