@@ -49,7 +49,7 @@
     .card{background:var(--card); border:1px solid var(--border); border-radius:14px; padding:18px}
     h2{margin:0 0 12px}
     label{display:block; margin:10px 0 6px; font-weight:600}
-    input, select{
+    input{
       padding:10px 12px; border-radius:10px; border:1px solid var(--border); width:100%; background:#0f1322; color:#f7f8fc;
     }
     .btn{padding:10px 14px; border:none; border-radius:10px; background:var(--accent); color:#000; font-weight:700; cursor:pointer}
@@ -70,7 +70,7 @@
 <body>
   <aside class="sidebar">
     <div class="brand">
-      <img src="Earn Your Encore Karaoke - Icon.png" alt="EYEK"/>
+      <img src="Earn Your Encore Karaoke - Icon.png" alt="EYEK" onerror="this.style.display='none'"/>
       <h1>Host Panel</h1>
     </div>
 
@@ -102,12 +102,12 @@
       <div class="card">
         <h2>Event Controls</h2>
         <label for="eventId">Event ID</label>
-        <input id="eventId" placeholder="e.g. friday-joe-s-bar" />
+        <input id="eventId" placeholder="e.g. Eagles" />
         <div class="stack">
           <button class="btn" id="setEventBtn">Set / Switch Event</button>
           <button class="btn secondary" id="clearVotesBtn">Clear All Votes</button>
         </div>
-        <div class="hint">Tip: share the Vote link or QR with your audience. All pages use the same <code>?eventId=...</code>.</div>
+        <div class="hint">Share the Vote link/QR with your audience. All pages use the same <code>?eventId=...</code>.</div>
       </div>
 
       <div class="card">
@@ -213,18 +213,18 @@
       navigator.clipboard.writeText(voteLink.href).then(()=>{ statusSide.textContent = "Vote URL copied."; });
     });
 
-    /************** EVENT ID HANDLING **************/
+    /************** EVENT ID + ABSOLUTE LINKS **************/
     function getEventIdFromURL(){
       const u = new URL(window.location.href);
       return u.searchParams.get("eventId") || "default";
     }
 
-    // ✅ FIXED: Build absolute links to root-level sibling folders
+    // Build absolute links to root-level folders: /vote/, /screen/, /board/
     function setLinksForEvent(eid){
       const ROOT = location.origin + "/"; // e.g., https://vote.earnyourencorekaraoke.com/
-      voteLink.href   = ROOT + "vote/index_vote.html?eventId="   + encodeURIComponent(eid);
-      screenLink.href = ROOT + "screen/index_screen.html?eventId=" + encodeURIComponent(eid);
-      boardLink.href  = ROOT + "board/index_board.html?eventId=" + encodeURIComponent(eid);
+      voteLink.href   = ROOT + "vote/index.html?eventId="   + encodeURIComponent(eid);
+      screenLink.href = ROOT + "screen/index.html?eventId=" + encodeURIComponent(eid);
+      boardLink.href  = ROOT + "board/index.html?eventId="  + encodeURIComponent(eid);
       voteUrlText.textContent = voteLink.href;
       drawQR(voteLink.href);
     }
