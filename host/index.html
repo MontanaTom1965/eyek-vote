@@ -267,7 +267,12 @@
     const statusBar    = document.getElementById("statusBar");
 
     // Buttons
-    document.getElementById("setEventBtn").addEventListener("click", onClickSetEvent);
+    const setBtn = document.getElementById("setEventBtn");
+    setBtn.addEventListener("click", onClickSetEvent);
+
+    // PATCH A: Enter key for Event input
+    eventIdInput.addEventListener("keydown", (e)=>{ if (e.key === "Enter") onClickSetEvent(); });
+
     openScreen.addEventListener("click", ()=> window.open(urlRoot()+"screen/index.html?eventId="+encodeURIComponent(getCurrentEventId()), "_blank", "noopener"));
     openBoard.addEventListener("click",  ()=> window.open(urlRoot()+"board/index.html?eventId="+encodeURIComponent(getCurrentEventId()), "_blank", "noopener"));
     copyEventVoteUrl.addEventListener("click", ()=> {
@@ -304,7 +309,14 @@
     lockEventEl.addEventListener("change", ()=> {
       localStorage.setItem("eyek_lock_event", lockEventEl.checked ? "1" : "0");
       eventNote.textContent = lockEventEl.checked ? "Event locked — switching disabled." : "";
+      // PATCH A: disable Set/Switch button when locked
+      syncSetBtnDisabled();
     });
+
+    // PATCH A helper: disable Set/Switch when locked
+    function syncSetBtnDisabled(){ setBtn.disabled = lockEventEl.checked; }
+    syncSetBtnDisabled();
+
     showHiddenEl.addEventListener("change", ()=> renderSingerList(cachedSingers));
 
     // Zoom controls
@@ -364,27 +376,63 @@
       const mem = localStorage.getItem(LS_EVENT);
       return mem && mem.trim() ? mem.trim() : "default";
     }
-    function applyEvent(eid){
-      const u = new URL(window.location.href);
-      u.searchParams.set("eventId", eid);
-      history.replaceState({}, "", u.toString());
-      try{ localStorage.setItem(LS_EVENT, eid); }catch{}
-      eventPill.textContent = "Event: " + eid;
-      watchSingers(eid);
-      watchState(eid);
-      if (broadcastEl.checked) broadcastActiveEvent(eid);
-      setStatus("Event set to: " + eid);
-    }
+
+    // PATCH B: robust confirm + all edge cases handled
     function onClickSetEvent(){
       const typed = (eventIdInput.value || "").trim();
       const current = getCurrentEventId();
-      if (lockEventEl.checked) return setStatus("Event is locked. Uncheck ‘Lock Event’ to switch.");
-      if (!typed) return setStatus("Enter an event name to set/switch.");
-      if (typed === current) return setStatus(`Already on event “${current}”.`);
-      const ok = confirm(`Switch event from “${current}” to “${typed}”?`);
-      if (!ok) return setStatus("Event switch cancelled.");
+
+      if (lockEventEl.checked){
+        return setStatus("Event is locked. Uncheck ‘Lock Event’ to switch.");
+      }
+      if (!typed){
+        return setStatus("Enter an event name to set/switch.");
+      }
+      if (typed === current){
+        return setStatus(`Already on event “${current}”.`);
+      }
+
+      const msg =
+`Switch event from “${current}” to “${typed}”?
+
+• This will NOT delete any singers or votes.
+• Screen/Board will follow the new event if “Broadcast Active” is on.
+• New QR codes will target “${typed}”.`;
+
+      let ok = true;
+      try {
+        ok = window.confirm(msg);
+      } catch (_e) {
+        // Some environments block native dialogs; fall through and proceed.
+        ok = true;
+      }
+      if (!ok){
+        return setStatus("Event switch cancelled.");
+      }
+
       applyEvent(typed);
     }
+
+    function applyEvent(eid){
+      // Update URL
+      const u = new URL(window.location.href);
+      u.searchParams.set("eventId", eid);
+      history.replaceState({}, "", u.toString());
+
+      // Persist & UI
+      try{ localStorage.setItem(LS_EVENT, eid); }catch{}
+      eventPill.textContent = "Event: " + eid;
+
+      // Rewire listeners
+      watchSingers(eid);
+      watchState(eid);
+
+      // Broadcast if enabled
+      if (broadcastEl.checked) broadcastActiveEvent(eid);
+
+      setStatus("Event set to: " + eid);
+    }
+
     async function broadcastActiveEvent(eid){
       try{
         await setDoc(doc(db,"meta","active"), { eventId: eid, updatedAt: serverTimestamp() });
