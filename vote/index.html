@@ -1,4 +1,4 @@
-<!-- EYEK /vote/index.html v2025-09-06.13 -->
+<!-- EYEK /vote/index.html v2025-09-06.14 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -96,6 +96,7 @@
 
   <div id="toast" class="toast">Switching to new singer…</div>
 
+  <!-- Firebase (compat) -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
@@ -124,18 +125,14 @@
     }
     var DEVICE_ID=getDeviceId();
 
-    // Auto-follow behavior:
-    // - If URL has performanceId: we show that performance.
-    // - When it closes, we watch /state/current and auto-switch to the new performance
-    //   (unless ?autofollow=0).
-    var LOCKED_TO_PARAM = !!getParam('performanceId');
+    // Auto-follow current singer (can disable with ?autofollow=0)
     var AUTO_FOLLOW = (getParam('autofollow') !== '0');
 
     function toastMsg(msg){
       if(!toast) return;
       toast.textContent = msg || 'Switching…';
       toast.style.display='block';
-      setTimeout(()=>{ toast.style.display='none'; }, 2000);
+      setTimeout(()=>{ toast.style.display='none'; }, 1800);
     }
 
     function setBadgeOpen(isOpen){
@@ -165,11 +162,12 @@
 
     function followEvent(){
       var u=new URL(location.href), eid=u.searchParams.get('eventId');
-      if(!eid){ alert('Missing eventId in URL.'); return; }
-      eventPill.textContent=eid;
-      CURRENT.eventId=eid;
+      var perfParam = u.searchParams.get('performanceId');
 
-      // Always watch state/current to learn about new performances
+      if(!eid){ alert('Missing eventId in URL.'); return; }
+      eventPill.textContent=eid; CURRENT.eventId=eid;
+
+      // Always watch /state/current to discover the active performance
       if(unsubState){ unsubState(); unsubState=null; }
       unsubState = db.collection('events').doc(eid).collection('state').doc('current')
         .onSnapshot(function(s){
@@ -178,24 +176,16 @@
           var name=d.currentSingerName || '—';
           title.textContent='Vote for: ' + name;
 
-          // If we are not locked to a specific performance, just follow current
-          if(!LOCKED_TO_PARAM && pid && pid!==CURRENT.performanceId){
+          // If AUTO_FOLLOW is enabled and state.current points to a different perf, switch immediately.
+          if(AUTO_FOLLOW && pid && pid!==CURRENT.performanceId){
             toastMsg('Switching to new singer…');
-            watchPerformance(pid);
-          }
-
-          // If we ARE locked to a perfId (came from QR), auto-switch when that perf closes
-          // and a new performance appears, provided AUTO_FOLLOW is true.
-          if(LOCKED_TO_PARAM && AUTO_FOLLOW && CURRENT.status==='closed' && pid && pid!==CURRENT.performanceId){
-            toastMsg('New singer started — updating…');
             watchPerformance(pid);
           }
         });
 
-      var perfParam = u.searchParams.get('performanceId');
-      if(perfParam){
-        watchPerformance(perfParam);
-      }
+      // If a specific performanceId is in the URL, watch it first;
+      // the state/current listener above will still move us to the new one when it changes.
+      if(perfParam){ watchPerformance(perfParam); }
     }
 
     function watchPerformance(perfId){
@@ -227,9 +217,10 @@
 
           title.textContent='Vote for: ' + CURRENT.singerName;
 
-          var isOpen = CURRENT.status==='open' && CURRENT.closeAt && (CURRENT.closeAt.toMillis() > Date.now());
+          // OPEN if status is 'open' even if closeAt hasn't landed yet
+          var isOpen = (CURRENT.status==='open') && (!CURRENT.closeAt || CURRENT.closeAt.toMillis() > Date.now());
           setBadgeOpen(isOpen);
-          if(isOpen){ startCountdown(); } else { stopCountdown(); }
+          if (CURRENT.closeAt && isOpen) { startCountdown(); } else { stopCountdown(); }
 
           // Watch my vote (one per device per performance)
           var myVoteId = perfId + '__' + DEVICE_ID;
@@ -243,7 +234,7 @@
                 btnE.disabled = btnA.disabled = btnM.disabled = true;
               }else{
                 done.style.display='none';
-                var open = CURRENT.status==='open' && CURRENT.closeAt && (CURRENT.closeAt.toMillis() > Date.now());
+                var open = (CURRENT.status==='open') && (!CURRENT.closeAt || CURRENT.closeAt.toMillis() > Date.now());
                 btnE.disabled = btnA.disabled = btnM.disabled = !open;
               }
             });
@@ -252,7 +243,8 @@
 
     function cast(category){
       if(!CURRENT.performanceId){ alert('No active performance.'); return; }
-      if(CURRENT.status!=='open' || !CURRENT.closeAt || CURRENT.closeAt.toMillis()<=Date.now()){
+      // Allow cast if status is 'open'; if closeAt exists and is past, block.
+      if (CURRENT.status!=='open' || (CURRENT.closeAt && CURRENT.closeAt.toMillis()<=Date.now())) {
         alert('Voting is closed.'); return;
       }
       var eid=CURRENT.eventId, pid=CURRENT.performanceId;
