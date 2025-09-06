@@ -272,14 +272,18 @@
 
       var showHiddenEl=$('showHidden'), singersSidebar=$('singersSidebar');
 
+      // Sign-in (anon)
       auth.signInAnonymously().catch(function(e){ setStatus('Auth error: ' + ((e&&e.message)||e)); });
 
+      // ---- State
       var LS_EVENT='eyek_last_event';
       var STATE={ currentSingerId:null, currentSingerName:null, performanceId:null, performanceCloseAt:null, performanceStatus:'' };
       var perfOutcomeCache={}; // perfId -> outcome
       var singerMap={};       // singerId -> {name, latestPerformanceId, removed}
       var unsubSingersRealtime=null, unsubState=null, unsubPerf=null;
+      var countdownTimer=null;   // << added: fixes "countdownTimer not defined"
 
+      // Ask for event if missing
       (function(){
         var u=new URL(location.href), q=u.searchParams.get('eventId'), mem=localStorage.getItem(LS_EVENT);
         if(!q && !mem){
@@ -288,15 +292,18 @@
         }
       })();
 
+      // Restore toggles
       broadcastEl.checked=localStorage.getItem('eyek_broadcast_event')==='1';
       lockEventEl.checked=localStorage.getItem('eyek_lock_event')==='1';
       syncSetBtnDisabled();
       if(lockEventEl.checked) eventNote.textContent='Event locked — switching disabled.';
 
+      // Start event
       var START_EVENT=(new URL(location.href)).searchParams.get('eventId') || localStorage.getItem(LS_EVENT) || 'default';
       eventIdInput.value=START_EVENT;
       applyEvent(START_EVENT);
 
+      // Listeners
       setBtn.addEventListener('click', onClickSetEvent);
       eventIdInput.addEventListener('keydown', function(e){ if(e.key==='Enter') onClickSetEvent(); });
       lockEventEl.addEventListener('change', function(){
@@ -407,6 +414,7 @@
         setTimeout(function(){ endVotingNow(); }, ms+300);
       }
 
+      // Watch performance
       function watchPerformance(eid, perfId){
         if(unsubPerf){ unsubPerf(); unsubPerf=null; }
         if(!perfId){
@@ -427,6 +435,7 @@
         }, function(err){ setStatus('Performance listener error: '+((err&&err.message)||err)); });
       }
 
+      // Watch state
       function watchState(eid){
         if(unsubState){ unsubState(); unsubState=null; }
         unsubState = db.collection('events').doc(eid).collection('state').doc('current').onSnapshot(function(snap){
@@ -464,6 +473,7 @@
           .catch(function(){ singerMap={}; renderSingersSidebar(); });
       }
 
+      var unsubSingersRealtime=null;
       function watchSingers(eid){
         if(unsubSingersRealtime){ unsubSingersRealtime(); unsubSingersRealtime=null; }
         loadSingersOnce(eid);
@@ -481,13 +491,6 @@
           });
           renderSingersSidebar();
         }, function(err){ setStatus('Realtime singers error: '+((err&&err.message)||err)); });
-      }
-
-      function wantSingerInSidebar(s){
-        // Include if not removed AND (no outcome yet OR outcome is encore/another).
-        var out=null;
-        if(s.latestPerformanceId){ out = perfOutcomeCache[s.latestPerformanceId] || null; }
-        return !s.removed && (out===null || out==='encore' || out==='another');
       }
 
       function renderSingersSidebar(){
@@ -566,6 +569,7 @@
         });
       }
 
+      // Add singer (auto-announce + show QR)
       function addSinger(){
         var name=(singerNameInput.value||'').trim();
         if(!name){ addSingerStatus.textContent='Please enter a singer name.'; return; }
