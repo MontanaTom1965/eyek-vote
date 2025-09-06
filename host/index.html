@@ -1,4 +1,4 @@
-<!-- EYEK /host/index.html v2025-09-06.18 -->
+<!-- EYEK /host/index.html v2025-09-06.19 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -393,7 +393,7 @@
       if(!CURRENT.eventId){ alert('Set the event first.'); return; }
       var eid = CURRENT.eventId;
 
-      // Create singer doc (if we want to avoid dupes by name we could search; keep it simple)
+      // Create singer doc
       var singerRef = db.collection('events').doc(eid).collection('singers').doc();
       singerRef.set({
         singerId: singerRef.id,
@@ -468,7 +468,6 @@
       if(!CURRENT.eventId || !CURRENT.performanceId){ alert('No performance selected.'); return; }
       var ref = db.collection('events').doc(CURRENT.eventId).collection('performances').doc(CURRENT.performanceId);
       ref.set({
-        // increment duration by +15s relative to openAt start
         durationSec: firebase.firestore.FieldValue.increment(15)
       }, { merge:true }).then(function(){
         showToast('Extended +15s');
@@ -492,16 +491,43 @@
       try{ var ls = localStorage.getItem('eyek_event_id'); if(ls && ls.trim()) return ls.trim(); }catch(_){}
       return '';
     }
+
     function openVote(){ var eid=getCurrentEventId(); if(!eid){ alert('Set event first.'); return; } window.open(urlRoot()+'vote/index.html?eventId='+encodeURIComponent(eid), '_blank', 'noopener'); }
     function openScreen(){ var eid=getCurrentEventId(); if(!eid){ alert('Set event first.'); return; } window.open(urlRoot()+'screen/index.html?eventId='+encodeURIComponent(eid), '_blank', 'noopener'); }
     function openBoard(){ var eid=getCurrentEventId(); if(!eid){ alert('Set event first.'); return; } window.open(urlRoot()+'board/index.html?eventId='+encodeURIComponent(eid), '_blank', 'noopener'); }
+
+    // New: open all three with blank tabs first, then assign locations (helps pop-up blockers)
     function openAllDisplays(){
       var eid=getCurrentEventId(); if(!eid){ alert('Set event first.'); return; }
-      var w1=window.open(urlRoot()+'vote/index.html?eventId='+encodeURIComponent(eid), '_blank', 'noopener');
-      var w2=window.open(urlRoot()+'screen/index.html?eventId='+encodeURIComponent(eid), '_blank', 'noopener');
-      var w3=window.open(urlRoot()+'board/index.html?eventId='+encodeURIComponent(eid), '_blank', 'noopener');
-      if(!w1 || !w2 || !w3){ alert('Popup blocked. Please allow pop-ups for this site or use the buttons individually.'); }
+
+      var root = urlRoot();
+      var urlVote   = root + 'vote/index.html?eventId='   + encodeURIComponent(eid);
+      var urlScreen = root + 'screen/index.html?eventId=' + encodeURIComponent(eid);
+      var urlBoard  = root + 'board/index.html?eventId='  + encodeURIComponent(eid);
+
+      // Open blank tabs synchronously (counts as the same user gesture)
+      var w1 = window.open('about:blank', '_blank', 'noopener');
+      var w2 = window.open('about:blank', '_blank', 'noopener');
+      var w3 = window.open('about:blank', '_blank', 'noopener');
+
+      var opened = [w1,w2,w3].filter(Boolean).length;
+      if(opened === 0){
+        alert('Your browser blocked pop-ups. Please allow pop-ups for this site, or use the Vote/Screen/Board buttons.');
+        return;
+      }
+
+      // Staggered assignment makes some blockers happier
+      var delay = 120; // ms between tab navigations
+      if(w1) setTimeout(function(){ try{ w1.location.href = urlVote; }catch(_){ /* ignore */ } }, 0);
+      if(w2) setTimeout(function(){ try{ w2.location.href = urlScreen; }catch(_){ /* ignore */ } }, delay);
+      if(w3) setTimeout(function(){ try{ w3.location.href = urlBoard; }catch(_){ /* ignore */ } }, delay*2);
+
+      if(opened < 3){
+        // Give a gentle heads-up if only some opened
+        showToast('Opened '+opened+'/3 tabs. Enable pop-ups to open all automatically.');
+      }
     }
+
     function broadcastActive(){
       var eid=getCurrentEventId(); if(!eid){ alert('Set event first.'); return; }
       db.collection('meta').doc('active').set({ eventId:eid, updatedAt: firebase.firestore.FieldValue.serverTimestamp() })
@@ -546,7 +572,6 @@
 
       // Auth then ready
       ensureAuth().then(function(){
-        // If we already had a saved event but state/current hasn’t been wired yet, re-wire
         if(saved){ wireEvent(saved); }
       });
     });
