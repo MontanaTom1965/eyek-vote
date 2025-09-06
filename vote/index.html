@@ -7,241 +7,222 @@
   <meta http-equiv="Cache-Control" content="no-store" />
   <style>
     :root{
-      /* Brand purple theme */
-      --bg:#2F0658;
-      --card:#401073;
-      --border:#7E3CC0;
-      --text:#ffffff;
-      --muted:#E3D6F4;
-      --accent:#D9B6FF;
-
-      /* Category colors */
-      --encore:#22c55e; 
-      --another:#f59e0b; 
-      --maybe:#ef4444;
+      --bg:#2F0658; --card:#401073; --border:#7E3CC0; --text:#ffffff; --muted:#E3D6F4; --accent:#D9B6FF;
+      --encore:#22c55e; --another:#f59e0b; --maybe:#ef4444;
     }
     *{box-sizing:border-box}
     html,body{height:100%}
     body{
-      margin:0; color:var(--text);
+      margin:0;
+      color:var(--text);
       background:
         radial-gradient(1200px 600px at 15% -10%, #6A2BB3 0%, rgba(106,43,179,0) 60%),
         radial-gradient(1000px 520px at 85% -10%, #4E1E8E 0%, rgba(78,30,142,0) 55%),
         var(--bg);
       font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu;
-      font-size: clamp(18px, 3.2vw, 22px);
+      font-size: clamp(16px, 2.6vw, 22px);
       display:flex; align-items:center; justify-content:center; padding:24px;
     }
     .card{
-      width:min(900px, 100%); 
-      background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02)), var(--card);
-      border:2px solid var(--border); border-radius:20px; padding:22px;
-      box-shadow:0 14px 48px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.06)
+      width:min(900px, 96vw);
+      background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02)) , var(--card);
+      border:2px solid var(--border); border-radius:18px; padding:22px;
+      box-shadow:0 12px 40px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.06)
     }
-    h1{margin:.2em 0 .2em; font-size:1.8em}
-    .muted{color:var(--muted)}
-    .row{display:flex; gap:12px; align-items:center; flex-wrap:wrap}
-    .pill{
-      display:inline-block; border:2px solid var(--border); border-radius:999px; padding:.18em .7em;
-      background:rgba(127,60,192,.18); color:#f5eaff; font-weight:900;
-    }
+    h1{margin:.2em 0 .1em; font-size:clamp(1.6rem, 5.2vw, 2.4rem)}
+    .pill{display:inline-block; border:2px solid var(--border); border-radius:999px; padding:.15em .7em; background:rgba(127,60,192,.18); font-weight:900}
+    .hint{color:var(--muted); font-weight:700}
+    .status{display:inline-block; margin-top:8px; padding:.35em .8em; border-radius:10px; border:2px solid var(--border); font-weight:900}
+    .sOpen{border-color:#7ab1ff; background:rgba(122,177,255,.18)}
+    .sClosed{border-color:#c77aa1; background:rgba(199,122,161,.18)}
+    .count{font-weight:900}
 
-    .grid{display:grid; gap:18px}
-    .buttons{display:grid; gap:14px; grid-template-columns:1fr}
-    @media (min-width:700px){ .buttons{grid-template-columns:1fr 1fr 1fr} }
-
+    .buttons{display:grid; gap:12px; grid-template-columns:1fr}
+    @media (min-width:680px){ .buttons{ grid-template-columns:1fr 1fr 1fr } }
     .btn{
-      appearance:none; border:2px solid transparent; border-radius:14px; padding:16px;
-      font-weight:1000; font-size:1.15em; cursor:pointer; color:#0c1423;
-      transition:transform .06s ease, filter .06s ease, box-shadow .15s ease;
-      box-shadow:0 6px 22px rgba(0,0,0,.25);
+      appearance:none; border:2px solid var(--border); border-radius:14px; padding:.9em .8em;
+      font-weight:1000; cursor:pointer; font-size:1.05em; color:#fff;
+      background:rgba(0,0,0,.25);
     }
-    .btn:active{ transform:scale(.98); filter:brightness(.95) }
-    .btn.enc{ background:var(--encore); border-color:#6fe394 }
-    .btn.ano{ background:var(--another); border-color:#ffd28a }
-    .btn.may{ background:var(--maybe); border-color:#ffb4b4; color:#fff }
+    .btn:disabled{opacity:.5; cursor:not-allowed}
+    .enc{ background:linear-gradient(180deg, rgba(34,197,94,.30), rgba(34,197,94,.08)); border-color:#3aa66a; color:#eafff3 }
+    .ano{ background:linear-gradient(180deg, rgba(245,158,11,.26), rgba(245,158,11,.06)); border-color:#9c6a14; color:#fff6e0 }
+    .may{ background:linear-gradient(180deg, rgba(239,68,68,.30), rgba(239,68,68,.08)); border-color:#a83b3b; color:#ffe8e8 }
 
-    .footer{
-      display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;
-      margin-top:8px; padding-top:12px; border-top:2px solid var(--border)
-    }
-    .status{font-weight:800}
-    .countdown{font-weight:1000}
-    .hidden{display:none}
-
-    .err{background:#3a0f0f; border:2px solid #ef4444; color:#ffe8e8; padding:.6em .8em; border-radius:12px; font-weight:800}
-    .ok{background:#0f2b1c; border:2px solid #22c55e; color:#eafff3; padding:.6em .8em; border-radius:12px; font-weight:800}
+    .done{margin-top:14px; padding:.8em 1em; border-radius:12px; border:2px dashed var(--border); background:rgba(0,0,0,.22); font-weight:900}
   </style>
 </head>
 <body>
-  <main class="card">
-    <div class="grid">
-      <div class="row" style="justify-content:space-between">
-        <div>
-          <div class="muted">You’re voting on</div>
-          <h1 id="singer">—</h1>
-        </div>
-        <div class="pill" id="eventPill">—</div>
-      </div>
+  <div class="card">
+    <div class="hint">Event: <span id="eventPill" class="pill">—</span></div>
+    <h1 id="title">Vote for: —</h1>
+    <div id="statusBadge" class="status">Loading…</div>
+    <div class="hint" style="margin-top:6px">Time left: <span id="countdown" class="count">—</span></div>
 
-      <div id="alert" class="hidden"></div>
-
-      <div class="buttons" id="voteBtns">
-        <button class="btn enc" id="btnEnc">Encore!</button>
-        <button class="btn ano" id="btnAno">Another Shot!</button>
-        <button class="btn may" id="btnMay">Maybe Next Time!</button>
-      </div>
-
-      <div class="footer">
-        <div class="status" id="status">Getting ready…</div>
-        <div class="muted">Time left: <span class="countdown" id="countdown">—</span></div>
-      </div>
+    <div style="height:12px"></div>
+    <div class="buttons">
+      <button class="btn enc" id="voteEncore">Encore!</button>
+      <button class="btn ano" id="voteAnother">Another Shot!</button>
+      <button class="btn may" id="voteMaybe">Maybe Next Time!</button>
     </div>
-  </main>
+
+    <div id="done" class="done" style="display:none"></div>
+  </div>
 
   <!-- Firebase (compat) -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
   <script>
-    (function(){
-      // Config
-      var FIREBASE_CONFIG = {
-        apiKey: "AIzaSyDGbC08WxruYIDPhZSlDlU-7Kzq-7mHENk",
-        authDomain: "eyek-vote.firebaseapp.com",
-        projectId: "eyek-vote"
-      };
-      if(!firebase || !firebase.initializeApp){ alert('Firebase failed to load.'); return; }
-      firebase.initializeApp(FIREBASE_CONFIG);
-      var db=firebase.firestore();
+  (function(){
+    var FIREBASE_CONFIG = {
+      apiKey: "AIzaSyDGbC08WxruYIDPhZSlDlU-7Kzq-7mHENk",
+      authDomain: "eyek-vote.firebaseapp.com",
+      projectId: "eyek-vote"
+    };
+    if(!firebase || !firebase.initializeApp){ alert('Firebase failed to load.'); return; }
+    firebase.initializeApp(FIREBASE_CONFIG);
+    var db=firebase.firestore();
 
-      function $(id){ return document.getElementById(id); }
-      var singerEl=$('singer'), eventPill=$('eventPill');
-      var statusEl=$('status'), alertEl=$('alert');
-      var countdownEl=$('countdown');
-      var btnEnc=$('btnEnc'), btnAno=$('btnAno'), btnMay=$('btnMay'), voteBtns=$('voteBtns');
+    function $(id){ return document.getElementById(id); }
+    var eventPill=$('eventPill'), title=$('title'), statusBadge=$('statusBadge'), countdownEl=$('countdown'),
+        btnE=$('voteEncore'), btnA=$('voteAnother'), btnM=$('voteMaybe'), done=$('done');
 
-      // URL params
-      var u=new URL(location.href);
-      var eventId=u.searchParams.get('eventId')||'default';
-      var performanceId=u.searchParams.get('performanceId')||null;
-      eventPill.textContent = eventId;
+    var unsubState=null, unsubPerf=null, unsubVoteDoc=null;
+    var CURRENT={ eventId:null, performanceId:null, singerName:'—', status:'pending', closeAt:null, openAt:null, durationSec:0 };
+    var countdownTimer=null;
 
-      if(!performanceId){
-        showErr('Missing performance. Please scan the current QR from the screen.');
-        disableVoting();
+    function getParam(name){ return (new URL(location.href)).searchParams.get(name); }
+    function urlRoot(){ return location.origin + '/'; }
+
+    function getDeviceId(){
+      var KEY='eyek_device_id', id=localStorage.getItem(KEY);
+      if(!id){ var arr=new Uint8Array(16); crypto.getRandomValues(arr); id=Array.prototype.map.call(arr,b=>b.toString(16).padStart(2,'0')).join(''); localStorage.setItem(KEY,id); }
+      return id;
+    }
+    var DEVICE_ID=getDeviceId();
+
+    function setBadgeOpen(isOpen){
+      statusBadge.className='status ' + (isOpen?'sOpen':'sClosed');
+      statusBadge.textContent = isOpen ? 'Voting OPEN' : 'Voting CLOSED';
+      btnE.disabled = btnA.disabled = btnM.disabled = !isOpen;
+    }
+
+    function computeCloseAtFrom(d){
+      if(d && d.openAt && d.durationSec){
+        var ms = d.openAt.toMillis() + (d.durationSec|0)*1000;
+        return firebase.firestore.Timestamp.fromDate(new Date(ms));
+      }
+      return d && d.closeAt ? d.closeAt : null;
+    }
+
+    function renderCountdown(){
+      var end = CURRENT.closeAt;
+      if(!end || CURRENT.status!=='open'){ countdownEl.textContent='—'; return; }
+      var ms = end.toMillis() - Date.now();
+      var s = Math.max(0, Math.ceil(ms/1000));
+      countdownEl.textContent = s + 's';
+      if(s<=0) setBadgeOpen(false);
+    }
+    function startCountdown(){ stopCountdown(); renderCountdown(); countdownTimer=setInterval(renderCountdown, 250); }
+    function stopCountdown(){ if(countdownTimer){ clearInterval(countdownTimer); } countdownTimer=null; countdownEl.textContent='—'; }
+
+    function followEvent(){
+      var u=new URL(location.href), eid=u.searchParams.get('eventId');
+      if(!eid){
+        alert('Missing eventId in URL.');
         return;
       }
+      eventPill.textContent=eid;
+      CURRENT.eventId=eid;
 
-      // Device ID for one-vote-per-performance
-      function getDeviceId(){
-        var KEY='eyek_device_id', id=localStorage.getItem(KEY);
-        if(!id){ var arr=new Uint8Array(16); crypto.getRandomValues(arr); id=Array.prototype.map.call(arr,b=>b.toString(16).padStart(2,'0')).join(''); localStorage.setItem(KEY,id); }
-        return id;
-      }
-      var DEVICE_ID = getDeviceId();
-      var VOTE_DOC_ID = performanceId + '__' + DEVICE_ID;
-
-      var unsubPerf=null, countdownTimer=null;
-      var PERF={ status:'', closeAt:null, singerName:'—' };
-
-      // Countdown
-      function renderCountdown(){
-        if(!PERF.closeAt || PERF.status!=='open'){ countdownEl.textContent='—'; return; }
-        var ms = PERF.closeAt.toMillis() - Date.now();
-        var s = Math.max(0, Math.ceil(ms/1000));
-        countdownEl.textContent = s+'s';
-        if(s<=0){ setClosed('Voting closed.'); }
-      }
-      function startCountdown(){ stopCountdown(); renderCountdown(); countdownTimer=setInterval(renderCountdown,250); }
-      function stopCountdown(){ if(countdownTimer){ clearInterval(countdownTimer); countdownTimer=null; } }
-
-      function setOpen(){
-        enableVoting();
-        statusEl.textContent='Vote now!';
-        hideAlert();
-        startCountdown();
-      }
-      function setPending(){
-        disableVoting();
-        statusEl.textContent='Get ready…';
-        showInfo('Voting hasn’t opened yet for this performance.');
-        stopCountdown();
-      }
-      function setClosed(msg){
-        disableVoting();
-        statusEl.textContent= msg || 'Voting closed.';
-        showInfo('Thanks for checking in! Voting is not open for this performance.');
-        stopCountdown();
-      }
-
-      function showErr(msg){ alertEl.className='err'; alertEl.textContent=msg; alertEl.classList.remove('hidden'); }
-      function showInfo(msg){ alertEl.className='ok';  alertEl.textContent=msg; alertEl.classList.remove('hidden'); }
-      function hideAlert(){ alertEl.className='hidden'; alertEl.textContent=''; }
-
-      function disableVoting(){
-        voteBtns.querySelectorAll('button').forEach(function(b){ b.disabled=true; b.style.opacity=.6; b.style.cursor='not-allowed'; });
-      }
-      function enableVoting(){
-        voteBtns.querySelectorAll('button').forEach(function(b){ b.disabled=false; b.style.opacity=1; b.style.cursor='pointer'; });
-      }
-
-      // Load performance doc live
-      unsubPerf = db.collection('events').doc(eventId).collection('performances').doc(performanceId)
-        .onSnapshot(function(snap){
-          if(!snap.exists){ setClosed('(performance not found)'); return; }
-          var d = snap.data()||{};
-          PERF.status = d.status || 'pending';
-          PERF.closeAt = d.closeAt || null;
-          PERF.singerName = d.singerName || '—';
-          singerEl.textContent = PERF.singerName;
-
-          if(PERF.status === 'open'){
-            setOpen();
-          }else if(PERF.status === 'pending'){
-            setPending();
-          }else{
-            setClosed();
-          }
-        }, function(err){
-          showErr((err && err.message) || String(err));
-          disableVoting();
-        });
-
-      // Vote handler
-      function cast(category){
-        if(PERF.status!=='open'){ setClosed(); return; }
-        var data={
-          performanceId: performanceId,
-          singerId: null, // not required by rules; kept null to avoid rule mismatch
-          category: category,
-          deviceId: DEVICE_ID,
-          ts: Date.now()
-        };
-        db.collection('events').doc(eventId).collection('votes').doc(VOTE_DOC_ID).set(data)
-          .then(function(){
-            // Lock UI after 1st successful vote (for this performance)
-            disableVoting();
-            showInfo('Thanks for voting! You can vote again for the next singer.');
-          })
-          .catch(function(e){
-            var msg=(e && e.message) ? e.message.toLowerCase() : '';
-            if(msg.includes('permission') || msg.includes('failed precondition') || msg.includes('already exists')){
-              showInfo('Looks like you already voted on this one. Thanks!');
-              disableVoting();
-            }else{
-              showErr('Could not submit vote. Please try again.');
-            }
+      var perfParam = u.searchParams.get('performanceId');
+      if(perfParam){
+        watchPerformance(perfParam);
+      }else{
+        // Follow current performance for this event
+        if(unsubState){ unsubState(); unsubState=null; }
+        unsubState = db.collection('events').doc(eid).collection('state').doc('current')
+          .onSnapshot(function(s){
+            var d=s.data()||{};
+            var pid=d.performanceId||null;
+            if(pid){ watchPerformance(pid); }
+            title.textContent='Vote for: ' + (d.currentSingerName || '—');
           });
       }
+    }
 
-      btnEnc.addEventListener('click', function(){ cast('encore'); });
-      btnAno.addEventListener('click', function(){ cast('another'); });
-      btnMay.addEventListener('click', function(){ cast('maybe'); });
+    function watchPerformance(perfId){
+      if(CURRENT.performanceId===perfId) return;
+      CURRENT.performanceId=perfId;
+      if(unsubPerf){ unsubPerf(); unsubPerf=null; }
+      if(unsubVoteDoc){ unsubVoteDoc(); unsubVoteDoc=null; }
 
-      // Clean up
-      window.addEventListener('beforeunload', function(){ try{ if(unsubPerf) unsubPerf(); }catch(_){} });
-    })();
+      var eid=CURRENT.eventId;
+      unsubPerf = db.collection('events').doc(eid).collection('performances').doc(perfId)
+        .onSnapshot(function(snap){
+          if(!snap.exists){
+            title.textContent='Vote for: —';
+            setBadgeOpen(false); stopCountdown(); return;
+          }
+          var d=snap.data()||{};
+          CURRENT.status = d.status || 'pending';
+          CURRENT.singerName = d.singerName || '—';
+          CURRENT.openAt = d.openAt || null;
+          CURRENT.durationSec = d.durationSec|0;
+          CURRENT.closeAt = computeCloseAtFrom(d);
+
+          title.textContent='Vote for: ' + CURRENT.singerName;
+
+          var isOpen = CURRENT.status==='open' && CURRENT.closeAt && (CURRENT.closeAt.toMillis() > Date.now());
+          setBadgeOpen(isOpen);
+          if(isOpen){ startCountdown(); } else { stopCountdown(); }
+
+          // Watch my vote (one per device per performance)
+          var myVoteId = perfId + '__' + DEVICE_ID;
+          if(unsubVoteDoc){ unsubVoteDoc(); unsubVoteDoc=null; }
+          unsubVoteDoc = db.collection('events').doc(eid).collection('votes').doc(myVoteId)
+            .onSnapshot(function(dv){
+              if(dv.exists){
+                var v=(dv.data()||{}).category||'';
+                done.style.display='block';
+                done.textContent = 'Thanks for voting! You chose: ' + (v==='encore'?'Encore!':v==='another'?'Another Shot!':v==='maybe'?'Maybe Next Time!':v);
+                btnE.disabled = btnA.disabled = btnM.disabled = true;
+              }else{
+                done.style.display='none';
+                var open = CURRENT.status==='open' && CURRENT.closeAt && (CURRENT.closeAt.toMillis() > Date.now());
+                btnE.disabled = btnA.disabled = btnM.disabled = !open;
+              }
+            });
+        });
+    }
+
+    function cast(category){
+      if(!CURRENT.performanceId){ alert('No active performance.'); return; }
+      if(CURRENT.status!=='open' || !CURRENT.closeAt || CURRENT.closeAt.toMillis()<=Date.now()){
+        alert('Voting is closed.');
+        return;
+      }
+      var eid=CURRENT.eventId, pid=CURRENT.performanceId;
+      var docId = pid + '__' + DEVICE_ID;
+      db.collection('events').doc(eid).collection('votes').doc(docId).set({
+        performanceId: pid,
+        singerId: null, // optional
+        singerName: CURRENT.singerName || '(Unknown)',
+        category: category,
+        deviceId: DEVICE_ID,
+        ts: Date.now()
+      }).catch(function(e){
+        alert('Could not submit vote. (Maybe already voted?)');
+      });
+    }
+
+    btnE.addEventListener('click', function(){ cast('encore'); });
+    btnA.addEventListener('click', function(){ cast('another'); });
+    btnM.addEventListener('click', function(){ cast('maybe'); });
+
+    followEvent();
+  })();
   </script>
 </body>
 </html>
