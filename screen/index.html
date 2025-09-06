@@ -26,18 +26,34 @@
     header{display:flex; align-items:flex-end; justify-content:space-between; gap:16px; padding-bottom:12px; border-bottom:2px solid var(--border)}
     h1{margin:0; font-size:clamp(2.2rem, 4.5vw, 4rem)}
     .pill{display:inline-block; border:2px solid var(--border); border-radius:999px; padding:.2em .75em; color:#f5eaff; font-weight:900; background:rgba(127,60,192,.18)}
+
     .grid{display:grid; gap:22px; grid-template-columns:1fr}
     .card{background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02)) , var(--card); border:2px solid var(--border); border-radius:18px; padding:20px; box-shadow:0 12px 40px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.06)}
-    .now{display:flex; align-items:center; justify-content:space-between; gap:28px; flex-wrap:wrap}
+
+    /* Top “now” card layout: left = singer, center = status, right = QR */
+    .now{
+      display:grid; gap:28px; align-items:center;
+      grid-template-columns: 1fr auto 260px;
+    }
+    @media (max-width: 900px){
+      .now{ grid-template-columns: 1fr; justify-items:center; text-align:center }
+    }
+
     .leftNow .hint{color:var(--muted)}
     .leftNow h2{margin:.1em 0; font-size:clamp(1.8rem, 3.6vw, 3rem)}
-    .rightNow{display:flex; align-items:flex-end; gap:18px; flex-wrap:wrap}
-    .statusBadge{font-weight:900; padding:.35em .8em; border-radius:12px; border:2px solid var(--border); color:#f3eaff; background:rgba(127,60,192,.18)}
+
+    .centerNow{display:flex; flex-direction:column; align-items:center; gap:10px}
+    .statusBadge{
+      font-weight:900; padding:.45em 1.0em; border-radius:12px; border:2px solid var(--border); color:#f3eaff;
+      background:rgba(127,60,192,.18); text-align:center; min-width: 240px;
+    }
     .statusOpen{border-color:#7ab1ff; background:rgba(122,177,255,.18)}
     .statusPending{border-color:#9c84c9}
     .statusClosed{border-color:#c77aa1; background:rgba(199,122,161,.18)}
-    .countdown{font-size:1.2rem; font-weight:900; text-align:right}
+    .countdown{font-size:1.1rem; font-weight:900}
+
     .qr{width:260px; height:260px; object-fit:contain; border-radius:14px; border:2px solid var(--border); background:rgba(0,0,0,.15)}
+
     .bars{display:grid; gap:16px; margin-top:10px}
     .row{display:flex; gap:14px; align-items:center}
     .label{min-width:260px; font-weight:900; font-size:clamp(1.4rem, 2.8vw, 2rem)}
@@ -47,13 +63,23 @@
     .bar.ano{background:linear-gradient(90deg, #d08a0a, #f59e0b)}
     .bar.may{background:linear-gradient(90deg, #cc2a2a, #ef4444)}
     .val{min-width:140px; text-align:right; font-weight:900; font-size:1.2rem}
+
     @keyframes flashPulse { 0%{filter:brightness(1)} 40%{filter:brightness(1.8)} 100%{filter:brightness(1)} }
     .flash{ animation: flashPulse .45s ease }
+
     .totals{margin-top:10px; color:var(--muted); font-weight:800}
-    .winner{display:inline-block; margin-top:10px; padding:.35em .8em; border-radius:12px; border:2px solid var(--border); font-weight:900; background:rgba(255,255,255,.05)}
+
+    /* Winner/Leader badge that also flashes while voting */
+    .winner{
+      display:inline-block; margin-top:12px; padding:.45em 1em; border-radius:12px; border:2px solid var(--border);
+      font-weight:1000; background:rgba(255,255,255,.05); text-align:center; min-width: 280px;
+    }
+    .win-neutral{border-color:#7E3CC0; background:rgba(127,60,192,.14)}
     .win-enc{border-color:#3aa66a; background:#0f2b1c}
     .win-ano{border-color:#9c6a14; background:#2b1f08}
     .win-may{border-color:#a83b3b; background:#2b0f10}
+
+    /* Bottom flashing banner after voting closes */
     .flashBanner{position:fixed; left:0; right:0; bottom:0; display:none; text-align:center; padding:18px 24px; font-weight:1000; letter-spacing:.3px; font-size:clamp(1.6rem, 3vw, 2.4rem); border-top:4px solid; z-index:50}
     @keyframes encPulse { 0%{filter:brightness(1); box-shadow:0 0 0 rgba(34,197,94,0)} 50%{filter:brightness(1.6); box-shadow:0 0 40px rgba(34,197,94,.35)} 100%{filter:brightness(1); box-shadow:0 0 0 rgba(34,197,94,0)} }
     @keyframes anoPulse { 0%{filter:brightness(1)} 50%{filter:brightness(1.25)} 100%{filter:brightness(1)} }
@@ -61,6 +87,15 @@
     .banner-enc{background:linear-gradient(180deg, rgba(34,197,94,.25), rgba(34,197,94,.05)); border-color:#22c55e; color:#eafff3; animation: encPulse .55s ease-in-out infinite}
     .banner-ano{background:linear-gradient(180deg, rgba(245,158,11,.18), rgba(245,158,11,.04)); border-color:#f59e0b; color:#fff6e0; animation: anoPulse 1.1s ease-in-out infinite}
     .banner-may{background:linear-gradient(180deg, rgba(239,68,68,.22), rgba(239,68,68,.06)); border-color:#ef4444; color:#ffe8e8; animation: mayPulse 1.35s ease-in-out infinite}
+
+    /* Sound toggle button */
+    .soundBtn{
+      position:fixed; right:16px; bottom:16px; z-index:60;
+      border:2px solid var(--border); background:rgba(0,0,0,.25); color:#fff; border-radius:999px;
+      padding:.45em .65em; font-size:1.1rem; cursor:pointer; user-select:none;
+      box-shadow:0 6px 20px rgba(0,0,0,.25)
+    }
+    .soundBtn:hover{ background:rgba(0,0,0,.35) }
   </style>
 </head>
 <body>
@@ -72,18 +107,20 @@
     <main class="grid" style="margin-top:18px">
       <section class="card">
         <div class="now">
+          <!-- Left: singer -->
           <div class="leftNow">
             <div class="hint">Now singing</div>
             <h2 id="nowSinger">—</h2>
-            <div class="sub" id="perfMsg">Waiting for the host to start voting…</div>
           </div>
-          <div class="rightNow">
-            <div style="text-align:right">
-              <div id="statusBadge" class="statusBadge">Getting ready…</div>
-              <div class="countdown" id="countdown">—</div>
-            </div>
-            <img id="qrImg" class="qr" alt="Scan to vote" />
+
+          <!-- Center: status + countdown (centered) -->
+          <div class="centerNow">
+            <div id="statusBadge" class="statusBadge">Getting ready…</div>
+            <div class="countdown" id="countdown">—</div>
           </div>
+
+          <!-- Right: QR -->
+          <img id="qrImg" class="qr" alt="Scan to vote" />
         </div>
       </section>
 
@@ -105,13 +142,18 @@
             <div class="val" id="valMay">0</div>
           </div>
         </div>
+
+        <!-- Winner/Leader box (now also flashes while votes roll in) -->
         <div class="totals" id="totals">Total votes: 0</div>
-        <div id="winnerBadge" class="winner" style="display:none">—</div>
+        <div id="winnerBadge" class="winner win-neutral">Loading…</div>
       </section>
     </main>
   </div>
 
   <div id="flashBanner" class="flashBanner">—</div>
+
+  <!-- Sound toggle -->
+  <button id="soundBtn" class="soundBtn" title="Toggle sound">🔇</button>
 
   <!-- Firebase (compat) -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -132,18 +174,88 @@
       function urlRoot(){ return location.origin + '/'; }
 
       var eventPill=$('eventPill'), nowSinger=$('nowSinger'), statusBadge=$('statusBadge'),
-          countdownEl=$('countdown'), perfMsg=$('perfMsg'),
+          countdownEl=$('countdown'),
           barEnc=$('barEnc'), barAno=$('barAno'), barMay=$('barMay'),
           wrapEnc=$('wrapEnc'), wrapAno=$('wrapAno'), wrapMay=$('wrapMay'),
           valEnc=$('valEnc'), valAno=$('valAno'), valMay=$('valMay'),
           totalsEl=$('totals'), winnerBadge=$('winnerBadge'), qrImg=$('qrImg'),
-          flashBanner=$('flashBanner');
+          flashBanner=$('flashBanner'), soundBtn=$('soundBtn');
 
       var unsubMeta=null, unsubState=null, unsubPerf=null, unsubVotes=null;
       var CURRENT={ eventId:null, performanceId:null, status:'', closeAt:null, singerName:'—' };
       var COUNTS={ encore:0, another:0, maybe:0 };
       var PREV={ encore:0, another:0, maybe:0 };
       var countdownTimer=null;
+      var prevLeader=null;
+      var lastFanfarePerfId=null;
+
+      /* -------- Sound (WebAudio) -------- */
+      var audioCtx=null;
+      var SOUND_KEY='eyek_sound';
+      var soundEnabled = (localStorage.getItem(SOUND_KEY)==='1'); // default muted
+      function updateSoundBtn(){ soundBtn.textContent = soundEnabled ? '🔊' : '🔇'; }
+      updateSoundBtn();
+
+      soundBtn.addEventListener('click', async function(){
+        soundEnabled = !soundEnabled;
+        localStorage.setItem(SOUND_KEY, soundEnabled ? '1':'0');
+        updateSoundBtn();
+        if(soundEnabled){ await ensureAudio(); }
+      });
+
+      async function ensureAudio(){
+        if(!soundEnabled) return false;
+        try{
+          if(!audioCtx){ audioCtx = new (window.AudioContext||window.webkitAudioContext)(); }
+          if(audioCtx.state==='suspended'){ await audioCtx.resume(); }
+          return true;
+        }catch(_){ return false; }
+      }
+
+      function beep(freq, duration, volume){
+        if(!soundEnabled || !audioCtx) return;
+        var now = audioCtx.currentTime;
+        var osc = audioCtx.createOscillator();
+        var gain = audioCtx.createGain();
+        osc.type='sine'; osc.frequency.setValueAtTime(freq, now);
+        gain.gain.setValueAtTime(0, now);
+        gain.gain.linearRampToValueAtTime(volume, now + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+        osc.connect(gain).connect(audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + duration + 0.05);
+      }
+
+      function playTick(){
+        if(!soundEnabled) return;
+        ensureAudio().then(function(ok){ if(ok) beep(900, 0.07, 0.06); });
+      }
+
+      function playFanfare(kind){
+        if(!soundEnabled) return;
+        ensureAudio().then(function(ok){
+          if(!ok) return;
+          var now = audioCtx.currentTime;
+          function tone(f,t,vol){ beep(f, t, vol); }
+          if(kind==='encore'){
+            // ascending quick triad
+            setTimeout(()=>tone(523,0.12,0.08), 0);
+            setTimeout(()=>tone(659,0.12,0.08), 140);
+            setTimeout(()=>tone(784,0.18,0.10), 280);
+          }else if(kind==='another'){
+            // two mid beeps
+            setTimeout(()=>tone(440,0.12,0.07), 0);
+            setTimeout(()=>tone(392,0.14,0.07), 160);
+          }else if(kind==='maybe'){
+            // single lower, a touch longer
+            setTimeout(()=>tone(220,0.25,0.08), 0);
+          }else{
+            // neutral ping
+            setTimeout(()=>tone(600,0.12,0.06), 0);
+          }
+        });
+      }
+      /* ---------------------------------- */
 
       function setBadge(status){
         statusBadge.className='statusBadge';
@@ -153,6 +265,26 @@
       }
       function fmt(n){ return (n|0).toString(); }
       function pct(part,total){ if(total<=0) return 0; return Math.round(part*100/total); }
+
+      function labelFromKind(kind){
+        if(kind==='encore') return 'Encore!';
+        if(kind==='another') return 'Another Shot!';
+        if(kind==='maybe') return 'Maybe Next Time!';
+        return '—';
+      }
+
+      function decideOutcomeStrict(e,a,m){
+        e|=0;a|=0;m|=0;
+        if(e>a && e>m) return 'encore';
+        if(a>e && a>m) return 'another';
+        if(m>e && m>a) return 'maybe';
+        if(a===m && a>e) return 'another';
+        if(e===a && e>m) return 'encore';
+        if(e===m && e>a) return 'another';
+        if(e===a && a===m && e>0) return 'another';
+        return null;
+      }
+
       function renderBars(){
         var t = COUNTS.encore + COUNTS.another + COUNTS.maybe;
         var pE=pct(COUNTS.encore,t), pA=pct(COUNTS.another,t), pM=pct(COUNTS.maybe,t);
@@ -165,41 +297,62 @@
         totalsEl.textContent = 'Total votes: ' + fmt(t);
 
         if(CURRENT.status==='open'){
-          var lead = decideOutcomeStrict(COUNTS.encore, COUNTS.another, COUNTS.maybe);
-          showWinnerBadge(lead, true);
+          updateLeaderBadge(t);
           hideFlashBanner();
         }else if(CURRENT.status==='closed'){
           var final = decideOutcomeStrict(COUNTS.encore, COUNTS.another, COUNTS.maybe);
-          showWinnerBadge(final, false);
+          showWinnerBadge(final, false, t);
           showFlashBanner(final);
         }else{
-          winnerBadge.style.display='none';
+          showWinnerBadge(null, true, t); // pending -> show Loading…
           hideFlashBanner();
         }
       }
 
       function flashIfIncreased(){
-        if (COUNTS.encore > PREV.encore){ wrapEnc.classList.add('flash'); setTimeout(()=>wrapEnc.classList.remove('flash'), 450); }
-        if (COUNTS.another> PREV.another){wrapAno.classList.add('flash'); setTimeout(()=>wrapAno.classList.remove('flash'), 450); }
-        if (COUNTS.maybe > PREV.maybe){  wrapMay.classList.add('flash'); setTimeout(()=>wrapMay.classList.remove('flash'), 450); }
+        var inc=false;
+        if (COUNTS.encore > PREV.encore){ inc=true; wrapEnc.classList.add('flash'); setTimeout(()=>wrapEnc.classList.remove('flash'), 450); }
+        if (COUNTS.another> PREV.another){ inc=true; wrapAno.classList.add('flash'); setTimeout(()=>wrapAno.classList.remove('flash'), 450); }
+        if (COUNTS.maybe > PREV.maybe){   inc=true; wrapMay.classList.add('flash'); setTimeout(()=>wrapMay.classList.remove('flash'), 450); }
         PREV.encore = COUNTS.encore; PREV.another = COUNTS.another; PREV.maybe = COUNTS.maybe;
+        return inc;
       }
 
-      function labelFromKind(kind){
-        if(kind==='encore') return 'Encore!';
-        if(kind==='another') return 'Another Shot!';
-        if(kind==='maybe') return 'Maybe Next Time!';
-        return '—';
-      }
-
-      function showWinnerBadge(kind, live){
-        if(!kind){ winnerBadge.style.display='none'; return; }
+      // Winner/Leader badge logic (flashes while voting when leader changes or increases)
+      function showWinnerBadge(kind, live, total){
         winnerBadge.className='winner';
+        if(!kind){
+          // No leader yet
+          winnerBadge.classList.add('win-neutral');
+          winnerBadge.textContent = live ? 'Loading…' : '—';
+          return;
+        }
         if(kind==='encore') winnerBadge.classList.add('win-enc');
         if(kind==='another') winnerBadge.classList.add('win-ano');
         if(kind==='maybe') winnerBadge.classList.add('win-may');
-        winnerBadge.textContent = (live?'Leading: ':'Winner: ') + labelFromKind(kind);
-        winnerBadge.style.display='inline-block';
+        winnerBadge.textContent = (live ? 'Leading: ' : 'Winner: ') + labelFromKind(kind);
+      }
+
+      function pulseWinner(){
+        winnerBadge.classList.remove('flash');
+        void winnerBadge.offsetWidth; // restart CSS animation
+        winnerBadge.classList.add('flash');
+      }
+
+      function updateLeaderBadge(total){
+        if(total<=0){
+          prevLeader=null;
+          showWinnerBadge(null, true, total); // Loading…
+          return;
+        }
+        var lead = decideOutcomeStrict(COUNTS.encore, COUNTS.another, COUNTS.maybe);
+        showWinnerBadge(lead, true, total);
+        if(lead !== prevLeader){
+          pulseWinner();           // flash when leader changes
+          prevLeader = lead;
+        }else{
+          pulseWinner();           // also flash as votes keep coming for the same leader
+        }
       }
 
       function hideFlashBanner(){
@@ -216,24 +369,6 @@
         flashBanner.style.display='block';
       }
 
-      function decideOutcomeStrict(e,a,m){
-        e|=0;a|=0;m|=0;
-        if(e>a && e>m) return 'encore';
-        if(a>e && a>m) return 'another';
-        if(m>e && m>a) return 'maybe';
-        if(a===m && a>e) return 'another';
-        if(e===a && e>m) return 'encore';
-        if(e===m && e>a) return 'another';
-        if(e===a && a===m && e>0) return 'another';
-        return null;
-      }
-
-      function clearVotes(){
-        COUNTS.encore=COUNTS.another=COUNTS.maybe=0;
-        PREV.encore=PREV.another=PREV.maybe=0;
-        renderBars();
-      }
-
       function renderCountdown(){
         if(!CURRENT.closeAt || CURRENT.status!=='open'){ countdownEl.textContent='—'; return; }
         var ms = CURRENT.closeAt.toMillis() - Date.now();
@@ -241,7 +376,7 @@
         countdownEl.textContent = s + 's';
       }
       function startCountdown(){ stopCountdown(); renderCountdown(); countdownTimer=setInterval(renderCountdown,250); }
-      function stopCountdown(){ if(countdownTimer){ clearInterval(countdownTimer); countdownTimer=null; } countdownEl.textContent='—'; }
+      function stopCountdown(){ if(countdownTimer){ clearInterval(countdownTimer); } countdownTimer=null; countdownEl.textContent='—'; }  /* fixed variable name */
 
       function qrProvider1(d){ return 'https://api.qrserver.com/v1/create-qr-code/?size=260x260&data='+encodeURIComponent(d); }
       function qrProvider2(d){ return 'https://chart.googleapis.com/chart?cht=qr&chs=260x260&chl='+encodeURIComponent(d); }
@@ -280,8 +415,8 @@
         if(unsubVotes){ unsubVotes(); unsubVotes=null; }
         nowSinger.textContent='—';
         setBadge('pending');
-        perfMsg.textContent='Waiting for the host to start voting…';
-        clearVotes();
+        COUNTS.encore=COUNTS.another=COUNTS.maybe=0; PREV.encore=PREV.another=PREV.maybe=0; prevLeader=null;
+        renderBars();
         setQrForUrl(null);
         hideFlashBanner();
 
@@ -299,37 +434,37 @@
         if(unsubPerf){ unsubPerf(); unsubPerf=null; }
         if(unsubVotes){ unsubVotes(); unsubVotes=null; }
         CURRENT.performanceId = perfId;
-        clearVotes();
+        COUNTS.encore=COUNTS.another=COUNTS.maybe=0; PREV.encore=PREV.another=PREV.maybe=0; prevLeader=null;
+        renderBars();
         if(!perfId){
-          setBadge('pending'); perfMsg.textContent='Waiting for the host to start voting…'; stopCountdown(); setQrForUrl(null); hideFlashBanner(); return;
+          setBadge('pending'); stopCountdown(); setQrForUrl(null); hideFlashBanner(); return;
         }
         updateQr();
 
         unsubPerf = db.collection('events').doc(CURRENT.eventId).collection('performances').doc(perfId)
           .onSnapshot(function(snap){
-            if(!snap.exists){ setBadge('pending'); perfMsg.textContent='(performance not found)'; stopCountdown(); hideFlashBanner(); return; }
+            if(!snap.exists){ setBadge('pending'); stopCountdown(); hideFlashBanner(); return; }
             var d = snap.data()||{};
+            var prevStatus = CURRENT.status;
             CURRENT.status = d.status || 'pending';
             CURRENT.closeAt = d.closeAt || null;
 
             if(CURRENT.status==='open'){
               setBadge('open');
-              perfMsg.textContent='Vote now!';
               if(CURRENT.closeAt) startCountdown(); else stopCountdown();
               if(!unsubVotes) watchVotes(perfId);
               updateQr();
               hideFlashBanner();
             }else if(CURRENT.status==='closed'){
               setBadge('closed');
-              perfMsg.textContent='Voting closed.';
               stopCountdown();
               updateQr();
-              var oc = d.outcome || decideOutcomeStrict(COUNTS.encore, COUNTS.another, COUNTS.maybe);
-              showWinnerBadge(oc,false);
-              showFlashBanner(oc);
+              renderBars(); // ensure final leader/winner & banner update
+              // Play fanfare once per performance
+              var final = (d.outcome) || decideOutcomeStrict(COUNTS.encore, COUNTS.another, COUNTS.maybe);
+              if(perfId !== lastFanfarePerfId){ playFanfare(final); lastFanfarePerfId = perfId; }
             }else{
               setBadge('pending');
-              perfMsg.textContent='Get ready to vote…';
               stopCountdown();
               updateQr();
               hideFlashBanner();
@@ -349,12 +484,17 @@
               else if(c==='another') COUNTS.another++;
               else if(c==='maybe') COUNTS.maybe++;
             });
-            flashIfIncreased();
+            var increased = flashIfIncreased();
             renderBars();
+            if(CURRENT.status==='open' && increased){ playTick(); }
           });
       }
 
       followEvent();
+
+      // Attempt to enable audio on first user interaction (helps with autoplay policies)
+      window.addEventListener('pointerdown', function(){ if(soundEnabled) ensureAudio(); }, { once:true });
+      window.addEventListener('keydown',     function(){ if(soundEnabled) ensureAudio(); }, { once:true });
     })();
   </script>
 </body>
