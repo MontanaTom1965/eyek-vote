@@ -2,95 +2,73 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Earn Your Encore Karaoke — Host (Large Print)</title>
+  <title>Earn Your Encore Karaoke — Host</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta http-equiv="Cache-Control" content="no-store" />
   <style>
-    /* ---------- ACCESSIBILITY FIRST ---------- */
     :root{
-      --scale: 1;                 /* A- / A+ controls adjust this */
-      --bg:#08090c; --panel:#0e1324; --card:#121831; --accent:#7bc4ff;
-      --text:#ffffff; --muted:#c8d1e6; --border:#2a3553;
+      --scale:1;
+      --bg:#0a0d14; --card:#111a30; --border:#2a3a60;
+      --text:#fff; --muted:#c9d3ea; --accent:#7bc4ff;
       --encore:#22c55e; --another:#f59e0b; --maybe:#ef4444;
-      --btn:#1a2140; --btnBorder:#344062;
-      --focus:#fff;
+      --btn:#132046; --btnBorder:#3b4c7a;
     }
     *{box-sizing:border-box}
     html,body{height:100%}
     html{background:var(--bg)}
     body{
-      margin:0; min-height:100vh; display:flex; flex-direction:column;
-      color:var(--text); font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu;
-      font-size: calc(20px * var(--scale));  /* LARGE base type */
-      line-height:1.35;
+      margin:0; color:var(--text);
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu;
+      font-size:calc(20px * var(--scale)); line-height:1.35;
+      display:flex; flex-direction:column;
     }
-    .fatal{
-      position:sticky; top:0; z-index:9999; background:#b91c1c; color:#fff;
-      padding:.5em .8em; font-weight:900; display:none
-    }
-    .wrap{max-width:1400px; margin:0 auto; width:100%}
-    header{
-      position:sticky; top:0; z-index:10;
-      background:linear-gradient(180deg,rgba(8,9,12,.9),rgba(8,9,12,.6));
-      backdrop-filter:saturate(1.2) blur(6px);
-      border-bottom:2px solid var(--border);
-    }
-    .bar{
-      display:flex; gap:16px; align-items:center; justify-content:space-between;
-      padding:14px 18px;
-    }
-    .title{font-size:1.6em; font-weight:900; letter-spacing:.2px}
-    .pill{display:inline-block; border:2px solid var(--border); border-radius:999px; padding:.25em .6em; color:var(--muted); font-weight:700}
-    .row{display:grid; gap:18px; grid-template-columns:1fr 1fr}
-    @media (max-width:1200px){ .row{grid-template-columns:1fr} }
-    .card{
-      background:var(--card); border:2px solid var(--border); border-radius:18px; padding:18px;
-      box-shadow: 0 6px 24px rgba(0,0,0,.25);
-    }
-    h2{margin:.1em 0 .5em; font-size:1.4em}
-    label{display:block; margin:.6em 0 .25em; font-weight:800}
+    .fatal{position:sticky; top:0; z-index:9999; background:#b91c1c; color:#fff; padding:.5em .8em; font-weight:900; display:none}
+    header{position:sticky; top:0; z-index:10; border-bottom:2px solid var(--border); background:linear-gradient(180deg,rgba(10,13,20,.92),rgba(10,13,20,.65)); backdrop-filter:blur(6px)}
+    .wrap{max-width:1250px; margin:0 auto; width:100%}
+    .bar{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:14px 16px}
+    .title{font-size:1.4em; font-weight:900}
+    .pill{display:inline-block; border:2px solid var(--border); border-radius:999px; padding:.25em .6em; color:var(--muted); font-weight:800}
+    main{padding:18px}
+    .grid{display:grid; gap:16px}
+    .grid-2{grid-template-columns:1fr 1fr}
+    @media (max-width:1100px){ .grid-2{grid-template-columns:1fr} }
+    .card{background:var(--card); border:2px solid var(--border); border-radius:16px; padding:16px; box-shadow:0 6px 24px rgba(0,0,0,.25)}
+    h2{margin:.1em 0 .5em; font-size:1.2em}
+    label{display:block; margin:.55em 0 .25em; font-weight:800}
     input{
-      padding:.7em .8em; border-radius:12px; border:2px solid var(--border); width:100%;
-      background:#0f152d; color:#fff; font-size:1.05em; outline:none;
+      width:100%; padding:.65em .8em; border-radius:12px;
+      border:2px solid var(--border); background:#0f1732; color:#fff; font-size:1.02em;
     }
-    input:focus{box-shadow:0 0 0 4px rgba(123,196,255,.25)}
-    .stack{display:flex; gap:12px; flex-wrap:wrap}
+    input:focus{outline:none; box-shadow:0 0 0 4px rgba(123,196,255,.25)}
+    .row{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+    .stack{display:flex; gap:10px; flex-wrap:wrap}
     .btn{
-      appearance:none; padding:.8em 1em; border:2px solid var(--btnBorder); border-radius:14px;
-      background:var(--btn); color:#fff; font-weight:900; cursor:pointer; font-size:1.05em; letter-spacing:.25px;
-      min-height:56px;
+      appearance:none; padding:.75em 1em; border:2px solid var(--btnBorder); border-radius:12px;
+      background:var(--btn); color:#fff; font-weight:900; cursor:pointer; font-size:1.02em; letter-spacing:.2px;
+      min-height:52px;
     }
-    .btn:focus{outline:3px solid var(--focus); outline-offset:2px}
-    .btn.primary{background:var(--accent); color:#07111d; border-color:#a9d9ff}
-    .btn.good{background:var(--encore); color:#062; border-color:#70e395}
+    .btn[disabled]{opacity:.5; cursor:not-allowed}
+    .btn.primary{background:var(--accent); color:#06111e; border-color:#a9d9ff}
+    .btn.good{background:var(--encore); color:#062; border-color:#6fe394}
     .btn.warn{background:var(--another); color:#231b00; border-color:#ffd28a}
     .btn.danger{background:var(--maybe); color:#2b0000; border-color:#ffb4b4}
-    .btn.ghost{background:#0f152d}
-    .btn[disabled]{opacity:.5; cursor:not-allowed}
-    .toggle{display:flex; gap:.5em; align-items:center; font-weight:800}
+    .btn.ghost{background:#0f1732}
     .hint{color:var(--muted); font-weight:600}
-    .bigline{font-size:1.3em; font-weight:900}
     ul{list-style:none; margin:0; padding:0}
     li{
-      display:flex; align-items:center; justify-content:space-between; gap:12px;
-      padding:.7em .8em; border:2px solid var(--border); border-radius:14px;
-      background:#0f152d; margin:.5em 0;
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      padding:.6em .7em; border:2px solid var(--border); border-radius:12px; background:#0f1732; margin:.45em 0;
     }
-    .qrWrap{
-      background:#0e1220; border:2px dashed var(--border); border-radius:16px;
-      display:flex; align-items:center; justify-content:center; padding:16px; min-height:520px;
+    .smallQR{
+      display:flex; align-items:center; gap:12px; border:2px dashed var(--border);
+      border-radius:12px; padding:10px; background:#0d142b;
     }
-    .qrWrap img{ width:100%; height:auto; max-width:760px; border-radius:12px }
-    footer{margin:12px 0 22px; color:var(--muted); text-align:center}
-    .status{
-      position:sticky; bottom:0; background:linear-gradient(180deg,rgba(8,9,12,.65),rgba(8,9,12,.95));
-      border-top:2px solid var(--border); padding:12px 18px; font-weight:800;
-    }
-    .countdown{font-weight:900; font-size:1.4em}
-    .controls .btn{min-width:220px}
-    .sectionTitle{display:flex; align-items:center; justify-content:space-between; gap:12px}
-    /* A-/A+ controls */
-    .zoomControls .btn{min-width:0; padding:.5em .7em}
+    .smallQR img{width:140px; height:140px; object-fit:contain; border-radius:10px}
+    .controls .btn{min-width:200px}
+    footer{margin:10px 0 20px}
+    .status{position:sticky; bottom:0; background:linear-gradient(180deg,rgba(10,13,20,.5),rgba(10,13,20,.95)); border-top:2px solid var(--border); padding:10px 16px; font-weight:800}
+    .zoomBar{display:flex; gap:10px; align-items:center; justify-content:center}
+    .zoomBar .btn{min-width:0; padding:.45em .7em}
   </style>
 </head>
 <body>
@@ -99,91 +77,97 @@
   <header>
     <div class="wrap bar">
       <div class="title">Host Control</div>
-      <div class="stack zoomControls" role="group" aria-label="Text size">
-        <button class="btn ghost" id="zoomDown" title="Smaller text">A−</button>
-        <span class="pill" id="zoomLabel">Text: 100%</span>
-        <button class="btn ghost" id="zoomUp" title="Larger text">A+</button>
-      </div>
-    </div>
-    <div class="wrap bar" style="padding-top:0">
       <div class="pill" id="eventPill">Event: —</div>
-      <div class="stack">
-        <label class="toggle"><input type="checkbox" id="broadcastActive"> Broadcast Active Event</label>
-        <label class="toggle"><input type="checkbox" id="lockEvent"> Lock Event</label>
-      </div>
     </div>
   </header>
 
-  <main class="wrap" style="padding:18px">
-    <!-- Event Controls -->
+  <main class="wrap">
+    <!-- Event -->
     <section class="card">
-      <div class="sectionTitle">
-        <h2>Event</h2>
+      <h2>Event</h2>
+      <div class="row">
+        <div style="flex:1 1 380px; min-width:280px">
+          <label for="eventId">Event name (venue)</label>
+          <input id="eventId" placeholder="e.g. Eagles Nest" />
+        </div>
+        <div class="stack">
+          <label class="row" style="font-weight:800"><input type="checkbox" id="lockEvent" /> Lock Event</label>
+          <label class="row" style="font-weight:800"><input type="checkbox" id="broadcastActive" /> Broadcast Active Event</label>
+        </div>
+        <div>
+          <button class="btn primary" id="setEventBtn" title="Apply event">Event</button>
+        </div>
       </div>
-      <label for="eventId">Event name</label>
-      <input id="eventId" placeholder="e.g. Eagles Nest" />
-      <div class="stack" style="margin-top:.6em">
-        <button class="btn primary" id="setEventBtn">Set / Switch Event</button>
-        <button class="btn ghost" id="openScreen">Open Screen</button>
-        <button class="btn ghost" id="openBoard">Open Board</button>
-        <button class="btn ghost" id="copyEventVoteUrl">Copy Event Vote URL</button>
+      <div class="hint" id="eventNote" style="margin-top:.45em">
+        Broadcast Active Event: when ON, TVs at <code>/screen</code> and <code>/board</code> (no URL params) auto-follow this event.
       </div>
-      <div class="hint" id="eventNote" style="margin-top:.6em">TVs can open <code>/screen/</code> and <code>/board/</code> (no params) when Broadcast is ON.</div>
     </section>
 
-    <div class="row" style="margin-top:18px">
-      <!-- Now Performing + Controls -->
-      <section class="card">
-        <h2>Now Performing</h2>
-        <div class="bigline" id="nowPerfLabel">None</div>
-        <div class="hint" id="perfStatus">No performance yet</div>
-        <div style="margin-top:.4em" class="hint">Countdown: <span class="countdown" id="countdown">—</span></div>
-        <div class="stack controls" style="margin-top:12px">
-          <button class="btn good"  id="btnAnnounce">Announce singer (show QR)</button>
-          <button class="btn warn"  id="btnVoteNow">Vote now (30s)</button>
-          <button class="btn ghost" id="btnExtend15">Extend +15s</button>
-          <button class="btn danger" id="btnEndNow">End now</button>
+    <!-- Singer Add -->
+    <section class="card">
+      <h2>Add singer</h2>
+      <div class="row">
+        <div style="flex:1 1 480px; min-width:280px">
+          <label for="singerName">Singer name</label>
+          <input id="singerName" placeholder="Type a name, press Enter" />
         </div>
-        <div class="stack" style="margin-top:12px">
-          <button class="btn" id="hostVoteEncore"  style="background:var(--encore);color:#062">Host Vote: Encore</button>
-          <button class="btn" id="hostVoteAnother" style="background:var(--another);color:#231b00">Host Vote: Another</button>
-          <button class="btn" id="hostVoteMaybe"   style="background:var(--maybe)">Host Vote: Maybe</button>
+        <div>
+          <button class="btn primary" id="addSingerBtn">Add</button>
         </div>
-      </section>
+      </div>
+      <div class="hint" id="addSingerStatus" style="margin-top:.35em">Ready.</div>
+    </section>
 
-      <!-- QR Panel -->
-      <section class="card">
-        <h2>Performance QR</h2>
-        <div class="qrWrap"><img id="qrImg" alt="QR code" /></div>
-        <div class="hint" id="perfVoteUrl" style="margin-top:.6em">—</div>
-        <div class="stack" style="margin-top:.6em">
-          <button class="btn ghost" id="copyPerfVoteUrl">Copy Perf Vote URL</button>
-          <button class="btn ghost" id="openQrInNewTab">Open QR in New Tab</button>
-        </div>
-        <div class="hint" id="qrNote" style="margin-top:.4em"></div>
-      </section>
-    </div>
-
-    <div class="row" style="margin-top:18px">
-      <!-- Add/Choose Singer -->
-      <section class="card">
-        <h2>Add or choose singer</h2>
-        <label for="singerName">Singer name</label>
-        <input id="singerName" placeholder="Type a name, press Enter" />
-        <div class="stack" style="margin-top:.6em">
-          <button class="btn primary" id="addSingerBtn">Add Singer</button>
-          <label class="toggle"><input type="checkbox" id="showHidden"> Show hidden (Maybe) singers</label>
-        </div>
-        <div class="hint" id="addSingerStatus" style="margin-top:.4em">Ready.</div>
-      </section>
-
-      <!-- Singer List -->
+    <!-- Current Singers + Links -->
+    <div class="grid grid-2">
       <section class="card">
         <h2>Current singers</h2>
+        <div class="row" style="margin:.25em 0 .5em">
+          <label class="row"><input type="checkbox" id="showHidden" /> Show hidden (Maybe) singers</label>
+        </div>
         <ul id="singerList"></ul>
         <div class="hint" id="singerReadNote"></div>
       </section>
+
+      <!-- Now Performing with small QR + controls -->
+      <section class="card">
+        <h2>Now Performing</h2>
+        <div class="smallQR" style="margin:.4em 0 1em">
+          <img id="qrImg" alt="QR" />
+          <div>
+            <div style="font-weight:900; font-size:1.2em" id="nowPerfLabel">None</div>
+            <div class="hint" id="perfStatus">No performance yet</div>
+            <div class="hint" style="margin-top:.25em">Countdown: <span id="countdown" style="font-weight:900">—</span></div>
+          </div>
+        </div>
+        <div class="controls stack">
+          <button class="btn warn" id="btnVoteNow">Vote now (30s)</button>
+          <button class="btn ghost" id="btnExtend15">Extend +15s</button>
+          <button class="btn danger" id="btnEndNow">End now</button>
+        </div>
+      </section>
     </div>
+
+    <!-- Links -->
+    <section class="card">
+      <h2>Links (open in new tabs)</h2>
+      <div class="stack">
+        <button class="btn ghost" id="openVote">Vote</button>
+        <button class="btn ghost" id="openScreen">Screen</button>
+        <button class="btn ghost" id="openBoard">Board</button>
+      </div>
+    </section>
+
+    <!-- Host vote -->
+    <section class="card">
+      <h2>Host vote (optional)</h2>
+      <div class="stack">
+        <button class="btn" id="hostVoteEncore"  style="background:var(--encore);color:#062">Encore</button>
+        <button class="btn" id="hostVoteAnother" style="background:var(--another);color:#231b00">Another</button>
+        <button class="btn" id="hostVoteMaybe"   style="background:var(--maybe)">Maybe Next Time</button>
+      </div>
+      <div class="hint" style="margin-top:.4em">One vote per device per performance (same as audience).</div>
+    </section>
   </main>
 
   <div class="status">
@@ -191,34 +175,29 @@
   </div>
 
   <footer class="wrap">
-    <div class="hint">Tip: Use A− / A+ to resize everything. Big buttons are touch-friendly.</div>
+    <div class="zoomBar">
+      <button class="btn ghost" id="zoomDown" title="Smaller text">A−</button>
+      <span class="pill" id="zoomLabel">Text: 100%</span>
+      <button class="btn ghost" id="zoomUp" title="Larger text">A+</button>
+    </div>
   </footer>
 
   <!-- ========= CORE (no-module, compat builds) ========= -->
   <script>
-    // Error banner that catches anything
+    // Error banner (always on)
     (function(){
       var fatalEl = document.getElementById('fatal');
-      function showFatal(msg){
-        if(!msg) return;
-        fatalEl.style.display = 'block';
-        fatalEl.textContent = 'Error: ' + msg;
-      }
+      function showFatal(msg){ if(!msg) return; fatalEl.style.display='block'; fatalEl.textContent='Error: '+msg; }
       window.__showFatal = showFatal;
-      window.addEventListener('error', function(e){ showFatal((e.error && e.error.message) || e.message); });
-      window.addEventListener('unhandledrejection', function(e){ var r=e.reason; showFatal((r && (r.message||r)) || 'Unhandled rejection'); });
+      window.addEventListener('error', e=> showFatal((e.error && e.error.message) || e.message));
+      window.addEventListener('unhandledrejection', e=> showFatal((e.reason && (e.reason.message||e.reason)) || 'Unhandled rejection'));
 
-      // A-/A+ works even if Firebase fails
-      var Z_KEY='eyek_zoom';
-      var zoomLabel=document.getElementById('zoomLabel');
-      function setZoom(v){
-        v=Math.min(1.8,Math.max(0.7, v));
-        document.documentElement.style.setProperty('--scale', v);
-        try{ localStorage.setItem(Z_KEY,String(v)); }catch(_){}
-        zoomLabel.textContent='Text: ' + Math.round(v*100) + '%';
-      }
-      document.getElementById('zoomDown').addEventListener('click', function(){ setZoom((+localStorage.getItem(Z_KEY)||1) - 0.1); });
-      document.getElementById('zoomUp').addEventListener('click',   function(){ setZoom((+localStorage.getItem(Z_KEY)||1) + 0.1); });
+      // A-/A+ available regardless of Firebase
+      var Z_KEY='eyek_zoom', zoomLabel=document.getElementById('zoomLabel');
+      function setZoom(v){ v=Math.min(1.8,Math.max(0.7,v)); document.documentElement.style.setProperty('--scale',v); try{localStorage.setItem(Z_KEY,String(v))}catch(_){}
+        zoomLabel.textContent='Text: '+Math.round(v*100)+'%'; }
+      document.getElementById('zoomDown').addEventListener('click', ()=> setZoom((+localStorage.getItem(Z_KEY)||1)-0.1));
+      document.getElementById('zoomUp').addEventListener('click',   ()=> setZoom((+localStorage.getItem(Z_KEY)||1)+0.1));
       setZoom(+localStorage.getItem(Z_KEY)||1);
     })();
   </script>
@@ -240,10 +219,6 @@
         appId: "1:954696683994:web:21a84298a94648ff0230e3"
       };
 
-      // DOM helpers
-      function $(id){ return document.getElementById(id); }
-      function setStatus(t){ $('statusBar').textContent = 'Status: ' + t; }
-
       // Guard if firebase failed to load
       if (!window.firebase || !firebase.initializeApp){
         return window.__showFatal('Firebase libraries failed to load.');
@@ -254,526 +229,416 @@
       var db = firebase.firestore();
       var auth = firebase.auth();
 
+      // DOM helpers
+      function $(id){ return document.getElementById(id); }
+      function setStatus(t){ $('statusBar').textContent='Status: '+t; }
+      function urlRoot(){ return location.origin + '/'; }
+
+      // Elements
+      var eventIdInput=$('eventId'), eventPill=$('eventPill'), setBtn=$('setEventBtn');
+      var broadcastEl=$('broadcastActive'), lockEventEl=$('lockEvent'), eventNote=$('eventNote');
+
+      var singerNameInput=$('singerName'), addSingerBtn=$('addSingerBtn'), addSingerStatus=$('addSingerStatus');
+      var showHiddenEl=$('showHidden'), singerListEl=$('singerList'), singerReadNote=$('singerReadNote');
+
+      var nowPerfLabel=$('nowPerfLabel'), perfStatus=$('perfStatus'), countdownEl=$('countdown');
+      var qrImg=$('qrImg');
+
+      var openVote=$('openVote'), openScreen=$('openScreen'), openBoard=$('openBoard');
+
       // Auth (anon)
-      auth.signInAnonymously().catch(function(e){ setStatus('Auth error: ' + (e && e.message || e)); });
+      auth.signInAnonymously().catch(function(e){ setStatus('Auth error: ' + ((e&&e.message)||e)); });
 
       // State
       var LS_EVENT='eyek_last_event';
-      var STATE = { currentSingerId:null, currentSingerName:null, performanceId:null, performanceCloseAt:null, performanceStatus:'' };
+      var STATE={ currentSingerId:null, currentSingerName:null, performanceId:null, performanceCloseAt:null, performanceStatus:'' };
       var unsubSingers=null, unsubState=null, unsubPerf=null;
       var countdownTimer=null, autoCloseTimer=null;
-      var perfOutcomeCache = {}; // perfId -> outcome
-      var cachedSingers = [];
-
-      // Elements
-      var eventIdInput = $('eventId');
-      var eventPill    = $('eventPill');
-      var broadcastEl  = $('broadcastActive');
-      var lockEventEl  = $('lockEvent');
-      var eventNote    = $('eventNote');
-
-      var nowPerfLabel = $('nowPerfLabel');
-      var perfStatus   = $('perfStatus');
-      var countdownEl  = $('countdown');
-
-      var btnAnnounce  = $('btnAnnounce');
-      var btnVoteNow   = $('btnVoteNow');
-      var btnExtend15  = $('btnExtend15');
-      var btnEndNow    = $('btnEndNow');
-
-      var hostVoteEncore  = $('hostVoteEncore');
-      var hostVoteAnother = $('hostVoteAnother');
-      var hostVoteMaybe   = $('hostVoteMaybe');
-
-      var qrImg         = $('qrImg');
-      var perfVoteUrlEl = $('perfVoteUrl');
-      var qrNote        = $('qrNote');
-      var copyPerfVoteUrl = $('copyPerfVoteUrl');
-      var openQrInNewTab  = $('openQrInNewTab');
-
-      var openScreen = $('openScreen');
-      var openBoard  = $('openBoard');
-      var copyEventVoteUrl = $('copyEventVoteUrl');
-
-      var singerNameInput = $('singerName');
-      var addSingerBtn    = $('addSingerBtn');
-      var addSingerStatus = $('addSingerStatus');
-      var showHiddenEl    = $('showHidden');
-      var singerListEl    = $('singerList');
-      var singerReadNote  = $('singerReadNote');
-
-      // QR helpers
-      function urlRoot(){ return location.origin + '/'; }
-      function qrProvider1(d){ return 'https://api.qrserver.com/v1/create-qr-code/?size=700x700&data=' + encodeURIComponent(d); }
-      function qrProvider2(d){ return 'https://chart.googleapis.com/chart?cht=qr&chs=600x600&chl=' + encodeURIComponent(d); }
-      function setQrImageForUrl(url){
-        var tried=false;
-        qrImg.onerror = function(){
-          if (!tried){ tried=true; qrImg.src = qrProvider2(url); qrNote.textContent='Primary QR blocked; using fallback.'; }
-          else { qrImg.alt='QR unavailable'; qrNote.textContent='Both QR providers blocked.'; }
-        };
-        qrImg.src = qrProvider1(url);
-      }
-
-      function getDeviceId(){
-        var KEY='eyek_device_id';
-        var id = localStorage.getItem(KEY);
-        if (!id){
-          var arr = new Uint8Array(16); crypto.getRandomValues(arr);
-          id = Array.prototype.map.call(arr, function(b){ return b.toString(16).padStart(2,'0'); }).join('');
-          localStorage.setItem(KEY, id);
-        }
-        return id;
-      }
-      var DEVICE_ID = getDeviceId();
+      var perfOutcomeCache={}; // perfId -> outcome
+      var cachedSingers=[];
 
       // Prompt once for event if missing
       (function(){
-        var u = new URL(location.href);
-        var q = u.searchParams.get('eventId');
-        var mem = localStorage.getItem(LS_EVENT);
-        if (!q && !mem){
-          var typed = (prompt('Enter event name:') || '').trim();
-          if (typed){
-            u.searchParams.set('eventId', typed);
-            history.replaceState({}, '', u.toString());
-            localStorage.setItem(LS_EVENT, typed);
-          }
+        var u=new URL(location.href), q=u.searchParams.get('eventId'), mem=localStorage.getItem(LS_EVENT);
+        if(!q && !mem){
+          var typed=(prompt('Enter event name:')||'').trim();
+          if(typed){ u.searchParams.set('eventId',typed); history.replaceState({},'',u.toString()); localStorage.setItem(LS_EVENT,typed); }
         }
       })();
 
-      // Toggles restore
-      broadcastEl.checked = localStorage.getItem('eyek_broadcast_event')==='1';
-      lockEventEl.checked = localStorage.getItem('eyek_lock_event')==='1';
-      if (lockEventEl.checked) eventNote.textContent = 'Event locked — switching disabled.';
+      // Restore toggles
+      broadcastEl.checked=localStorage.getItem('eyek_broadcast_event')==='1';
+      lockEventEl.checked=localStorage.getItem('eyek_lock_event')==='1';
+      syncSetBtnDisabled(); if(lockEventEl.checked) eventNote.textContent='Event locked — switching disabled.';
 
       // Start event
-      var START_EVENT = (new URL(location.href)).searchParams.get('eventId') || localStorage.getItem(LS_EVENT) || 'default';
-      eventIdInput.value = START_EVENT;
+      var START_EVENT=(new URL(location.href)).searchParams.get('eventId') || localStorage.getItem(LS_EVENT) || 'default';
+      eventIdInput.value=START_EVENT;
       applyEvent(START_EVENT);
 
       // Listeners
-      var setBtn = $('setEventBtn');
       setBtn.addEventListener('click', onClickSetEvent);
-      eventIdInput.addEventListener('keydown', function(e){ if (e.key === 'Enter') onClickSetEvent(); });
-
-      function syncSetBtnDisabled(){ setBtn.disabled = lockEventEl.checked; }
-      syncSetBtnDisabled();
+      eventIdInput.addEventListener('keydown', function(e){ if(e.key==='Enter') onClickSetEvent(); });
       lockEventEl.addEventListener('change', function(){
-        localStorage.setItem('eyek_lock_event', lockEventEl.checked ? '1':'0');
-        eventNote.textContent = lockEventEl.checked ? 'Event locked — switching disabled.' : '';
+        localStorage.setItem('eyek_lock_event',lockEventEl.checked?'1':'0');
+        eventNote.textContent=lockEventEl.checked?'Event locked — switching disabled.':'';
         syncSetBtnDisabled();
       });
-
       broadcastEl.addEventListener('change', function(){
-        localStorage.setItem('eyek_broadcast_event', broadcastEl.checked ? '1':'0');
-        if (broadcastEl.checked) broadcastActiveEvent(getCurrentEventId());
+        localStorage.setItem('eyek_broadcast_event',broadcastEl.checked?'1':'0');
+        if(broadcastEl.checked) broadcastActiveEvent(getCurrentEventId());
       });
-
-      openScreen.addEventListener('click', function(){ window.open(urlRoot()+'screen/index.html?eventId='+encodeURIComponent(getCurrentEventId()), '_blank', 'noopener'); });
-      openBoard .addEventListener('click', function(){ window.open(urlRoot()+'board/index.html?eventId='+encodeURIComponent(getCurrentEventId()),  '_blank', 'noopener'); });
-      copyEventVoteUrl.addEventListener('click', function(){ navigator.clipboard.writeText(urlRoot()+'vote/index.html?eventId='+encodeURIComponent(getCurrentEventId())).then(function(){ setStatus('Event Vote URL copied.'); }); });
 
       addSingerBtn.addEventListener('click', addSinger);
-      singerNameInput.addEventListener('keydown', function(e){ if (e.key === 'Enter') addSinger(); });
+      singerNameInput.addEventListener('keydown', function(e){ if(e.key==='Enter') addSinger(); });
 
-      btnAnnounce.addEventListener('click', announceSinger);
-      btnVoteNow.addEventListener('click', function(){ openVoting(30); });
-      btnExtend15.addEventListener('click', function(){ extendVoting(15); });
-      btnEndNow.addEventListener('click', endVotingNow);
+      $('btnVoteNow').addEventListener('click', function(){ openVoting(30); });
+      $('btnExtend15').addEventListener('click', function(){ extendVoting(15); });
+      $('btnEndNow').addEventListener('click', endVotingNow);
 
-      hostVoteEncore .addEventListener('click', function(){ hostCastVote('encore'); });
-      hostVoteAnother.addEventListener('click', function(){ hostCastVote('another'); });
-      hostVoteMaybe  .addEventListener('click', function(){ hostCastVote('maybe'); });
+      $('hostVoteEncore').addEventListener('click', function(){ hostCastVote('encore'); });
+      $('hostVoteAnother').addEventListener('click', function(){ hostCastVote('another'); });
+      $('hostVoteMaybe').addEventListener('click', function(){ hostCastVote('maybe'); });
 
-      copyPerfVoteUrl.addEventListener('click', function(){
-        var url = (perfVoteUrlEl.textContent||'').trim();
-        if (!url || url==='—') return setStatus('No performance.');
-        navigator.clipboard.writeText(url).then(function(){ setStatus('Performance Vote URL copied.'); });
+      showHiddenEl.addEventListener('change', function(){ renderSingerList(cachedSingers); });
+
+      openVote.addEventListener('click', function(){
+        var eid=getCurrentEventId();
+        var base=urlRoot()+'vote/index.html?eventId='+encodeURIComponent(eid);
+        // If a performance exists, include it so you can test quickly
+        if(STATE.performanceId) base+='&performanceId='+encodeURIComponent(STATE.performanceId);
+        window.open(base,'_blank','noopener');
       });
-      openQrInNewTab.addEventListener('click', function(){
-        var url = (perfVoteUrlEl.textContent||'').trim();
-        if (!url || url==='—') return setStatus('No performance.');
-        window.open(qrProvider1(url), '_blank', 'noopener');
+      openScreen.addEventListener('click', function(){
+        window.open(urlRoot()+'screen/index.html?eventId='+encodeURIComponent(getCurrentEventId()),'_blank','noopener');
+      });
+      openBoard.addEventListener('click', function(){
+        window.open(urlRoot()+'board/index.html?eventId='+encodeURIComponent(getCurrentEventId()),'_blank','noopener');
       });
 
-      // Helpers
+      function syncSetBtnDisabled(){ setBtn.disabled = !!lockEventEl.checked; }
       function getCurrentEventId(){
-        var u = new URL(window.location.href);
-        var q = u.searchParams.get('eventId');
-        if (q && q.trim()) return q.trim();
-        var mem = localStorage.getItem(LS_EVENT);
+        var u=new URL(window.location.href), q=u.searchParams.get('eventId');
+        if(q && q.trim()) return q.trim();
+        var mem=localStorage.getItem(LS_EVENT);
         return (mem && mem.trim()) ? mem.trim() : 'default';
       }
+
       function onClickSetEvent(){
-        var typed = (eventIdInput.value || '').trim();
-        var current = getCurrentEventId();
+        var typed=(eventIdInput.value||'').trim();
+        var current=getCurrentEventId();
+        if(lockEventEl.checked) return setStatus('Event is locked. Uncheck “Lock Event” to switch.');
+        if(!typed) return setStatus('Enter an event name.');
+        if(typed===current) return setStatus('Already on “'+current+'”.');
 
-        if (lockEventEl.checked) return setStatus('Event is locked. Uncheck ‘Lock Event’ to switch.');
-        if (!typed) return setStatus('Enter an event name to set/switch.');
-        if (typed === current) return setStatus('Already on event “'+current+'”.');
-
-        var msg = 'Switch event from “'+current+'” to “'+typed+'”?\n\n• This will NOT delete any singers or votes.\n• Screen/Board will follow the new event if “Broadcast Active” is on.\n• New QR codes will target “'+typed+'”.';
-        var ok = true;
-        try { ok = window.confirm(msg); } catch(_){ ok = true; }
-        if (!ok) return setStatus('Event switch cancelled.');
-
+        var ok=true;
+        try{
+          ok=confirm('Switch event from “'+current+'” to “'+typed+'”?\n\nThis will NOT delete singers or votes. TVs with Broadcast ON will follow the new event.');
+        }catch(_){ ok=true; }
+        if(!ok) return setStatus('Event switch cancelled.');
         applyEvent(typed);
       }
+
       function applyEvent(eid){
-        var u = new URL(window.location.href);
-        u.searchParams.set('eventId', eid);
-        history.replaceState({}, '', u.toString());
-        try{ localStorage.setItem(LS_EVENT, eid); }catch(_){}
-        eventPill.textContent = 'Event: ' + eid;
+        var u=new URL(window.location.href); u.searchParams.set('eventId',eid); history.replaceState({},'',u.toString());
+        try{ localStorage.setItem(LS_EVENT,eid); }catch(_){}
+        eventPill.textContent='Event: '+eid;
 
         watchSingers(eid);
         watchState(eid);
 
-        if (broadcastEl.checked) broadcastActiveEvent(eid);
-        setStatus('Event set to: ' + eid);
-      }
-      function broadcastActiveEvent(eid){
-        db.collection('meta').doc('active').set({
-          eventId: eid,
-          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        }).then(function(){
-          eventNote.textContent = 'Broadcasting Active Event: ' + eid;
-        }).catch(function(e){
-          eventNote.textContent = 'Error broadcasting: ' + (e && e.message || e);
-        });
+        if(broadcastEl.checked) broadcastActiveEvent(eid);
+        setStatus('Event set to: '+eid);
       }
 
-      // QR for current performance
+      function broadcastActiveEvent(eid){
+        db.collection('meta').doc('active').set({
+          eventId:eid, updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }).then(function(){ eventNote.textContent='Broadcasting Active Event: '+eid; })
+          .catch(function(e){ eventNote.textContent='Error broadcasting: '+((e&&e.message)||e); });
+      }
+
+      // QR helpers (small)
+      function qrProvider1(d){ return 'https://api.qrserver.com/v1/create-qr-code/?size=280x280&data='+encodeURIComponent(d); }
+      function qrProvider2(d){ return 'https://chart.googleapis.com/chart?cht=qr&chs=240x240&chl='+encodeURIComponent(d); }
+      function setQrImageForUrl(url){
+        var tried=false;
+        qrImg.onerror=function(){ if(!tried){ tried=true; qrImg.src=qrProvider2(url); } else { qrImg.alt='QR unavailable'; } };
+        qrImg.src=qrProvider1(url);
+      }
       function updatePerfQr(){
-        var eid = getCurrentEventId();
-        if (!STATE.performanceId){
-          perfVoteUrlEl.textContent = '—';
-          qrImg.removeAttribute('src'); qrImg.alt='No performance'; qrNote.textContent='';
-          return;
-        }
-        var url = urlRoot() + 'vote/index.html?eventId='+encodeURIComponent(eid)+'&performanceId='+encodeURIComponent(STATE.performanceId);
-        perfVoteUrlEl.textContent = url;
+        if(!STATE.performanceId){ qrImg.removeAttribute('src'); qrImg.alt='No performance'; return; }
+        var url = urlRoot()+'vote/index.html?eventId='+encodeURIComponent(getCurrentEventId())+'&performanceId='+encodeURIComponent(STATE.performanceId);
         setQrImageForUrl(url);
-        qrNote.textContent = '';
       }
 
       // Countdown
       function renderCountdown(){
-        if (!STATE.performanceCloseAt || STATE.performanceStatus !== 'open'){ countdownEl.textContent = '—'; return; }
-        var ms = STATE.performanceCloseAt.toMillis() - Date.now();
-        var s = Math.max(0, Math.ceil(ms/1000));
-        countdownEl.textContent = s + 's';
+        if(!STATE.performanceCloseAt || STATE.performanceStatus!=='open'){ countdownEl.textContent='—'; return; }
+        var ms=STATE.performanceCloseAt.toMillis()-Date.now();
+        var s=Math.max(0,Math.ceil(ms/1000));
+        countdownEl.textContent=s+'s';
       }
-      function startCountdown(){ stopCountdown(); renderCountdown(); countdownTimer = setInterval(renderCountdown, 250); }
-      function stopCountdown(){ if (countdownTimer){ clearInterval(countdownTimer); countdownTimer=null; } countdownEl.textContent='—'; }
+      function startCountdown(){ stopCountdown(); renderCountdown(); countdownTimer=setInterval(renderCountdown,250); }
+      function stopCountdown(){ if(countdownTimer){ clearInterval(countownTimer); } countdownTimer=null; countdownEl.textContent='—'; }
       function armAutoClose(){
-        if (autoCloseTimer){ clearTimeout(autoCloseTimer); autoCloseTimer=null; }
-        if (!STATE.performanceCloseAt) return;
-        var ms = Math.max(0, STATE.performanceCloseAt.toMillis() - Date.now());
-        autoCloseTimer = setTimeout(function(){ endVotingNow(); }, ms + 300);
+        if(autoCloseTimer){ clearTimeout(autoCloseTimer); autoCloseTimer=null; }
+        if(!STATE.performanceCloseAt) return;
+        var ms=Math.max(0,STATE.performanceCloseAt.toMillis()-Date.now());
+        autoCloseTimer=setTimeout(function(){ endVotingNow(); }, ms+300);
       }
 
       // Watch performance
       function watchPerformance(eid, perfId){
-        if (unsubPerf){ unsubPerf(); unsubPerf=null; }
-        if (!perfId){
+        if(unsubPerf){ unsubPerf(); unsubPerf=null; }
+        if(!perfId){
           STATE.performanceId=null; STATE.performanceCloseAt=null; STATE.performanceStatus='';
-          stopCountdown(); updatePerfQr(); perfStatus.textContent = 'No performance yet';
+          stopCountdown(); updatePerfQr(); perfStatus.textContent='No performance yet';
           return;
         }
         unsubPerf = db.collection('events').doc(eid).collection('performances').doc(perfId).onSnapshot(function(snap){
-          if (!snap.exists){
-            STATE.performanceCloseAt=null; STATE.performanceStatus=''; stopCountdown(); perfStatus.textContent='(performance not found)';
-            return;
-          }
-          var d = snap.data() || {};
-          STATE.performanceId = snap.id;
-          STATE.performanceStatus = d.status || 'pending';
-          STATE.performanceCloseAt = d.closeAt || null;
+          if(!snap.exists){ STATE.performanceCloseAt=null; STATE.performanceStatus=''; stopCountdown(); perfStatus.textContent='(performance not found)'; return; }
+          var d=snap.data()||{};
+          STATE.performanceId=snap.id;
+          STATE.performanceStatus=d.status||'pending';
+          STATE.performanceCloseAt=d.closeAt||null;
           updatePerfQr();
-          if (STATE.performanceStatus === 'open'){ perfStatus.textContent='Voting OPEN'; startCountdown(); armAutoClose(); }
-          else if (STATE.performanceStatus === 'pending'){ perfStatus.textContent='Now singing (get ready)'; stopCountdown(); }
+          if(STATE.performanceStatus==='open'){ perfStatus.textContent='Voting OPEN'; startCountdown(); armAutoClose(); }
+          else if(STATE.performanceStatus==='pending'){ perfStatus.textContent='Now singing (get ready)'; stopCountdown(); }
           else { perfStatus.textContent='Voting CLOSED'; stopCountdown(); }
-        }, function(err){ setStatus('Performance listener error: ' + (err && err.message || err)); });
+        }, function(err){ setStatus('Performance listener error: '+((err&&err.message)||err)); });
       }
 
       // Watch state
       function watchState(eid){
-        if (unsubState){ unsubState(); unsubState=null; }
+        if(unsubState){ unsubState(); unsubState=null; }
         unsubState = db.collection('events').doc(eid).collection('state').doc('current').onSnapshot(function(snap){
-          if (!snap.exists){
-            STATE.currentSingerId=null; STATE.currentSingerName=null; nowPerfLabel.textContent='None'; watchPerformance(eid, null);
-            return;
-          }
-          var d = snap.data() || {};
-          STATE.currentSingerId = d.currentSingerId || null;
-          STATE.currentSingerName = d.currentSingerName || '(Unknown)';
-          nowPerfLabel.textContent = STATE.currentSingerName || 'None';
+          if(!snap.exists){ STATE.currentSingerId=null; STATE.currentSingerName=null; nowPerfLabel.textContent='None'; watchPerformance(eid,null); return; }
+          var d=snap.data()||{};
+          STATE.currentSingerId=d.currentSingerId||null;
+          STATE.currentSingerName=d.currentSingerName||'(Unknown)';
+          nowPerfLabel.textContent=STATE.currentSingerName||'None';
           watchPerformance(eid, d.performanceId || null);
-        }, function(err){ setStatus('State listener error: ' + (err && err.message || err)); });
+        }, function(err){ setStatus('State listener error: '+((err&&err.message)||err)); });
       }
 
-      // Singer list (hide 'maybe' unless toggled)
+      // Singers list
       function renderSingerList(items){
-        cachedSingers = items.slice();
-        singerListEl.innerHTML = '';
-        var showHidden = showHiddenEl.checked;
-        items.sort(function(a,b){ return a.name.localeCompare(b.name, undefined, {sensitivity:'base'}); });
-        var shown = 0;
+        cachedSingers=items.slice(); singerListEl.innerHTML='';
+        var showHidden=showHiddenEl.checked;
+        items.sort(function(a,b){ return a.name.localeCompare(b.name,undefined,{sensitivity:'base'}); });
 
-        function appendItem(it, outcome){
-          if (!showHidden && outcome === 'maybe') return;
-          var li = document.createElement('li');
-          var left = document.createElement('div');
-          left.innerHTML = '<div style="font-weight:900">'+ it.name +'</div><div class="hint">Latest: '+ (it.latestPerformanceId || '—') + (outcome ? ' ('+outcome+')' : '') +'</div>';
-          var right = document.createElement('div'); right.className='stack';
+        var shown=0;
+        function appendRow(it,outcome){
+          if(!showHidden && outcome==='maybe') return;
+          var li=document.createElement('li');
 
-          var b1 = document.createElement('button');
-          b1.className='btn good'; b1.textContent='Announce';
-          b1.addEventListener('click', function(){ announceExisting(it.id, it.name); });
+          var left=document.createElement('div');
+          left.innerHTML='<div style="font-weight:900">'+it.name+'</div><div class="hint">Latest: '+(it.latestPerformanceId||'—')+(outcome?(' ('+outcome+')'):'')+'</div>';
 
-          var b2 = document.createElement('button');
-          b2.className='btn warn'; b2.textContent='Vote now (30s)';
-          b2.addEventListener('click', function(){
-            if (STATE.currentSingerId !== it.id){
-              if (!confirm('Switch to “'+it.name+'” and open a 30s vote?')) return;
+          var right=document.createElement('div'); right.className='stack';
+          var bVote=document.createElement('button'); bVote.className='btn warn'; bVote.textContent='Vote now (30s)';
+          bVote.addEventListener('click', function(){
+            if(STATE.currentSingerId!==it.id){
+              if(!confirm('Switch to “'+it.name+'” and open a 30s vote?')) return;
             }
-            if (!STATE.performanceId || STATE.currentSingerId !== it.id){
-              announceExisting(it.id, it.name).then(function(){ openVoting(30); });
+            if(!STATE.performanceId || STATE.currentSingerId!==it.id){
+              announceExisting(it.id,it.name).then(function(){ openVoting(30); });
             }else{
               openVoting(30);
             }
           });
-          right.appendChild(b1); right.appendChild(b2);
+
+          right.appendChild(bVote);
           li.appendChild(left); li.appendChild(right);
           singerListEl.appendChild(li);
           shown++;
         }
 
-        var i, it, perfId, cached;
-        for (i=0;i<items.length;i++){
-          it = items[i];
-          perfId = it.latestPerformanceId || null;
-          cached = perfId ? perfOutcomeCache[perfId] : null;
-
-          if (!perfId){
-            appendItem(it, null);
-          }else if (cached !== undefined){
-            appendItem(it, cached);
-          }else{
-            // lazy-load
-            (function(itCopy, pid){
-              db.collection('events').doc(getCurrentEventId()).collection('performances').doc(pid).get()
-              .then(function(s){ var d=s.exists ? (s.data()||{}) : {}; perfOutcomeCache[pid] = d.outcome || null; renderSingerList(cachedSingers); })
-              .catch(function(){ perfOutcomeCache[pid] = null; renderSingerList(cachedSingers); });
-            })(it, perfId);
+        items.forEach(function(it){
+          var pid=it.latestPerformanceId||null;
+          var cached=pid ? perfOutcomeCache[pid] : undefined;
+          if(!pid){ appendRow(it,null); }
+          else if(cached!==undefined){ appendRow(it,cached); }
+          else{
+            db.collection('events').doc(getCurrentEventId()).collection('performances').doc(pid).get()
+            .then(function(s){ perfOutcomeCache[pid]=s.exists?(s.data().outcome||null):null; renderSingerList(cachedSingers); })
+            .catch(function(){ perfOutcomeCache[pid]=null; renderSingerList(cachedSingers); });
           }
-        }
+        });
 
-        if (!shown){
-          var li = document.createElement('li');
-          li.textContent = showHidden ? 'No singers.' : 'No singers (Maybe singers hidden).';
-          singerListEl.appendChild(li);
-        }
+        if(!shown){ var li=document.createElement('li'); li.textContent=showHidden?'No singers.':'No singers (Maybe singers hidden).'; singerListEl.appendChild(li); }
       }
 
       function loadSingersOnce(eid){
         db.collection('events').doc(eid).collection('singers').get()
-          .then(function(snap){
-            var items=[]; snap.forEach(function(d){ var x=d.data()||{}; items.push({id:d.id, name:x.name||'', latestPerformanceId:x.latestPerformanceId||null}); });
-            renderSingerList(items); singerReadNote.textContent='';
-          })
+          .then(function(snap){ var items=[]; snap.forEach(function(d){ var x=d.data()||{}; items.push({id:d.id, name:x.name||'', latestPerformanceId:x.latestPerformanceId||null}); }); renderSingerList(items); singerReadNote.textContent=''; })
           .catch(function(){ renderSingerList([]); singerReadNote.textContent='Could not read singers (check rules).'; });
       }
       function watchSingers(eid){
-        if (unsubSingers){ unsubSingers(); unsubSingers=null; }
+        if(unsubSingers){ unsubSingers(); unsubSingers=null; }
         loadSingersOnce(eid);
         unsubSingers = db.collection('events').doc(eid).collection('singers').onSnapshot(function(snap){
           var items=[]; snap.forEach(function(d){ var x=d.data()||{}; items.push({id:d.id, name:x.name||'', latestPerformanceId:x.latestPerformanceId||null}); });
           renderSingerList(items); singerReadNote.textContent='';
-        }, function(err){ singerReadNote.textContent='Realtime singers error: ' + (err && err.message || err); });
+        }, function(err){ singerReadNote.textContent='Realtime singers error: '+((err&&err.message)||err); });
       }
-      showHiddenEl.addEventListener('change', function(){ renderSingerList(cachedSingers); });
 
-      // Add singer (auto-announce)
+      // Add singer (auto-announce + show QR)
       function addSinger(){
-        var name = (singerNameInput.value||'').trim();
-        if (!name){ addSingerStatus.textContent='Please enter a singer name.'; return; }
-        var eid = getCurrentEventId();
-        addSingerBtn.disabled = true; addSingerStatus.textContent='Adding…';
+        var name=(singerNameInput.value||'').trim();
+        if(!name){ addSingerStatus.textContent='Please enter a singer name.'; return; }
+        var eid=getCurrentEventId();
+        addSingerBtn.disabled=true; addSingerStatus.textContent='Adding…';
         auth.signInAnonymously().catch(function(){}).finally(function(){
-          db.collection('events').doc(eid).collection('singers').add({ name:name, ts: Date.now() })
-            .then(function(ref){
-              singerNameInput.value = '';
-              addSingerStatus.textContent='Singer added. Announcing…';
-              announceExisting(ref.id, name).then(function(){ addSingerStatus.textContent='Singer added & announced.'; });
-            })
-            .catch(function(e){
-              var msg = (e && e.message) || String(e);
-              addSingerStatus.textContent = (String(msg).toLowerCase().indexOf('permission')>=0)
-                ? 'Permissions error adding singer (check rules).'
-                : ('Error adding singer: ' + msg);
-            })
-            .finally(function(){ addSingerBtn.disabled = false; });
+          db.collection('events').doc(eid).collection('singers').add({ name:name, ts:Date.now() })
+          .then(function(ref){
+            singerNameInput.value=''; addSingerStatus.textContent='Singer added. Announcing…';
+            announceExisting(ref.id,name).then(function(){ addSingerStatus.textContent='Singer added & announced.'; });
+          })
+          .catch(function(e){
+            var msg=(e&&e.message)||String(e);
+            addSingerStatus.textContent = String(msg).toLowerCase().indexOf('permission')>=0
+              ? 'Permissions error adding singer (check rules).'
+              : 'Error adding singer: '+msg;
+          })
+          .finally(function(){ addSingerBtn.disabled=false; });
         });
       }
 
-      // Flow functions
-      function announceExisting(singerId, singerName){
-        var eid = getCurrentEventId();
+      // Flow
+      function announceExisting(singerId,singerName){
+        var eid=getCurrentEventId();
         return db.collection('events').doc(eid).collection('performances').add({
-          singerId: singerId, singerName: singerName, status:'pending',
+          singerId:singerId, singerName:singerName, status:'pending',
           openAt: firebase.firestore.FieldValue.serverTimestamp()
         }).then(function(perfRef){
           return Promise.all([
             db.collection('events').doc(eid).collection('singers').doc(singerId).set({ latestPerformanceId: perfRef.id }, { merge:true }),
             db.collection('events').doc(eid).collection('state').doc('current').set({
-              currentSingerId: singerId, currentSingerName: singerName, performanceId: perfRef.id, ts: Date.now()
+              currentSingerId:singerId, currentSingerName:singerName, performanceId:perfRef.id, ts:Date.now()
             })
-          ]).then(function(){ setStatus('Announced: '+singerName+'. QR shown; voting not open yet.'); });
-        }).catch(function(e){
-          setStatus('Announce failed: ' + (e && e.message || e));
-        });
+          ]).then(function(){
+            setStatus('Announced: '+singerName+'. (QR shown; voting not open yet)');
+          });
+        }).catch(function(e){ setStatus('Announce failed: '+((e&&e.message)||e)); });
       }
-      function announceSinger(){
-        if (!STATE.currentSingerId) return setStatus('Pick or add a singer first.');
-        announceExisting(STATE.currentSingerId, STATE.currentSingerName || '(Unknown)');
-      }
+
       function openVoting(seconds){
-        seconds = seconds || 30;
-        var eid = getCurrentEventId();
-        var ensurePerf = Promise.resolve();
-        if (!STATE.performanceId){
-          ensurePerf = db.collection('events').doc(eid).collection('performances').add({
-            singerId: STATE.currentSingerId, singerName: STATE.currentSingerName, status:'pending',
+        seconds=seconds||30;
+        var eid=getCurrentEventId();
+        var ensure=Promise.resolve();
+        if(!STATE.performanceId){
+          ensure = db.collection('events').doc(eid).collection('performances').add({
+            singerId:STATE.currentSingerId, singerName:STATE.currentSingerName, status:'pending',
             openAt: firebase.firestore.FieldValue.serverTimestamp()
           }).then(function(perfRef){
             return Promise.all([
               db.collection('events').doc(eid).collection('singers').doc(STATE.currentSingerId).set({ latestPerformanceId: perfRef.id }, { merge:true }),
               db.collection('events').doc(eid).collection('state').doc('current').set({
-                currentSingerId: STATE.currentSingerId, currentSingerName: STATE.currentSingerName, performanceId: perfRef.id, ts: Date.now()
+                currentSingerId:STATE.currentSingerId, currentSingerName:STATE.currentSingerName, performanceId:perfRef.id, ts:Date.now()
               })
             ]);
           });
         }
-        ensurePerf.then(function(){
-          var closeAt = firebase.firestore.Timestamp.fromMillis(Date.now() + seconds*1000);
+        ensure.then(function(){
+          var closeAt=firebase.firestore.Timestamp.fromMillis(Date.now()+seconds*1000);
           return db.collection('events').doc(eid).collection('performances').doc(STATE.performanceId).update({
-            status:'open', openAt: firebase.firestore.FieldValue.serverTimestamp(), closeAt: closeAt
+            status:'open', openAt: firebase.firestore.FieldValue.serverTimestamp(), closeAt:closeAt
           }).then(function(){ setStatus('Voting opened for '+(STATE.currentSingerName||'')+' ('+seconds+'s).'); });
-        }).catch(function(e){
-          setStatus('Open voting error: ' + (e && e.message || e));
-        });
+        }).catch(function(e){ setStatus('Open voting error: '+((e&&e.message)||e)); });
       }
+
       function extendVoting(extra){
-        extra = extra || 15;
-        var eid = getCurrentEventId();
-        if (!STATE.performanceId) return setStatus('No performance.');
-        var base = Date.now();
-        if (STATE.performanceCloseAt) base = Math.max(base, STATE.performanceCloseAt.toMillis());
-        var newClose = new Date(base + extra*1000);
+        extra=extra||15;
+        if(!STATE.performanceId) return setStatus('No performance.');
+        var eid=getCurrentEventId();
+        var base=Date.now(); if(STATE.performanceCloseAt) base=Math.max(base, STATE.performanceCloseAt.toMillis());
+        var newClose=new Date(base + extra*1000);
         db.collection('events').doc(eid).collection('performances').doc(STATE.performanceId).update({
           closeAt: firebase.firestore.Timestamp.fromDate(newClose)
-        }).then(function(){ setStatus('Extended by '+extra+'s.'); })
-          .catch(function(e){ setStatus('Extend failed: ' + (e && e.message || e)); });
+        }).then(function(){ setStatus('Extended by '+extra+'s.'); }).catch(function(e){ setStatus('Extend failed: '+((e&&e.message)||e)); });
       }
-      function endVotingNow(){
-        var eid = getCurrentEventId();
-        if (!STATE.performanceId) return setStatus('No performance.');
-        db.collection('events').doc(eid).collection('performances').doc(STATE.performanceId).update({
-          status:'closed', closeAt: firebase.firestore.Timestamp.fromDate(new Date())
-        }).then(function(){ finalizePerformance(eid, STATE.performanceId); setStatus('Voting closed.'); })
-          .catch(function(e){ setStatus('End failed: ' + (e && e.message || e)); });
-      }
+
       function decideOutcome(e,a,m){
-        e|=0; a|=0; m|=0;
-        if (e>a && e>m) return 'encore';
-        if (a>e && a>m) return 'another';
-        if (m>e && m>a) return 'maybe';
-        if (a===m && a>e) return 'another';
-        if (e===a && e>m) return 'encore';
-        if (e===m && e>a) return 'another';
-        if (e===a && a===m && e>0) return 'another';
+        e|=0;a|=0;m|=0;
+        if(e>a && e>m) return 'encore';
+        if(a>e && a>m) return 'another';
+        if(m>e && m>a) return 'maybe';
+        if(a===m && a>e) return 'another';
+        if(e===a && e>m) return 'encore';
+        if(e===m && e>a) return 'another';
+        if(e===a && a===m && e>0) return 'another';
         return null;
       }
       function finalizePerformance(eid, perfId){
-        var q = db.collection('events').doc(eid).collection('votes').where('performanceId','==',perfId);
+        var q=db.collection('events').doc(eid).collection('votes').where('performanceId','==',perfId);
         q.get().then(function(snap){
           var e=0,a=0,m=0;
           snap.forEach(function(d){
-            var cat = String((d.data()||{}).category||'').toLowerCase();
-            if (cat==='encore') e++; else if (cat==='another') a++; else if (cat==='maybe') m++;
+            var cat=String((d.data()||{}).category||'').toLowerCase();
+            if(cat==='encore') e++; else if(cat==='another') a++; else if(cat==='maybe') m++;
           });
-          var outcome = decideOutcome(e,a,m);
+          var outcome=decideOutcome(e,a,m);
           return db.collection('events').doc(eid).collection('performances').doc(perfId).update({
-            status:'closed',
-            closeAt: firebase.firestore.Timestamp.fromDate(new Date()),
-            outcome: outcome,
-            counts: {encore:e, another:a, maybe:m}
-          }).then(function(){
-            perfOutcomeCache[perfId] = outcome || null;
-            renderSingerList(cachedSingers);
-          });
+            status:'closed', closeAt: firebase.firestore.Timestamp.fromDate(new Date()),
+            outcome:outcome, counts:{encore:e, another:a, maybe:m}
+          }).then(function(){ perfOutcomeCache[perfId]=outcome||null; renderSingerList(cachedSingers); });
         }).catch(function(){});
+      }
+      function endVotingNow(){
+        if(!STATE.performanceId) return setStatus('No performance.');
+        var eid=getCurrentEventId();
+        db.collection('events').doc(eid).collection('performances').doc(STATE.performanceId).update({
+          status:'closed', closeAt: firebase.firestore.Timestamp.fromDate(new Date())
+        }).then(function(){ finalizePerformance(eid, STATE.performanceId); setStatus('Voting closed.'); })
+          .catch(function(e){ setStatus('End failed: '+((e&&e.message)||e)); });
       }
 
       // Host vote
+      function getDeviceId(){
+        var KEY='eyek_device_id', id=localStorage.getItem(KEY);
+        if(!id){ var arr=new Uint8Array(16); crypto.getRandomValues(arr); id=Array.prototype.map.call(arr,b=>b.toString(16).padStart(2,'0')).join(''); localStorage.setItem(KEY,id); }
+        return id;
+      }
+      var DEVICE_ID=getDeviceId();
       function hostCastVote(category){
-        if (!STATE.performanceId) return setStatus('Open voting first.');
-        var eid = getCurrentEventId();
-        var docId = STATE.performanceId + '__' + DEVICE_ID;
+        if(!STATE.performanceId) return setStatus('Open voting first.');
+        var eid=getCurrentEventId(), docId=STATE.performanceId+'__'+DEVICE_ID;
         db.collection('events').doc(eid).collection('votes').doc(docId).set({
-          performanceId: STATE.performanceId,
-          singerId: STATE.currentSingerId,
-          singerName: STATE.currentSingerName || '(Unknown)',
-          category: category,
-          deviceId: DEVICE_ID,
-          ts: Date.now()
+          performanceId:STATE.performanceId, singerId:STATE.currentSingerId, singerName:STATE.currentSingerName||'(Unknown)',
+          category:category, deviceId:DEVICE_ID, ts:Date.now()
         }).then(function(){ setStatus('Host vote submitted.'); })
         .catch(function(e){
-          var msg = String((e && e.message) || e).toLowerCase();
-          if (msg.indexOf('permission')>=0 || msg.indexOf('already exists')>=0) setStatus('Already voted or window closed.');
+          var msg=String((e&&e.message)||e).toLowerCase();
+          if(msg.indexOf('permission')>=0 || msg.indexOf('already exists')>=0) setStatus('Already voted or window closed.');
           else setStatus('Error submitting vote.');
         });
       }
 
-      // Wire host vote buttons to function
-      window.hostCastVote = hostCastVote;
+      // Expose a couple for debugging if needed
+      window.hostCastVote=hostCastVote;
 
-      // Watchers
+      // Realtime wiring
       function watchSingers(eid){
-        if (unsubSingers){ unsubSingers(); unsubSingers=null; }
+        if(unsubSingers){ unsubSingers(); unsubSingers=null; }
         loadSingersOnce(eid);
         unsubSingers = db.collection('events').doc(eid).collection('singers').onSnapshot(function(snap){
           var items=[]; snap.forEach(function(d){ var x=d.data()||{}; items.push({id:d.id, name:x.name||'', latestPerformanceId:x.latestPerformanceId||null}); });
           renderSingerList(items); singerReadNote.textContent='';
-        }, function(err){ singerReadNote.textContent = 'Realtime singers error: ' + (err && err.message || err); });
+        }, function(err){ singerReadNote.textContent='Realtime singers error: '+((err&&err.message)||err); });
       }
       function watchState(eid){
-        if (unsubState){ unsubState(); unsubState=null; }
+        if(unsubState){ unsubState(); unsubState=null; }
         unsubState = db.collection('events').doc(eid).collection('state').doc('current').onSnapshot(function(snap){
-          if (!snap.exists){
-            STATE.currentSingerId=null; STATE.currentSingerName=null; nowPerfLabel.textContent='None'; watchPerformance(eid, null); return;
-          }
-          var d = snap.data()||{};
-          STATE.currentSingerId = d.currentSingerId || null;
-          STATE.currentSingerName = d.currentSingerName || '(Unknown)';
-          nowPerfLabel.textContent = STATE.currentSingerName || 'None';
+          if(!snap.exists){ STATE.currentSingerId=null; STATE.currentSingerName=null; nowPerfLabel.textContent='None'; watchPerformance(eid,null); return; }
+          var d=snap.data()||{};
+          STATE.currentSingerId=d.currentSingerId||null;
+          STATE.currentSingerName=d.currentSingerName||'(Unknown)';
+          nowPerfLabel.textContent=STATE.currentSingerName||'None';
           watchPerformance(eid, d.performanceId || null);
-        }, function(err){ setStatus('State listener error: ' + (err && err.message || err)); });
+        }, function(err){ setStatus('State listener error: '+((err&&err.message)||err)); });
       }
-
-      // Expose a couple for inline buttons (not strictly needed)
-      window.openVoting = openVoting;
-      window.endVotingNow = endVotingNow;
-      window.extendVoting = extendVoting;
-      window.announceSinger = announceSinger;
-
-      // Event handlers used above need rendering helpers too
-      function updatePerfQr(){ /* already defined above */ }
-
-      // Reuse earlier functions in button handlers
     })();
   </script>
 </body>
