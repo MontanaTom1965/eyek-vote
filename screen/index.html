@@ -7,65 +7,136 @@
   <meta http-equiv="Cache-Control" content="no-store" />
   <style>
     :root{
-      --bg:#070b12; --card:#0e162b; --border:#253659; --text:#fff; --muted:#c9d3ea;
-      --encore:#22c55e; --another:#f59e0b; --maybe:#ef4444; --accent:#7bc4ff;
+      /* Brand purple theme */
+      --bg:#2F0658;            /* main background */
+      --card:#401073;          /* panels/cards */
+      --border:#7E3CC0;        /* borders & outlines */
+      --text:#ffffff;          /* primary text */
+      --muted:#E3D6F4;         /* secondary text */
+      --accent:#D9B6FF;        /* subtle accent */
+
+      /* Category colors (kept for meaning) */
+      --encore:#22c55e; 
+      --another:#f59e0b; 
+      --maybe:#ef4444;
     }
+
     *{box-sizing:border-box}
     html,body{height:100%}
     body{
-      margin:0; background:var(--bg); color:var(--text);
+      margin:0; 
+      color:var(--text);
+      background:
+        radial-gradient(1200px 600px at 15% -10%, #6A2BB3 0%, rgba(106,43,179,0) 60%),
+        radial-gradient(1000px 520px at 85% -10%, #4E1E8E 0%, rgba(78,30,142,0) 55%),
+        var(--bg);
       font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu;
+      font-size: clamp(18px, 2.2vw, 26px); /* TV size */
     }
-    .wrap{max-width:1400px; margin:0 auto; padding:20px}
-    header{display:flex; align-items:flex-end; justify-content:space-between; gap:12px; padding-bottom:8px; border-bottom:2px solid var(--border)}
-    h1{margin:0; font-size:2.2rem}
-    .pill{display:inline-block; border:2px solid var(--border); border-radius:999px; padding:.15em .6em; color:#cfe1ff; font-weight:800}
+    .wrap{max-width:1800px; margin:0 auto; padding:24px 24px 96px} /* bottom pad for banner space */
+
+    header{
+      display:flex; align-items:flex-end; justify-content:space-between; gap:16px;
+      padding-bottom:12px; border-bottom:2px solid var(--border)
+    }
+    h1{margin:0; font-size:clamp(2.2rem, 4.5vw, 4rem)}
+    .pill{
+      display:inline-block; border:2px solid var(--border); border-radius:999px;
+      padding:.2em .75em; color:#f5eaff; font-weight:900; background:rgba(127,60,192,.18)
+    }
     .sub{color:var(--muted); margin-top:6px}
-    .grid{display:grid; gap:18px; grid-template-columns:1fr}
-    .card{background:var(--card); border:2px solid var(--border); border-radius:16px; padding:16px}
+
+    .grid{display:grid; gap:22px; grid-template-columns:1fr}
+    .card{
+      background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02)) , var(--card);
+      border:2px solid var(--border); border-radius:18px; padding:20px;
+      box-shadow:0 12px 40px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.06);
+    }
 
     /* Now area with QR on the right */
-    .now{display:flex; align-items:center; justify-content:space-between; gap:24px; flex-wrap:wrap}
+    .now{display:flex; align-items:center; justify-content:space-between; gap:28px; flex-wrap:wrap}
     .leftNow .hint{color:var(--muted)}
-    .leftNow h2{margin:.1em 0; font-size:2rem}
-    .rightNow{display:flex; align-items:flex-end; gap:16px; flex-wrap:wrap}
-    .statusBadge{font-weight:900; padding:.25em .6em; border-radius:10px; border:2px solid var(--border); color:#cfe1ff}
-    .statusOpen{border-color:#1a6bff; background:#0b1d42}
-    .statusPending{border-color:#7c879e; background:#101a2c}
-    .statusClosed{border-color:#7a3a3a; background:#2a1010}
-    .countdown{font-size:1.1rem; font-weight:900; text-align:right}
-    .qr{width:160px; height:160px; object-fit:contain; border-radius:12px; border:2px solid var(--border); background:#0a1326}
+    .leftNow h2{margin:.1em 0; font-size:clamp(1.8rem, 3.6vw, 3rem)}
+    .rightNow{display:flex; align-items:flex-end; gap:18px; flex-wrap:wrap}
+    .statusBadge{
+      font-weight:900; padding:.35em .8em; border-radius:12px; border:2px solid var(--border);
+      color:#f3eaff; background:rgba(127,60,192,.18)
+    }
+    .statusOpen{border-color:#7ab1ff; background:rgba(122,177,255,.18)}
+    .statusPending{border-color:#9c84c9}
+    .statusClosed{border-color:#c77aa1; background:rgba(199,122,161,.18)}
+    .countdown{font-size:1.2rem; font-weight:900; text-align:right}
+    .qr{
+      width:260px; height:260px; object-fit:contain; border-radius:14px; 
+      border:2px solid var(--border); background:rgba(0,0,0,.15)
+    }
 
     /* Bars */
-    .bars{display:grid; gap:14px; margin-top:8px}
-    .row{display:flex; gap:12px; align-items:center}
-    .label{min-width:200px; font-weight:900; font-size:1.35rem}
-    .barWrap{flex:1; height:48px; border:2px solid var(--border); border-radius:12px; overflow:hidden; background:#0a1326}
+    .bars{display:grid; gap:16px; margin-top:10px}
+    .row{display:flex; gap:14px; align-items:center}
+    .label{min-width:260px; font-weight:900; font-size:clamp(1.4rem, 2.8vw, 2rem)}
+    .barWrap{
+      flex:1; height:60px; border:2px solid var(--border); border-radius:14px; overflow:hidden;
+      background:rgba(0,0,0,.18)
+    }
     .bar{height:100%; width:0%; transition:width .35s ease}
     .bar.enc{background:linear-gradient(90deg, #1ea854, #22c55e)}
     .bar.ano{background:linear-gradient(90deg, #d08a0a, #f59e0b)}
     .bar.may{background:linear-gradient(90deg, #cc2a2a, #ef4444)}
-    .val{min-width:120px; text-align:right; font-weight:900; font-size:1.15rem}
+    .val{min-width:140px; text-align:right; font-weight:900; font-size:1.2rem}
 
-    /* “flash” when a new vote comes in */
+    /* flash on new vote */
     @keyframes flashPulse { 0%{filter:brightness(1)} 40%{filter:brightness(1.8)} 100%{filter:brightness(1)} }
     .flash{ animation: flashPulse .45s ease }
 
-    .totals{margin-top:8px; color:var(--muted); font-weight:700}
-    .winner{display:inline-block; margin-top:8px; padding:.25em .6em; border-radius:10px; border:2px solid var(--border); font-weight:900}
+    .totals{margin-top:10px; color:var(--muted); font-weight:800}
+    .winner{
+      display:inline-block; margin-top:10px; padding:.35em .8em; border-radius:12px; border:2px solid var(--border);
+      font-weight:900; background:rgba(255,255,255,.05)
+    }
     .win-enc{border-color:#3aa66a; background:#0f2b1c}
     .win-ano{border-color:#9c6a14; background:#2b1f08}
     .win-may{border-color:#a83b3b; background:#2b0f10}
+
+    /* Bottom flash banner */
+    .flashBanner{
+      position:fixed; left:0; right:0; bottom:0;
+      display:none; text-align:center;
+      padding:18px 24px;
+      font-weight:1000; letter-spacing:.3px;
+      font-size:clamp(1.6rem, 3vw, 2.4rem);
+      border-top:4px solid;
+      z-index:50;
+    }
+    @keyframes encPulse {
+      0%{filter:brightness(1); box-shadow:0 0 0 rgba(34,197,94,0)}
+      50%{filter:brightness(1.6); box-shadow:0 0 40px rgba(34,197,94,.35)}
+      100%{filter:brightness(1); box-shadow:0 0 0 rgba(34,197,94,0)}
+    }
+    @keyframes anoPulse { 0%{filter:brightness(1)} 50%{filter:brightness(1.25)} 100%{filter:brightness(1)} }
+    @keyframes mayPulse { 0%{filter:brightness(1)} 50%{filter:brightness(1.15)} 100%{filter:brightness(1)} }
+    .banner-enc{
+      background:linear-gradient(180deg, rgba(34,197,94,.25), rgba(34,197,94,.05));
+      border-color:#22c55e; color:#eafff3; animation: encPulse .55s ease-in-out infinite;
+    }
+    .banner-ano{
+      background:linear-gradient(180deg, rgba(245,158,11,.18), rgba(245,158,11,.04));
+      border-color:#f59e0b; color:#fff6e0; animation: anoPulse 1.1s ease-in-out infinite;
+    }
+    .banner-may{
+      background:linear-gradient(180deg, rgba(239,68,68,.22), rgba(239,68,68,.06));
+      border-color:#ef4444; color:#ffe8e8; animation: mayPulse 1.35s ease-in-out infinite;
+    }
   </style>
 </head>
 <body>
   <div class="wrap">
     <header>
-      <h1>Encore Karaoke <span class="pill" id="eventPill">Event: —</span></h1>
+      <h1>Encore Karaoke <span class="pill" id="eventPill">—</span></h1>
       <div class="sub" id="topNote">Screens auto-follow the active event when no <code>?eventId=</code> is provided.</div>
     </header>
 
-    <main class="grid" style="margin-top:16px">
+    <main class="grid" style="margin-top:18px">
       <!-- Now singing + QR -->
       <section class="card">
         <div class="now">
@@ -76,7 +147,7 @@
           </div>
           <div class="rightNow">
             <div style="text-align:right">
-              <div id="statusBadge" class="statusBadge statusPending">Getting ready…</div>
+              <div id="statusBadge" class="statusBadge">Getting ready…</div>
               <div class="countdown" id="countdown">—</div>
             </div>
             <img id="qrImg" class="qr" alt="Scan to vote" />
@@ -88,17 +159,17 @@
       <section class="card">
         <div class="bars">
           <div class="row">
-            <div class="label">Encore 🔥</div>
+            <div class="label">Encore!</div>
             <div class="barWrap" id="wrapEnc"><div class="bar enc" id="barEnc"></div></div>
             <div class="val" id="valEnc">0</div>
           </div>
           <div class="row">
-            <div class="label">Another ➕</div>
+            <div class="label">Another Shot!</div>
             <div class="barWrap" id="wrapAno"><div class="bar ano" id="barAno"></div></div>
             <div class="val" id="valAno">0</div>
           </div>
           <div class="row">
-            <div class="label">Maybe 💤</div>
+            <div class="label">Maybe Next Time!</div>
             <div class="barWrap" id="wrapMay"><div class="bar may" id="barMay"></div></div>
             <div class="val" id="valMay">0</div>
           </div>
@@ -108,6 +179,9 @@
       </section>
     </main>
   </div>
+
+  <!-- Bottom flash banner -->
+  <div id="flashBanner" class="flashBanner">—</div>
 
   <!-- Firebase (compat) -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -134,7 +208,8 @@
           barEnc=$('barEnc'), barAno=$('barAno'), barMay=$('barMay'),
           wrapEnc=$('wrapEnc'), wrapAno=$('wrapAno'), wrapMay=$('wrapMay'),
           valEnc=$('valEnc'), valAno=$('valAno'), valMay=$('valMay'),
-          totalsEl=$('totals'), winnerBadge=$('winnerBadge'), qrImg=$('qrImg');
+          totalsEl=$('totals'), winnerBadge=$('winnerBadge'), qrImg=$('qrImg'),
+          flashBanner=$('flashBanner');
 
       // --- State
       var unsubMeta=null, unsubState=null, unsubPerf=null, unsubVotes=null;
@@ -163,15 +238,17 @@
         valMay.textContent = fmt(COUNTS.maybe)  + (t?(' · '+pM+'%'):'');
         totalsEl.textContent = 'Total votes: ' + fmt(t);
 
-        // Live leader when open / final when closed
         if(CURRENT.status==='open'){
           var lead = decideOutcomeStrict(COUNTS.encore, COUNTS.another, COUNTS.maybe);
           showWinnerBadge(lead, true);
+          hideFlashBanner();
         }else if(CURRENT.status==='closed'){
           var final = decideOutcomeStrict(COUNTS.encore, COUNTS.another, COUNTS.maybe);
           showWinnerBadge(final, false);
+          showFlashBanner(final);
         }else{
           winnerBadge.style.display='none';
+          hideFlashBanner();
         }
       }
 
@@ -182,14 +259,36 @@
         PREV.encore = COUNTS.encore; PREV.another = COUNTS.another; PREV.maybe = COUNTS.maybe;
       }
 
+      function labelFromKind(kind){
+        if(kind==='encore') return 'Encore!';
+        if(kind==='another') return 'Another Shot!';
+        if(kind==='maybe') return 'Maybe Next Time!';
+        return '—';
+      }
+
       function showWinnerBadge(kind, live){
         if(!kind){ winnerBadge.style.display='none'; return; }
         winnerBadge.className='winner';
         if(kind==='encore') winnerBadge.classList.add('win-enc');
         if(kind==='another') winnerBadge.classList.add('win-ano');
         if(kind==='maybe') winnerBadge.classList.add('win-may');
-        winnerBadge.textContent = (live?'Leading: ':'Winner: ') + (kind==='encore'?'Encore':kind==='another'?'Another':'Maybe');
+        winnerBadge.textContent = (live?'Leading: ':'Winner: ') + labelFromKind(kind);
         winnerBadge.style.display='inline-block';
+      }
+
+      // Bottom flash banner control
+      function hideFlashBanner(){
+        flashBanner.style.display='none';
+        flashBanner.className='flashBanner';
+      }
+      function showFlashBanner(kind){
+        if(!kind){ hideFlashBanner(); return; }
+        flashBanner.className='flashBanner'; // reset
+        if(kind==='encore'){ flashBanner.classList.add('banner-enc'); }
+        else if(kind==='another'){ flashBanner.classList.add('banner-ano'); }
+        else if(kind==='maybe'){ flashBanner.classList.add('banner-may'); }
+        flashBanner.textContent = labelFromKind(kind);
+        flashBanner.style.display='block';
       }
 
       // Tie-break logic (your exact rules)
@@ -198,10 +297,10 @@
         if(e>a && e>m) return 'encore';
         if(a>e && a>m) return 'another';
         if(m>e && m>a) return 'maybe';
-        if(a===m && a>e) return 'another';     // another vs maybe -> another
-        if(e===a && e>m) return 'encore';      // encore vs another -> encore
-        if(e===m && e>a) return 'another';     // encore vs maybe -> another
-        if(e===a && a===m && e>0) return 'another'; // three-way tie -> another
+        if(a===m && a>e) return 'another';
+        if(e===a && e>m) return 'encore';
+        if(e===m && e>a) return 'another';
+        if(e===a && a===m && e>0) return 'another';
         return null;
       }
 
@@ -221,8 +320,8 @@
       function stopCountdown(){ if(countdownTimer){ clearInterval(countdownTimer); countdownTimer=null; } countdownEl.textContent='—'; }
 
       // QR: static providers (no library)
-      function qrProvider1(d){ return 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&data='+encodeURIComponent(d); }
-      function qrProvider2(d){ return 'https://chart.googleapis.com/chart?cht=qr&chs=220x220&chl='+encodeURIComponent(d); }
+      function qrProvider1(d){ return 'https://api.qrserver.com/v1/create-qr-code/?size=260x260&data='+encodeURIComponent(d); }
+      function qrProvider2(d){ return 'https://chart.googleapis.com/chart?cht=qr&chs=260x260&chl='+encodeURIComponent(d); }
       function setQrForUrl(url){
         if (!qrImg) return;
         if (!url){ qrImg.removeAttribute('src'); qrImg.alt='QR will appear when a performance is announced'; return; }
@@ -241,11 +340,11 @@
       // --- Wiring
       function followEvent(){
         var u=new URL(location.href), eid=u.searchParams.get('eventId');
-        if(eid){ eventPill.textContent='Event: '+eid; startForEvent(eid); }
+        if(eid){ eventPill.textContent=eid; startForEvent(eid); }
         else{
           unsubMeta = db.collection('meta').doc('active').onSnapshot(function(snap){
             var d=snap.data()||{}; var ev=d.eventId||'default';
-            eventPill.textContent='Event: '+ev;
+            eventPill.textContent=ev;
             startForEvent(ev);
           }, function(err){ console.error(err); });
         }
@@ -263,6 +362,7 @@
         perfMsg.textContent='Waiting for the host to start voting…';
         clearVotes();
         setQrForUrl(null);
+        hideFlashBanner();
 
         unsubState = db.collection('events').doc(eid).collection('state').doc('current')
           .onSnapshot(function(s){
@@ -280,13 +380,13 @@
         CURRENT.performanceId = perfId;
         clearVotes();
         if(!perfId){
-          setBadge('pending'); perfMsg.textContent='Waiting for the host to start voting…'; stopCountdown(); setQrForUrl(null); return;
+          setBadge('pending'); perfMsg.textContent='Waiting for the host to start voting…'; stopCountdown(); setQrForUrl(null); hideFlashBanner(); return;
         }
         updateQr(); // show QR immediately in pending/open/closed
 
         unsubPerf = db.collection('events').doc(CURRENT.eventId).collection('performances').doc(perfId)
           .onSnapshot(function(snap){
-            if(!snap.exists){ setBadge('pending'); perfMsg.textContent='(performance not found)'; stopCountdown(); return; }
+            if(!snap.exists){ setBadge('pending'); perfMsg.textContent='(performance not found)'; stopCountdown(); hideFlashBanner(); return; }
             var d = snap.data()||{};
             CURRENT.status = d.status || 'pending';
             CURRENT.closeAt = d.closeAt || null;
@@ -297,19 +397,21 @@
               if(CURRENT.closeAt) startCountdown(); else stopCountdown();
               if(!unsubVotes) watchVotes(perfId);
               updateQr();
+              hideFlashBanner();
             }else if(CURRENT.status==='closed'){
               setBadge('closed');
               perfMsg.textContent='Voting closed.';
               stopCountdown();
               updateQr();
-              // Show final winner using counts we have (or doc.outcome if set)
               var oc = d.outcome || decideOutcomeStrict(COUNTS.encore, COUNTS.another, COUNTS.maybe);
               showWinnerBadge(oc,false);
+              showFlashBanner(oc);
             }else{
               setBadge('pending');
               perfMsg.textContent='Get ready to vote…';
               stopCountdown();
               updateQr();
+              hideFlashBanner();
             }
           }, function(err){ console.error(err); });
       }
@@ -318,7 +420,6 @@
         unsubVotes = db.collection('events').doc(CURRENT.eventId).collection('votes')
           .where('performanceId','==', perfId)
           .onSnapshot(function(snap){
-            // recompute from scratch (simple + robust)
             COUNTS.encore=COUNTS.another=COUNTS.maybe=0;
             snap.forEach(function(d){
               var x=d.data()||{};
