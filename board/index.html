@@ -7,154 +7,148 @@
   <meta http-equiv="Cache-Control" content="no-store" />
   <style>
     :root{
-      --bg:#0b0b0f; --card:#141826; --accent:#7bc4ff; --border:#26304a;
-      --text:#f7f8fc; --muted:#b9c0d0; --encore:#4ade80; --another:#fbbf24;
+      --bg:#070b12; --card:#0e162b; --border:#253659; --text:#fff; --muted:#c9d3ea;
+      --encore:#22c55e; --another:#f59e0b;
     }
     *{box-sizing:border-box}
     html,body{height:100%}
-    body{margin:0; min-height:100vh; background:linear-gradient(180deg,#0b0b0f,#0e1220); color:var(--text); font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu;}
-    header{ padding:16px 18px; border-bottom:1px solid var(--border); background:rgba(0,0,0,.25) }
-    .title{ font-size:22px; font-weight:900 }
-    .muted{ color:var(--muted) }
-    main{ padding:24px; }
-    .grid{ display:grid; grid-template-columns:1fr 1fr; gap:24px; }
-    @media (max-width:1100px){ .grid{ grid-template-columns:1fr } }
-    .col{ background:var(--card); border:1px solid var(--border); border-radius:16px; padding:16px; }
-    .col h2{ margin:0 0 12px; font-size:20px }
-    ul{ list-style:none; margin:0; padding:0 }
-    li{ display:flex; justify-content:space-between; align-items:center; padding:12px 14px; border:1px solid var(--border); border-radius:12px; background:#0f1322; margin-bottom:10px; }
-    .pill{ display:inline-block; border:1px solid var(--border); border-radius:999px; padding:6px 10px; color:var(--muted); font-size:12px }
-    footer{ padding:8px 16px; color:var(--muted); font-size:12px; border-top:1px solid var(--border) }
+    body{margin:0; background:var(--bg); color:var(--text); font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu}
+    .wrap{max-width:1400px; margin:0 auto; padding:20px}
+    h1{margin:0 0 16px; font-size:2rem}
+    .grid{display:grid; gap:20px; grid-template-columns:1fr 1fr}
+    @media (max-width:1100px){ .grid{grid-template-columns:1fr} }
+    .col{background:var(--card); border:2px solid var(--border); border-radius:16px; padding:16px}
+    .col h2{margin:.1em 0 .5em}
+    ul{list-style:none; margin:0; padding:0}
+    li{padding:.6em .8em; border:2px solid var(--border); border-radius:12px; background:#0d1630; margin:.5em 0; font-weight:800}
+    .enc{border-color:#256f44; background:#0d2617}
+    .ano{border-color:#7a520c; background:#261a08}
+    .fatal{position:sticky; top:0; z-index:999; padding:.6em .8em; background:#b91c1c; color:#fff; font-weight:900; display:none}
+    .pill{display:inline-block; border:2px solid var(--border); border-radius:999px; padding:.15em .5em; color:#cfe1ff; font-weight:800}
+    .sub{color:var(--muted)}
   </style>
 </head>
 <body>
-  <header>
-    <div class="title">Encore Karaoke — Live Board</div>
-    <div class="muted" id="eventName">Event: —</div>
-  </header>
-
-  <main>
-    <div class="grid">
-      <section class="col">
-        <h2 style="color:var(--encore)">Encore Winners</h2>
+  <div id="fatal" class="fatal"></div>
+  <div class="wrap">
+    <h1>Encore Karaoke <span class="pill" id="eventPill">Event: —</span></h1>
+    <div class="sub" id="subNote">Showing latest status. Removed singers are hidden.</div>
+    <div class="grid" style="margin-top:16px">
+      <div class="col">
+        <h2>Encore</h2>
         <ul id="encoreList"></ul>
-      </section>
-      <section class="col">
-        <h2 style="color:var(--another)">Another Shot</h2>
+      </div>
+      <div class="col">
+        <h2>Another Shot</h2>
         <ul id="anotherList"></ul>
-      </section>
+      </div>
     </div>
-  </main>
+  </div>
 
-  <footer id="debug" class="muted"></footer>
+  <!-- Firebase (compat) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
-  <script type="module">
-    const FIREBASE_CONFIG = {
-      apiKey: "AIzaSyDGbC08WxruYIDPhZSlDlU-7Kzq-7mHENk",
-      authDomain: "eyek-vote.firebaseapp.com",
-      projectId: "eyek-vote",
-      storageBucket: "eyek-vote.firebasestorage.app",
-      messagingSenderId: "954696683994",
-      appId: "1:954696683994:web:21a84298a94648ff0230e3"
-    };
+  <script>
+    (function(){
+      var fatal = document.getElementById('fatal');
+      function die(msg){ fatal.textContent='Error: '+msg; fatal.style.display='block'; }
 
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getFirestore, doc, onSnapshot, collection, query, onSnapshot as onColSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+      var FIREBASE_CONFIG = {
+        apiKey: "AIzaSyDGbC08WxruYIDPhZSlDlU-7Kzq-7mHENk",
+        authDomain: "eyek-vote.firebaseapp.com",
+        projectId: "eyek-vote"
+      };
 
-    const app = initializeApp(FIREBASE_CONFIG);
-    const db  = getFirestore(app);
+      if(!firebase || !firebase.initializeApp){ return die('Firebase failed to load.'); }
+      firebase.initializeApp(FIREBASE_CONFIG);
+      var db=firebase.firestore();
 
-    const encoreList = document.getElementById("encoreList");
-    const anotherList= document.getElementById("anotherList");
-    const debug      = document.getElementById("debug");
-    const eventName  = document.getElementById("eventName");
+      var eventPill = document.getElementById('eventPill');
+      var encoreList = document.getElementById('encoreList');
+      var anotherList = document.getElementById('anotherList');
 
-    function resolveEventId(cb){
-      const u = new URL(location.href);
-      const explicit = u.searchParams.get("eventId");
-      if (explicit){ cb(explicit, null); return; }
-      const unsub = onSnapshot(doc(db,"meta","active"), (snap)=>{
-        if (!snap.exists()){ cb(null, unsub); return; }
-        const d = snap.data()||{};
-        cb(d.eventId || null, unsub);
-      });
-    }
-
-    function decideBucket(c){
-      const e = c.encore|0, a = c.another|0, m = c.maybe|0;
-      if (e===0 && a===0 && m===0) return null;
-      if (e>a && e>m) return "encore";
-      if (a>e && a>m) return "another";
-      if (m>e && m>a) return null; // "Maybe" not shown
-      if (a===m && a>e) return "another";
-      if (e===a && e>m) return "encore";
-      if (e===m && e>a) return "another";
-      if (e===a && a===m && e>0) return "another";
-      return null;
-    }
-
-    function renderList(el, arr){
-      el.innerHTML = "";
-      if (!arr.length){ const li=document.createElement("li"); li.textContent="—"; el.appendChild(li); return; }
-      for (const {name,count} of arr){
-        const li = document.createElement("li");
-        li.innerHTML = `<span>${name}</span><span class="pill">${count}</span>`;
-        el.appendChild(li);
+      // Choose event: ?eventId=… or meta/active
+      var u=new URL(location.href), eid=u.searchParams.get('eventId'), unsubMeta=null;
+      if (eid){ eventPill.textContent='Event: '+eid; start(eid); }
+      else {
+        unsubMeta = db.collection('meta').doc('active').onSnapshot(function(s){
+          var d=s.data()||{}; var ev=d.eventId||'default';
+          eventPill.textContent='Event: '+ev;
+          start(ev);
+        }, function(err){ die('meta/active: '+((err&&err.message)||err)); });
       }
-    }
 
-    function followEvent(eid){
-      if (!eid){ eventName.textContent = "Event: (no active)"; return; }
-      eventName.textContent = "Event: " + eid;
+      var unsubPerf=null, unsubSingers=null, singerRemovedMap={}; // singerId -> removed bool
 
-      let singers = {}; // singerId -> {name, latestPerformanceId}
-      onColSnapshot(query(collection(db,"events",eid,"singers")), (snap)=>{
-        singers = {};
-        snap.forEach(d=>{
-          const x = d.data()||{};
-          singers[d.id] = { name: x.name || "(Unknown)", latestPerformanceId: x.latestPerformanceId || null };
-        });
-        computeBoard(); // recompute when singers change
-      }, err=>{ debug.textContent = "Singers error: " + (err?.message||err); });
+      function start(eventId){
+        if(unsubPerf){ unsubPerf(); unsubPerf=null; }
+        if(unsubSingers){ unsubSingers(); unsubSingers=null; singerRemovedMap={}; }
 
-      // Aggregate votes by performanceId
-      let byPerf = {}; // perfId -> {encore:a, another:b, maybe:c}
-      onColSnapshot(query(collection(db,"events",eid,"votes")), (snap)=>{
-        byPerf = {};
-        snap.forEach(d=>{
-          const v = d.data()||{};
-          const perfId = v.performanceId;
-          const cat = (v.category||"").toLowerCase();
-          if (!perfId || !['encore','another','maybe'].includes(cat)) return;
-          byPerf[perfId] = byPerf[perfId] || {encore:0, another:0, maybe:0};
-          byPerf[perfId][cat] += 1;
-        });
-        computeBoard();
-      }, err=>{ debug.textContent = "Votes error: " + (err?.message||err); });
+        // Load + watch removed flags
+        unsubSingers = db.collection('events').doc(eventId).collection('singers').onSnapshot(function(snap){
+          snap.forEach(function(d){
+            var x=d.data()||{};
+            singerRemovedMap[d.id] = !!x.removed;
+          });
+          rebuild(); // refresh lists when flags change
+        }, function(err){ die('singers: '+((err&&err.message)||err)); });
 
-      function computeBoard(){
-        const encoreArr = [];
-        const anotherArr= [];
-        Object.entries(singers).forEach(([sid, info])=>{
-          const perf = info.latestPerformanceId;
-          if (!perf) return;
-          const counts = byPerf[perf] || {encore:0, another:0, maybe:0};
-          const bucket = decideBucket(counts);
-          if (!bucket) return;
-          const total = (counts.encore|0)+(counts.another|0)+(counts.maybe|0);
-          if (bucket === "encore") encoreArr.push({name: info.name, count: total});
-          if (bucket === "another") anotherArr.push({name: info.name, count: total});
-        });
-        // Sort by total desc, then name
-        encoreArr.sort((a,b)=>b.count-a.count || a.name.localeCompare(b.name));
-        anotherArr.sort((a,b)=>b.count-a.count || a.name.localeCompare(b.name));
+        // Listen to latest performances and compute each singer's latest outcome
+        unsubPerf = db.collection('events').doc(eventId).collection('performances')
+          .orderBy('closeAt','desc')
+          .onSnapshot(function(snap){
+            var latestBySinger = {};
+            snap.forEach(function(d){
+              var x=d.data()||{};
+              var sid=x.singerId; if(!sid) return;
+              // only first seen (latest closeAt due to desc order)
+              if (latestBySinger[sid] === undefined){
+                latestBySinger[sid] = (x.outcome || null);
+              }
+            });
+            rebuild(latestBySinger);
+          }, function(err){ die('performances: '+((err&&err.message)||err)); });
 
-        renderList(encoreList, encoreArr);
-        renderList(anotherList, anotherArr);
+        function rebuild(latestBySinger){
+          latestBySinger = latestBySinger || {};
+          // Build Encore / Another lists, skipping removed singers
+          var enc = [], ano = [];
+          Object.keys(latestBySinger).forEach(function(sid){
+            if (singerRemovedMap[sid]) return;         // hide removed
+            var outcome = latestBySinger[sid];
+            if (outcome === 'encore') enc.push(sid);
+            else if (outcome === 'another') ano.push(sid);
+          });
+
+          // We need names; fetch once
+          // (We already maintain singerRemovedMap; reuse same query)
+          db.collection('events').doc(eventId).collection('singers').get().then(function(snap){
+            var names={}; snap.forEach(function(d){ names[d.id]=(d.data()||{}).name||'(Unknown)'; });
+
+            encoreList.innerHTML = '';
+            anotherList.innerHTML = '';
+
+            enc.sort(function(a,b){ return (names[a]||'').localeCompare(names[b]||''); })
+               .forEach(function(sid){
+                 var li=document.createElement('li'); li.className='enc';
+                 li.textContent = names[sid] || '(Unknown)';
+                 encoreList.appendChild(li);
+               });
+
+            ano.sort(function(a,b){ return (names[a]||'').localeCompare(names[b]||''); })
+               .forEach(function(sid){
+                 var li=document.createElement('li'); li.className='ano';
+                 li.textContent = names[sid] || '(Unknown)';
+                 anotherList.appendChild(li);
+               });
+
+            if (!enc.length){ var li=document.createElement('li'); li.textContent='—'; encoreList.appendChild(li); }
+            if (!ano.length){ var li=document.createElement('li'); li.textContent='—'; anotherList.appendChild(li); }
+          });
+        }
       }
-    }
-
-    resolveEventId((eid, unsub)=>{ followEvent(eid); });
+    })();
   </script>
 </body>
 </html>
