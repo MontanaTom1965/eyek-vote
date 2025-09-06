@@ -2,45 +2,43 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Earn Your Encore Karaoke — Vote</title>
+  <title>Encore Karaoke — Vote</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta http-equiv="Cache-Control" content="no-store" />
   <style>
     :root{
-      --bg:#0b0b0f; --card:#141826; --encore:#4ade80; --another:#fbbf24; --maybe:#f87171;
+      --bg:#0b0b0f; --panel:#101424; --card:#141826; --accent:#7bc4ff;
       --text:#f7f8fc; --muted:#b9c0d0; --border:#26304a;
+      --encore:#4ade80; --another:#fbbf24; --maybe:#f87171;
     }
     *{box-sizing:border-box}
-    body{
-      margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Helvetica Neue,Arial,Noto Sans,Apple Color Emoji,Segoe UI Emoji;
-      background:linear-gradient(180deg,#0b0b0f 0%,#0e1220 100%); color:var(--text);
-      display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:20px;gap:20px;
-    }
-    h1{margin:0;font-size:28px;font-weight:800;text-align:center}
-    .performing{font-size:18px;color:var(--muted)}
-    .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:18px;width:100%;max-width:480px}
-    .buttons{display:flex;flex-direction:column;gap:16px;width:100%}
-    button{border:none;border-radius:12px;padding:18px;font-size:22px;font-weight:800;cursor:pointer;color:#fff;box-shadow:0 6px 18px rgba(0,0,0,.3);transition:transform .15s}
-    button:active{transform:scale(.97)}
-    .encore{background:var(--encore)}
-    .another{background:var(--another);color:#000}
-    .maybe{background:var(--maybe)}
-    button[disabled]{opacity:.5;cursor:not-allowed}
-    #status{font-size:18px;color:var(--muted);text-align:center;min-height:22px;margin-top:12px}
+    html,body{height:100%}
+    body{margin:0; min-height:100vh; display:grid; place-items:center; background:linear-gradient(180deg,#0b0b0f,#0e1220); color:var(--text); font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu;}
+    .card{ width:min(640px, 96vw); background:var(--card); border:1px solid var(--border); border-radius:16px; padding:20px; }
+    h1{ margin:0 0 4px }
+    .muted{ color:var(--muted) }
+    .stack{ display:flex; gap:10px; flex-wrap:wrap; margin-top:14px }
+    .btn{ padding:14px 16px; border:none; border-radius:14px; background:#0f1322; color:#fff; border:1px solid var(--border); font-weight:800; cursor:pointer; flex:1 }
+    .btn.encore{ background:var(--encore); color:#052; }
+    .btn.another{ background:var(--another); color:#221a00; }
+    .btn.maybe{ background:var(--maybe); }
+    .count{ font-weight:900 }
   </style>
 </head>
 <body>
-  <h1>Cast Your Vote</h1>
-  <div class="performing" id="performing">Getting the singer…</div>
+  <main class="card">
+    <h1 id="title">Vote for —</h1>
+    <div class="muted" id="eventLine">Event: —</div>
+    <div class="muted" style="margin-top:4px">Voting window: <span id="countdown" class="count">—</span></div>
 
-  <div class="card">
-    <div class="buttons">
-      <button class="encore"  id="btnEncore"  disabled>🔥 Encore!</button>
-      <button class="another" id="btnAnother" disabled>🤔 Another Shot</button>
-      <button class="maybe"   id="btnMaybe"   disabled>❌ Maybe Next Time</button>
+    <div class="stack" style="margin-top:16px">
+      <button class="btn encore"  id="voteEncore">Encore</button>
+      <button class="btn another" id="voteAnother">Another Shot</button>
+      <button class="btn maybe"   id="voteMaybe">Maybe Next Time</button>
     </div>
-    <div id="status"></div>
-  </div>
+
+    <div id="msg" class="muted" style="margin-top:14px"></div>
+  </main>
 
   <script type="module">
     const FIREBASE_CONFIG = {
@@ -53,21 +51,26 @@
     };
 
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getFirestore, doc, setDoc, onSnapshot, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const app = initializeApp(FIREBASE_CONFIG);
     const db  = getFirestore(app);
 
-    const qs = new URLSearchParams(location.search);
-    const EVENT_ID  = qs.get("eventId") || "default";
-    const SINGER_ID_PARAM = qs.get("singerId"); // optional
+    const title = document.getElementById("title");
+    const eventLine = document.getElementById("eventLine");
+    const countdownEl = document.getElementById("countdown");
+    const msg  = document.getElementById("msg");
+    const btnE = document.getElementById("voteEncore");
+    const btnA = document.getElementById("voteAnother");
+    const btnM = document.getElementById("voteMaybe");
 
-    const statusEl = document.getElementById("status");
-    const perfEl   = document.getElementById("performing");
-    const btnE = document.getElementById("btnEncore");
-    const btnA = document.getElementById("btnAnother");
-    const btnM = document.getElementById("btnMaybe");
-
+    function getParams(){
+      const u = new URL(location.href);
+      return {
+        eventId: u.searchParams.get("eventId") || "",
+        performanceId: u.searchParams.get("performanceId") || ""
+      };
+    }
     function getDeviceId(){
       const KEY = "eyek_device_id";
       let id = localStorage.getItem(KEY);
@@ -80,75 +83,74 @@
     }
     const DEVICE_ID = getDeviceId();
 
-    let currentSinger = { id:null, name:null };
+    let perf = null; // { singerId, singerName, status, closeAt }
+    let countdownTimer = null;
 
-    async function setSingerById(singerId){
-      if(!singerId){ setDisabled(true); perfEl.textContent="No singer selected."; return; }
-      let name = null;
-      try{
-        const s = await getDoc(doc(db,"events",EVENT_ID,"singers",singerId));
-        if (s.exists()){ name = (s.data()||{}).name || null; }
-      }catch(e){}
-      currentSinger = { id: singerId, name: name || "(Unknown Singer)" };
-      perfEl.textContent = "Now voting for: " + currentSinger.name;
-      setDisabled(false);
+    function renderCountdown(){
+      if (!perf || !perf.closeAt || perf.status !== "open"){ countdownEl.textContent = "—"; return; }
+      const ms = perf.closeAt.toMillis() - Date.now();
+      const s = Math.max(0, Math.ceil(ms/1000));
+      countdownEl.textContent = s + "s";
+    }
+    function startCountdown(){ stopCountdown(); renderCountdown(); countdownTimer = setInterval(renderCountdown, 250); }
+    function stopCountdown(){ if (countdownTimer){ clearInterval(countdownTimer); countdownTimer=null; } countdownEl.textContent = "—"; }
+
+    function setButtonsEnabled(on){
+      for (const b of [btnE, btnA, btnM]) b.disabled = !on;
     }
 
-    function followStateCurrent(){
-      onSnapshot(doc(db,"events",EVENT_ID,"state","current"), (snap)=>{
-        if (!snap.exists()){
-          setDisabled(true);
-          perfEl.textContent = "Waiting for the host to set the singer…";
-          return;
-        }
-        const d = snap.data()||{};
-        currentSinger = { id: d.currentSingerId || null, name: d.currentSingerName || "(Unknown Singer)" };
-        setDisabled(!currentSinger.id);
-        perfEl.textContent = currentSinger.id ? ("Now voting for: " + currentSinger.name) : "Waiting for the host…";
-      }, (err)=>{
-        statusEl.textContent = "Error: " + (err?.message || err);
-      });
-    }
+    async function init(){
+      const { eventId, performanceId } = getParams();
+      if (!eventId){ msg.textContent = "Missing event id."; setButtonsEnabled(false); return; }
+      eventLine.textContent = "Event: " + eventId;
 
-    function setDisabled(disabled){
-      btnE.disabled = disabled; btnA.disabled = disabled; btnM.disabled = disabled;
-    }
-
-    async function castVote(category){
-      if (!currentSinger.id){
-        statusEl.textContent = "Voting opens when the singer is set.";
+      if (!performanceId){
+        msg.textContent = "Waiting for host to open voting… (no performanceId)";
+        setButtonsEnabled(false);
+        // Optional: follow state/current to suggest refreshing
         return;
       }
-      const docId = `${currentSinger.id}__${DEVICE_ID}`;
-      const voteRef = doc(db,"events",EVENT_ID,"votes",docId);
-      statusEl.textContent = "Submitting your vote…";
-      try{
-        await setDoc(voteRef, {
-          singerId: currentSinger.id,
-          singerName: currentSinger.name,
-          category,
-          deviceId: DEVICE_ID,
-          ts: Date.now()
-        }, { merge:false });
-        statusEl.textContent = "✅ Vote submitted! (one per device per singer)";
-        setDisabled(true);
-      }catch(e){
-        const msg = (""+e?.message||"").toLowerCase();
-        if (msg.includes("permission") || msg.includes("already exists") || msg.includes("failed")){
-          statusEl.textContent = "You’ve already voted for this singer on this device.";
-        }else{
-          statusEl.textContent = "❌ Error submitting vote.";
+
+      const pref = doc(db,"events",eventId,"performances",performanceId);
+      onSnapshot(pref, (snap)=>{
+        if (!snap.exists()){
+          msg.textContent = "This vote is no longer available.";
+          setButtonsEnabled(false); stopCountdown(); return;
         }
+        const d = snap.data()||{};
+        perf = { singerId:d.singerId, singerName:d.singerName, status:d.status, closeAt:d.closeAt };
+        title.textContent = "Vote for " + (perf.singerName || "(Unknown)");
+        if (perf.status === "open"){ msg.textContent = ""; setButtonsEnabled(true); startCountdown(); }
+        else { msg.textContent = "Voting for " + (perf.singerName || "") + " is closed. Thanks for participating!"; setButtonsEnabled(false); stopCountdown(); }
+      }, err=>{ msg.textContent = "Error loading performance: " + (err?.message||err); setButtonsEnabled(false); });
+
+      btnE.addEventListener("click", ()=> cast("encore", eventId, performanceId));
+      btnA.addEventListener("click", ()=> cast("another", eventId, performanceId));
+      btnM.addEventListener("click", ()=> cast("maybe",  eventId, performanceId));
+    }
+
+    async function cast(category, eventId, performanceId){
+      if (!perf || perf.status !== "open"){ msg.textContent = "Voting is closed."; return; }
+      setButtonsEnabled(false);
+      const voteId = performanceId + "__" + DEVICE_ID;
+      const vref = doc(db,"events",eventId,"votes",voteId);
+      try{
+        await setDoc(vref, {
+          performanceId, singerId: perf.singerId, singerName: perf.singerName || "",
+          category, deviceId: DEVICE_ID, ts: Date.now()
+        }, { merge:false });
+        msg.textContent = "Thanks! You already voted for " + (perf.singerName||"") + ".";
+      }catch(e){
+        const m = (""+e?.message||"").toLowerCase();
+        if (m.includes("permission")) msg.textContent = "Voting is closed or you already voted for this performance.";
+        else if (m.includes("already exists")) msg.textContent = "You already voted for " + (perf.singerName||"") + ".";
+        else msg.textContent = "Could not record your vote. Please try again.";
+      }finally{
+        // keep buttons disabled to avoid double taps
       }
     }
 
-    btnE.addEventListener("click", ()=>castVote("encore"));
-    btnA.addEventListener("click", ()=>castVote("another"));
-    btnM.addEventListener("click", ()=>castVote("maybe"));
-
-    // Init: singerId param wins; otherwise follow host state/current
-    if (SINGER_ID_PARAM){ setSingerById(SINGER_ID_PARAM); }
-    else { followStateCurrent(); }
+    init();
   </script>
 </body>
 </html>
