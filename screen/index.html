@@ -2,66 +2,57 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Earn Your Encore Karaoke — Screen</title>
+  <title>Earn Your Encore Karaoke — Scan to Vote</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta http-equiv="Cache-Control" content="no-store" />
   <style>
     :root{
-      --bg:#0b0b0f;
-      --card:#141826;
-      --encore:#4ade80;
-      --another:#fbbf24;
-      --maybe:#f87171;
-      --text:#f7f8fc;
-      --muted:#b9c0d0;
-      --border:#26304a;
+      --bg:#0b0b0f; --panel:#101424; --card:#141826; --accent:#7bc4ff;
+      --text:#f7f8fc; --muted:#b9c0d0; --border:#26304a;
+      --encore:#4ade80; --another:#fbbf24; --maybe:#f87171;
     }
     *{box-sizing:border-box}
+    html,body{height:100%}
     body{
-      margin:0;
+      margin:0; min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center;
+      background:linear-gradient(180deg,#0b0b0f 0%,#0e1220 100%); color:var(--text);
       font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Helvetica Neue,Arial,Noto Sans;
-      background:linear-gradient(180deg,#0b0b0f 0%,#0e1220 100%);
-      color:var(--text);
-      display:flex;flex-direction:column;align-items:center;
-      min-height:100vh;
-      padding:20px;
+      padding:24px;
     }
-    h1{margin:0 0 20px 0;font-size:32px;text-align:center}
-    .grid{display:grid;gap:20px;grid-template-columns:repeat(3,1fr);width:100%;max-width:1200px}
-    .col{
-      background:var(--card);
-      border:1px solid var(--border);
-      border-radius:18px;
-      padding:16px;
-      min-height:240px;
-    }
-    .col h2{margin:0 0 12px;font-size:26px}
-    .encore h2{color:var(--encore)}
-    .another h2{color:var(--another)}
-    .maybe h2{color:var(--maybe)}
-    ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
-    li{background:rgba(255,255,255,.05);border:1px solid var(--border);padding:12px 14px;border-radius:12px;font-size:22px;display:flex;justify-content:space-between}
-    .counts{font-size:18px;color:var(--muted)}
-    #status{margin-top:20px;font-size:18px;color:var(--muted)}
+    header{position:fixed; top:0; left:0; right:0; padding:14px 18px; display:flex; justify-content:space-between; align-items:center;
+      background:rgba(20,24,38,.6); border-bottom:1px solid var(--border); backdrop-filter:blur(6px)}
+    .brand{display:flex; align-items:center; gap:12px; font-weight:800}
+    .brand img{width:40px; height:40px; border-radius:10px}
+    .pill{display:inline-block; border:1px solid var(--border); border-radius:999px; padding:6px 10px; color:var(--muted); font-size:12px}
+    .wrap{display:flex; flex-direction:column; align-items:center; gap:18px; margin-top:60px}
+    h1{margin:0; text-align:center; font-size:32px}
+    .name{font-size:22px; color:var(--muted)}
+    .card{background:var(--card); border:1px solid var(--border); border-radius:18px; padding:18px; box-shadow:0 10px 26px rgba(0,0,0,.35)}
+    canvas{display:block; width:min(80vw,520px); height:auto}
+    .url{font-size:16px; color:var(--muted); word-break:break-all; text-align:center; max-width:min(90vw,720px)}
+    .note{color:var(--muted); font-size:14px}
+    .err{color:#fca5a5; font-weight:600}
   </style>
+  <!-- Tiny QR library (global QRCode) -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 </head>
 <body>
-  <h1>Live Results</h1>
-  <div class="grid">
-    <div class="col encore">
-      <h2>Encore</h2>
-      <ul id="encoreList"></ul>
+  <header>
+    <div class="brand">
+      <img src="Earn Your Encore Karaoke - Icon.png" alt="EYEK" onerror="this.style.display='none'"/>
+      <div>Scan to Vote</div>
     </div>
-    <div class="col another">
-      <h2>Another Shot</h2>
-      <ul id="anotherList"></ul>
-    </div>
-    <div class="col maybe">
-      <h2>Maybe Next Time</h2>
-      <ul id="maybeList"></ul>
-    </div>
+    <div class="pill" id="eventPill">Event: —</div>
+  </header>
+
+  <div class="wrap">
+    <h1 id="headline">Vote for this singer</h1>
+    <div class="name" id="singerName">Waiting for singer…</div>
+    <div class="card"><canvas id="qrCanvas" width="1024" height="1024" aria-label="QR code to vote"></canvas></div>
+    <div class="url" id="voteUrl">—</div>
+    <div class="note">One vote per device per singer.</div>
+    <div class="err" id="status"></div>
   </div>
-  <div id="status">Connecting…</div>
 
   <script type="module">
     const FIREBASE_CONFIG = {
@@ -74,59 +65,73 @@
     };
 
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getFirestore, collection, onSnapshot, query } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getFirestore, doc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const app = initializeApp(FIREBASE_CONFIG);
     const db  = getFirestore(app);
 
-    function getEventIdFromURL() {
-      const u = new URL(window.location.href);
-      return u.searchParams.get("eventId") || "default";
+    const qs = new URLSearchParams(location.search);
+    const EVENT_ID  = qs.get("eventId") || "default";
+    const SINGER_ID_PARAM = qs.get("singerId"); // optional; if missing we use state/current
+
+    document.getElementById("eventPill").textContent = "Event: " + EVENT_ID;
+
+    const singerNameEl = document.getElementById("singerName");
+    const headlineEl   = document.getElementById("headline");
+    const statusEl     = document.getElementById("status");
+    const qrCanvas     = document.getElementById("qrCanvas");
+    const voteUrlEl    = document.getElementById("voteUrl");
+
+    const ROOT = location.origin + "/"; // e.g. https://vote.earnyourencorekaraoke.com/
+
+    async function showForSingerId(singerId){
+      if(!singerId){ setError("No singer selected."); return; }
+      // Get singer name (best-effort)
+      let name = null;
+      try{
+        const sdoc = await getDoc(doc(db,"events",EVENT_ID,"singers",singerId));
+        if (sdoc.exists()) name = (sdoc.data()||{}).name || null;
+      }catch(e){ /* non-fatal */ }
+      singerNameEl.textContent = name ? name : "(Unknown Singer)";
+      const url = ROOT + "vote/index.html?eventId=" + encodeURIComponent(EVENT_ID) + "&singerId=" + encodeURIComponent(singerId);
+      voteUrlEl.textContent = url;
+      drawQR(url);
     }
-    const EVENT_ID = getEventIdFromURL();
 
-    const encoreListEl = document.getElementById("encoreList");
-    const anotherListEl = document.getElementById("anotherList");
-    const maybeListEl = document.getElementById("maybeList");
-    const statusEl = document.getElementById("status");
-
-    onSnapshot(query(collection(db, "events", EVENT_ID, "votes")), (snap) => {
-      const tallies = {encore:{}, another:{}, maybe:{}};
-      snap.forEach(doc => {
-        const d = doc.data();
-        const name = d.singerName || "Anonymous";
-        const cat = (d.category||"").toLowerCase();
-        if(!["encore","another","maybe"].includes(cat)) return;
-        if(!tallies[cat][name]) tallies[cat][name] = 0;
-        tallies[cat][name]++;
-      });
-
-      renderList(encoreListEl, tallies.encore);
-      renderList(anotherListEl, tallies.another);
-      renderList(maybeListEl, tallies.maybe);
-
-      statusEl.textContent = `Votes loaded: ${snap.size}`;
-    });
-
-    function renderList(el, obj){
-      el.innerHTML = "";
-      const arr = Object.entries(obj);
-      if(!arr.length){
-        const li=document.createElement("li");
-        li.textContent="—";
-        el.appendChild(li);
-        return;
+    function drawQR(url){
+      statusEl.textContent = "";
+      try{
+        // Use global QRCode from the CDN script
+        window.QRCode.toCanvas(qrCanvas, url, { width: 1024, margin: 2 }, (err)=>{
+          if (err){ setError("QR error: " + (err?.message || err)); }
+        });
+      }catch(e){
+        setError("QR library failed to load.");
       }
-      arr.sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]));
-      for(const [name,count] of arr){
-        const li=document.createElement("li");
-        li.textContent=name;
-        const span=document.createElement("span");
-        span.className="counts";
-        span.textContent=`${count}`;
-        li.appendChild(span);
-        el.appendChild(li);
-      }
+    }
+
+    function setError(msg){
+      statusEl.textContent = msg || "";
+    }
+
+    if (SINGER_ID_PARAM){
+      // Explicit singer passed in
+      headlineEl.textContent = "Scan to vote for this singer";
+      showForSingerId(SINGER_ID_PARAM);
+    }else{
+      // Fall back to host-controlled "current" singer
+      headlineEl.textContent = "Scan to vote (Now Performing)";
+      onSnapshot(doc(db,"events",EVENT_ID,"state","current"), (snap)=>{
+        if (!snap.exists()){ singerNameEl.textContent = "Waiting for host…"; voteUrlEl.textContent = "—"; setError(""); return; }
+        const d = snap.data()||{};
+        const sid = d.currentSingerId || null;
+        const sname = d.currentSingerName || "(Unknown Singer)";
+        singerNameEl.textContent = sname;
+        if (!sid){ voteUrlEl.textContent="—"; setError("No current singer set."); return; }
+        const url = ROOT + "vote/index.html?eventId=" + encodeURIComponent(EVENT_ID) + "&singerId=" + encodeURIComponent(sid);
+        voteUrlEl.textContent = url;
+        drawQR(url);
+      }, (err)=> setError("Firestore error: " + (err?.message || err)));
     }
   </script>
 </body>
