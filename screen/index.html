@@ -30,7 +30,7 @@
     .qrWrap{ background:#0e1220; border:1px dashed var(--border); border-radius:14px;
              display:flex; align-items:center; justify-content:center; padding:16px; min-height:520px; }
     .qrWrap img{ width:100%; height:auto; max-width:720px; border-radius:10px }
-    .big{ font-size:36px; font-weight:900; line-height:1.1 }
+    .big{ font-size:40px; font-weight:900; line-height:1.1 }
     .eyebrow{ font-size:12px; color:var(--muted); letter-spacing:.06em; text-transform:uppercase }
     .pill{ display:inline-block; border:1px solid var(--border); border-radius:999px; padding:6px 10px; color:var(--muted); font-size:12px }
     .url{ font-family:ui-monospace,Menlo,Consolas,monospace; word-break:break-all }
@@ -39,6 +39,7 @@
     .btn.secondary{ background:#0f1322; color:#fff; border:1px solid var(--border) }
     .muted{ color:var(--muted) }
     .count{ font-weight:900 }
+    .state{ font-size:24px; font-weight:800; margin-top:10px }
     footer{ padding:8px 16px; color:var(--muted); font-size:12px; border-top:1px solid var(--border) }
   </style>
 </head>
@@ -54,13 +55,10 @@
       </div>
       <div>
         <div><span class="eyebrow">Event</span> <span class="pill" id="eventPill">—</span></div>
-        <div style="margin-top:10px"><span class="eyebrow">Now Voting For</span><div class="big" id="singerName">Waiting for host…</div></div>
+        <div style="margin-top:10px"><span class="eyebrow">Now singing</span><div class="big" id="singerName">Waiting for host…</div></div>
+        <div class="state" id="screenState">—</div>
         <div style="margin-top:10px"><span class="eyebrow">Vote URL</span><div class="url" id="voteUrl">—</div></div>
         <div style="margin-top:10px"><span class="eyebrow">Countdown</span> <span class="count" id="countdown">—</span></div>
-        <div class="stack" style="margin-top:12px">
-          <button class="btn" id="openVote">Open Vote Page</button>
-          <button class="btn secondary" id="openQrInNewTab">Open QR in New Tab</button>
-        </div>
         <div class="muted" id="note" style="margin-top:12px"></div>
       </div>
     </section>
@@ -89,11 +87,10 @@
     const singerName  = document.getElementById("singerName");
     const voteUrlEl   = document.getElementById("voteUrl");
     const qrImg       = document.getElementById("qrImg");
-    const openVoteBtn = document.getElementById("openVote");
-    const openQrBtn   = document.getElementById("openQrInNewTab");
     const note        = document.getElementById("note");
     const debug       = document.getElementById("debug");
     const countdownEl = document.getElementById("countdown");
+    const screenState = document.getElementById("screenState");
     let countdownTimer = null;
     let perfCloseAt = null;
     let perfStatus = "";
@@ -107,7 +104,7 @@
       let tried = false;
       qrImg.onerror = () => {
         if (!tried){ tried = true; qrImg.src = qrProvider2(url); note.textContent = "Primary QR blocked; using fallback."; }
-        else { qrImg.alt = "QR unavailable"; note.textContent = "Both QR providers blocked. Use “Open QR in New Tab”."; }
+        else { qrImg.alt = "QR unavailable"; note.textContent = "Both QR providers blocked."; }
       };
       qrImg.src = qrProvider1(url);
     }
@@ -127,13 +124,12 @@
     }
     function stopCountdown(){ if (countdownTimer){ clearInterval(countdownTimer); countdownTimer=null; } countdownEl.textContent = "—"; }
 
-    // Resolve eventId: URL param or /meta/active
     function resolveEventId(cb){
       const u = new URL(location.href);
       const explicit = u.searchParams.get("eventId");
       if (explicit){ cb(explicit, null); return; }
       const unsub = onSnapshot(doc(db,"meta","active"), (snap)=>{
-        if (!snap.exists()){ cb(null, unsub); debug.textContent = "No active event broadcast."; return; }
+        if (!snap.exists()){ cb(null, unsub); return; }
         const d = snap.data()||{};
         cb(d.eventId || null, unsub);
       }, err=>{ debug.textContent = "Active event error: " + (err?.message||err); });
@@ -151,7 +147,7 @@
       unsubState = onSnapshot(doc(db,"events",eventId,"state","current"), (snap)=>{
         if (!snap.exists()){
           singerName.textContent = "Waiting for host…";
-          voteUrlEl.textContent = "—"; qrImg.removeAttribute("src"); stopCountdown(); note.textContent = "";
+          voteUrlEl.textContent = "—"; qrImg.removeAttribute("src"); stopCountdown(); note.textContent = ""; screenState.textContent="—";
           return;
         }
         const d = snap.data()||{};
@@ -160,38 +156,29 @@
         singerName.textContent = label;
 
         if (!perfId){
-          voteUrlEl.textContent = "—"; qrImg.removeAttribute("src"); stopCountdown(); note.textContent = "Voting not open.";
+          voteUrlEl.textContent = "—"; qrImg.removeAttribute("src"); stopCountdown(); note.textContent = ""; screenState.textContent="—";
           return;
         }
 
         if (unsubPerf) unsubPerf();
         unsubPerf = onSnapshot(doc(db,"events",eventId,"performances",perfId),(ps)=>{
           if (!ps.exists()){
-            voteUrlEl.textContent = "—"; qrImg.removeAttribute("src"); stopCountdown(); note.textContent = "(performance missing)";
+            voteUrlEl.textContent = "—"; qrImg.removeAttribute("src"); stopCountdown(); note.textContent = "(performance missing)"; screenState.textContent="—";
             return;
           }
           const pd = ps.data()||{};
-          perfStatus = pd.status || "open";
+          perfStatus = pd.status || "pending";
           perfCloseAt = pd.closeAt || null;
 
           const url = buildVoteUrl(eventId, perfId);
           voteUrlEl.textContent = url;
           setQrImageForUrl(url);
 
-          if (perfStatus === "open"){ startCountdown(); note.textContent = ""; }
-          else { stopCountdown(); note.textContent = "Voting closed."; }
+          if (perfStatus === "pending"){ screenState.textContent = "Now singing… (get ready to vote)"; stopCountdown(); note.textContent = ""; }
+          else if (perfStatus === "open"){ screenState.textContent = "VOTE NOW!"; startCountdown(); note.textContent = ""; }
+          else { screenState.textContent = "Thank you for voting!"; stopCountdown(); note.textContent = ""; }
         }, err=>{ debug.textContent = "Performance error: " + (err?.message||err); });
       }, err=>{ debug.textContent = "State error: " + (err?.message||err); });
-
-      openVoteBtn.addEventListener("click", ()=> {
-        const url = voteUrlEl.textContent.trim();
-        if (url && url !== "—") window.open(url, "_blank", "noopener");
-      });
-      openQrBtn.addEventListener("click", ()=> {
-        const url = voteUrlEl.textContent.trim();
-        if (!url || url === "—") return;
-        window.open(qrProvider1(url), "_blank", "noopener");
-      });
     }
 
     resolveEventId((eid, unsubMeta)=>{
