@@ -1,37 +1,56 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Vote | Earn Your Encore Karaoke</title>
+  <meta charset="utf-8" />
+  <title>Earn Your Encore Karaoke — Vote</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-store" />
   <style>
-    body { margin:0; font-family:system-ui,sans-serif; display:flex; justify-content:center; align-items:center; min-height:100vh; background:#0e0d2b; color:#fff; }
-    .container { text-align:center; max-width:600px; }
-    h1 { color:#ffd24a; margin-bottom:20px; line-height:1.4; }
-    button { display:block; width:100%; margin:12px 0; padding:20px; font-size:1.2rem; border:none; border-radius:8px; cursor:pointer; }
-    .encore { background:#27ae60; color:#fff; }
-    .one-more { background:#f39c12; color:#fff; }
-    .next-time { background:#c0392b; color:#fff; }
-    p.note { margin-top:14px; font-size:0.95rem; color:#cfe; }
-    p.msg  { margin-top:10px; font-size:0.95rem; color:#ccc; }
-    p.err  { margin-top:10px; font-size:0.95rem; color:#ffb3b3; display:none; }
+    :root{
+      --bg: #0b0b0f;
+      --card: #141826;
+      --encore: #4ade80;
+      --another: #fbbf24;
+      --maybe: #f87171;
+      --text: #f7f8fc;
+      --muted: #b9c0d0;
+      --border: #26304a;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Helvetica Neue,Arial,Noto Sans,Apple Color Emoji,Segoe UI Emoji;
+      background:linear-gradient(180deg, #0b0b0f 0%, #0e1220 100%);
+      color:var(--text);
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+      height:100vh;padding:20px;gap:20px;
+    }
+    h1{margin:0;font-size:28px;font-weight:700;text-align:center}
+    .buttons{display:flex;flex-direction:column;gap:16px;width:100%;max-width:400px}
+    button{
+      border:none;border-radius:12px;padding:18px;font-size:22px;font-weight:600;
+      cursor:pointer;color:#fff;
+      box-shadow:0 6px 18px rgba(0,0,0,.3);
+      transition:transform .15s;
+    }
+    button:active{transform:scale(.97)}
+    .encore{background:var(--encore)}
+    .another{background:var(--another);color:#000}
+    .maybe{background:var(--maybe)}
+    #status{font-size:18px;color:var(--muted);text-align:center;min-height:22px}
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>You’re voting for this singer.<br>Did they earn an Encore?</h1>
-    <button class="encore">🔥 Encore!</button>
-    <button class="one-more">🤔 One More Shot</button>
-    <button class="next-time">❌ Maybe Next Time</button>
-    <p class="note">One vote per device per round. Thanks for playing!</p>
-    <p id="msg" class="msg"></p>
-    <p id="err" class="err"></p>
+  <h1>Cast Your Vote</h1>
+  <div class="buttons">
+    <button class="encore" onclick="castVote('encore')">🔥 Encore!</button>
+    <button class="another" onclick="castVote('another')">🤔 Another Shot</button>
+    <button class="maybe" onclick="castVote('maybe')">❌ Maybe Next Time</button>
   </div>
+  <div id="status"></div>
 
-  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore-compat.js"></script>
-  <script>
-    const firebaseConfig = {
+  <script type="module">
+    const FIREBASE_CONFIG = {
       apiKey: "AIzaSyDGbC08WxruYIDPhZSlDlU-7Kzq-7mHENk",
       authDomain: "eyek-vote.firebaseapp.com",
       projectId: "eyek-vote",
@@ -39,77 +58,38 @@
       messagingSenderId: "954696683994",
       appId: "1:954696683994:web:21a84298a94648ff0230e3"
     };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
 
-    const params = new URLSearchParams(location.search);
-    const sid    = params.get('sid')    || "TEST";
-    const singer = params.get('singer') || "this singer";
-    const showId = params.get('show')   || null;
-    const reset  = params.get('reset')  === '1';
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-    document.querySelector('h1').innerHTML = `You’re voting for ${singer}.<br>Did they earn an Encore?`;
-    if (reset) localStorage.removeItem(`eyek_voted_${sid}`);
+    const app = initializeApp(FIREBASE_CONFIG);
+    const db  = getFirestore(app);
 
-    function getDeviceId() {
-      const KEY = 'eyek_device_id';
-      let id = localStorage.getItem(KEY);
-      if (!id) {
-        id = Math.random().toString(36).slice(2,10) + Date.now().toString(36);
-        localStorage.setItem(KEY, id);
-      }
-      return id;
+    // Use ?eventId=xyz in the URL to target a specific event
+    function getEventIdFromURL() {
+      const u = new URL(window.location.href);
+      return u.searchParams.get("eventId") || "default";
     }
-    const deviceId = getDeviceId();
+    const EVENT_ID = getEventIdFromURL();
 
-    const votedKey = `eyek_voted_${sid}`;
-    const msgEl = document.getElementById('msg');
-    const errEl = document.getElementById('err');
+    const statusEl = document.getElementById("status");
 
-    function lockUI(text="Thanks—your vote was recorded.") {
-      document.querySelectorAll('button').forEach(b => b.disabled = true);
-      msgEl.textContent = text;
-    }
-    if (localStorage.getItem(votedKey)) {
-      lockUI("Looks like you already voted in this round.");
-    }
-
-    db.collection('sessions').doc(sid).set({
-      singer,
-      status: 'open',
-      touchedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      ...(showId ? { showId } : {})
-    }, { merge: true }).catch(err => {
-      errEl.style.display = 'block';
-      errEl.textContent = 'Setup error: ' + err.message;
-    });
-
-    async function cast(choice){
-      if (localStorage.getItem(votedKey)) return;
-      const docRef = db.collection('sessions').doc(sid).collection('votes').doc(deviceId);
+    async function castVote(category) {
+      statusEl.textContent = "Submitting your vote...";
       try {
-        const snap = await docRef.get();
-        if (snap.exists) {
-          localStorage.setItem(votedKey, '1');
-          return lockUI("You already voted in this round.");
-        }
-        await docRef.set({
-          singer,
-          choice,
-          ua: navigator.userAgent,
-          ts: firebase.firestore.FieldValue.serverTimestamp()
+        await addDoc(collection(db, "events", EVENT_ID, "votes"), {
+          singerId: "anon",
+          singerName: "Anonymous",
+          category: category,
+          ts: Date.now()
         });
-        localStorage.setItem(votedKey, '1');
-        lockUI();
-      } catch (err) {
-        errEl.style.display = 'block';
-        errEl.textContent = 'Vote failed: ' + err.message;
+        statusEl.textContent = "✅ Vote submitted!";
+      } catch (e) {
+        console.error(e);
+        statusEl.textContent = "❌ Error submitting vote";
       }
     }
-
-    document.querySelector('.encore').onclick   = ()=>cast('encore');
-    document.querySelector('.one-more').onclick = ()=>cast('one_more');
-    document.querySelector('.next-time').onclick= ()=>cast('next_time');
+    window.castVote = castVote;
   </script>
 </body>
 </html>
