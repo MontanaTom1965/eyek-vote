@@ -7,45 +7,37 @@
   <meta http-equiv="Cache-Control" content="no-store" />
   <style>
     :root{
-      --bg: #0b0b0f;
-      --card: #141826;
-      --encore: #4ade80;
-      --another: #fbbf24;
-      --maybe: #f87171;
-      --text: #f7f8fc;
-      --muted: #b9c0d0;
-      --border: #26304a;
+      --bg:#0b0b0f; --card:#141826; --encore:#4ade80; --another:#fbbf24; --maybe:#f87171;
+      --text:#f7f8fc; --muted:#b9c0d0; --border:#26304a;
     }
     *{box-sizing:border-box}
     body{
-      margin:0;
-      font-family: system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Helvetica Neue,Arial,Noto Sans,Apple Color Emoji,Segoe UI Emoji;
-      background:linear-gradient(180deg, #0b0b0f 0%, #0e1220 100%);
-      color:var(--text);
-      display:flex;flex-direction:column;align-items:center;justify-content:center;
-      min-height:100vh;padding:20px;gap:20px;
+      margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Helvetica Neue,Arial,Noto Sans,Apple Color Emoji,Segoe UI Emoji;
+      background:linear-gradient(180deg,#0b0b0f 0%,#0e1220 100%); color:var(--text);
+      display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:20px;gap:20px;
     }
-    h1{margin:0;font-size:28px;font-weight:700;text-align:center}
-    .card{background:var(--card); border:1px solid var(--border); border-radius:16px; padding:18px; width:100%; max-width:480px}
+    h1{margin:0;font-size:28px;font-weight:800;text-align:center}
+    .performing{font-size:18px;color:var(--muted)}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:18px;width:100%;max-width:480px}
     .buttons{display:flex;flex-direction:column;gap:16px;width:100%}
-    button{
-      border:none;border-radius:12px;padding:18px;font-size:22px;font-weight:700;
-      cursor:pointer;color:#fff; box-shadow:0 6px 18px rgba(0,0,0,.3); transition:transform .15s;
-    }
+    button{border:none;border-radius:12px;padding:18px;font-size:22px;font-weight:800;cursor:pointer;color:#fff;box-shadow:0 6px 18px rgba(0,0,0,.3);transition:transform .15s}
     button:active{transform:scale(.97)}
     .encore{background:var(--encore)}
     .another{background:var(--another);color:#000}
     .maybe{background:var(--maybe)}
+    button[disabled]{opacity:.5;cursor:not-allowed}
     #status{font-size:18px;color:var(--muted);text-align:center;min-height:22px;margin-top:12px}
   </style>
 </head>
 <body>
   <h1>Cast Your Vote</h1>
+  <div class="performing" id="performing">Waiting for the host to set the current singer…</div>
+
   <div class="card">
     <div class="buttons">
-      <button class="encore" onclick="castVote('encore')">🔥 Encore!</button>
-      <button class="another" onclick="castVote('another')">🤔 Another Shot</button>
-      <button class="maybe" onclick="castVote('maybe')">❌ Maybe Next Time</button>
+      <button class="encore"  id="btnEncore"  disabled>🔥 Encore!</button>
+      <button class="another" id="btnAnother" disabled>🤔 Another Shot</button>
+      <button class="maybe"   id="btnMaybe"   disabled>❌ Maybe Next Time</button>
     </div>
     <div id="status"></div>
   </div>
@@ -61,35 +53,92 @@
     };
 
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const app = initializeApp(FIREBASE_CONFIG);
     const db  = getFirestore(app);
 
-    function getEventIdFromURL() {
+    function getEventIdFromURL(){
       const u = new URL(window.location.href);
       return u.searchParams.get("eventId") || "default";
     }
     const EVENT_ID = getEventIdFromURL();
 
-    const statusEl = document.getElementById("status");
+    // Stable device id (per browser/device)
+    function getDeviceId(){
+      const KEY = "eyek_device_id";
+      let id = localStorage.getItem(KEY);
+      if (!id){
+        const arr = new Uint8Array(16); crypto.getRandomValues(arr);
+        id = Array.from(arr, b => b.toString(16).padStart(2,"0")).join("");
+        localStorage.setItem(KEY, id);
+      }
+      return id;
+    }
+    const DEVICE_ID = getDeviceId();
 
-    async function castVote(category) {
-      statusEl.textContent = "Submitting your vote...";
-      try {
-        await addDoc(collection(db, "events", EVENT_ID, "votes"), {
-          singerId: "anon",
-          singerName: "Anonymous",
-          category: category,
+    const statusEl = document.getElementById("status");
+    const perfEl   = document.getElementById("performing");
+    const btnE = document.getElementById("btnEncore");
+    const btnA = document.getElementById("btnAnother");
+    const btnM = document.getElementById("btnMaybe");
+
+    let currentSinger = { id:null, name:null };
+
+    // Watch "Now Performing"
+    onSnapshot(doc(db,"events",EVENT_ID,"state","current"), (snap)=>{
+      if (!snap.exists()){
+        currentSinger = { id:null, name:null };
+        perfEl.textContent = "Waiting for the host to set the current singer…";
+        setDisabled(true);
+        return;
+      }
+      const d = snap.data()||{};
+      currentSinger = { id: d.currentSingerId || null, name: d.currentSingerName || "Unknown" };
+      perfEl.textContent = currentSinger.id ? `Now voting for: ${currentSinger.name}` : "Waiting for the host to set the current singer…";
+      setDisabled(!currentSinger.id);
+    }, (err)=>{
+      statusEl.textContent = "Error: " + (err?.message || err);
+    });
+
+    function setDisabled(disabled){
+      btnE.disabled = disabled;
+      btnA.disabled = disabled;
+      btnM.disabled = disabled;
+    }
+
+    async function castVote(category){
+      if (!currentSinger.id){
+        statusEl.textContent = "Voting opens when the host sets the current singer.";
+        return;
+      }
+      const docId = `${currentSinger.id}__${DEVICE_ID}`;
+      const voteDocRef = doc(db, "events", EVENT_ID, "votes", docId);
+      statusEl.textContent = "Submitting your vote…";
+      try{
+        await setDoc(voteDocRef, {
+          singerId: currentSinger.id,
+          singerName: currentSinger.name,
+          category,
+          deviceId: DEVICE_ID,
           ts: Date.now()
-        });
-        statusEl.textContent = "✅ Vote submitted!";
-      } catch (e) {
-        console.error(e);
-        statusEl.textContent = "❌ Error submitting vote";
+        }, { merge: false }); // create-only; rules forbid update
+        statusEl.textContent = "✅ Vote submitted! Thanks.";
+        setDisabled(true); // optional UX: disable after successful vote
+      }catch(e){
+        // If they already voted, rules will block the update; show a friendly message.
+        const msg = (""+e?.message||"").toLowerCase();
+        if (msg.includes("permission") || msg.includes("already exists") || msg.includes("failed")){
+          statusEl.textContent = "You’ve already voted for this singer on this device.";
+        }else{
+          statusEl.textContent = "❌ Error submitting vote.";
+        }
       }
     }
-    window.castVote = castVote;
+
+    btnE.addEventListener("click", ()=>castVote("encore"));
+    btnA.addEventListener("click", ()=>castVote("another"));
+    btnM.addEventListener("click", ()=>castVote("maybe"));
   </script>
 </body>
 </html>
