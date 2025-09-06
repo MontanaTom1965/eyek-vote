@@ -107,7 +107,6 @@
       if (!performanceId){
         msg.textContent = "Waiting for host to open voting… (no performanceId)";
         setButtonsEnabled(false);
-        // Optional: follow state/current to suggest refreshing
         return;
       }
 
@@ -120,8 +119,16 @@
         const d = snap.data()||{};
         perf = { singerId:d.singerId, singerName:d.singerName, status:d.status, closeAt:d.closeAt };
         title.textContent = "Vote for " + (perf.singerName || "(Unknown)");
-        if (perf.status === "open"){ msg.textContent = ""; setButtonsEnabled(true); startCountdown(); }
-        else { msg.textContent = "Voting for " + (perf.singerName || "") + " is closed. Thanks for participating!"; setButtonsEnabled(false); stopCountdown(); }
+        if (perf.status === "pending"){
+          msg.textContent = "Get ready — voting opens soon.";
+          setButtonsEnabled(false); stopCountdown();
+        } else if (perf.status === "open"){
+          msg.textContent = "";
+          setButtonsEnabled(true); startCountdown();
+        } else {
+          msg.textContent = "Voting for " + (perf.singerName || "") + " is closed. Thanks for participating!";
+          setButtonsEnabled(false); stopCountdown();
+        }
       }, err=>{ msg.textContent = "Error loading performance: " + (err?.message||err); setButtonsEnabled(false); });
 
       btnE.addEventListener("click", ()=> cast("encore", eventId, performanceId));
@@ -130,7 +137,7 @@
     }
 
     async function cast(category, eventId, performanceId){
-      if (!perf || perf.status !== "open"){ msg.textContent = "Voting is closed."; return; }
+      if (!perf || perf.status !== "open"){ msg.textContent = "Voting is closed or not open yet."; return; }
       setButtonsEnabled(false);
       const voteId = performanceId + "__" + DEVICE_ID;
       const vref = doc(db,"events",eventId,"votes",voteId);
