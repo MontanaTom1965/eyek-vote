@@ -1,4 +1,4 @@
-<!-- EYEK /screen/index.html v2025-09-06.20 (Encore full-screen celebration + MP3 loop) -->
+<!-- EYEK /screen/index.html v2025-09-06.21 (custom MP3 loop with fallbacks + Encore full-screen) -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -246,14 +246,16 @@
       }
 
       /* -------- Sound system -------- */
-      // Toggle state (persisted)
       var SOUND_KEY='eyek_sound';
       var soundEnabled = (localStorage.getItem(SOUND_KEY)==='1');
       function updateSoundBtn(){ soundBtn.textContent = soundEnabled ? '🔊' : '🔇'; }
-      function showSoundHint(show){ soundHint.style.display = show ? 'block' : 'none'; }
+      function showSoundHint(show, text){
+        soundHint.textContent = text || (soundEnabled ? '' : 'Click 🔊 to enable sound');
+        soundHint.style.display = show ? 'block' : 'none';
+      }
       updateSoundBtn(); showSoundHint(!soundEnabled);
 
-      // SFX (ticks/fanfares) via WebAudio oscillators + tiny HTML beep fallback
+      // Ticks/Fanfares via WebAudio
       var audioCtx=null, sfxGain=null;
       const FALLBACK_BEEP = 'data:audio/wav;base64,UklGRuwNAABXQVZFZm10IBAAAAABAAEAIlYAAESsAAACABAAZGF0YcgNAAAAADsWEys4PYpLIlVmWRNYPlFTRRM1gSHWC271r9/2FhJJQ4d7rF1UjYJm9hJ3x0yJH4d/0QY1y8r8BXeCBR6j8eYqk0J3cQvKcM8rQ0NtyPcY3tF7m9duT+38s0Gz8w2u2K5C3I9kWZQ/3rZ5m0C';
       function htmlBeep(delayMs=0, rate=1){
@@ -303,15 +305,30 @@
         });
       }
 
-      // Ambient loop via your MP3 (replaces synthesized loop)
-      var loopAudio=null, loopFadeTimer=null;
-      var LOOP_URL = location.origin + '/screen/quiz-countdown.mp3';
+      // Ambient loop using your MP3 with robust fallback paths + error hints
+      var loopAudio=null, loopFadeTimer=null, loopIndex=0;
+      var LOOP_CANDIDATES = [
+        'quiz-countdown.mp3?v=3',                  // relative (best for /screen/)
+        '/screen/quiz-countdown.mp3?v=3',         // absolute path
+        (location.origin + '/screen/quiz-countdown.mp3?v=3') // origin + absolute
+      ];
       function ensureLoop(){
         if(!loopAudio){
-          loopAudio = new Audio(LOOP_URL);
+          loopAudio = new Audio(LOOP_CANDIDATES[loopIndex]);
           loopAudio.loop = true;
           loopAudio.preload = 'auto';
           loopAudio.volume = 0.0;
+          loopAudio.onerror = function(){
+            console.warn('Loop load failed:', loopAudio.src);
+            loopIndex++;
+            if(loopIndex < LOOP_CANDIDATES.length){
+              loopAudio.src = LOOP_CANDIDATES[loopIndex];
+              try{ loopAudio.load(); }catch(_){}
+            }else{
+              showSoundHint(true, 'Sound file not found: /screen/quiz-countdown.mp3');
+            }
+          };
+          loopAudio.oncanplaythrough = function(){ if(soundEnabled){ showSoundHint(false); } };
         }
         return loopAudio;
       }
@@ -336,7 +353,9 @@
         var a = ensureLoop();
         try{
           a.currentTime = 0;
-          a.play().then(function(){ fadeLoop(0.55, 200); }).catch(function(){ showSoundHint(true); });
+          a.play().then(function(){ fadeLoop(0.55, 200); }).catch(function(){
+            showSoundHint(true, 'Click 🔊 to enable sound');
+          });
         }catch(_){}
       }
       function stopVoteLoop(){ if(!loopAudio) return; fadeLoop(0.0, 150); }
@@ -345,16 +364,23 @@
       soundBtn.addEventListener('click', async function(){
         soundEnabled = !soundEnabled;
         localStorage.setItem(SOUND_KEY, soundEnabled ? '1':'0');
-        updateSoundBtn(); showSoundHint(!soundEnabled);
+        updateSoundBtn();
         if(soundEnabled){
+          showSoundHint(true, 'Loading sound…');
           await ensureAudio();
+          ensureLoop(); // kick off load chain
+          // a little confirmation chirp
           sfxBeep(880,0.14,0.28); htmlBeep(0,1.0);
           setTimeout(()=>{ sfxBeep(988,0.16,0.30); htmlBeep(0,1.1); },200);
           if(CURRENT.status==='open'){ startVoteLoop(); }
         }else{
           stopVoteLoop();
+          showSoundHint(false);
         }
       });
+      // warm-up: create audio element early so errors appear quickly
+      document.addEventListener('DOMContentLoaded', function(){ ensureLoop(); });
+
       window.addEventListener('pointerdown', function(){ if(soundEnabled) ensureAudio(); }, { once:true });
       window.addEventListener('keydown',     function(){ if(soundEnabled) ensureAudio(); }, { once:true });
 
@@ -549,7 +575,7 @@
               if(!unsubVotes) watchVotes(perfId);
               updateQr();
               hideFlashBanner();
-              stopEncoreOverlay();   // make sure overlay is gone when new voting starts
+              stopEncoreOverlay();   // ensure overlay gone when new voting starts
               startVoteLoop();       // play your MP3 loop
             }else if(CURRENT.status==='closed'){
               setBadge('closed');
@@ -562,7 +588,7 @@
               // Play fanfare once per performance
               if(perfId !== lastFanfarePerfId){ playFanfare(final); lastFanfarePerfId = perfId; }
 
-              // NEW: full-screen ENCORE celebration (15s), once per performance
+              // Full-screen ENCORE celebration (15s), once per performance
               if(final === 'encore' && perfId !== lastEncoreOverlayPerfId){
                 showEncoreOverlay();
                 lastEncoreOverlayPerfId = perfId;
@@ -601,13 +627,9 @@
       /* ---------- Encore overlay helpers ---------- */
       function showEncoreOverlay(){
         if(!encoreOverlay) return;
-        // Show the overlay
         encoreOverlay.style.display='flex';
-        // Hide it after 15 seconds
         stopEncoreOverlay();
-        encoreTimer = setTimeout(function(){
-          hideEncoreOverlay(false);
-        }, 15000);
+        encoreTimer = setTimeout(function(){ hideEncoreOverlay(false); }, 15000);
       }
       function hideEncoreOverlay(force){
         if(!encoreOverlay) return;
