@@ -1,4 +1,4 @@
-<!-- EYEK /vote/index.html v2025-09-06.12 -->
+<!-- EYEK /vote/index.html v2025-09-06.13 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -41,7 +41,7 @@
     .buttons{display:grid; gap:12px; grid-template-columns:1fr}
     @media (min-width:680px){ .buttons{ grid-template-columns:1fr 1fr 1fr } }
 
-    /* SOLID color buttons (no purple tint) */
+    /* SOLID color buttons */
     .btn{
       appearance:none;
       border:2px solid transparent;
@@ -67,6 +67,14 @@
     .may:active{ transform:translateY(0); filter:brightness(.98); }
 
     .done{margin-top:14px; padding:.8em 1em; border-radius:12px; border:2px dashed var(--border); background:rgba(0,0,0,.22); font-weight:900}
+
+    /* small toast for auto-follow switches */
+    .toast{
+      position:fixed; left:50%; transform:translateX(-50%);
+      bottom:20px; padding:.6em 1em; border-radius:10px; border:2px solid var(--border);
+      background:rgba(0,0,0,.45); color:#fff; font-weight:900; z-index:50;
+      display:none;
+    }
   </style>
 </head>
 <body>
@@ -86,24 +94,21 @@
     <div id="done" class="done" style="display:none"></div>
   </div>
 
-  <!-- Firebase (compat) -->
+  <div id="toast" class="toast">Switching to new singer…</div>
+
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
   <script>
   (function(){
-    var FIREBASE_CONFIG = {
-      apiKey: "AIzaSyDGbC08WxruYIDPhZSlDlU-7Kzq-7mHENk",
-      authDomain: "eyek-vote.firebaseapp.com",
-      projectId: "eyek-vote"
-    };
+    var FIREBASE_CONFIG = { apiKey:"AIzaSyDGbC08WxruYIDPhZSlDlU-7Kzq-7mHENk", authDomain:"eyek-vote.firebaseapp.com", projectId:"eyek-vote" };
     if(!firebase || !firebase.initializeApp){ alert('Firebase failed to load.'); return; }
     firebase.initializeApp(FIREBASE_CONFIG);
     var db=firebase.firestore();
 
     function $(id){ return document.getElementById(id); }
     var eventPill=$('eventPill'), title=$('title'), statusBadge=$('statusBadge'), countdownEl=$('countdown'),
-        btnE=$('voteEncore'), btnA=$('voteAnother'), btnM=$('voteMaybe'), done=$('done');
+        btnE=$('voteEncore'), btnA=$('voteAnother'), btnM=$('voteMaybe'), done=$('done'), toast=$('toast');
 
     var unsubState=null, unsubPerf=null, unsubVoteDoc=null;
     var CURRENT={ eventId:null, performanceId:null, singerName:'—', status:'pending', closeAt:null, openAt:null, durationSec:0 };
@@ -118,6 +123,20 @@
       return id;
     }
     var DEVICE_ID=getDeviceId();
+
+    // Auto-follow behavior:
+    // - If URL has performanceId: we show that performance.
+    // - When it closes, we watch /state/current and auto-switch to the new performance
+    //   (unless ?autofollow=0).
+    var LOCKED_TO_PARAM = !!getParam('performanceId');
+    var AUTO_FOLLOW = (getParam('autofollow') !== '0');
+
+    function toastMsg(msg){
+      if(!toast) return;
+      toast.textContent = msg || 'Switching…';
+      toast.style.display='block';
+      setTimeout(()=>{ toast.style.display='none'; }, 2000);
+    }
 
     function setBadgeOpen(isOpen){
       statusBadge.className='status ' + (isOpen?'sOpen':'sClosed');
@@ -146,26 +165,36 @@
 
     function followEvent(){
       var u=new URL(location.href), eid=u.searchParams.get('eventId');
-      if(!eid){
-        alert('Missing eventId in URL.');
-        return;
-      }
+      if(!eid){ alert('Missing eventId in URL.'); return; }
       eventPill.textContent=eid;
       CURRENT.eventId=eid;
+
+      // Always watch state/current to learn about new performances
+      if(unsubState){ unsubState(); unsubState=null; }
+      unsubState = db.collection('events').doc(eid).collection('state').doc('current')
+        .onSnapshot(function(s){
+          var d=s.data()||{};
+          var pid=d.performanceId||null;
+          var name=d.currentSingerName || '—';
+          title.textContent='Vote for: ' + name;
+
+          // If we are not locked to a specific performance, just follow current
+          if(!LOCKED_TO_PARAM && pid && pid!==CURRENT.performanceId){
+            toastMsg('Switching to new singer…');
+            watchPerformance(pid);
+          }
+
+          // If we ARE locked to a perfId (came from QR), auto-switch when that perf closes
+          // and a new performance appears, provided AUTO_FOLLOW is true.
+          if(LOCKED_TO_PARAM && AUTO_FOLLOW && CURRENT.status==='closed' && pid && pid!==CURRENT.performanceId){
+            toastMsg('New singer started — updating…');
+            watchPerformance(pid);
+          }
+        });
 
       var perfParam = u.searchParams.get('performanceId');
       if(perfParam){
         watchPerformance(perfParam);
-      }else{
-        // Follow current performance for this event
-        if(unsubState){ unsubState(); unsubState=null; }
-        unsubState = db.collection('events').doc(eid).collection('state').doc('current')
-          .onSnapshot(function(s){
-            var d=s.data()||{};
-            var pid=d.performanceId||null;
-            if(pid){ watchPerformance(pid); }
-            title.textContent='Vote for: ' + (d.currentSingerName || '—');
-          });
       }
     }
 
@@ -174,8 +203,15 @@
       CURRENT.performanceId=perfId;
       if(unsubPerf){ unsubPerf(); unsubPerf=null; }
       if(unsubVoteDoc){ unsubVoteDoc(); unsubVoteDoc=null; }
+      stopCountdown();
+      setBadgeOpen(false);
 
       var eid=CURRENT.eventId;
+      if(!perfId){
+        title.textContent='Vote for: —';
+        return;
+      }
+
       unsubPerf = db.collection('events').doc(eid).collection('performances').doc(perfId)
         .onSnapshot(function(snap){
           if(!snap.exists){
@@ -203,7 +239,7 @@
               if(dv.exists){
                 var v=(dv.data()||{}).category||'';
                 done.style.display='block';
-                done.textContent = 'Thanks for voting! You chose: ' + (v==='encore'?'Encore!':v==='another'?'Another Shot!':v==='maybe'?'Maybe Next Time!':v);
+                done.textContent = 'Thanks! You chose: ' + (v==='encore'?'Encore!':v==='another'?'Another Shot!':v==='maybe'?'Maybe Next Time!':v);
                 btnE.disabled = btnA.disabled = btnM.disabled = true;
               }else{
                 done.style.display='none';
@@ -217,14 +253,13 @@
     function cast(category){
       if(!CURRENT.performanceId){ alert('No active performance.'); return; }
       if(CURRENT.status!=='open' || !CURRENT.closeAt || CURRENT.closeAt.toMillis()<=Date.now()){
-        alert('Voting is closed.');
-        return;
+        alert('Voting is closed.'); return;
       }
       var eid=CURRENT.eventId, pid=CURRENT.performanceId;
       var docId = pid + '__' + DEVICE_ID;
       db.collection('events').doc(eid).collection('votes').doc(docId).set({
         performanceId: pid,
-        singerId: null, // optional
+        singerId: null,
         singerName: CURRENT.singerName || '(Unknown)',
         category: category,
         deviceId: DEVICE_ID,
