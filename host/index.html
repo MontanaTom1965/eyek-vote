@@ -1,133 +1,121 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Host Dashboard | Earn Your Encore Karaoke</title>
+  <meta charset="utf-8" />
+  <title>Earn Your Encore Karaoke — Host</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-store" />
   <style>
-    body { margin:0; font-family:system-ui,sans-serif; background:#0e0d2b; color:#fff; }
-    .wrap { max-width:920px; margin:0 auto; padding:28px; }
-    h1 { color:#ffd24a; }
-    .panel { background:#1e1d3a; border-radius:12px; padding:16px; margin:16px 0; }
-    label { font-weight:600; margin:10px 0 4px; display:block; }
-    input { width:100%; padding:10px; border:0; border-radius:6px; background:#141335; color:#fff; }
-    button { margin-top:10px; padding:10px 16px; border:0; border-radius:6px; background:#2a2954; color:#fff; cursor:pointer; }
-    .linkbox { display:grid; grid-template-columns:1fr auto; gap:8px; align-items:center; margin:8px 0; }
-    .qrrow { display:flex; gap:16px; align-items:center; flex-wrap:wrap; }
-    .qr img { width:180px; height:180px; background:#fff; border-radius:8px; padding:8px; }
-    .caption { line-height:1.35; font-size:14px; color:#dfe; }
-    .small { font-size:13px; color:#ccc; margin-top:8px; }
-    a { color:#9ee7ff; }
+    :root{
+      --bg:#0b0b0f;
+      --card:#141826;
+      --accent:#7bc4ff;
+      --text:#f7f8fc;
+      --muted:#b9c0d0;
+      --border:#26304a;
+    }
+    body{
+      margin:0;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Helvetica Neue,Arial,Noto Sans;
+      background:linear-gradient(180deg,#0b0b0f 0%,#0e1220 100%);
+      color:var(--text);padding:20px;
+    }
+    h1{margin-top:0}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:20px}
+    label{display:block;margin-bottom:6px;font-weight:600}
+    input{padding:8px 10px;border-radius:8px;border:1px solid var(--border);width:100%;margin-bottom:10px}
+    button{padding:10px 16px;border:none;border-radius:8px;background:var(--accent);color:#000;font-weight:600;cursor:pointer}
+    ul{list-style:none;padding:0;margin:0}
+    li{margin-bottom:6px;display:flex;justify-content:space-between;align-items:center}
+    .danger{background:#f87171;color:#fff}
+    .muted{color:var(--muted);font-size:14px;margin-top:8px}
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <h1>Host Dashboard</h1>
+  <h1>Host Controls</h1>
 
-    <div class="panel">
-      <label for="showId">Show ID (auto-filled; edit if you want)</label>
-      <input id="showId" type="text" placeholder="2025-09-04_MooseLodge">
-      <label for="singer">Singer Name</label>
-      <input id="singer" type="text" placeholder="e.g., Ashley">
-      <label for="sid">Session Code</label>
-      <input id="sid" type="text" placeholder="e.g., ABC123">
-      <button id="genSid">Generate Code</button>
-    </div>
-
-    <div class="panel">
-      <label>Links</label>
-      <div class="linkbox">
-        <input id="screenLink" type="text" readonly>
-        <button data-copy="#screenLink">Copy</button>
-      </div>
-      <div class="linkbox">
-        <input id="voteLink" type="text" readonly>
-        <button data-copy="#voteLink">Copy</button>
-      </div>
-
-      <div class="qrrow" style="margin-top:10px">
-        <div class="qr"><img id="qr" alt="QR for vote link"></div>
-        <div class="caption">
-          <div id="previewTitleTop">You’re voting for this singer.</div>
-          <div id="previewTitleBottom">Did they earn an Encore?</div>
-          <div class="small" style="margin-top:10px">
-            Open the <a id="openScreen" href="#" target="_blank" rel="noopener">Screen link</a> on your TV.<br>
-            <strong>KJ Board:</strong> <span id="boardLinkWrap"></span>
-          </div>
-        </div>
-      </div>
-    </div>
+  <div class="card">
+    <h2>Create / Switch Event</h2>
+    <label for="eventId">Event ID</label>
+    <input id="eventId" placeholder="Enter event ID (e.g. bar-2025-09-05)" />
+    <button onclick="setEvent()">Set Event</button>
+    <div class="muted">Current event: <span id="currentEvent">none</span></div>
   </div>
 
-  <script>
-    const BASE = 'https://vote.earnyourencorekaraoke.com';
-    const singerEl = document.getElementById('singer');
-    const sidEl    = document.getElementById('sid');
-    const showEl   = document.getElementById('showId');
-    const screenEl = document.getElementById('screenLink');
-    const voteEl   = document.getElementById('voteLink');
-    const qrImg    = document.getElementById('qr');
-    const openScreenA = document.getElementById('openScreen');
-    const previewTop    = document.getElementById('previewTitleTop');
-    const previewBottom = document.getElementById('previewTitleBottom');
-    const boardWrap     = document.getElementById('boardLinkWrap');
+  <div class="card">
+    <h2>Add Singer</h2>
+    <label for="singerName">Singer Name</label>
+    <input id="singerName" placeholder="Enter singer name" />
+    <button onclick="addSinger()">Add Singer</button>
+    <ul id="singerList"></ul>
+  </div>
 
-    function todaySlug(){
-      const d = new Date();
-      const y = d.getFullYear();
-      const m = String(d.getMonth()+1).padStart(2,'0');
-      const day = String(d.getDate()).padStart(2,'0');
-      return `${y}-${m}-${day}_Show`;
+  <div class="card">
+    <h2>Votes</h2>
+    <button class="danger" onclick="clearVotes()">Clear All Votes</button>
+    <div class="muted">This wipes the votes for the current event.</div>
+  </div>
+
+  <script type="module">
+    const FIREBASE_CONFIG = {
+      apiKey: "AIzaSyDGbC08WxruYIDPhZSlDlU-7Kzq-7mHENk",
+      authDomain: "eyek-vote.firebaseapp.com",
+      projectId: "eyek-vote",
+      storageBucket: "eyek-vote.firebasestorage.app",
+      messagingSenderId: "954696683994",
+      appId: "1:954696683994:web:21a84298a94648ff0230e3"
+    };
+
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const app = initializeApp(FIREBASE_CONFIG);
+    const db = getFirestore(app);
+
+    let EVENT_ID = "default";
+    const currentEventEl = document.getElementById("currentEvent");
+    const singerListEl = document.getElementById("singerList");
+
+    function setEvent() {
+      const val = document.getElementById("eventId").value.trim();
+      if (val) {
+        EVENT_ID = val;
+        currentEventEl.textContent = EVENT_ID;
+        refreshSingers();
+      }
+    }
+    window.setEvent = setEvent;
+
+    async function addSinger() {
+      const name = document.getElementById("singerName").value.trim();
+      if (!name) return;
+      await addDoc(collection(db, "events", EVENT_ID, "singers"), {
+        name: name,
+        ts: Date.now()
+      });
+      document.getElementById("singerName").value = "";
+      refreshSingers();
+    }
+    window.addSinger = addSinger;
+
+    async function refreshSingers() {
+      singerListEl.innerHTML = "";
+      const snap = await getDocs(collection(db, "events", EVENT_ID, "singers"));
+      snap.forEach(d => {
+        const li = document.createElement("li");
+        li.textContent = d.data().name;
+        singerListEl.appendChild(li);
+      });
     }
 
-    function makeSid(){ return Math.random().toString(36).substring(2,8).toUpperCase(); }
-
-    function updateLinks() {
-      const singerRaw = (singerEl.value || 'this singer').trim();
-      const sidRaw    = (sidEl.value    || 'TEST').trim();
-      const showRaw   = (showEl.value   || todaySlug()).trim();
-
-      const singer = encodeURIComponent(singerRaw);
-      const sid    = encodeURIComponent(sidRaw);
-      const show   = encodeURIComponent(showRaw);
-
-      const screenURL = `${BASE}/screen/?sid=${sid}&singer=${singer}&show=${show}`;
-      const voteURL   = `${BASE}/vote/?sid=${sid}&singer=${singer}&show=${show}`;
-      const boardURL  = `${BASE}/board/?show=${show}`;
-
-      screenEl.value = screenURL;
-      voteEl.value   = voteURL;
-      openScreenA.href = screenURL;
-      qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(voteURL)}`;
-
-      previewTop.textContent = `You’re voting for ${singerRaw}.`;
-      previewBottom.textContent = `Did they earn an Encore?`;
-
-      boardWrap.innerHTML = `<a href="${boardURL}" target="_blank" rel="noopener">${boardURL}</a>`;
+    async function clearVotes() {
+      const snap = await getDocs(collection(db, "events", EVENT_ID, "votes"));
+      for (const d of snap.docs) {
+        await deleteDoc(doc(db, "events", EVENT_ID, "votes", d.id));
+      }
+      alert("Votes cleared for event: " + EVENT_ID);
     }
-
-    // Copy buttons
-    document.addEventListener('click', e=>{
-      const btn = e.target.closest('button[data-copy]');
-      if(!btn) return;
-      const inp = document.querySelector(btn.dataset.copy);
-      navigator.clipboard.writeText(inp.value || '');
-      btn.textContent = 'Copied!';
-      setTimeout(()=>btn.textContent='Copy', 1000);
-    });
-
-    document.getElementById('genSid').addEventListener('click', ()=>{
-      sidEl.value = makeSid();
-      updateLinks();
-    });
-    singerEl.addEventListener('input', updateLinks);
-    sidEl.addEventListener('input', updateLinks);
-    showEl.addEventListener('input', updateLinks);
-
-    // Init defaults
-    showEl.value = todaySlug();
-    sidEl.value  = makeSid();
-    updateLinks();
+    window.clearVotes = clearVotes;
   </script>
 </body>
 </html>
