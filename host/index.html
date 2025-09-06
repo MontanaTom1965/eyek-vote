@@ -1,4 +1,4 @@
-<!-- EYEK /host/index.html v2025-09-06.19 -->
+<!-- EYEK /host/index.html v2025-09-06.21 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -105,6 +105,9 @@
       padding:.6em .9em; border-radius:10px; border:2px solid var(--border);
       background:rgba(0,0,0,.45); color:#fff; font-weight:1000; z-index:80; display:none;
     }
+
+    /* Hidden launcher anchors for multi-tab open */
+    .launchers{ position:absolute; left:-9999px; top:-9999px; width:1px; height:1px; overflow:hidden; }
   </style>
 </head>
 <body>
@@ -145,6 +148,13 @@
           </div>
           <div class="btn-row">
             <button id="broadcastBtn" class="btn good" title="Set this event as active for screens that follow meta/active">Broadcast Active Event</button>
+          </div>
+
+          <!-- Hidden anchors used to open multiple tabs from one click -->
+          <div id="launchers" class="launchers" aria-hidden="true">
+            <a id="launchVote"   target="_blank" rel="noreferrer">vote</a>
+            <a id="launchScreen" target="_blank" rel="noreferrer">screen</a>
+            <a id="launchBoard"  target="_blank" rel="noreferrer">board</a>
           </div>
         </section>
 
@@ -210,6 +220,7 @@
         eventIdInput=$('eventIdInput'), setEventBtn=$('setEventBtn'), lockEventChk=$('lockEventChk'),
         openAllDisplaysBtn=$('openAllDisplaysBtn'), openVoteBtn=$('openVoteBtn'), openScreenBtn=$('openScreenBtn'), openBoardBtn=$('openBoardBtn'),
         broadcastBtn=$('broadcastBtn'),
+        launchVote=$('launchVote'), launchScreen=$('launchScreen'), launchBoard=$('launchBoard'),
         singerNameInput=$('singerNameInput'), addSingerBtn=$('addSingerBtn'),
         singerList=$('singerList'), showRemovedChk=$('showRemovedChk'),
         nowSinger=$('nowSinger'), perfIdTag=$('perfIdTag'), qrImg=$('qrImg'),
@@ -221,14 +232,13 @@
     var CURRENT={ eventId:null, performanceId:null, status:'pending', openAt:null, durationSec:0, closeAt:null, singerName:'—' };
     var unsubState=null, unsubPerf=null, unsubSingers=null;
     var countdownTimer=null;
+    var autoCloseTimer=null;   // NEW: auto close scheduler
 
     /* --- Utils --- */
     function showToast(msg){ toast.textContent=msg||'Done'; toast.style.display='block'; setTimeout(()=>toast.style.display='none', 1800); }
     function urlRoot(){ return location.origin + '/'; }
-    function getDeviceId(){ try{ var k='eyek_device_id', id=localStorage.getItem(k); if(!id){ var a=new Uint8Array(16); crypto.getRandomValues(a); id=Array.from(a,b=>b.toString(16).padStart(2,'0')).join(''); localStorage.setItem(k,id); } return id; }catch(_){ return 'dev'; } }
     function saveEventId(eid){ try{ localStorage.setItem('eyek_event_id', eid); }catch(_){} }
     function loadEventId(){ try{ return localStorage.getItem('eyek_event_id')||''; }catch(_){ return ''; } }
-    function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
     function computeCloseAtFrom(d){
       if(d && d.openAt && d.durationSec){ return firebase.firestore.Timestamp.fromDate(new Date(d.openAt.toMillis() + (d.durationSec|0)*1000)); }
       return d && d.closeAt ? d.closeAt : null;
@@ -273,6 +283,36 @@
     }
     function stopCountdown(){ if(countdownTimer){ clearInterval(countdownTimer); } countdownTimer=null; }
 
+    /* --- Auto-close helpers (NEW) --- */
+    function clearAutoClose(){ if(autoCloseTimer){ clearTimeout(autoCloseTimer); autoCloseTimer=null; } }
+
+    function scheduleAutoClose(){
+      clearAutoClose();
+      if(CURRENT.status!=='open' || !CURRENT.performanceId || !CURRENT.eventId || !CURRENT.closeAt) return;
+
+      var remaining = msLeft();
+      if(remaining <= 200){
+        // Already expired: close immediately
+        var ref = db.collection('events').doc(CURRENT.eventId).collection('performances').doc(CURRENT.performanceId);
+        ref.set({ status:'closed', closeAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true })
+           .catch(function(e){ console.warn('Auto-close write failed:', e && e.message ? e.message : e); });
+        return;
+      }
+
+      autoCloseTimer = setTimeout(function(){
+        // Double-check at fire time (may have been extended)
+        if(CURRENT.status!=='open'){ return; }
+        if(msLeft() > 0){
+          // Race with extend; reschedule once more
+          scheduleAutoClose();
+          return;
+        }
+        var ref = db.collection('events').doc(CURRENT.eventId).collection('performances').doc(CURRENT.performanceId);
+        ref.set({ status:'closed', closeAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true })
+           .catch(function(e){ console.warn('Auto-close write failed:', e && e.message ? e.message : e); });
+      }, remaining + 120); // a tiny cushion
+    }
+
     /* --- Auth (anon) --- */
     function ensureAuth(){
       return auth.signInAnonymously().catch(function(e){
@@ -306,6 +346,7 @@
       if(unsubState){ unsubState(); unsubState=null; }
       if(unsubPerf){ unsubPerf(); unsubPerf=null; }
       if(unsubSingers){ unsubSingers(); unsubSingers=null; }
+      clearAutoClose();
 
       // State/current
       unsubState = db.collection('events').doc(eid).collection('state').doc('current')
@@ -364,6 +405,8 @@
 
     function watchPerfDoc(){
       if(unsubPerf){ unsubPerf(); unsubPerf=null; }
+      clearAutoClose();
+
       if(!CURRENT.eventId || !CURRENT.performanceId){
         CURRENT.status='pending'; CURRENT.openAt=null; CURRENT.durationSec=0; CURRENT.closeAt=null;
         renderStatus();
@@ -373,7 +416,7 @@
         .onSnapshot(function(snap){
           if(!snap.exists){
             CURRENT.status='pending'; CURRENT.openAt=null; CURRENT.durationSec=0; CURRENT.closeAt=null;
-            renderStatus(); updateQr(); stopCountdown();
+            renderStatus(); updateQr(); stopCountdown(); clearAutoClose();
             return;
           }
           var d=snap.data()||{};
@@ -382,7 +425,14 @@
           CURRENT.durationSec = d.durationSec|0;
           CURRENT.closeAt = computeCloseAtFrom(d);
           renderStatus();
-          if(CURRENT.status==='open' && CURRENT.closeAt){ startCountdown(); } else{ stopCountdown(); }
+
+          if(CURRENT.status==='open' && CURRENT.closeAt){
+            startCountdown();
+            scheduleAutoClose();     // NEW: arm auto-close each snapshot
+          } else {
+            stopCountdown();
+            clearAutoClose();        // NEW: disarm when not open
+          }
         });
     }
 
@@ -462,6 +512,7 @@
         closeAt: null
       }, { merge:true }).then(function(){
         showToast('Voting opened (30s)');
+        // auto-close will arm when snapshot arrives
       }).catch(function(e){ alert('Error starting voting: ' + (e && e.message ? e.message : e)); });
     }
     function extendVote(){
@@ -471,6 +522,7 @@
         durationSec: firebase.firestore.FieldValue.increment(15)
       }, { merge:true }).then(function(){
         showToast('Extended +15s');
+        // snapshot will reschedule auto-close
       }).catch(function(e){ alert('Error extending: ' + (e && e.message ? e.message : e)); });
     }
     function endNow(){
@@ -481,6 +533,7 @@
         closeAt: firebase.firestore.FieldValue.serverTimestamp()
       }, { merge:true }).then(function(){
         showToast('Voting closed');
+        clearAutoClose(); // disarm any pending auto-close
       }).catch(function(e){ alert('Error closing: ' + (e && e.message ? e.message : e)); });
     }
 
@@ -492,40 +545,19 @@
       return '';
     }
 
-    function openVote(){ var eid=getCurrentEventId(); if(!eid){ alert('Set event first.'); return; } window.open(urlRoot()+'vote/index.html?eventId='+encodeURIComponent(eid), '_blank', 'noopener'); }
-    function openScreen(){ var eid=getCurrentEventId(); if(!eid){ alert('Set event first.'); return; } window.open(urlRoot()+'screen/index.html?eventId='+encodeURIComponent(eid), '_blank', 'noopener'); }
-    function openBoard(){ var eid=getCurrentEventId(); if(!eid){ alert('Set event first.'); return; } window.open(urlRoot()+'board/index.html?eventId='+encodeURIComponent(eid), '_blank', 'noopener'); }
+    function openVote(){ var eid=getCurrentEventId(); if(!eid){ alert('Set event first.'); return; } window.open(urlRoot()+'vote/index.html?eventId='+encodeURIComponent(eid), '_blank'); }
+    function openScreen(){ var eid=getCurrentEventId(); if(!eid){ alert('Set event first.'); return; } window.open(urlRoot()+'screen/index.html?eventId='+encodeURIComponent(eid), '_blank'); }
+    function openBoard(){ var eid=getCurrentEventId(); if(!eid){ alert('Set event first.'); return; } window.open(urlRoot()+'board/index.html?eventId='+encodeURIComponent(eid), '_blank'); }
 
-    // New: open all three with blank tabs first, then assign locations (helps pop-up blockers)
+    // Anchor-click multi-open (works around blockers better than window.open thrice)
     function openAllDisplays(){
       var eid=getCurrentEventId(); if(!eid){ alert('Set event first.'); return; }
-
       var root = urlRoot();
-      var urlVote   = root + 'vote/index.html?eventId='   + encodeURIComponent(eid);
-      var urlScreen = root + 'screen/index.html?eventId=' + encodeURIComponent(eid);
-      var urlBoard  = root + 'board/index.html?eventId='  + encodeURIComponent(eid);
-
-      // Open blank tabs synchronously (counts as the same user gesture)
-      var w1 = window.open('about:blank', '_blank', 'noopener');
-      var w2 = window.open('about:blank', '_blank', 'noopener');
-      var w3 = window.open('about:blank', '_blank', 'noopener');
-
-      var opened = [w1,w2,w3].filter(Boolean).length;
-      if(opened === 0){
-        alert('Your browser blocked pop-ups. Please allow pop-ups for this site, or use the Vote/Screen/Board buttons.');
-        return;
-      }
-
-      // Staggered assignment makes some blockers happier
-      var delay = 120; // ms between tab navigations
-      if(w1) setTimeout(function(){ try{ w1.location.href = urlVote; }catch(_){ /* ignore */ } }, 0);
-      if(w2) setTimeout(function(){ try{ w2.location.href = urlScreen; }catch(_){ /* ignore */ } }, delay);
-      if(w3) setTimeout(function(){ try{ w3.location.href = urlBoard; }catch(_){ /* ignore */ } }, delay*2);
-
-      if(opened < 3){
-        // Give a gentle heads-up if only some opened
-        showToast('Opened '+opened+'/3 tabs. Enable pop-ups to open all automatically.');
-      }
+      launchVote.href   = root + 'vote/index.html?eventId='   + encodeURIComponent(eid);
+      launchScreen.href = root + 'screen/index.html?eventId=' + encodeURIComponent(eid);
+      launchBoard.href  = root + 'board/index.html?eventId='  + encodeURIComponent(eid);
+      launchVote.click(); setTimeout(()=>launchScreen.click(), 60); setTimeout(()=>launchBoard.click(), 120);
+      setTimeout(function(){ showToast('If not all tabs opened, enable pop-ups for this site.'); }, 400);
     }
 
     function broadcastActive(){
@@ -537,19 +569,17 @@
 
     /* --- Wire up --- */
     document.addEventListener('DOMContentLoaded', function(){
-      // Force button to say “Enter”
       if(addSingerBtn) addSingerBtn.textContent='Enter';
 
-      // Load saved event id
       var saved = loadEventId();
       if(saved){ eventIdInput.value = saved; setEvent(saved); }
 
-      // Listeners
       setEventBtn.addEventListener('click', setEventFromInput);
       lockEventChk.addEventListener('change', function(){
         var lock = !!lockEventChk.checked;
-        lockEventUI(lock);
+        eventIdInput.disabled = lock; setEventBtn.disabled = lock;
         try{ localStorage.setItem('eyek_event_locked', lock ? '1':'0'); }catch(_){}
+        if(lock) showToast('Event locked');
       });
 
       addSingerBtn.addEventListener('click', addSinger);
@@ -567,11 +597,9 @@
       openBoardBtn.addEventListener('click', openBoard);
       broadcastBtn.addEventListener('click', broadcastActive);
 
-      // Restore lock
-      try{ var L = localStorage.getItem('eyek_event_locked'); if(L==='1'){ lockEventUI(true); } }catch(_){}
+      try{ var L = localStorage.getItem('eyek_event_locked'); if(L==='1'){ eventIdInput.disabled=true; setEventBtn.disabled=true; lockEventChk.checked=true; } }catch(_){}
 
-      // Auth then ready
-      ensureAuth().then(function(){
+      auth.signInAnonymously().then(function(){
         if(saved){ wireEvent(saved); }
       });
     });
