@@ -23,31 +23,32 @@
       background:linear-gradient(180deg, #0b0b0f 0%, #0e1220 100%);
       color:var(--text);
       display:flex;flex-direction:column;align-items:center;justify-content:center;
-      height:100vh;padding:20px;gap:20px;
+      min-height:100vh;padding:20px;gap:20px;
     }
     h1{margin:0;font-size:28px;font-weight:700;text-align:center}
-    .buttons{display:flex;flex-direction:column;gap:16px;width:100%;max-width:400px}
+    .card{background:var(--card); border:1px solid var(--border); border-radius:16px; padding:18px; width:100%; max-width:480px}
+    .buttons{display:flex;flex-direction:column;gap:16px;width:100%}
     button{
-      border:none;border-radius:12px;padding:18px;font-size:22px;font-weight:600;
-      cursor:pointer;color:#fff;
-      box-shadow:0 6px 18px rgba(0,0,0,.3);
-      transition:transform .15s;
+      border:none;border-radius:12px;padding:18px;font-size:22px;font-weight:700;
+      cursor:pointer;color:#fff; box-shadow:0 6px 18px rgba(0,0,0,.3); transition:transform .15s;
     }
     button:active{transform:scale(.97)}
     .encore{background:var(--encore)}
     .another{background:var(--another);color:#000}
     .maybe{background:var(--maybe)}
-    #status{font-size:18px;color:var(--muted);text-align:center;min-height:22px}
+    #status{font-size:18px;color:var(--muted);text-align:center;min-height:22px;margin-top:12px}
   </style>
 </head>
 <body>
   <h1>Cast Your Vote</h1>
-  <div class="buttons">
-    <button class="encore" onclick="castVote('encore')">🔥 Encore!</button>
-    <button class="another" onclick="castVote('another')">🤔 Another Shot</button>
-    <button class="maybe" onclick="castVote('maybe')">❌ Maybe Next Time</button>
+  <div class="card">
+    <div class="buttons">
+      <button class="encore" onclick="castVote('encore')">🔥 Encore!</button>
+      <button class="another" onclick="castVote('another')">🤔 Another Shot</button>
+      <button class="maybe" onclick="castVote('maybe')">❌ Maybe Next Time</button>
+    </div>
+    <div id="status"></div>
   </div>
-  <div id="status"></div>
 
   <script type="module">
     const FIREBASE_CONFIG = {
@@ -65,7 +66,6 @@
     const app = initializeApp(FIREBASE_CONFIG);
     const db  = getFirestore(app);
 
-    // Use ?eventId=xyz in the URL to target a specific event
     function getEventIdFromURL() {
       const u = new URL(window.location.href);
       return u.searchParams.get("eventId") || "default";
