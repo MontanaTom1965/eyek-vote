@@ -26,10 +26,8 @@
     header{position:sticky; top:0; z-index:10; border-bottom:2px solid var(--border); background:linear-gradient(180deg,rgba(10,13,20,.92),rgba(10,13,20,.65)); backdrop-filter:blur(6px)}
     .wrap{max-width:1250px; margin:0 auto; width:100%}
     .bar{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 16px}
-    .title{font-size:1.4em; font-weight:900}
-    .pill{display:inline-block; border:2px solid var(--border); border-radius:999px; padding:.25em .6em; color:#cfe1ff; font-weight:800}
-    .subbar{display:flex; align-items:center; gap:18px; padding:0 16px 12px}
-    .subbar .hint{color:var(--muted)}
+    .title{font-size:1.0em; font-weight:800; color:#cfe1ff}
+    h1#eventHeading{margin:.2em 0; font-size:1.8em; letter-spacing:.3px}
     main{padding:18px}
     .grid{display:grid; gap:16px}
     .grid-2-1{grid-template-columns:3fr 1fr}
@@ -63,6 +61,7 @@
     }
     .li-removed{opacity:.55}
     .smallQR{display:flex; align-items:center; gap:12px; border:2px dashed var(--border); border-radius:12px; padding:10px; background:#0d142b}
+    /* ~25% of the older big QR */
     .smallQR img{width:90px; height:90px; object-fit:contain; border-radius:10px}
     .controls .btn{min-width:200px}
     .status{position:sticky; bottom:0; background:linear-gradient(180deg,rgba(10,13,20,.5),rgba(10,13,20,.95)); border-top:2px solid var(--border); padding:10px 16px; font-weight:800}
@@ -77,17 +76,30 @@
   <header>
     <div class="wrap bar">
       <div class="title">Host Control</div>
-      <div class="pill" id="eventPill">Event: —</div>
-    </div>
-    <div class="wrap subbar">
-      <label class="row" style="font-weight:800"><input type="checkbox" id="lockEvent" /> Lock Event</label>
-      <label class="row" style="font-weight:800"><input type="checkbox" id="broadcastActive" /> Broadcast Active Event</label>
-      <div class="hint">When ON, TVs at <code>/screen</code> and <code>/board</code> (no params) auto-follow this event.</div>
+      <h1 id="eventHeading">—</h1>
     </div>
   </header>
 
   <main class="wrap">
-    <!-- Add singer (top) -->
+    <!-- Event (TOP) -->
+    <section class="card">
+      <h2>Event</h2>
+      <div class="row" style="align-items:flex-end">
+        <div style="flex:1 1 480px; min-width:260px">
+          <label for="eventId">Event name (venue)</label>
+          <input id="eventId" placeholder="e.g. Eagles Nest" />
+        </div>
+        <div class="stack">
+          <label class="row" style="font-weight:800"><input type="checkbox" id="lockEvent" /> Lock Event</label>
+        </div>
+        <div>
+          <button class="btn primary" id="setEventBtn" title="Apply event">CHANGE</button>
+        </div>
+      </div>
+      <div class="hint" id="eventNote" style="margin-top:.45em"></div>
+    </section>
+
+    <!-- Add singer -->
     <section class="card">
       <h2>Add singer</h2>
       <div class="row">
@@ -100,21 +112,6 @@
         </div>
       </div>
       <div class="hint" id="addSingerStatus" style="margin-top:.35em">Ready.</div>
-    </section>
-
-    <!-- Event controls -->
-    <section class="card">
-      <h2>Event</h2>
-      <div class="row">
-        <div style="flex:1 1 420px; min-width:260px">
-          <label for="eventId">Event name (venue)</label>
-          <input id="eventId" placeholder="e.g. Eagles Nest" />
-        </div>
-        <div>
-          <button class="btn primary" id="setEventBtn" title="Apply event">Event</button>
-        </div>
-      </div>
-      <div class="hint" id="eventNote" style="margin-top:.45em"></div>
     </section>
 
     <!-- Main + Sidebar -->
@@ -139,24 +136,16 @@
           </div>
         </section>
 
-        <!-- Current singers -->
-        <section class="card">
-          <h2>Current singers</h2>
-          <div class="row" style="margin:.25em 0 .5em">
-            <label class="row"><input type="checkbox" id="showHidden" /> Show Removed!</label>
-          </div>
-          <ul id="singerList"></ul>
-          <div class="hint" id="singerReadNote"></div>
-        </section>
-
-        <!-- Open pages -->
+        <!-- Open pages + Broadcast toggle -->
         <section class="card">
           <h2>Open pages</h2>
-          <div class="stack">
+          <div class="stack" style="margin-bottom:.4em">
             <button class="btn ghost" id="openVote">Vote</button>
             <button class="btn ghost" id="openScreen">Screen</button>
             <button class="btn ghost" id="openBoard">Board</button>
           </div>
+          <label class="row" style="font-weight:800"><input type="checkbox" id="broadcastActive" /> Broadcast Active Event</label>
+          <div class="hint">When ON, TVs at <code>/screen</code> and <code>/board</code> (no params) auto-follow this event.</div>
         </section>
 
         <!-- Host vote -->
@@ -171,11 +160,14 @@
         </section>
       </div>
 
-      <!-- Sidebar: Still in it -->
+      <!-- Sidebar: Singers (only those still in it) -->
       <aside class="card">
-        <h2>Still in it</h2>
-        <ul id="stillInList"></ul>
-        <div class="hint" id="stillInNote">Shows singers whose latest outcome is Encore or Another (and not Removed).</div>
+        <h2>Singers</h2>
+        <div class="row" style="margin:.25em 0 .5em">
+          <label class="row"><input type="checkbox" id="showHidden" /> Show Removed!</label>
+        </div>
+        <ul id="singersSidebar"></ul>
+        <div class="hint" id="singersNote">Shows singers whose latest outcome is Encore or Another (not Removed).</div>
       </aside>
     </div>
   </main>
@@ -237,30 +229,36 @@
       var auth = firebase.auth();
 
       function $(id){ return document.getElementById(id); }
-      function setStatus(t){ $('statusBar').textContent='Status: '+t; }
+      function setStatus(t){ $('statusBar').textContent='Status: ' + t; }
       function urlRoot(){ return location.origin + '/'; }
 
-      var eventIdInput=$('eventId'), eventPill=$('eventPill'), setBtn=$('setEventBtn');
+      // Elements
+      var eventHeading=$('eventHeading');
+      var eventIdInput=$('eventId'), setBtn=$('setEventBtn');
       var broadcastEl=$('broadcastActive'), lockEventEl=$('lockEvent'), eventNote=$('eventNote');
 
       var singerNameInput=$('singerName'), addSingerBtn=$('addSingerBtn'), addSingerStatus=$('addSingerStatus');
-      var showHiddenEl=$('showHidden'), singerListEl=$('singerList'), singerReadNote=$('singerReadNote');
 
-      var nowPerfLabel=$('nowPerfLabel'), perfStatus=$('perfStatus'), countdownEl=$('countdown');
-      var qrImg=$('qrImg');
+      var nowPerfLabel=$('nowPerfLabel'), perfStatus=$('perfStatus'), countdownEl=$('countdown'), qrImg=$('qrImg');
 
       var openPerfVote=$('openPerfVote');
       var openVote=$('openVote'), openScreen=$('openScreen'), openBoard=$('openBoard');
 
+      var showHiddenEl=$('showHidden'), singersSidebar=$('singersSidebar');
+
+      // Auth (anon)
       auth.signInAnonymously().catch(function(e){ setStatus('Auth error: ' + ((e&&e.message)||e)); });
 
+      // State
       var LS_EVENT='eyek_last_event';
       var STATE={ currentSingerId:null, currentSingerName:null, performanceId:null, performanceCloseAt:null, performanceStatus:'' };
-      var unsubSingers=null, unsubState=null, unsubPerf=null;
+      var unsubSingers=null, unsubState=null, unsubPerf=null, unsubMeta=null;
       var countdownTimer=null, autoCloseTimer=null;
       var perfOutcomeCache={}; // perfId -> outcome
-      var cachedSingers=[], stillInCache=[];
+      var singerMap={}; // singerId -> {name, latestPerformanceId, removed}
+      var stillInIds=[];
 
+      // Ask for event if missing
       (function(){
         var u=new URL(location.href), q=u.searchParams.get('eventId'), mem=localStorage.getItem(LS_EVENT);
         if(!q && !mem){
@@ -269,23 +267,27 @@
         }
       })();
 
+      // Restore toggles
       broadcastEl.checked=localStorage.getItem('eyek_broadcast_event')==='1';
       lockEventEl.checked=localStorage.getItem('eyek_lock_event')==='1';
-      syncSetBtnDisabled(); if(lockEventEl.checked) eventNote.textContent='Event locked — switching disabled.';
+      syncSetBtnDisabled();
+      if(lockEventEl.checked) eventNote.textContent='Event locked — switching disabled.';
 
+      // Start event
       var START_EVENT=(new URL(location.href)).searchParams.get('eventId') || localStorage.getItem(LS_EVENT) || 'default';
       eventIdInput.value=START_EVENT;
       applyEvent(START_EVENT);
 
+      // Listeners
       setBtn.addEventListener('click', onClickSetEvent);
       eventIdInput.addEventListener('keydown', function(e){ if(e.key==='Enter') onClickSetEvent(); });
       lockEventEl.addEventListener('change', function(){
-        localStorage.setItem('eyek_lock_event',lockEventEl.checked?'1':'0');
+        localStorage.setItem('eyek_lock_event', lockEventEl.checked?'1':'0');
         eventNote.textContent=lockEventEl.checked?'Event locked — switching disabled.':'';
         syncSetBtnDisabled();
       });
       broadcastEl.addEventListener('change', function(){
-        localStorage.setItem('eyek_broadcast_event',broadcastEl.checked?'1':'0');
+        localStorage.setItem('eyek_broadcast_event', broadcastEl.checked?'1':'0');
         if(broadcastEl.checked) broadcastActiveEvent(getCurrentEventId());
       });
 
@@ -300,7 +302,7 @@
       $('hostVoteAnother').addEventListener('click', function(){ hostCastVote('another'); });
       $('hostVoteMaybe').addEventListener('click', function(){ hostCastVote('maybe'); });
 
-      showHiddenEl.addEventListener('change', function(){ renderSingerList(cachedSingers); renderStillInList(); });
+      showHiddenEl.addEventListener('change', renderSingersSidebar);
 
       openPerfVote.addEventListener('click', function(){
         if(!STATE.performanceId) return setStatus('No performance.');
@@ -343,9 +345,11 @@
       function applyEvent(eid){
         var u=new URL(window.location.href); u.searchParams.set('eventId',eid); history.replaceState({},'',u.toString());
         try{ localStorage.setItem(LS_EVENT,eid); }catch(_){}
-        eventPill.textContent='Event: '+eid;
+        eventHeading.textContent = eid;
+
         watchSingers(eid);
         watchState(eid);
+
         if(broadcastEl.checked) broadcastActiveEvent(eid);
         setStatus('Event set to: '+eid);
       }
@@ -420,123 +424,119 @@
         }, function(err){ setStatus('State listener error: '+((err&&err.message)||err)); });
       }
 
-      // Render lists (main + “Still in it”) with Remove/Restore
-      function renderSingerList(items){
-        cachedSingers=items.slice(); singerListEl.innerHTML='';
-        var showRemoved=showHiddenEl.checked;
-        items.sort(function(a,b){ return a.name.localeCompare(b.name,undefined,{sensitivity:'base'}); });
+      // Singers sidebar (only "still in it" + optional removed when toggled)
+      function renderSingersSidebar(){
+        var showRemoved = showHiddenEl.checked;
+        var listEl = singersSidebar;
+        listEl.innerHTML = '';
 
-        var shown=0; stillInCache=[];
+        // Build list of singer IDs that are still in it: outcome in {'encore','another'} AND not removed
+        var items = [];
+        Object.keys(singerMap).forEach(function(sid){
+          var s = singerMap[sid];
+          var outcome = null;
+          if (s.latestPerformanceId){
+            outcome = perfOutcomeCache[s.latestPerformanceId] || null;
+          }
+          var inIt = (outcome === 'encore' || outcome === 'another');
+          if (s.removed){
+            if (showRemoved) items.push({id:sid, name:s.name, outcome:outcome, removed:true});
+          }else if (inIt){
+            items.push({id:sid, name:s.name, outcome:outcome, removed:false});
+          }
+        });
 
-        function considerStillIn(it, outcome){
-          if (it.removed) return; // do not show removed in sidebar
-          if (outcome==='encore' || outcome==='another') stillInCache.push({name: it.name, outcome: outcome});
+        items.sort(function(a,b){ return a.name.localeCompare(b.name, undefined, {sensitivity:'base'}); });
+
+        if (!items.length){
+          var li=document.createElement('li'); li.textContent=showRemoved?'No singers.':'No singers in it yet.'; listEl.appendChild(li);
+          return;
         }
 
-        function appendRow(it,outcome){
-          // Hide removed by default unless Show Removed! is on
-          if (!showRemoved && it.removed) return;
-
-          var li=document.createElement('li');
-          if (it.removed) li.classList.add('li-removed');
+        items.forEach(function(it){
+          var li=document.createElement('li'); if (it.removed) li.classList.add('li-removed');
 
           var left=document.createElement('div');
-          var badge = it.removed ? ' <span class="pill" style="margin-left:8px;border-color:#7a3a3a;color:#ffdddd;background:#3a0f0f;">REMOVED</span>' : '';
+          var badge = it.removed ? ' <span style="display:inline-block;border:2px solid #7a3a3a;border-radius:999px;padding:.05em .45em;color:#ffdddd;background:#3a0f0f;font-weight:800;margin-left:8px">REMOVED</span>' : '';
           left.innerHTML='<div style="font-weight:900;display:flex;align-items:center;gap:6px">'+it.name+badge+'</div>'
-                        +'<div class="hint">Latest: '+(it.latestPerformanceId||'—')+(outcome?(' ('+outcome+')'):'')+'</div>';
+                        +'<div class="hint">Latest: '+(it.outcome||'—')+'</div>';
 
           var right=document.createElement('div'); right.className='stack';
+
           var bVote=document.createElement('button'); bVote.className='btn warn'; bVote.textContent='Vote now (30s)';
           bVote.addEventListener('click', function(){
-            if(STATE.currentSingerId!==it.id){
-              if(!confirm('Switch to “'+it.name+'” and open a 30s vote?')) return;
+            // Switch to this singer, then open voting
+            if(STATE.currentSingerName !== it.name){
+              // Find singerId by name (we already have sid)
             }
-            if(!STATE.performanceId || STATE.currentSingerId!==it.id){
-              announceExisting(it.id,it.name).then(function(){ openVoting(30); });
-            }else{
-              openVoting(30);
-            }
+            announceOrReuseThenVote(it.id, it.name);
           });
 
-          // Remove / Restore
           var bRemove=document.createElement('button');
           if (!it.removed){
-            bRemove.className='btn danger';
-            bRemove.textContent='Remove';
+            bRemove.className='btn danger'; bRemove.textContent='Remove';
             bRemove.addEventListener('click', function(){
               if (!confirm('Remove singer “'+it.name+'”? They will be hidden from lists and the Board.')) return;
               updateSingerRemoved(it.id, true);
             });
           }else{
-            bRemove.className='btn good';
-            bRemove.textContent='Restore';
+            bRemove.className='btn good'; bRemove.textContent='Restore';
             bRemove.addEventListener('click', function(){ updateSingerRemoved(it.id, false); });
           }
 
           right.appendChild(bVote);
           right.appendChild(bRemove);
           li.appendChild(left); li.appendChild(right);
-          singerListEl.appendChild(li);
-          shown++;
-
-          considerStillIn(it, outcome);
-        }
-
-        items.forEach(function(it){
-          var pid=it.latestPerformanceId||null;
-          var cached=pid ? perfOutcomeCache[pid] : undefined;
-          if(!pid){ appendRow(it,null); }
-          else if(cached!==undefined){ appendRow(it,cached); }
-          else{
-            db.collection('events').doc(getCurrentEventId()).collection('performances').doc(pid).get()
-            .then(function(s){ var outcome=s.exists?(s.data().outcome||null):null; perfOutcomeCache[pid]=outcome; renderSingerList(cachedSingers); })
-            .catch(function(){ perfOutcomeCache[pid]=null; renderSingerList(cachedSingers); });
-          }
+          listEl.appendChild(li);
         });
-
-        if(!shown){ var li=document.createElement('li'); li.textContent=showRemoved?'No singers.':'No singers (Removed hidden).'; singerListEl.appendChild(li); }
-
-        renderStillInList();
       }
 
-      function renderStillInList(){
-        var stillEl = $('stillInList');
-        stillEl.innerHTML = '';
-        if (!stillInCache.length){
-          var li=document.createElement('li'); li.textContent='—'; stillEl.appendChild(li);
-          return;
+      function announceOrReuseThenVote(singerId, singerName){
+        // If this singer isn't current or has no open/perf, announce first, then open voting
+        if (STATE.currentSingerId !== singerId){
+          announceExisting(singerId, singerName).then(function(){ openVoting(30); });
+        }else{
+          if (!STATE.performanceId){
+            announceExisting(singerId, singerName).then(function(){ openVoting(30); });
+          }else{
+            openVoting(30);
+          }
         }
-        stillInCache.sort(function(a,b){ return a.name.localeCompare(b.name,undefined,{sensitivity:'base'}); });
-        stillInCache.forEach(function(x){
-          var li=document.createElement('li');
-          li.innerHTML = '<div style="font-weight:900">'+x.name+'</div><div class="hint">'+x.outcome+'</div>';
-          stillEl.appendChild(li);
-        });
       }
 
       function loadSingersOnce(eid){
         db.collection('events').doc(eid).collection('singers').get()
           .then(function(snap){
-            var items=[];
+            singerMap = {};
             snap.forEach(function(d){
               var x=d.data()||{};
-              items.push({id:d.id, name:x.name||'', latestPerformanceId:x.latestPerformanceId||null, removed: !!x.removed});
+              singerMap[d.id] = {name:x.name||'', latestPerformanceId:x.latestPerformanceId||null, removed: !!x.removed};
             });
-            renderSingerList(items); singerReadNote.textContent='';
+            // Also warm outcomes for any referenced latestPerformanceId
+            var perfIds = Object.values(singerMap).map(s=>s.latestPerformanceId).filter(Boolean);
+            if (perfIds.length){
+              // fetch outcomes
+              // (We rely on live perf watcher to keep them fresh; this is just an initial render)
+            }
+            renderSingersSidebar();
           })
-          .catch(function(){ renderSingerList([]); singerReadNote.textContent='Could not read singers (check rules).'; });
+          .catch(function(){ singerMap={}; renderSingersSidebar(); });
       }
+
       function watchSingers(eid){
         if(unsubSingers){ unsubSingers(); unsubSingers=null; }
         loadSingersOnce(eid);
         unsubSingers = db.collection('events').doc(eid).collection('singers').onSnapshot(function(snap){
-          var items=[];
-          snap.forEach(function(d){
-            var x=d.data()||{};
-            items.push({id:d.id, name:x.name||'', latestPerformanceId:x.latestPerformanceId||null, removed: !!x.removed});
+          snap.docChanges().forEach(function(ch){
+            var id=ch.doc.id, x=ch.doc.data()||{};
+            if (ch.type==='removed'){
+              delete singerMap[id];
+            }else{
+              singerMap[id] = {name:x.name||'', latestPerformanceId:x.latestPerformanceId||null, removed: !!x.removed};
+            }
           });
-          renderSingerList(items); singerReadNote.textContent='';
-        }, function(err){ singerReadNote.textContent='Realtime singers error: '+((err&&err.message)||err); });
+          renderSingersSidebar();
+        }, function(err){ setStatus('Realtime singers error: '+((err&&err.message)||err)); });
       }
 
       // Update removed flag
@@ -651,7 +651,7 @@
           return db.collection('events').doc(eid).collection('performances').doc(perfId).update({
             status:'closed', closeAt: firebase.firestore.Timestamp.fromDate(new Date()),
             outcome:outcome, counts:{encore:e, another:a, maybe:m}
-          }).then(function(){ perfOutcomeCache[perfId]=outcome||null; renderSingerList(cachedSingers); });
+          }).then(function(){ perfOutcomeCache[perfId]=outcome||null; renderSingersSidebar(); });
         }).catch(function(){});
       }
       function endVotingNow(){
@@ -690,13 +690,16 @@
         if(unsubSingers){ unsubSingers(); unsubSingers=null; }
         loadSingersOnce(eid);
         unsubSingers = db.collection('events').doc(eid).collection('singers').onSnapshot(function(snap){
-          var items=[];
-          snap.forEach(function(d){
-            var x=d.data()||{};
-            items.push({id:d.id, name:x.name||'', latestPerformanceId:x.latestPerformanceId||null, removed: !!x.removed});
+          snap.docChanges().forEach(function(ch){
+            var id=ch.doc.id, x=ch.doc.data()||{};
+            if (ch.type==='removed'){
+              delete singerMap[id];
+            }else{
+              singerMap[id] = {name:x.name||'', latestPerformanceId:x.latestPerformanceId||null, removed: !!x.removed};
+            }
           });
-          renderSingerList(items); singerReadNote.textContent='';
-        }, function(err){ singerReadNote.textContent='Realtime singers error: '+((err&&err.message)||err); });
+          renderSingersSidebar();
+        }, function(err){ setStatus('Realtime singers error: '+((err&&err.message)||err)); });
       }
       function watchState(eid){
         if(unsubState){ unsubState(); unsubState=null; }
