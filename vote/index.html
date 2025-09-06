@@ -31,7 +31,7 @@
 </head>
 <body>
   <h1>Cast Your Vote</h1>
-  <div class="performing" id="performing">Waiting for the host to set the current singer…</div>
+  <div class="performing" id="performing">Getting the singer…</div>
 
   <div class="card">
     <div class="buttons">
@@ -53,18 +53,21 @@
     };
 
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getFirestore, doc, setDoc, onSnapshot, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const app = initializeApp(FIREBASE_CONFIG);
     const db  = getFirestore(app);
 
-    function getEventIdFromURL(){
-      const u = new URL(window.location.href);
-      return u.searchParams.get("eventId") || "default";
-    }
-    const EVENT_ID = getEventIdFromURL();
+    const qs = new URLSearchParams(location.search);
+    const EVENT_ID  = qs.get("eventId") || "default";
+    const SINGER_ID_PARAM = qs.get("singerId"); // optional
 
-    // Stable device id (per browser/device)
+    const statusEl = document.getElementById("status");
+    const perfEl   = document.getElementById("performing");
+    const btnE = document.getElementById("btnEncore");
+    const btnA = document.getElementById("btnAnother");
+    const btnM = document.getElementById("btnMaybe");
+
     function getDeviceId(){
       const KEY = "eyek_device_id";
       let id = localStorage.getItem(KEY);
@@ -77,56 +80,59 @@
     }
     const DEVICE_ID = getDeviceId();
 
-    const statusEl = document.getElementById("status");
-    const perfEl   = document.getElementById("performing");
-    const btnE = document.getElementById("btnEncore");
-    const btnA = document.getElementById("btnAnother");
-    const btnM = document.getElementById("btnMaybe");
-
     let currentSinger = { id:null, name:null };
 
-    // Watch "Now Performing"
-    onSnapshot(doc(db,"events",EVENT_ID,"state","current"), (snap)=>{
-      if (!snap.exists()){
-        currentSinger = { id:null, name:null };
-        perfEl.textContent = "Waiting for the host to set the current singer…";
-        setDisabled(true);
-        return;
-      }
-      const d = snap.data()||{};
-      currentSinger = { id: d.currentSingerId || null, name: d.currentSingerName || "Unknown" };
-      perfEl.textContent = currentSinger.id ? `Now voting for: ${currentSinger.name}` : "Waiting for the host to set the current singer…";
-      setDisabled(!currentSinger.id);
-    }, (err)=>{
-      statusEl.textContent = "Error: " + (err?.message || err);
-    });
+    async function setSingerById(singerId){
+      if(!singerId){ setDisabled(true); perfEl.textContent="No singer selected."; return; }
+      let name = null;
+      try{
+        const s = await getDoc(doc(db,"events",EVENT_ID,"singers",singerId));
+        if (s.exists()){ name = (s.data()||{}).name || null; }
+      }catch(e){}
+      currentSinger = { id: singerId, name: name || "(Unknown Singer)" };
+      perfEl.textContent = "Now voting for: " + currentSinger.name;
+      setDisabled(false);
+    }
+
+    function followStateCurrent(){
+      onSnapshot(doc(db,"events",EVENT_ID,"state","current"), (snap)=>{
+        if (!snap.exists()){
+          setDisabled(true);
+          perfEl.textContent = "Waiting for the host to set the singer…";
+          return;
+        }
+        const d = snap.data()||{};
+        currentSinger = { id: d.currentSingerId || null, name: d.currentSingerName || "(Unknown Singer)" };
+        setDisabled(!currentSinger.id);
+        perfEl.textContent = currentSinger.id ? ("Now voting for: " + currentSinger.name) : "Waiting for the host…";
+      }, (err)=>{
+        statusEl.textContent = "Error: " + (err?.message || err);
+      });
+    }
 
     function setDisabled(disabled){
-      btnE.disabled = disabled;
-      btnA.disabled = disabled;
-      btnM.disabled = disabled;
+      btnE.disabled = disabled; btnA.disabled = disabled; btnM.disabled = disabled;
     }
 
     async function castVote(category){
       if (!currentSinger.id){
-        statusEl.textContent = "Voting opens when the host sets the current singer.";
+        statusEl.textContent = "Voting opens when the singer is set.";
         return;
       }
       const docId = `${currentSinger.id}__${DEVICE_ID}`;
-      const voteDocRef = doc(db, "events", EVENT_ID, "votes", docId);
+      const voteRef = doc(db,"events",EVENT_ID,"votes",docId);
       statusEl.textContent = "Submitting your vote…";
       try{
-        await setDoc(voteDocRef, {
+        await setDoc(voteRef, {
           singerId: currentSinger.id,
           singerName: currentSinger.name,
           category,
           deviceId: DEVICE_ID,
           ts: Date.now()
-        }, { merge: false }); // create-only; rules forbid update
-        statusEl.textContent = "✅ Vote submitted! Thanks.";
-        setDisabled(true); // optional UX: disable after successful vote
+        }, { merge:false });
+        statusEl.textContent = "✅ Vote submitted! (one per device per singer)";
+        setDisabled(true);
       }catch(e){
-        // If they already voted, rules will block the update; show a friendly message.
         const msg = (""+e?.message||"").toLowerCase();
         if (msg.includes("permission") || msg.includes("already exists") || msg.includes("failed")){
           statusEl.textContent = "You’ve already voted for this singer on this device.";
@@ -139,6 +145,10 @@
     btnE.addEventListener("click", ()=>castVote("encore"));
     btnA.addEventListener("click", ()=>castVote("another"));
     btnM.addEventListener("click", ()=>castVote("maybe"));
+
+    // Init: singerId param wins; otherwise follow host state/current
+    if (SINGER_ID_PARAM){ setSingerById(SINGER_ID_PARAM); }
+    else { followStateCurrent(); }
   </script>
 </body>
 </html>
