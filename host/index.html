@@ -2,166 +2,195 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Earn Your Encore Karaoke — Host</title>
+  <title>Earn Your Encore Karaoke — Host (Large Print)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta http-equiv="Cache-Control" content="no-store" />
   <style>
+    /* ---------- ACCESSIBILITY FIRST ---------- */
     :root{
-      --bg:#0b0b0f; --panel:#101424; --card:#141826; --accent:#7bc4ff;
-      --text:#f7f8fc; --muted:#b9c0d0; --border:#26304a;
-      --encore:#4ade80; --another:#fbbf24; --maybe:#f87171;
+      --scale: 1;                 /* A- / A+ controls adjust this */
+      --bg:#08090c; --panel:#0e1324; --card:#121831; --accent:#7bc4ff;
+      --text:#ffffff; --muted:#c8d1e6; --border:#2a3553;
+      --encore:#22c55e; --another:#f59e0b; --maybe:#ef4444;
+      --btn:#1a2140; --btnBorder:#344062;
+      --focus:#fff;
+    }
+    @media (prefers-contrast: more){
+      :root{ --border:#41507a; --btnBorder:#4a5a8b; }
     }
     *{box-sizing:border-box}
     html,body{height:100%}
+    html{background:var(--bg)}
     body{
-      margin:0; display:flex; min-height:100vh;
-      background:linear-gradient(180deg,#0b0b0f 0%,#0e1220 100%);
-      color:var(--text); font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Helvetica Neue,Arial,Noto Sans;
+      margin:0; min-height:100vh; display:flex; flex-direction:column;
+      color:var(--text); font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu;
+      font-size: calc(20px * var(--scale));  /* LARGE base type */
+      line-height:1.35;
     }
-    .sidebar{
-      width:360px; background:var(--panel); border-right:1px solid var(--border);
-      padding:18px; position:sticky; top:0; height:100vh; overflow:auto;
+    .wrap{max-width:1400px; margin:0 auto; width:100%}
+    header{
+      position:sticky; top:0; z-index:10;
+      background:linear-gradient(180deg,rgba(8,9,12,.9),rgba(8,9,12,.6));
+      backdrop-filter:saturate(1.2) blur(6px);
+      border-bottom:2px solid var(--border);
     }
-    .brand{display:flex;align-items:center;gap:10px;margin-bottom:14px}
-    .brand img{width:36px;height:36px;border-radius:8px}
-    .brand h1{font-size:18px;margin:0}
-    .muted{color:var(--muted)}
-    .group{margin-top:18px}
-    .pill{display:inline-block;border:1px solid var(--border);border-radius:999px;padding:6px 10px;color:var(--muted);font-size:12px}
-    .sidebar a, .sidebar button.link{
-      display:block;text-decoration:none;color:var(--text);background:#0f1322;border:1px solid var(--border);
-      padding:10px 12px;border-radius:10px;margin-bottom:10px;font-weight:600;text-align:center;cursor:pointer
+    .bar{
+      display:flex; gap:16px; align-items:center; justify-content:space-between;
+      padding:14px 18px;
     }
-    .sidebar a:hover,.sidebar button.link:hover{outline:1px solid var(--accent)}
-    .qrWrap{margin-top:8px;background:#0e1220;border:1px dashed var(--border);border-radius:12px;padding:10px;text-align:center}
-    .qrWrap img{width:100%;height:auto;border-radius:6px}
-    .small{font-size:12px;color:var(--muted);word-break:break-all}
-
-    .main{flex:1;padding:20px}
-    .hero{
-      background:linear-gradient(90deg,#141b36 0%, transparent 100%);
-      border:1px solid var(--border); border-radius:16px; padding:16px 18px; margin-bottom:18px;
+    .title{font-size:1.6em; font-weight:900; letter-spacing:.2px}
+    .pill{display:inline-block; border:2px solid var(--border); border-radius:999px; padding:.25em .6em; color:var(--muted); font-weight:700}
+    .row{display:grid; gap:18px; grid-template-columns:1fr 1fr}
+    @media (max-width:1200px){ .row{grid-template-columns:1fr} }
+    .card{
+      background:var(--card); border:2px solid var(--border); border-radius:18px; padding:18px;
+      box-shadow: 0 6px 24px rgba(0,0,0,.25);
     }
-    .hero h2{margin:0;font-size:26px}
-    .hero .sub{margin-top:6px;color:var(--muted)}
-    .row{display:grid;gap:18px;grid-template-columns:1fr 1fr}
-    @media (max-width:1200px){.row{grid-template-columns:1fr}.sidebar{position:static;height:auto}}
-    .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px}
-    h2{margin:0 0 12px}
-    label{display:block;margin:10px 0 6px;font-weight:600}
-    input{padding:10px 12px;border-radius:10px;border:1px solid var(--border);width:100%;background:#0f1322;color:#f7f8fc}
-    .btn{padding:10px 14px;border:none;border-radius:10px;background:var(--accent);color:#000;font-weight:700;cursor:pointer}
-    .btn.secondary{background:#0f1322;color:#fff;border:1px solid var(--border)}
-    .btn.danger{background:#ef4444;color:#fff}
-    .stack{display:flex;gap:10px;flex-wrap:wrap}
-    ul{list-style:none;margin:0;padding:0}
-    li{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:#0f1322;margin-bottom:10px}
-    .hint{font-size:13px;color:var(--muted);margin-top:8px}
-    .ok{color:#86efac}.err{color:#fca5a5}
-    .count{font-weight:900}
-    .toggle{display:flex;align-items:center;gap:8px;margin-top:8px}
+    h2{margin:.1em 0 .5em; font-size:1.4em}
+    label{display:block; margin:.6em 0 .25em; font-weight:800}
+    input{
+      padding:.7em .8em; border-radius:12px; border:2px solid var(--border); width:100%;
+      background:#0f152d; color:#fff; font-size:1.05em; outline:none;
+    }
+    input:focus{box-shadow:0 0 0 4px rgba(123,196,255,.25)}
+    .stack{display:flex; gap:12px; flex-wrap:wrap}
+    .btn{
+      appearance:none; padding:.8em 1em; border:2px solid var(--btnBorder); border-radius:14px;
+      background:var(--btn); color:#fff; font-weight:900; cursor:pointer; font-size:1.05em; letter-spacing:.25px;
+      min-height:56px;
+    }
+    .btn:focus{outline:3px solid var(--focus); outline-offset:2px}
+    .btn.primary{background:var(--accent); color:#07111d; border-color:#a9d9ff}
+    .btn.good{background:var(--encore); color:#062; border-color:#70e395}
+    .btn.warn{background:var(--another); color:#231b00; border-color:#ffd28a}
+    .btn.danger{background:var(--maybe); color:#2b0000; border-color:#ffb4b4}
+    .btn.ghost{background:#0f152d}
+    .toggle{display:flex; gap:.5em; align-items:center; font-weight:800}
+    .hint{color:var(--muted); font-weight:600}
+    .bigline{font-size:1.3em; font-weight:900}
+    ul{list-style:none; margin:0; padding:0}
+    li{
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+      padding:.7em .8em; border:2px solid var(--border); border-radius:14px;
+      background:#0f152d; margin:.5em 0;
+    }
+    .qrWrap{
+      background:#0e1220; border:2px dashed var(--border); border-radius:16px;
+      display:flex; align-items:center; justify-content:center; padding:16px; min-height:520px;
+    }
+    .qrWrap img{ width:100%; height:auto; max-width:760px; border-radius:12px }
+    footer{margin:12px 0 22px; color:var(--muted); text-align:center}
+    .status{
+      position:sticky; bottom:0; background:linear-gradient(180deg,rgba(8,9,12,.65),rgba(8,9,12,.95));
+      border-top:2px solid var(--border); padding:12px 18px; font-weight:800;
+    }
+    .countdown{font-weight:900; font-size:1.4em}
+    .controls .btn{min-width:220px}
+    .sectionTitle{display:flex; align-items:center; justify-content:space-between; gap:12px}
+    /* A-/A+ controls */
+    .zoomControls .btn{min-width:0; padding:.5em .7em}
   </style>
 </head>
 <body>
-  <aside class="sidebar">
-    <div class="brand">
-      <img src="/Earn Your Encore Karaoke - Icon.png" alt="EYEK" onerror="this.style.display='none'"/>
-      <h1>Host Panel</h1>
-    </div>
-
-    <div class="group">
-      <div class="muted">Current Event</div>
-      <div class="pill" id="currentEventPill">default</div>
-      <div class="small" id="listeningPill">Listening to: default</div>
-
-      <div class="toggle">
-        <label class="small"><input type="checkbox" id="lockEvent"> Lock Event</label>
-        <label class="small"><input type="checkbox" id="broadcastActive"> Broadcast Active Event</label>
+  <header>
+    <div class="wrap bar">
+      <div class="title">Host Control</div>
+      <div class="stack zoomControls" role="group" aria-label="Text size">
+        <button class="btn ghost" id="zoomDown" title="Smaller text">A−</button>
+        <span class="pill" id="zoomLabel">Text: 100%</span>
+        <button class="btn ghost" id="zoomUp" title="Larger text">A+</button>
       </div>
-      <div class="small" id="eventNote"></div>
     </div>
-
-    <div class="group">
-      <div class="muted">Now Performing</div>
-      <div class="pill" id="nowPerfPill">None</div>
-      <div class="small" id="perfStatus">No performance</div>
-      <div class="small">Countdown: <span id="countdown" class="count">—</span></div>
-      <div class="stack" style="margin-top:12px">
-        <button class="link" id="btnAnnounce">Announce singer (show QR)</button>
-        <button class="link" id="btnVoteNow">Vote now (30s)</button>
-        <button class="link" id="btnExtend15">Extend +15s</button>
-        <button class="link" id="btnEndNow">End now</button>
+    <div class="wrap bar" style="padding-top:0">
+      <div class="pill" id="eventPill">Event: —</div>
+      <div class="stack">
+        <label class="toggle"><input type="checkbox" id="broadcastActive"> Broadcast Active Event</label>
+        <label class="toggle"><input type="checkbox" id="lockEvent"> Lock Event</label>
       </div>
-      <div class="stack" style="margin-top:12px">
-        <button class="link" id="hostVoteEncore">Host Vote: Encore</button>
-        <button class="link" id="hostVoteAnother">Host Vote: Another</button>
-        <button class="link" id="hostVoteMaybe">Host Vote: Maybe</button>
+    </div>
+  </header>
+
+  <main class="wrap" style="padding:18px">
+    <!-- Event Controls -->
+    <section class="card">
+      <div class="sectionTitle">
+        <h2>Event</h2>
       </div>
-      <div class="small">Host votes are limited to one per device per performance.</div>
-    </div>
-
-    <div class="group">
-      <div class="muted">QR for Current Performance</div>
-      <div class="qrWrap">
-        <img id="qrImg" alt="QR code" />
+      <label for="eventId">Event name</label>
+      <input id="eventId" placeholder="e.g. Eagles Nest" />
+      <div class="stack" style="margin-top:.6em">
+        <button class="btn primary" id="setEventBtn">Set / Switch Event</button>
+        <button class="btn ghost" id="openScreen">Open Screen</button>
+        <button class="btn ghost" id="openBoard">Open Board</button>
+        <button class="btn ghost" id="copyEventVoteUrl">Copy Event Vote URL</button>
       </div>
-      <div class="small" id="perfVoteUrl">—</div>
-      <div class="stack" style="margin-top:8px">
-        <button class="link" id="copyPerfVoteUrl">Copy Perf Vote URL</button>
-        <button class="link" id="openQrScreen">Open Big QR Screen</button>
-        <button class="link" id="openQrInNewTab">Open QR in New Tab</button>
-      </div>
-      <div class="small" id="qrNote"></div>
-    </div>
+      <div class="hint" id="eventNote" style="margin-top:.6em">TVs can open <code>/screen/</code> and <code>/board/</code> (no params) when Broadcast is ON.</div>
+    </section>
 
-    <div class="group">
-      <div class="muted">Status</div>
-      <div class="small" id="statusSide">Idle…</div>
-    </div>
-  </aside>
-
-  <main class="main">
-    <div class="hero" id="eventHero" hidden>
-      <h2 id="eventHeroTitle">Encore Karaoke at —</h2>
-      <div class="sub">You’re controlling this event from the Host Panel.</div>
-    </div>
-
-    <div class="row">
-      <div class="card">
-        <h2>Event Controls</h2>
-        <label for="eventId">Event name</label>
-        <input id="eventId" placeholder="e.g. Eagles Nest" />
-        <div class="stack">
-          <button class="btn" id="setEventBtn">Set / Switch Event</button>
-          <button class="btn secondary" id="clearVotesBtn">Clear All Votes (event)</button>
+    <div class="row" style="margin-top:18px">
+      <!-- Now Performing + Controls -->
+      <section class="card">
+        <h2>Now Performing</h2>
+        <div class="bigline" id="nowPerfLabel">None</div>
+        <div class="hint" id="perfStatus">No performance yet</div>
+        <div style="margin-top:.4em" class="hint">Countdown: <span class="countdown" id="countdown">—</span></div>
+        <div class="stack controls" style="margin-top:12px">
+          <button class="btn good"  id="btnAnnounce">Announce singer (show QR)</button>
+          <button class="btn warn"  id="btnVoteNow">Vote now (30s)</button>
+          <button class="btn ghost" id="btnExtend15">Extend +15s</button>
+          <button class="btn danger" id="btnEndNow">End now</button>
         </div>
-        <div class="hint">TVs can open <code>/screen/</code> and <code>/board/</code> (no params) if you enable “Broadcast Active Event”.</div>
-      </div>
+        <div class="stack" style="margin-top:12px">
+          <button class="btn" id="hostVoteEncore"  style="background:var(--encore);color:#062">Host Vote: Encore</button>
+          <button class="btn" id="hostVoteAnother" style="background:var(--another);color:#231b00">Host Vote: Another</button>
+          <button class="btn" id="hostVoteMaybe"   style="background:var(--maybe)">Host Vote: Maybe</button>
+        </div>
+      </section>
 
-      <div class="card">
+      <!-- QR Panel -->
+      <section class="card">
+        <h2>Performance QR</h2>
+        <div class="qrWrap"><img id="qrImg" alt="QR code" /></div>
+        <div class="hint" id="perfVoteUrl" style="margin-top:.6em">—</div>
+        <div class="stack" style="margin-top:.6em">
+          <button class="btn ghost" id="copyPerfVoteUrl">Copy Perf Vote URL</button>
+          <button class="btn ghost" id="openQrInNewTab">Open QR in New Tab</button>
+        </div>
+        <div class="hint" id="qrNote" style="margin-top:.4em"></div>
+      </section>
+    </div>
+
+    <div class="row" style="margin-top:18px">
+      <!-- Add/Choose Singer -->
+      <section class="card">
         <h2>Add or choose singer</h2>
         <label for="singerName">Singer name</label>
         <input id="singerName" placeholder="Type a name, press Enter" />
-        <div class="stack">
-          <button class="btn" id="addSingerBtn">Add Singer</button>
-          <label class="small"><input type="checkbox" id="showHidden"> Show hidden (Maybe) singers</label>
+        <div class="stack" style="margin-top:.6em">
+          <button class="btn primary" id="addSingerBtn">Add Singer</button>
+          <label class="toggle"><input type="checkbox" id="showHidden"> Show hidden (Maybe) singers</label>
         </div>
-        <div id="addSingerStatus" class="hint">Ready.</div>
-      </div>
-    </div>
+        <div class="hint" id="addSingerStatus" style="margin-top:.4em">Ready.</div>
+      </section>
 
-    <div class="card" style="margin-top:18px">
-      <h2>Current singers</h2>
-      <ul id="singerList"></ul>
-      <div class="hint" id="singerReadNote"></div>
-    </div>
-
-    <div class="card" style="margin-top:18px">
-      <h2>Debug / Info</h2>
-      <div id="statusMain" class="hint">Waiting for changes…</div>
+      <!-- Singer List -->
+      <section class="card">
+        <h2>Current singers</h2>
+        <ul id="singerList"></ul>
+        <div class="hint" id="singerReadNote"></div>
+      </section>
     </div>
   </main>
 
+  <div class="status">
+    <div id="statusBar">Status: Idle…</div>
+  </div>
+
+  <footer class="wrap">
+    <div class="hint">Tip: Use A− / A+ to resize everything. Big buttons are touch-friendly.</div>
+  </footer>
+
+  <!-- ======================= APP LOGIC ======================= -->
   <script type="module">
     /************** CONFIG **************/
     const FIREBASE_CONFIG = {
@@ -186,34 +215,47 @@
     const db  = getFirestore(app);
     const auth = getAuth(app);
 
-    // Anonymous sign-in (host)
+    // ---------- Anonymous sign-in (host) ----------
     signInAnonymously(auth).catch(e=>{
-      document.getElementById("statusSide").textContent = "Auth error: " + (e?.message || e);
+      setStatus("Auth error: " + (e?.message || e));
     });
     onAuthStateChanged(auth, user=>{
-      document.getElementById("statusSide").textContent = user ? "Host signed in (anon)" : "Not signed in";
+      if (!user) setStatus("Not signed in");
     });
 
     /************** DOM **************/
-    const eventIdInput    = document.getElementById("eventId");
-    const currentEventPill= document.getElementById("currentEventPill");
-    const listeningPill   = document.getElementById("listeningPill");
-    const eventHero       = document.getElementById("eventHero");
-    const eventHeroTitle  = document.getElementById("eventHeroTitle");
-    const lockEventEl     = document.getElementById("lockEvent");
-    const broadcastEl     = document.getElementById("broadcastActive");
-    const eventNote       = document.getElementById("eventNote");
+    const zoomDown = document.getElementById("zoomDown");
+    const zoomUp = document.getElementById("zoomUp");
+    const zoomLabel = document.getElementById("zoomLabel");
 
-    const nowPerfPill     = document.getElementById("nowPerfPill");
-    const perfStatus      = document.getElementById("perfStatus");
-    const countdownEl     = document.getElementById("countdown");
+    const eventIdInput = document.getElementById("eventId");
+    const eventPill    = document.getElementById("eventPill");
+    const broadcastEl  = document.getElementById("broadcastActive");
+    const lockEventEl  = document.getElementById("lockEvent");
+    const eventNote    = document.getElementById("eventNote");
 
-    const qrImg           = document.getElementById("qrImg");
-    const perfVoteUrlEl   = document.getElementById("perfVoteUrl");
-    const qrNote          = document.getElementById("qrNote");
+    const nowPerfLabel = document.getElementById("nowPerfLabel");
+    const perfStatus   = document.getElementById("perfStatus");
+    const countdownEl  = document.getElementById("countdown");
+
+    const btnAnnounce  = document.getElementById("btnAnnounce");
+    const btnVoteNow   = document.getElementById("btnVoteNow");
+    const btnExtend15  = document.getElementById("btnExtend15");
+    const btnEndNow    = document.getElementById("btnEndNow");
+
+    const hostVoteEncore  = document.getElementById("hostVoteEncore");
+    const hostVoteAnother = document.getElementById("hostVoteAnother");
+    const hostVoteMaybe   = document.getElementById("hostVoteMaybe");
+
+    const qrImg         = document.getElementById("qrImg");
+    const perfVoteUrlEl = document.getElementById("perfVoteUrl");
+    const qrNote        = document.getElementById("qrNote");
     const copyPerfVoteUrl = document.getElementById("copyPerfVoteUrl");
-    const openQrScreen    = document.getElementById("openQrScreen");
     const openQrInNewTab  = document.getElementById("openQrInNewTab");
+
+    const openScreen = document.getElementById("openScreen");
+    const openBoard  = document.getElementById("openBoard");
+    const copyEventVoteUrl = document.getElementById("copyEventVoteUrl");
 
     const singerNameInput = document.getElementById("singerName");
     const addSingerBtn    = document.getElementById("addSingerBtn");
@@ -222,155 +264,137 @@
     const singerListEl    = document.getElementById("singerList");
     const singerReadNote  = document.getElementById("singerReadNote");
 
-    const statusSide      = document.getElementById("statusSide");
-    const statusMain      = document.getElementById("statusMain");
+    const statusBar    = document.getElementById("statusBar");
 
+    // Buttons
     document.getElementById("setEventBtn").addEventListener("click", onClickSetEvent);
-    document.getElementById("clearVotesBtn").addEventListener("click", clearVotes);
+    openScreen.addEventListener("click", ()=> window.open(urlRoot()+"screen/index.html?eventId="+encodeURIComponent(getCurrentEventId()), "_blank", "noopener"));
+    openBoard.addEventListener("click",  ()=> window.open(urlRoot()+"board/index.html?eventId="+encodeURIComponent(getCurrentEventId()), "_blank", "noopener"));
+    copyEventVoteUrl.addEventListener("click", ()=> {
+      navigator.clipboard.writeText(urlRoot()+"vote/index.html?eventId="+encodeURIComponent(getCurrentEventId())).then(()=> setStatus("Event Vote URL copied."));
+    });
 
     addSingerBtn.addEventListener("click", addSinger);
     singerNameInput.addEventListener("keydown", (e)=>{ if (e.key === "Enter") addSinger(); });
-    eventIdInput.addEventListener("keydown", (e)=>{ if (e.key === "Enter") onClickSetEvent(); });
 
-    document.getElementById("btnAnnounce").addEventListener("click", announceSinger);
-    document.getElementById("btnVoteNow").addEventListener("click", () => openVoting(30));
-    document.getElementById("btnExtend15").addEventListener("click", () => extendVoting(15));
-    document.getElementById("btnEndNow").addEventListener("click", endVotingNow);
+    btnAnnounce.addEventListener("click", announceSinger);
+    btnVoteNow.addEventListener("click", ()=> openVoting(30));
+    btnExtend15.addEventListener("click", ()=> extendVoting(15));
+    btnEndNow.addEventListener("click", endVotingNow);
 
-    document.getElementById("hostVoteEncore").addEventListener("click", ()=> hostCastVote("encore"));
-    document.getElementById("hostVoteAnother").addEventListener("click", ()=> hostCastVote("another"));
-    document.getElementById("hostVoteMaybe").addEventListener("click", ()=> hostCastVote("maybe"));
+    hostVoteEncore.addEventListener("click", ()=> hostCastVote("encore"));
+    hostVoteAnother.addEventListener("click", ()=> hostCastVote("another"));
+    hostVoteMaybe.addEventListener("click", ()=> hostCastVote("maybe"));
 
     copyPerfVoteUrl.addEventListener("click", () => {
       const url = perfVoteUrlEl.textContent.trim();
-      if (!url || url === "—") { statusSide.textContent = "No performance."; return; }
-      navigator.clipboard.writeText(url).then(()=>{ statusSide.textContent = "Performance Vote URL copied."; });
-    });
-    openQrScreen.addEventListener("click", () => {
-      const ROOT = location.origin + "/";
-      const url = ROOT + "screen/index.html?eventId=" + encodeURIComponent(getCurrentEventId());
-      window.open(url, "_blank", "noopener");
+      if (!url || url === "—") return setStatus("No performance.");
+      navigator.clipboard.writeText(url).then(()=> setStatus("Performance Vote URL copied."));
     });
     openQrInNewTab.addEventListener("click", ()=>{
       const url = perfVoteUrlEl.textContent.trim();
-      if (!url || url === "—") { statusSide.textContent = "No performance."; return; }
+      if (!url || url === "—") return setStatus("No performance.");
       window.open(qrProvider1(url), "_blank", "noopener");
     });
 
-    lockEventEl.addEventListener("change", ()=> {
-      localStorage.setItem("eyek_lock_event", lockEventEl.checked ? "1" : "0");
-      eventNote.textContent = lockEventEl.checked ? "Event locked — switching disabled." : "";
-    });
     broadcastEl.addEventListener("change", ()=> {
       localStorage.setItem("eyek_broadcast_event", broadcastEl.checked ? "1" : "0");
       if (broadcastEl.checked) broadcastActiveEvent(getCurrentEventId());
     });
+    lockEventEl.addEventListener("change", ()=> {
+      localStorage.setItem("eyek_lock_event", lockEventEl.checked ? "1" : "0");
+      eventNote.textContent = lockEventEl.checked ? "Event locked — switching disabled." : "";
+    });
     showHiddenEl.addEventListener("change", ()=> renderSingerList(cachedSingers));
 
+    // Zoom controls
+    const Z_KEY = "eyek_zoom";
+    function setZoom(v){
+      v = Math.min(1.6, Math.max(0.8, v));
+      document.documentElement.style.setProperty("--scale", v);
+      localStorage.setItem(Z_KEY, String(v));
+      zoomLabel.textContent = "Text: " + Math.round(v*100) + "%";
+    }
+    zoomDown.addEventListener("click", ()=> setZoom((+localStorage.getItem(Z_KEY)||1) - 0.1));
+    zoomUp.addEventListener("click",   ()=> setZoom((+localStorage.getItem(Z_KEY)||1) + 0.1));
+    setZoom(+localStorage.getItem(Z_KEY)||1);
+
     /************** STATE **************/
-    const STATE = {
-      currentSingerId:null,
-      currentSingerName:null,
-      performanceId:null,
-      performanceCloseAt:null,
-      performanceStatus:""
-    };
-    let unsubscribeSingers = null, unsubscribeVotes = null, unsubscribeState = null, unsubscribePerf = null;
-    let countdownTimer = null;
-    let autoCloseTimer = null;
+    const STATE = { currentSingerId:null, currentSingerName:null, performanceId:null, performanceCloseAt:null, performanceStatus:"" };
+    let unsubscribeSingers = null, unsubscribeState = null, unsubscribePerf = null;
+    let countdownTimer = null, autoCloseTimer = null;
+    const perfOutcomeCache = new Map(); // perfId -> outcome
+    let cachedSingers = [];
 
-    const perfOutcomeCache = new Map(); // perfId -> 'encore'|'another'|'maybe'|null
-    let cachedSingers = []; // {id,name,latestPerformanceId}
+    // Persisted event id
+    const LS_EVENT = "eyek_last_event";
 
-    // Persistent event helpers
-    const LS_EVENT_KEY = "eyek_last_event";
-
-    // Prompt for event if none saved or in URL
-    (function maybePromptEvent(){
+    // Prompt on first load if missing
+    (function promptEventIfMissing(){
       const u = new URL(location.href);
       const q = u.searchParams.get("eventId");
-      const mem = localStorage.getItem(LS_EVENT_KEY);
+      const mem = localStorage.getItem(LS_EVENT);
       if (!q && !mem){
         const typed = (prompt("Enter event name:") || "").trim();
-        if (typed) {
+        if (typed){
           u.searchParams.set("eventId", typed);
           history.replaceState({}, "", u.toString());
-          localStorage.setItem(LS_EVENT_KEY, typed);
+          localStorage.setItem(LS_EVENT, typed);
         }
       }
     })();
 
+    // Init toggles
+    broadcastEl.checked = localStorage.getItem("eyek_broadcast_event")==="1";
+    lockEventEl.checked = localStorage.getItem("eyek_lock_event")==="1";
+    if (lockEventEl.checked) eventNote.textContent = "Event locked — switching disabled.";
+
+    // Start up on current/last event
+    const START_EVENT = (new URL(location.href)).searchParams.get("eventId") || localStorage.getItem(LS_EVENT) || "default";
+    eventIdInput.value = START_EVENT;
+    applyEvent(START_EVENT);
+
+    /************** Helpers **************/
+    function setStatus(text){ statusBar.textContent = "Status: " + text; }
+    function urlRoot(){ return location.origin + "/"; }
     function getCurrentEventId(){
       const u = new URL(window.location.href);
       const q = u.searchParams.get("eventId");
       if (q && q.trim()) return q.trim();
-      const mem = localStorage.getItem(LS_EVENT_KEY);
+      const mem = localStorage.getItem(LS_EVENT);
       return mem && mem.trim() ? mem.trim() : "default";
     }
-
     function applyEvent(eid){
-      // Update URL
       const u = new URL(window.location.href);
       u.searchParams.set("eventId", eid);
       history.replaceState({}, "", u.toString());
-
-      // Persist & UI
-      try{ localStorage.setItem(LS_EVENT_KEY, eid); }catch{}
-      currentEventPill.textContent = eid;
-      listeningPill.textContent = "Listening to: " + eid;
-      eventHero.hidden = false;
-      eventHeroTitle.textContent = `Encore Karaoke at ${eid}`;
-
-      // Rewire listeners
+      try{ localStorage.setItem(LS_EVENT, eid); }catch{}
+      eventPill.textContent = "Event: " + eid;
       watchSingers(eid);
       watchState(eid);
-
-      // Broadcast if enabled
       if (broadcastEl.checked) broadcastActiveEvent(eid);
-
-      statusMain.textContent = "Event set to: " + eid;
+      setStatus("Event set to: " + eid);
     }
-
     function onClickSetEvent(){
       const typed = (eventIdInput.value || "").trim();
       const current = getCurrentEventId();
-
-      if (lockEventEl.checked){
-        statusMain.textContent = "Event is locked. Uncheck “Lock Event” to switch.";
-        return;
-      }
-      if (!typed){
-        statusMain.textContent = "Enter an event name to set/switch.";
-        return;
-      }
-      if (typed === current){
-        statusMain.textContent = `Already on event "${current}".`;
-        return;
-      }
-
-      const msg =
-`Switch event from "${current}" to "${typed}"?
-
-• This will NOT delete any singers or votes.
-• Screen/Board will follow the new event if “Broadcast Active” is on.
-• New QR codes will target "${typed}".`;
-      if (!window.confirm(msg)){
-        statusMain.textContent = "Event switch cancelled.";
-        return;
-      }
-
+      if (lockEventEl.checked) return setStatus("Event is locked. Uncheck ‘Lock Event’ to switch.");
+      if (!typed) return setStatus("Enter an event name to set/switch.");
+      if (typed === current) return setStatus(`Already on event “${current}”.`);
+      const ok = confirm(`Switch event from “${current}” to “${typed}”?`);
+      if (!ok) return setStatus("Event switch cancelled.");
       applyEvent(typed);
     }
-
     async function broadcastActiveEvent(eid){
       try{
         await setDoc(doc(db,"meta","active"), { eventId: eid, updatedAt: serverTimestamp() });
         eventNote.textContent = `Broadcasting Active Event: ${eid}`;
       }catch(e){
-        eventNote.textContent = "Error broadcasting active event: " + (e?.message || e);
+        eventNote.textContent = "Error broadcasting: " + (e?.message || e);
       }
     }
 
+    // Device id for host vote
     function getDeviceId(){
       const KEY = "eyek_device_id";
       let id = localStorage.getItem(KEY);
@@ -383,164 +407,116 @@
     }
     const DEVICE_ID = getDeviceId();
 
-    // ===== QR via image providers =====
-    function qrProvider1(data){ return "https://api.qrserver.com/v1/create-qr-code/?size=600x600&data=" + encodeURIComponent(data); }
-    function qrProvider2(data){ return "https://chart.googleapis.com/chart?cht=qr&chs=512x512&chl=" + encodeURIComponent(data); }
-    function setQrImageForUrl(dataUrl){
-      const p1 = qrProvider1(dataUrl);
-      const p2 = qrProvider2(dataUrl);
-      let triedFallback = false;
-      qrImg.onerror = () => {
-        if (!triedFallback){
-          triedFallback = true;
-          qrImg.src = p2;
-          qrNote.textContent = "Primary QR image blocked; using fallback provider.";
-        }else{
-          qrImg.alt = "QR unavailable";
-          qrNote.textContent = "Both QR image providers were blocked. Use “Open QR in New Tab”.";
-        }
-      };
-      qrImg.src = p1;
+    // QR providers (image-only so no extra JS libs)
+    function qrProvider1(d){ return "https://api.qrserver.com/v1/create-qr-code/?size=700x700&data=" + encodeURIComponent(d); }
+    function qrProvider2(d){ return "https://chart.googleapis.com/chart?cht=qr&chs=600x600&chl=" + encodeURIComponent(d); }
+    function setQrImageForUrl(url){
+      let tried=false;
+      qrImg.onerror = ()=>{ if(!tried){ tried=true; qrImg.src = qrProvider2(url); qrNote.textContent = "Primary QR blocked; using fallback."; }else{ qrImg.alt="QR unavailable"; qrNote.textContent="Both QR providers blocked."; } };
+      qrImg.src = qrProvider1(url);
     }
     function updatePerfQr(){
       const eid = getCurrentEventId();
       if (!STATE.performanceId){
-        perfVoteUrlEl.textContent = "—";
-        qrImg.removeAttribute("src");
-        qrImg.alt = "No performance";
-        qrNote.textContent = "";
-        return;
+        perfVoteUrlEl.textContent = "—"; qrImg.removeAttribute("src"); qrImg.alt="No performance"; qrNote.textContent=""; return;
       }
-      const ROOT = location.origin + "/";
-      const url = ROOT + "vote/index.html?eventId=" + encodeURIComponent(eid)
-                + "&performanceId=" + encodeURIComponent(STATE.performanceId);
+      const url = urlRoot() + "vote/index.html?eventId=" + encodeURIComponent(eid) + "&performanceId=" + encodeURIComponent(STATE.performanceId);
       perfVoteUrlEl.textContent = url;
       setQrImageForUrl(url);
       qrNote.textContent = "";
     }
 
-    // ===== Countdown & auto-close =====
+    // Countdown
     function renderCountdown(){
-      if (!STATE.performanceCloseAt || STATE.performanceStatus !== "open"){
-        countdownEl.textContent = "—";
-        return;
-      }
+      if (!STATE.performanceCloseAt || STATE.performanceStatus !== "open"){ countdownEl.textContent = "—"; return; }
       const ms = STATE.performanceCloseAt.toMillis() - Date.now();
       const s = Math.max(0, Math.ceil(ms/1000));
       countdownEl.textContent = s + "s";
     }
-    function startCountdown(){
-      stopCountdown();
-      renderCountdown();
-      countdownTimer = setInterval(renderCountdown, 250);
-    }
-    function stopCountdown(){
-      if (countdownTimer){ clearInterval(countdownTimer); countdownTimer = null; }
-      countdownEl.textContent = "—";
-    }
+    function startCountdown(){ stopCountdown(); renderCountdown(); countdownTimer = setInterval(renderCountdown, 250); }
+    function stopCountdown(){ if(countdownTimer){ clearInterval(countdownTimer); countdownTimer=null; } countdownEl.textContent="—"; }
     function armAutoClose(){
       if (autoCloseTimer){ clearTimeout(autoCloseTimer); autoCloseTimer=null; }
       if (!STATE.performanceCloseAt) return;
       const ms = Math.max(0, STATE.performanceCloseAt.toMillis() - Date.now());
-      autoCloseTimer = setTimeout(()=> endVotingNow(), ms + 250);
+      autoCloseTimer = setTimeout(()=> endVotingNow(), ms + 300);
     }
 
-    // ===== State / Performance watchers =====
+    // Watch state/performance
     function watchPerformance(eid, perfId){
       if (unsubscribePerf) unsubscribePerf();
       if (!perfId){
         STATE.performanceId=null; STATE.performanceCloseAt=null; STATE.performanceStatus="";
-        stopCountdown(); updatePerfQr(); perfStatus.textContent = "No performance";
-        return;
+        stopCountdown(); updatePerfQr(); perfStatus.textContent = "No performance yet"; return;
       }
       unsubscribePerf = onSnapshot(doc(db,"events",eid,"performances",perfId),(snap)=>{
-        if (!snap.exists()){
-          STATE.performanceCloseAt=null; STATE.performanceStatus=""; stopCountdown(); perfStatus.textContent = "(performance not found)"; return;
-        }
+        if (!snap.exists()){ STATE.performanceCloseAt=null; STATE.performanceStatus=""; stopCountdown(); perfStatus.textContent = "(performance not found)"; return; }
         const d = snap.data()||{};
         STATE.performanceId = snap.id;
         STATE.performanceStatus = d.status || "pending";
         STATE.performanceCloseAt = d.closeAt || null;
         updatePerfQr();
-
         if (STATE.performanceStatus === "open"){ perfStatus.textContent = "Voting OPEN"; startCountdown(); armAutoClose(); }
         else if (STATE.performanceStatus === "pending"){ perfStatus.textContent = "Now singing (get ready)"; stopCountdown(); }
         else { perfStatus.textContent = "Voting CLOSED"; stopCountdown(); }
-
-      }, (err)=>{ perfStatus.textContent = "Performance listener error: " + (err?.message||err); });
+      }, (err)=> setStatus("Performance listener error: " + (err?.message || err)));
     }
-
     function watchState(eid){
       if (unsubscribeState) unsubscribeState();
       unsubscribeState = onSnapshot(doc(db,"events",eid,"state","current"), (snap)=>{
-        if (!snap.exists()){
-          STATE.currentSingerId = null; STATE.currentSingerName = null;
-          nowPerfPill.textContent = "None";
-          watchPerformance(eid, null);
-        }else{
-          const d = snap.data()||{};
-          STATE.currentSingerId = d.currentSingerId || null;
-          STATE.currentSingerName = d.currentSingerName || "(Unknown)";
-          nowPerfPill.textContent = STATE.currentSingerName || "None";
-          watchPerformance(eid, d.performanceId || null);
-        }
-      }, (err)=>{
-        statusMain.innerHTML = `<span class="err">State listener error: ${err?.message || err}</span>`;
-      });
+        if (!snap.exists()){ STATE.currentSingerId=null; STATE.currentSingerName=null; nowPerfLabel.textContent="None"; watchPerformance(eid, null); return; }
+        const d = snap.data()||{};
+        STATE.currentSingerId = d.currentSingerId || null;
+        STATE.currentSingerName = d.currentSingerName || "(Unknown)";
+        nowPerfLabel.textContent = STATE.currentSingerName || "None";
+        watchPerformance(eid, d.performanceId || null);
+      }, (err)=> setStatus("State listener error: " + (err?.message || err)));
     }
 
-    /************** Singers (list with hide “Maybe”) **************/
+    // Singers list (hide 'maybe' by default)
     function renderSingerList(items){
       cachedSingers = items.slice();
       singerListEl.innerHTML = "";
       const showHidden = showHiddenEl.checked;
 
-      // Sort alpha
-      items.sort((a,b)=>a.name.localeCompare(b.name, undefined, {sensitivity:"base"}));
+      items.sort((a,b)=> a.name.localeCompare(b.name, undefined, {sensitivity:"base"}));
 
       let shown = 0;
       for (const it of items){
-        // Hide those whose latest performance outcome is 'maybe', unless showHidden is checked
         const perfId = it.latestPerformanceId || null;
         const outcome = perfId ? perfOutcomeCache.get(perfId) : null;
 
         if (!showHidden && outcome === 'maybe') continue;
 
-        // Lazy-load outcome for latest performance
         if (perfId && outcome === undefined){
-          getDoc(doc(db,"events",getCurrentEventId(),"performances",perfId)).then(s=>{
-            const d = s.exists() ? (s.data()||{}) : {};
-            perfOutcomeCache.set(perfId, d.outcome || null);
-            // Re-render once per unknown outcome load
-            renderSingerList(cachedSingers);
-          }).catch(()=>{ perfOutcomeCache.set(perfId,null); });
+          getDoc(doc(db,"events",getCurrentEventId(),"performances",perfId))
+            .then(s=>{ perfOutcomeCache.set(perfId, s.exists() ? (s.data().outcome || null) : null); renderSingerList(cachedSingers); })
+            .catch(()=>{ perfOutcomeCache.set(perfId,null); });
         }
 
         const li = document.createElement("li");
         const left = document.createElement("div");
-        left.innerHTML = `<div><strong>${it.name}</strong></div><div class="small">Latest: ${perfId || "—"} ${outcome ? `(${outcome})` : ""}</div>`;
+        left.innerHTML = `<div style="font-weight:900">${it.name}</div><div class="hint">Latest: ${perfId || "—"} ${outcome ? `(${outcome})` : ""}</div>`;
+
         const right = document.createElement("div"); right.className = "stack";
+        const b1 = document.createElement("button");
+        b1.className = "btn good"; b1.textContent = "Announce";
+        b1.addEventListener("click", ()=> announceExisting(it.id, it.name));
 
-        const btnAnnounce = document.createElement("button");
-        btnAnnounce.className = "btn secondary"; btnAnnounce.textContent = "Announce";
-        btnAnnounce.addEventListener("click", ()=> announceExisting(it.id, it.name));
-
-        const btnVote = document.createElement("button");
-        btnVote.className = "btn"; btnVote.textContent = "Vote now (30s)";
-        btnVote.addEventListener("click", ()=> {
+        const b2 = document.createElement("button");
+        b2.className = "btn warn"; b2.textContent = "Vote now (30s)";
+        b2.addEventListener("click", async ()=>{
           if (STATE.currentSingerId !== it.id){
-            const ok = confirm(`Switch to "${it.name}" and open a 30s vote?`);
+            const ok = confirm(`Switch to “${it.name}” and open a 30s vote?`);
             if (!ok) return;
           }
-          // If no perf yet, Announce first, then open
           if (!STATE.performanceId || STATE.currentSingerId !== it.id){
-            announceExisting(it.id, it.name).then(()=> openVoting(30));
-          }else{
-            openVoting(30);
+            await announceExisting(it.id, it.name);
           }
+          openVoting(30);
         });
 
-        right.appendChild(btnAnnounce); right.appendChild(btnVote);
+        right.appendChild(b1); right.appendChild(b2);
         li.appendChild(left); li.appendChild(right);
         singerListEl.appendChild(li);
         shown++;
@@ -552,109 +528,73 @@
         singerListEl.appendChild(li);
       }
     }
-
     async function loadSingersOnce(eid){
       try{
         const snap = await getDocs(collection(db,"events",eid,"singers"));
         const items = snap.docs.map(d => ({ id:d.id, ...(d.data()||{}) }));
-        renderSingerList(items);
-        singerReadNote.textContent = "";
+        renderSingerList(items); singerReadNote.textContent = "";
       }catch(e){
-        renderSingerList([]);
-        singerReadNote.innerHTML = `<span class="err">Could not read singers. Check Firestore Rules for <code>events/${eid}/singers</code> read.</span>`;
+        renderSingerList([]); singerReadNote.textContent = "Could not read singers (check rules).";
       }
     }
-
     function watchSingers(eid){
       if (unsubscribeSingers) unsubscribeSingers();
       loadSingersOnce(eid);
-      const qref = query(collection(db,"events",eid,"singers"));
-      unsubscribeSingers = onSnapshot(qref,(snap)=>{
-        const items = [];
-        snap.forEach(d=>{ const {name="", latestPerformanceId=null} = d.data()||{}; items.push({id:d.id, name, latestPerformanceId}); });
-        renderSingerList(items);
-        singerReadNote.textContent = "";
-      }, (err)=>{
-        singerReadNote.innerHTML = `<span class="err">Realtime singers listener error: ${err?.message || err}.</span>`;
-      });
+      unsubscribeSingers = onSnapshot(query(collection(db,"events",eid,"singers")),(snap)=>{
+        const items = []; snap.forEach(d=>{ const {name="", latestPerformanceId=null} = d.data()||{}; items.push({id:d.id, name, latestPerformanceId}); });
+        renderSingerList(items); singerReadNote.textContent = "";
+      }, (err)=>{ singerReadNote.textContent = "Realtime singers error: " + (err?.message || err); });
     }
 
+    // Add singer (auto-announce)
     async function addSinger(){
       const name = singerNameInput.value.trim();
-      if(!name){ addSingerStatus.innerHTML = `<span class="err">Please enter a singer name.</span>`; return; }
-
+      if(!name) return addSingerStatus.textContent = "Please enter a singer name.";
       const eid = getCurrentEventId();
+      try{
+        if (!auth.currentUser) await signInAnonymously(auth);
+      }catch(e){ addSingerStatus.textContent = "Auth error: " + (e?.message || e); return; }
 
-      // Ensure anon auth
-      if (!auth.currentUser){
-        try { await signInAnonymously(auth); }
-        catch(e){
-          const msg = (e && e.message) || String(e);
-          addSingerStatus.innerHTML = `<span class="err">Auth error: ${msg}</span>`;
-          return;
-        }
-      }
-
-      addSingerBtn.disabled = true;
-      addSingerStatus.textContent = "Adding…";
+      addSingerBtn.disabled = true; addSingerStatus.textContent = "Adding…";
       try{
         const ref = await addDoc(collection(db,"events",eid,"singers"), { name, ts: Date.now() });
         singerNameInput.value = "";
-        addSingerStatus.innerHTML = `<span class="ok">Singer added.</span>`;
-
-        // Auto announce immediately (show QR) for streamlined flow
+        addSingerStatus.textContent = "Singer added. Announcing…";
         await announceExisting(ref.id, name);
-
+        addSingerStatus.textContent = "Singer added & announced.";
       }catch(e){
         const msg = (e && e.message) || String(e);
-        if (msg.toLowerCase().includes("permission")){
-          addSingerStatus.innerHTML = `<span class="err">Permissions error adding singer. Check Firestore Rules for <code>events/${eid}/singers</code> create.</span>`;
-        }else{
-          addSingerStatus.innerHTML = `<span class="err">Error adding singer: ${msg}</span>`;
-        }
+        addSingerStatus.textContent = msg.toLowerCase().includes("permission")
+          ? "Permissions error adding singer (check rules)."
+          : ("Error adding singer: " + msg);
       }finally{
         addSingerBtn.disabled = false;
       }
     }
 
-    /************** Flow: Announce → pending; Vote now → open; auto-close **************/
+    /************** Flow functions **************/
     async function announceExisting(singerId, singerName){
       const eid = getCurrentEventId();
       try{
-        // Create a PENDING performance
         const perfRef = await addDoc(collection(db,"events",eid,"performances"), {
           singerId, singerName, status: 'pending', openAt: serverTimestamp()
         });
-
-        // Update singer.latestPerformanceId + state/current
         await Promise.all([
           setDoc(doc(db,"events",eid,"singers",singerId), { latestPerformanceId: perfRef.id }, { merge:true }),
           setDoc(doc(db,"events",eid,"state","current"), {
-            currentSingerId: singerId,
-            currentSingerName: singerName,
-            performanceId: perfRef.id,
-            ts: Date.now()
+            currentSingerId: singerId, currentSingerName: singerName, performanceId: perfRef.id, ts: Date.now()
           })
         ]);
-
-        statusMain.innerHTML = `<span class="ok">Announced: ${singerName}. QR shown; voting not open yet.</span>`;
-      }catch(e){
-        statusMain.innerHTML = `<span class="err">Announce failed: ${e?.message || e}</span>`;
-      }
+        setStatus(`Announced: ${singerName}. QR shown; voting not open yet.`);
+      }catch(e){ setStatus("Announce failed: " + (e?.message||e)); }
     }
-
     async function announceSinger(){
-      if (!STATE.currentSingerId){
-        statusSide.textContent = "Pick or add a singer first.";
-        return;
-      }
+      if (!STATE.currentSingerId) return setStatus("Pick or add a singer first.");
       await announceExisting(STATE.currentSingerId, STATE.currentSingerName || "(Unknown)");
     }
-
     async function openVoting(seconds=30){
       const eid = getCurrentEventId();
       try{
-        // If no performance (e.g., you clicked Vote now first), create one and set state
         if (!STATE.performanceId){
           const perfRef = await addDoc(collection(db,"events",eid,"performances"), {
             singerId: STATE.currentSingerId, singerName: STATE.currentSingerName, status: 'pending', openAt: serverTimestamp()
@@ -664,32 +604,22 @@
             currentSingerId: STATE.currentSingerId, currentSingerName: STATE.currentSingerName, performanceId: perfRef.id, ts: Date.now()
           });
         }
-
         const closeAt = Timestamp.fromMillis(Date.now() + seconds*1000);
         await updateDoc(doc(db,"events",eid,"performances",STATE.performanceId), {
           status: 'open', openAt: serverTimestamp(), closeAt
         });
-
-        statusMain.innerHTML = `<span class="ok">Voting opened for ${STATE.currentSingerName} (${seconds}s).</span>`;
-      }catch(e){
-        statusMain.innerHTML = `<span class="err">Error opening voting: ${e?.message || e}</span>`;
-      }
+        setStatus(`Voting opened for ${STATE.currentSingerName} (${seconds}s).`);
+      }catch(e){ setStatus("Open voting error: " + (e?.message||e)); }
     }
-
-    async function extendVoting(extraSeconds=15){
+    async function extendVoting(extra=15){
       const eid = getCurrentEventId();
-      if (!STATE.performanceId){ statusSide.textContent = "No performance."; return; }
+      if (!STATE.performanceId) return setStatus("No performance.");
       try{
-        const newClose = new Date(Math.max(Date.now(), (STATE.performanceCloseAt?.toMillis()||0)) + extraSeconds*1000);
-        await updateDoc(doc(db,"events",eid,"performances",STATE.performanceId), {
-          closeAt: Timestamp.fromDate(newClose)
-        });
-        statusSide.textContent = `Extended by ${extraSeconds}s.`;
-      }catch(e){
-        statusSide.textContent = "Extend failed: " + (e?.message || e);
-      }
+        const newClose = new Date(Math.max(Date.now(), (STATE.performanceCloseAt?.toMillis()||0)) + extra*1000);
+        await updateDoc(doc(db,"events",eid,"performances",STATE.performanceId), { closeAt: Timestamp.fromDate(newClose) });
+        setStatus(`Extended by ${extra}s.`);
+      }catch(e){ setStatus("Extend failed: " + (e?.message||e)); }
     }
-
     function decideOutcome(e,a,m){
       e|=0; a|=0; m|=0;
       if (e>a && e>m) return 'encore';
@@ -699,99 +629,72 @@
       if (e===a && e>m) return 'encore';
       if (e===m && e>a) return 'another';
       if (e===a && a===m && e>0) return 'another';
-      return null; // no votes
+      return null;
     }
-
     async function finalizePerformance(eid, perfId){
-      // Count votes for outcome
       let e=0,a=0,m=0;
       try{
         const qref = query(collection(db,"events",eid,"votes"), where("performanceId","==",perfId));
         const snap = await getDocs(qref);
-        snap.forEach(d=>{
-          const cat = (d.data()?.category||"").toLowerCase();
-          if (cat==='encore') e++; else if (cat==='another') a++; else if (cat==='maybe') m++;
-        });
+        snap.forEach(d=>{ const cat=(d.data()?.category||"").toLowerCase(); if(cat==='encore')e++; else if(cat==='another')a++; else if(cat==='maybe')m++; });
       }catch(_){}
-
       const outcome = decideOutcome(e,a,m);
       try{
         await updateDoc(doc(db,"events",eid,"performances",perfId), {
-          status:'closed',
-          closeAt: Timestamp.fromDate(new Date()),
-          outcome,
-          counts: {encore:e, another:a, maybe:m}
+          status:'closed', closeAt: Timestamp.fromDate(new Date()), outcome, counts:{encore:e, another:a, maybe:m}
         });
-        // Cache to apply hide rule without re-read
         perfOutcomeCache.set(perfId, outcome || null);
         renderSingerList(cachedSingers);
-      }catch(e){
-        // non-fatal
-      }
+      }catch(_){}
     }
-
     async function endVotingNow(){
       const eid = getCurrentEventId();
-      if (!STATE.performanceId){ statusSide.textContent = "No performance."; return; }
+      if (!STATE.performanceId) return setStatus("No performance.");
       try{
-        await updateDoc(doc(db,"events",eid,"performances",STATE.performanceId), { status: 'closed', closeAt: Timestamp.fromDate(new Date()) });
+        await updateDoc(doc(db,"events",eid,"performances",STATE.performanceId), { status:'closed', closeAt: Timestamp.fromDate(new Date()) });
         await finalizePerformance(eid, STATE.performanceId);
-        statusSide.textContent = "Voting closed.";
-      }catch(e){
-        statusSide.textContent = "End failed: " + (e?.message || e);
-      }
+        setStatus("Voting closed.");
+      }catch(e){ setStatus("End failed: " + (e?.message||e)); }
     }
 
-    /************** HOST VOTE (one per device per performance) **************/
+    // Host vote (one per device per performance)
     async function hostCastVote(category){
-      if (!STATE.performanceId){
-        statusSide.textContent = "Open voting first.";
-        return;
-      }
+      if (!STATE.performanceId) return setStatus("Open voting first.");
       const eid = getCurrentEventId();
       const docId = `${STATE.performanceId}__${DEVICE_ID}`;
-      const voteRef = doc(db,"events",eid,"votes",docId);
-      statusSide.textContent = "Submitting host vote…";
       try{
-        await setDoc(voteRef, {
-          performanceId: STATE.performanceId,
-          singerId: STATE.currentSingerId,
-          singerName: STATE.currentSingerName || "(Unknown)",
-          category,
-          deviceId: DEVICE_ID,
-          ts: Date.now()
+        await setDoc(doc(db,"events",eid,"votes",docId), {
+          performanceId: STATE.performanceId, singerId: STATE.currentSingerId, singerName: STATE.currentSingerName || "(Unknown)",
+          category, deviceId: DEVICE_ID, ts: Date.now()
         }, { merge:false });
-        statusSide.textContent = "Host vote submitted.";
+        setStatus("Host vote submitted.");
       }catch(e){
         const msg = (""+e?.message||"").toLowerCase();
-        if (msg.includes("permission") || msg.includes("already exists") || msg.includes("failed")){
-          statusSide.textContent = "Already voted or window closed.";
-        }else{
-          statusSide.textContent = "Error submitting vote.";
-        }
+        if (msg.includes("permission") || msg.includes("already exists")) setStatus("Already voted or window closed.");
+        else setStatus("Error submitting vote.");
       }
     }
 
-    /************** CLEAR VOTES (event) **************/
-    async function clearVotes(){
-      const eid = getCurrentEventId();
-      try{
-        const snap = await getDocs(collection(db,"events",eid,"votes"));
-        let n=0; for (const d of snap.docs){ await deleteDoc(doc(db,"events",eid,"votes",d.id)); n++; }
-        statusMain.innerHTML = `<span class="ok">Cleared ${n} votes for "${eid}".</span>`;
-      }catch(e){
-        statusMain.innerHTML = `<span class="err">Error clearing votes: ${e?.message || e}</span>`;
-      }
+    // Watchers
+    function watchSingers(eid){
+      if (unsubscribeSingers) unsubscribeSingers();
+      loadSingersOnce(eid);
+      unsubscribeSingers = onSnapshot(query(collection(db,"events",eid,"singers")),(snap)=>{
+        const items = []; snap.forEach(d=>{ const {name="", latestPerformanceId=null} = d.data()||{}; items.push({id:d.id, name, latestPerformanceId}); });
+        renderSingerList(items); singerReadNote.textContent = "";
+      }, (err)=>{ singerReadNote.textContent = "Realtime singers error: " + (err?.message || err); });
     }
-
-    /************** INIT **************/
-    const START_EVENT = (new URL(location.href)).searchParams.get("eventId")
-                        || localStorage.getItem(LS_EVENT_KEY) || "default";
-    eventIdInput.value = START_EVENT;
-    lockEventEl.checked = localStorage.getItem("eyek_lock_event")==="1";
-    broadcastEl.checked = localStorage.getItem("eyek_broadcast_event")==="1";
-    if (lockEventEl.checked) eventNote.textContent = "Event locked — switching disabled.";
-    applyEvent(START_EVENT);
+    function watchState(eid){
+      if (unsubscribeState) unsubscribeState();
+      unsubscribeState = onSnapshot(doc(db,"events",eid,"state","current"), (snap)=>{
+        if (!snap.exists()){ STATE.currentSingerId=null; STATE.currentSingerName=null; nowPerfLabel.textContent="None"; watchPerformance(eid, null); return; }
+        const d = snap.data()||{};
+        STATE.currentSingerId = d.currentSingerId || null;
+        STATE.currentSingerName = d.currentSingerName || "(Unknown)";
+        nowPerfLabel.textContent = STATE.currentSingerName || "None";
+        watchPerformance(eid, d.performanceId || null);
+      }, (err)=> setStatus("State listener error: " + (err?.message || err)));
+    }
   </script>
 </body>
 </html>
