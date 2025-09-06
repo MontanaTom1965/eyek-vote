@@ -1,3 +1,4 @@
+<!-- EYEK /screen/index.html v2025-09-06.12 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -59,9 +60,10 @@
     .label{min-width:260px; font-weight:900; font-size:clamp(1.4rem, 2.8vw, 2rem)}
     .barWrap{flex:1; height:60px; border:2px solid var(--border); border-radius:14px; overflow:hidden; background:rgba(0,0,0,.18)}
     .bar{height:100%; width:0%; transition:width .35s ease}
-    .bar.enc{background:linear-gradient(90deg, #1ea854, #22c55e)}
-    .bar.ano{background:linear-gradient(90deg, #d08a0a, #f59e0b)}
-    .bar.may{background:linear-gradient(90deg, #cc2a2a, #ef4444)}
+    /* SOLID colors to match Vote page buttons */
+    .bar.enc{background:#22c55e}
+    .bar.ano{background:#f59e0b}
+    .bar.may{background:#ef4444}
     .val{min-width:140px; text-align:right; font-weight:900; font-size:1.2rem}
 
     @keyframes flashPulse { 0%{filter:brightness(1)} 40%{filter:brightness(1.8)} 100%{filter:brightness(1)} }
@@ -79,13 +81,13 @@
     .win-ano{border-color:#9c6a14; background:#2b1f08}
     .win-may{border-color:#a83b3b; background:#2b0f10}
 
-    /* Bottom flashing banner after voting closes – 50% taller */
+    /* Bottom flashing banner – 50% taller */
     .flashBanner{
       position:fixed; left:0; right:0; bottom:0; display:none; text-align:center;
-      padding:27px 24px; /* was 18px */
+      padding:27px 24px; /* taller */
       font-weight:1000; letter-spacing:.3px;
-      font-size:clamp(2.4rem, 4.5vw, 3.6rem); /* was clamp(1.6rem, 3vw, 2.4rem) */
-      border-top:6px solid; /* was 4px */
+      font-size:clamp(2.4rem, 4.5vw, 3.6rem);
+      border-top:6px solid;
       z-index:50
     }
     @keyframes encPulse { 0%{filter:brightness(1); box-shadow:0 0 0 rgba(34,197,94,0)} 50%{filter:brightness(1.6); box-shadow:0 0 40px rgba(34,197,94,.35)} 100%{filter:brightness(1); box-shadow:0 0 0 rgba(34,197,94,0)} }
@@ -155,7 +157,7 @@
           </div>
         </div>
 
-        <!-- Winner/Leader box (now also flashes while votes roll in) -->
+        <!-- Winner/Leader box (flashes while votes roll in) -->
         <div class="totals" id="totals">Total votes: 0</div>
         <div id="winnerBadge" class="winner win-neutral">Loading…</div>
       </section>
@@ -202,7 +204,6 @@
       var prevLeader=null;
       var lastFanfarePerfId=null;
 
-      /* ---- Helper to compute server-based closeAt from openAt + durationSec ---- */
       function computeCloseAtFrom(docData){
         if(docData && docData.openAt && docData.durationSec){
           var ms = docData.openAt.toMillis() + (docData.durationSec|0)*1000;
@@ -211,13 +212,25 @@
         return (docData && docData.closeAt) ? docData.closeAt : null;
       }
 
-      /* -------- Sound (WebAudio) -------- */
+      /* -------- Sound (WebAudio with HTML5 <audio> fallback) -------- */
       var audioCtx=null;
       var SOUND_KEY='eyek_sound';
       var soundEnabled = (localStorage.getItem(SOUND_KEY)==='1'); // default muted
       function updateSoundBtn(){ soundBtn.textContent = soundEnabled ? '🔊' : '🔇'; }
-      function showSoundHint(show){ soundHint.style.display = show ? 'block' : 'none'; }
+      function showSoundHint(show){ if (typeof soundHint!=='undefined' && soundHint) soundHint.style.display = show ? 'block' : 'none'; }
       updateSoundBtn(); showSoundHint(!soundEnabled);
+
+      // Tiny inline WAV beep fallback
+      const FALLBACK_BEEP = 'data:audio/wav;base64,UklGRuwNAABXQVZFZm10IBAAAAABAAEAIlYAAESsAAACABAAZGF0YcgNAAAAADsWEys4PYpLIlVmWRNYPlFTRRM1gSHWC271r9/2FhJJQ4d7rF1UjYJm9hJ3x0yJH4d/0QY1y8r8BXeCBR6j8eYqk0J3cQvKcM8rQ0NtyPcY3tF7m9duT+38s0Gz8w2u2K5C3I9kWZQ/3rZ5m0C';
+      function htmlBeep(delayMs=0, rate=1){
+        try{
+          setTimeout(function(){
+            var a = new Audio(FALLBACK_BEEP);
+            a.playbackRate = rate || 1;
+            a.play().catch(function(){ /* ignore */ });
+          }, delayMs|0);
+        }catch(_){}
+      }
 
       soundBtn.addEventListener('click', async function(){
         soundEnabled = !soundEnabled;
@@ -225,11 +238,10 @@
         updateSoundBtn(); showSoundHint(!soundEnabled);
         if(soundEnabled){
           var ok = await ensureAudio();
-          if(ok){ // test ping so you know it's on
-            playTick();
-          }else{
-            alert('Your browser blocked audio until a click/keypress on this page.');
-          }
+          // Fire both engines once so you hear it
+          beep(900, 0.10, 0.18);
+          htmlBeep(0, 1.0);
+          if(!ok){ /* first gesture usually unlocks */ }
         }
       });
 
@@ -243,44 +255,52 @@
 
       function beep(freq, duration, volume){
         if(!soundEnabled) return;
-        if(!audioCtx) return;
-        var now = audioCtx.currentTime;
-        var osc = audioCtx.createOscillator();
-        var gain = audioCtx.createGain();
-        osc.type='sine'; osc.frequency.setValueAtTime(freq, now);
-        gain.gain.setValueAtTime(0, now);
-        gain.gain.linearRampToValueAtTime(volume, now + 0.01);
-        gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
-        osc.connect(gain).connect(audioCtx.destination);
-        osc.start(now);
-        osc.stop(now + duration + 0.05);
+        try{
+          if(!audioCtx) return;
+          var now = audioCtx.currentTime;
+          var osc = audioCtx.createOscillator();
+          var gain = audioCtx.createGain();
+          osc.type='sine'; osc.frequency.setValueAtTime(freq, now);
+          gain.gain.setValueAtTime(0, now);
+          gain.gain.linearRampToValueAtTime(volume, now + 0.01);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+          osc.connect(gain).connect(audioCtx.destination);
+          osc.start(now);
+          osc.stop(now + duration + 0.05);
+        }catch(_){}
       }
 
-      function playTick(){ ensureAudio().then(function(ok){ if(ok) beep(900, 0.07, 0.06); }); }
-
-      function playFanfare(kind){
-        ensureAudio().then(function(ok){
-          if(!ok || !soundEnabled) return;
-          function tone(f,t,vol){ beep(f, t, vol); }
-          if(kind==='encore'){
-            setTimeout(()=>tone(523,0.12,0.08), 0);
-            setTimeout(()=>tone(659,0.12,0.08), 140);
-            setTimeout(()=>tone(784,0.18,0.10), 280);
-          }else if(kind==='another'){
-            setTimeout(()=>tone(440,0.12,0.07), 0);
-            setTimeout(()=>tone(392,0.14,0.07), 160);
-          }else if(kind==='maybe'){
-            setTimeout(()=>tone(220,0.25,0.08), 0);
-          }else{
-            setTimeout(()=>tone(600,0.12,0.06), 0);
-          }
+      function playTick(){
+        ensureAudio().then(function(){
+          beep(900, 0.10, 0.18);
+          htmlBeep(0, 1.0);
         });
       }
 
-      // Try to enable audio on the first user interaction (helps autoplay rules)
+      function playFanfare(kind){
+        ensureAudio().then(function(){
+          function tone(f,t,vol){ beep(f, t, vol); }
+          if(kind==='encore'){
+            setTimeout(()=>tone(523,0.12,0.20), 0);
+            setTimeout(()=>tone(659,0.12,0.20), 140);
+            setTimeout(()=>tone(784,0.18,0.22), 280);
+            htmlBeep(0,1.0); htmlBeep(140,1.2); htmlBeep(280,1.5);
+          }else if(kind==='another'){
+            setTimeout(()=>tone(440,0.12,0.18), 0);
+            setTimeout(()=>tone(392,0.14,0.18), 160);
+            htmlBeep(0,1.0); htmlBeep(160,0.9);
+          }else if(kind==='maybe'){
+            setTimeout(()=>tone(220,0.25,0.20), 0);
+            htmlBeep(0,0.7);
+          }else{
+            setTimeout(()=>tone(600,0.12,0.18), 0);
+            htmlBeep(0,1.0);
+          }
+        });
+      }
+      // Try to unlock audio on first interaction
       window.addEventListener('pointerdown', function(){ if(soundEnabled) ensureAudio(); }, { once:true });
       window.addEventListener('keydown',     function(){ if(soundEnabled) ensureAudio(); }, { once:true });
-
       /* ---------------------------------- */
 
       function setBadge(status){
@@ -344,7 +364,6 @@
         return inc;
       }
 
-      // Winner/Leader badge logic (flashes while voting when leader changes or increases)
       function showWinnerBadge(kind, live, total){
         winnerBadge.className='winner';
         if(!kind){
@@ -469,7 +488,7 @@
         unsubPerf = db.collection('events').doc(CURRENT.eventId).collection('performances').doc(perfId)
           .onSnapshot(function(snap){
             if(!snap.exists){ setBadge('pending'); stopCountdown(); hideFlashBanner(); return; }
-            var d = snap.data()||{};
+            var d = s.data()||{};
             var prevStatus = CURRENT.status;
             CURRENT.status = d.status || 'pending';
             CURRENT.closeAt = computeCloseAtFrom(d);
@@ -484,7 +503,7 @@
               setBadge('closed');
               stopCountdown();
               updateQr();
-              renderBars(); // ensure final leader/winner & banner update
+              renderBars(); // final leader/winner & banner update
               var final = (d.outcome) || decideOutcomeStrict(COUNTS.encore, COUNTS.another, COUNTS.maybe);
               if(perfId !== lastFanfarePerfId){ playFanfare(final); lastFanfarePerfId = perfId; }
             }else{
