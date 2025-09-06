@@ -181,13 +181,22 @@
           totalsEl=$('totals'), winnerBadge=$('winnerBadge'), qrImg=$('qrImg'),
           flashBanner=$('flashBanner'), soundBtn=$('soundBtn');
 
-      var unsubMeta=null, unsubState=null, unsubPerf=null, unsubVotes=null;
+      var unsubState=null, unsubPerf=null, unsubVotes=null;
       var CURRENT={ eventId:null, performanceId:null, status:'', closeAt:null, singerName:'—' };
       var COUNTS={ encore:0, another:0, maybe:0 };
       var PREV={ encore:0, another:0, maybe:0 };
       var countdownTimer=null;
       var prevLeader=null;
       var lastFanfarePerfId=null;
+
+      /* ---- Helper to compute server-based closeAt from openAt + durationSec ---- */
+      function computeCloseAtFrom(docData){
+        if(docData && docData.openAt && docData.durationSec){
+          var ms = docData.openAt.toMillis() + (docData.durationSec|0)*1000;
+          return firebase.firestore.Timestamp.fromDate(new Date(ms));
+        }
+        return (docData && docData.closeAt) ? docData.closeAt : null;
+        }
 
       /* -------- Sound (WebAudio) -------- */
       var audioCtx=null;
@@ -235,22 +244,17 @@
         if(!soundEnabled) return;
         ensureAudio().then(function(ok){
           if(!ok) return;
-          var now = audioCtx.currentTime;
           function tone(f,t,vol){ beep(f, t, vol); }
           if(kind==='encore'){
-            // ascending quick triad
             setTimeout(()=>tone(523,0.12,0.08), 0);
             setTimeout(()=>tone(659,0.12,0.08), 140);
             setTimeout(()=>tone(784,0.18,0.10), 280);
           }else if(kind==='another'){
-            // two mid beeps
             setTimeout(()=>tone(440,0.12,0.07), 0);
             setTimeout(()=>tone(392,0.14,0.07), 160);
           }else if(kind==='maybe'){
-            // single lower, a touch longer
             setTimeout(()=>tone(220,0.25,0.08), 0);
           }else{
-            // neutral ping
             setTimeout(()=>tone(600,0.12,0.06), 0);
           }
         });
@@ -322,14 +326,13 @@
       function showWinnerBadge(kind, live, total){
         winnerBadge.className='winner';
         if(!kind){
-          // No leader yet
           winnerBadge.classList.add('win-neutral');
           winnerBadge.textContent = live ? 'Loading…' : '—';
           return;
         }
         if(kind==='encore') winnerBadge.classList.add('win-enc');
         if(kind==='another') winnerBadge.classList.add('win-ano');
-        if(kind==='maybe') winnerBadge.classList.add('win-may');
+        if(kind==='maybe')  winnerBadge.classList.add('win-may');
         winnerBadge.textContent = (live ? 'Leading: ' : 'Winner: ') + labelFromKind(kind);
       }
 
@@ -364,7 +367,7 @@
         flashBanner.className='flashBanner';
         if(kind==='encore'){ flashBanner.classList.add('banner-enc'); }
         else if(kind==='another'){ flashBanner.classList.add('banner-ano'); }
-        else if(kind==='maybe'){ flashBanner.classList.add('banner-may'); }
+        else if(kind==='maybe'){  flashBanner.classList.add('banner-may'); }
         flashBanner.textContent = labelFromKind(kind);
         flashBanner.style.display='block';
       }
@@ -376,7 +379,7 @@
         countdownEl.textContent = s + 's';
       }
       function startCountdown(){ stopCountdown(); renderCountdown(); countdownTimer=setInterval(renderCountdown,250); }
-      function stopCountdown(){ if(countdownTimer){ clearInterval(countdownTimer); } countdownTimer=null; countdownEl.textContent='—'; }  /* fixed variable name */
+      function stopCountdown(){ if(countdownTimer){ clearInterval(countdownTimer); } countdownTimer=null; countdownEl.textContent='—'; }
 
       function qrProvider1(d){ return 'https://api.qrserver.com/v1/create-qr-code/?size=260x260&data='+encodeURIComponent(d); }
       function qrProvider2(d){ return 'https://chart.googleapis.com/chart?cht=qr&chs=260x260&chl='+encodeURIComponent(d); }
@@ -447,7 +450,7 @@
             var d = snap.data()||{};
             var prevStatus = CURRENT.status;
             CURRENT.status = d.status || 'pending';
-            CURRENT.closeAt = d.closeAt || null;
+            CURRENT.closeAt = computeCloseAtFrom(d);
 
             if(CURRENT.status==='open'){
               setBadge('open');
@@ -460,7 +463,6 @@
               stopCountdown();
               updateQr();
               renderBars(); // ensure final leader/winner & banner update
-              // Play fanfare once per performance
               var final = (d.outcome) || decideOutcomeStrict(COUNTS.encore, COUNTS.another, COUNTS.maybe);
               if(perfId !== lastFanfarePerfId){ playFanfare(final); lastFanfarePerfId = perfId; }
             }else{
@@ -482,7 +484,7 @@
               var c=String(x.category||'').toLowerCase();
               if(c==='encore') COUNTS.encore++;
               else if(c==='another') COUNTS.another++;
-              else if(c==='maybe') COUNTS.maybe++;
+              else if(c==='maybe')  COUNTS.maybe++;
             });
             var increased = flashIfIncreased();
             renderBars();
