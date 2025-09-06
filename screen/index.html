@@ -1,4 +1,4 @@
-<!-- EYEK /screen/index.html v2025-09-06.21 (custom MP3 loop with fallbacks + Encore full-screen) -->
+<!-- EYEK /screen/index.html v2025-09-06.23 (Encore overlay triggers even if winner settles a few seconds after auto-close) -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -236,6 +236,7 @@
       var lastFanfarePerfId=null;
       var lastEncoreOverlayPerfId=null;
       var encoreTimer=null;
+      var postCloseTimer=null;
 
       function computeCloseAtFrom(docData){
         if(docData && docData.openAt && docData.durationSec){
@@ -245,7 +246,7 @@
         return (docData && docData.closeAt) ? docData.closeAt : null;
       }
 
-      /* -------- Sound system -------- */
+      /* -------- Sound system (custom MP3 loop + beeps) -------- */
       var SOUND_KEY='eyek_sound';
       var soundEnabled = (localStorage.getItem(SOUND_KEY)==='1');
       function updateSoundBtn(){ soundBtn.textContent = soundEnabled ? '🔊' : '🔇'; }
@@ -255,7 +256,7 @@
       }
       updateSoundBtn(); showSoundHint(!soundEnabled);
 
-      // Ticks/Fanfares via WebAudio
+      // WebAudio blips
       var audioCtx=null, sfxGain=null;
       const FALLBACK_BEEP = 'data:audio/wav;base64,UklGRuwNAABXQVZFZm10IBAAAAABAAEAIlYAAESsAAACABAAZGF0YcgNAAAAADsWEys4PYpLIlVmWRNYPlFTRRM1gSHWC271r9/2FhJJQ4d7rF1UjYJm9hJ3x0yJH4d/0QY1y8r8BXeCBR6j8eYqk0J3cQvKcM8rQ0NtyPcY3tF7m9duT+38s0Gz8w2u2K5C3I9kWZQ/3rZ5m0C';
       function htmlBeep(delayMs=0, rate=1){
@@ -305,12 +306,12 @@
         });
       }
 
-      // Ambient loop using your MP3 with robust fallback paths + error hints
+      // Ambient MP3 loop (robust path)
       var loopAudio=null, loopFadeTimer=null, loopIndex=0;
       var LOOP_CANDIDATES = [
-        'quiz-countdown.mp3?v=3',                  // relative (best for /screen/)
-        '/screen/quiz-countdown.mp3?v=3',         // absolute path
-        (location.origin + '/screen/quiz-countdown.mp3?v=3') // origin + absolute
+        'quiz-countdown.mp3?v=3',
+        '/screen/quiz-countdown.mp3?v=3',
+        (location.origin + '/screen/quiz-countdown.mp3?v=3')
       ];
       function ensureLoop(){
         if(!loopAudio){
@@ -319,7 +320,6 @@
           loopAudio.preload = 'auto';
           loopAudio.volume = 0.0;
           loopAudio.onerror = function(){
-            console.warn('Loop load failed:', loopAudio.src);
             loopIndex++;
             if(loopIndex < LOOP_CANDIDATES.length){
               loopAudio.src = LOOP_CANDIDATES[loopIndex];
@@ -360,7 +360,7 @@
       }
       function stopVoteLoop(){ if(!loopAudio) return; fadeLoop(0.0, 150); }
 
-      // UI hooks for sound
+      // Sound UI
       soundBtn.addEventListener('click', async function(){
         soundEnabled = !soundEnabled;
         localStorage.setItem(SOUND_KEY, soundEnabled ? '1':'0');
@@ -368,9 +368,8 @@
         if(soundEnabled){
           showSoundHint(true, 'Loading sound…');
           await ensureAudio();
-          ensureLoop(); // kick off load chain
-          // a little confirmation chirp
-          sfxBeep(880,0.14,0.28); htmlBeep(0,1.0);
+          ensureLoop();
+          sfxBeep(880,0.14,0.30); htmlBeep(0,1.0);
           setTimeout(()=>{ sfxBeep(988,0.16,0.30); htmlBeep(0,1.1); },200);
           if(CURRENT.status==='open'){ startVoteLoop(); }
         }else{
@@ -378,9 +377,7 @@
           showSoundHint(false);
         }
       });
-      // warm-up: create audio element early so errors appear quickly
       document.addEventListener('DOMContentLoaded', function(){ ensureLoop(); });
-
       window.addEventListener('pointerdown', function(){ if(soundEnabled) ensureAudio(); }, { once:true });
       window.addEventListener('keydown',     function(){ if(soundEnabled) ensureAudio(); }, { once:true });
 
@@ -524,6 +521,8 @@
         }
       }
 
+      function clearPostCloseTimer(){ if(postCloseTimer){ clearTimeout(postCloseTimer); postCloseTimer=null; } }
+
       function startForEvent(eid){
         if(CURRENT.eventId===eid) return;
         CURRENT.eventId=eid;
@@ -538,6 +537,8 @@
         hideFlashBanner();
         stopVoteLoop();
         hideEncoreOverlay(true);
+        lastEncoreOverlayPerfId=null;
+        clearPostCloseTimer();
 
         unsubState = db.collection('events').doc(eid).collection('state').doc('current')
           .onSnapshot(function(s){
@@ -556,14 +557,14 @@
         COUNTS.encore=COUNTS.another=COUNTS.maybe=0; PREV.encore=PREV.another=PREV.maybe=0; prevLeader=null;
         renderBars();
         if(!perfId){
-          setBadge('pending'); stopCountdown(); setQrForUrl(null); hideFlashBanner(); stopVoteLoop(); hideEncoreOverlay(true); return;
+          setBadge('pending'); stopCountdown(); setQrForUrl(null); hideFlashBanner(); stopVoteLoop(); hideEncoreOverlay(true); clearPostCloseTimer(); return;
         }
         updateQr();
 
         unsubPerf = db.collection('events').doc(CURRENT.eventId).collection('performances').doc(perfId)
           .onSnapshot(function(snap){
             if(!snap.exists){
-              setBadge('pending'); stopCountdown(); hideFlashBanner(); stopVoteLoop(); hideEncoreOverlay(true); return;
+              setBadge('pending'); stopCountdown(); hideFlashBanner(); stopVoteLoop(); hideEncoreOverlay(true); clearPostCloseTimer(); return;
             }
             var d = snap.data()||{};
             CURRENT.status = d.status || 'pending';
@@ -575,26 +576,26 @@
               if(!unsubVotes) watchVotes(perfId);
               updateQr();
               hideFlashBanner();
-              stopEncoreOverlay();   // ensure overlay gone when new voting starts
-              startVoteLoop();       // play your MP3 loop
+              hideEncoreOverlay(true); // reset overlay when a new vote starts
+              startVoteLoop();
+              clearPostCloseTimer();   // cancel any lingering settle checks
             }else if(CURRENT.status==='closed'){
               setBadge('closed');
               stopCountdown();
               updateQr();
               renderBars();
-              stopVoteLoop();        // stop your MP3 loop
-              var final = (d.outcome) || decideOutcomeStrict(COUNTS.encore, COUNTS.another, COUNTS.maybe);
+              stopVoteLoop();
 
-              // Play fanfare once per performance
-              if(perfId !== lastFanfarePerfId){ playFanfare(final); lastFanfarePerfId = perfId; }
+              // Winner at the moment of close (may be incomplete)
+              var immediate = (d.outcome) || decideOutcomeStrict(COUNTS.encore, COUNTS.another, COUNTS.maybe);
+              maybeShowEncoreOverlay(perfId, immediate);  // try now
 
-              // Full-screen ENCORE celebration (15s), once per performance
-              if(final === 'encore' && perfId !== lastEncoreOverlayPerfId){
-                showEncoreOverlay();
-                lastEncoreOverlayPerfId = perfId;
-              } else {
-                hideEncoreOverlay(false);
-              }
+              // Also schedule a post-close settle check (captures late-arriving vote snapshots)
+              clearPostCloseTimer();
+              postCloseTimer = setTimeout(function(){
+                var settled = decideOutcomeStrict(COUNTS.encore, COUNTS.another, COUNTS.maybe);
+                maybeShowEncoreOverlay(perfId, settled);
+              }, 3200);
             }else{
               setBadge('pending');
               stopCountdown();
@@ -602,6 +603,7 @@
               hideFlashBanner();
               stopVoteLoop();
               hideEncoreOverlay(true);
+              clearPostCloseTimer();
             }
           });
       }
@@ -621,6 +623,12 @@
             var increased = flashIfIncreased();
             renderBars();
             if(CURRENT.status==='open' && increased && soundEnabled){ playTick(); }
+
+            // If we're already CLOSED and counts changed, re-evaluate now (no need to wait for the timer)
+            if(CURRENT.status==='closed'){
+              var settled = decideOutcomeStrict(COUNTS.encore, COUNTS.another, COUNTS.maybe);
+              maybeShowEncoreOverlay(perfId, settled);
+            }
           });
       }
 
@@ -629,7 +637,7 @@
         if(!encoreOverlay) return;
         encoreOverlay.style.display='flex';
         stopEncoreOverlay();
-        encoreTimer = setTimeout(function(){ hideEncoreOverlay(false); }, 15000);
+        encoreTimer = setTimeout(function(){ hideEncoreOverlay(true); }, 15000);
       }
       function hideEncoreOverlay(force){
         if(!encoreOverlay) return;
@@ -637,6 +645,18 @@
         if(force){ encoreOverlay.style.display='none'; }
       }
       function stopEncoreOverlay(){ if(encoreTimer){ clearTimeout(encoreTimer); encoreTimer=null; } }
+
+      function maybeShowEncoreOverlay(perfId, finalKind){
+        if(finalKind === 'encore'){
+          if(perfId !== lastEncoreOverlayPerfId){
+            lastEncoreOverlayPerfId = perfId;
+            showEncoreOverlay();
+          }
+        }else{
+          // Ensure overlay is hidden for non-encore outcomes
+          hideEncoreOverlay(true);
+        }
+      }
 
       followEvent();
     })();
