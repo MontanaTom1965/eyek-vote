@@ -1,4 +1,4 @@
-<!-- EYEK /screen/index.html v2025-09-06.12 -->
+<!-- EYEK /screen/index.html v2025-09-06.13 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -60,7 +60,7 @@
     .label{min-width:260px; font-weight:900; font-size:clamp(1.4rem, 2.8vw, 2rem)}
     .barWrap{flex:1; height:60px; border:2px solid var(--border); border-radius:14px; overflow:hidden; background:rgba(0,0,0,.18)}
     .bar{height:100%; width:0%; transition:width .35s ease}
-    /* SOLID colors to match Vote page buttons */
+    /* SOLID colors */
     .bar.enc{background:#22c55e}
     .bar.ano{background:#f59e0b}
     .bar.may{background:#ef4444}
@@ -84,7 +84,7 @@
     /* Bottom flashing banner – 50% taller */
     .flashBanner{
       position:fixed; left:0; right:0; bottom:0; display:none; text-align:center;
-      padding:27px 24px; /* taller */
+      padding:27px 24px;
       font-weight:1000; letter-spacing:.3px;
       font-size:clamp(2.4rem, 4.5vw, 3.6rem);
       border-top:6px solid;
@@ -121,19 +121,14 @@
     <main class="grid" style="margin-top:18px">
       <section class="card">
         <div class="now">
-          <!-- Left: singer -->
           <div class="leftNow">
             <div class="hint">Now singing</div>
             <h2 id="nowSinger">—</h2>
           </div>
-
-          <!-- Center: status + countdown (centered) -->
           <div class="centerNow">
             <div id="statusBadge" class="statusBadge">Getting ready…</div>
             <div class="countdown" id="countdown">—</div>
           </div>
-
-          <!-- Right: QR -->
           <img id="qrImg" class="qr" alt="Scan to vote" />
         </div>
       </section>
@@ -157,7 +152,6 @@
           </div>
         </div>
 
-        <!-- Winner/Leader box (flashes while votes roll in) -->
         <div class="totals" id="totals">Total votes: 0</div>
         <div id="winnerBadge" class="winner win-neutral">Loading…</div>
       </section>
@@ -166,21 +160,15 @@
 
   <div id="flashBanner" class="flashBanner">—</div>
 
-  <!-- Sound toggle + hint -->
   <button id="soundBtn" class="soundBtn" title="Toggle sound">🔇</button>
   <div id="soundHint" class="soundHint" style="display:none">Click 🔊 to enable sound</div>
 
-  <!-- Firebase (compat) -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
   <script>
     (function(){
-      var FIREBASE_CONFIG = {
-        apiKey: "AIzaSyDGbC08WxruYIDPhZSlDlU-7Kzq-7mHENk",
-        authDomain: "eyek-vote.firebaseapp.com",
-        projectId: "eyek-vote"
-      };
+      var FIREBASE_CONFIG = { apiKey:"AIzaSyDGbC08WxruYIDPhZSlDlU-7Kzq-7mHENk", authDomain:"eyek-vote.firebaseapp.com", projectId:"eyek-vote" };
       if(!firebase || !firebase.initializeApp){ alert('Firebase failed to load.'); return; }
       firebase.initializeApp(FIREBASE_CONFIG);
       var db=firebase.firestore();
@@ -212,22 +200,23 @@
         return (docData && docData.closeAt) ? docData.closeAt : null;
       }
 
-      /* -------- Sound (WebAudio with HTML5 <audio> fallback) -------- */
+      /* -------- Sound (WebAudio + HTML5 fallback) -------- */
       var audioCtx=null;
       var SOUND_KEY='eyek_sound';
       var soundEnabled = (localStorage.getItem(SOUND_KEY)==='1'); // default muted
       function updateSoundBtn(){ soundBtn.textContent = soundEnabled ? '🔊' : '🔇'; }
-      function showSoundHint(show){ if (typeof soundHint!=='undefined' && soundHint) soundHint.style.display = show ? 'block' : 'none'; }
+      function showSoundHint(show){ if (soundHint) soundHint.style.display = show ? 'block' : 'none'; }
       updateSoundBtn(); showSoundHint(!soundEnabled);
 
-      // Tiny inline WAV beep fallback
+      // inline WAV fallback
       const FALLBACK_BEEP = 'data:audio/wav;base64,UklGRuwNAABXQVZFZm10IBAAAAABAAEAIlYAAESsAAACABAAZGF0YcgNAAAAADsWEys4PYpLIlVmWRNYPlFTRRM1gSHWC271r9/2FhJJQ4d7rF1UjYJm9hJ3x0yJH4d/0QY1y8r8BXeCBR6j8eYqk0J3cQvKcM8rQ0NtyPcY3tF7m9duT+38s0Gz8w2u2K5C3I9kWZQ/3rZ5m0C';
       function htmlBeep(delayMs=0, rate=1){
         try{
           setTimeout(function(){
             var a = new Audio(FALLBACK_BEEP);
+            a.muted = false;
             a.playbackRate = rate || 1;
-            a.play().catch(function(){ /* ignore */ });
+            a.play().catch(function(){});
           }, delayMs|0);
         }catch(_){}
       }
@@ -237,11 +226,11 @@
         localStorage.setItem(SOUND_KEY, soundEnabled ? '1':'0');
         updateSoundBtn(); showSoundHint(!soundEnabled);
         if(soundEnabled){
-          var ok = await ensureAudio();
-          // Fire both engines once so you hear it
-          beep(900, 0.10, 0.18);
-          htmlBeep(0, 1.0);
-          if(!ok){ /* first gesture usually unlocks */ }
+          await ensureAudio();
+          // triple ping so you *know* it’s on (some TVs are quiet)
+          beep(880, 0.14, 0.28); htmlBeep(0,1.0);
+          setTimeout(()=>{ beep(880,0.14,0.28); htmlBeep(0,1.0); }, 180);
+          setTimeout(()=>{ beep(988,0.16,0.30); htmlBeep(0,1.1); }, 360);
         }
       });
 
@@ -260,7 +249,8 @@
           var now = audioCtx.currentTime;
           var osc = audioCtx.createOscillator();
           var gain = audioCtx.createGain();
-          osc.type='sine'; osc.frequency.setValueAtTime(freq, now);
+          osc.type='square'; /* louder & punchier */
+          osc.frequency.setValueAtTime(freq, now);
           gain.gain.setValueAtTime(0, now);
           gain.gain.linearRampToValueAtTime(volume, now + 0.01);
           gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
@@ -272,7 +262,7 @@
 
       function playTick(){
         ensureAudio().then(function(){
-          beep(900, 0.10, 0.18);
+          beep(900, 0.12, 0.25);
           htmlBeep(0, 1.0);
         });
       }
@@ -281,24 +271,25 @@
         ensureAudio().then(function(){
           function tone(f,t,vol){ beep(f, t, vol); }
           if(kind==='encore'){
-            setTimeout(()=>tone(523,0.12,0.20), 0);
-            setTimeout(()=>tone(659,0.12,0.20), 140);
-            setTimeout(()=>tone(784,0.18,0.22), 280);
-            htmlBeep(0,1.0); htmlBeep(140,1.2); htmlBeep(280,1.5);
+            setTimeout(()=>tone(523,0.14,0.30), 0);
+            setTimeout(()=>tone(659,0.14,0.30), 180);
+            setTimeout(()=>tone(784,0.20,0.32), 360);
+            htmlBeep(0,1.0); htmlBeep(180,1.2); htmlBeep(360,1.4);
           }else if(kind==='another'){
-            setTimeout(()=>tone(440,0.12,0.18), 0);
-            setTimeout(()=>tone(392,0.14,0.18), 160);
-            htmlBeep(0,1.0); htmlBeep(160,0.9);
+            setTimeout(()=>tone(440,0.14,0.26), 0);
+            setTimeout(()=>tone(392,0.16,0.26), 200);
+            htmlBeep(0,1.0); htmlBeep(200,0.9);
           }else if(kind==='maybe'){
-            setTimeout(()=>tone(220,0.25,0.20), 0);
-            htmlBeep(0,0.7);
+            setTimeout(()=>tone(220,0.30,0.30), 0);
+            htmlBeep(0,0.8);
           }else{
-            setTimeout(()=>tone(600,0.12,0.18), 0);
+            setTimeout(()=>tone(600,0.14,0.28), 0);
             htmlBeep(0,1.0);
           }
         });
       }
-      // Try to unlock audio on first interaction
+
+      // enable audio after first interaction if muted state was toggled earlier
       window.addEventListener('pointerdown', function(){ if(soundEnabled) ensureAudio(); }, { once:true });
       window.addEventListener('keydown',     function(){ if(soundEnabled) ensureAudio(); }, { once:true });
       /* ---------------------------------- */
@@ -350,7 +341,7 @@
           showWinnerBadge(final, false, t);
           showFlashBanner(final);
         }else{
-          showWinnerBadge(null, true, t); // pending -> show Loading…
+          showWinnerBadge(null, true, t);
           hideFlashBanner();
         }
       }
@@ -379,30 +370,23 @@
 
       function pulseWinner(){
         winnerBadge.classList.remove('flash');
-        void winnerBadge.offsetWidth; // restart CSS animation
+        void winnerBadge.offsetWidth;
         winnerBadge.classList.add('flash');
       }
 
       function updateLeaderBadge(total){
         if(total<=0){
           prevLeader=null;
-          showWinnerBadge(null, true, total); // Loading…
+          showWinnerBadge(null, true, total);
           return;
         }
         var lead = decideOutcomeStrict(COUNTS.encore, COUNTS.another, COUNTS.maybe);
         showWinnerBadge(lead, true, total);
-        if(lead !== prevLeader){
-          pulseWinner();           // flash when leader changes
-          prevLeader = lead;
-        }else{
-          pulseWinner();           // also flash as votes keep coming for the same leader
-        }
+        if(lead !== prevLeader){ pulseWinner(); prevLeader = lead; }
+        else{ pulseWinner(); }
       }
 
-      function hideFlashBanner(){
-        flashBanner.style.display='none';
-        flashBanner.className='flashBanner';
-      }
+      function hideFlashBanner(){ flashBanner.style.display='none'; flashBanner.className='flashBanner'; }
       function showFlashBanner(kind){
         if(!kind){ hideFlashBanner(); return; }
         flashBanner.className='flashBanner';
@@ -488,8 +472,7 @@
         unsubPerf = db.collection('events').doc(CURRENT.eventId).collection('performances').doc(perfId)
           .onSnapshot(function(snap){
             if(!snap.exists){ setBadge('pending'); stopCountdown(); hideFlashBanner(); return; }
-            var d = s.data()||{};
-            var prevStatus = CURRENT.status;
+            var d = snap.data()||{};
             CURRENT.status = d.status || 'pending';
             CURRENT.closeAt = computeCloseAtFrom(d);
 
@@ -503,7 +486,7 @@
               setBadge('closed');
               stopCountdown();
               updateQr();
-              renderBars(); // final leader/winner & banner update
+              renderBars();
               var final = (d.outcome) || decideOutcomeStrict(COUNTS.encore, COUNTS.another, COUNTS.maybe);
               if(perfId !== lastFanfarePerfId){ playFanfare(final); lastFanfarePerfId = perfId; }
             }else{
