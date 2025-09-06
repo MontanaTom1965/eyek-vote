@@ -19,11 +19,10 @@
       color:var(--text); font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Helvetica Neue,Arial,Noto Sans;
     }
     header{
-      display:flex; align-items:center; gap:12px; padding:14px 18px; background:rgba(0,0,0,0.25);
-      border-bottom:1px solid var(--border);
+      padding:16px 18px; border-bottom:1px solid var(--border); background:rgba(0,0,0,0.25);
     }
-    header img{ width:36px; height:36px; border-radius:8px }
-    header h1{ font-size:18px; margin:0 }
+    .welcome{font-size:22px; font-weight:800}
+    .welcome .at{ color:var(--muted); font-weight:600 }
     main{ flex:1; display:grid; place-items:center; padding:24px }
     .card{
       width:min(1200px, 96vw);
@@ -51,9 +50,7 @@
 </head>
 <body>
   <header>
-    <!-- Use absolute path so /screen/ subfolder finds it -->
-    <img src="/Earn Your Encore Karaoke - Icon.png" alt="EYEK" onerror="this.style.display='none'"/>
-    <h1>Audience Vote</h1>
+    <div class="welcome" id="welcomeHeader">Welcome to Encore Karaoke</div>
   </header>
 
   <main>
@@ -89,14 +86,13 @@
 
     /************** IMPORTS **************/
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import {
-      getFirestore, doc, onSnapshot, getDoc
-    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getFirestore, doc, onSnapshot, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const app = initializeApp(FIREBASE_CONFIG);
     const db  = getFirestore(app);
 
     /************** DOM **************/
+    const welcomeHeader = document.getElementById("welcomeHeader");
     const eventPill   = document.getElementById("eventPill");
     const singerName  = document.getElementById("singerName");
     const voteUrlEl   = document.getElementById("voteUrl");
@@ -113,6 +109,9 @@
         eventId: u.searchParams.get("eventId") || "default",
         singerId: u.searchParams.get("singerId") || null
       };
+    }
+    function setWelcome(eventId){
+      welcomeHeader.innerHTML = `Welcome to Encore Karaoke <span class="at">at</span> ${eventId}`;
     }
     function buildVoteUrl(eventId, singerId){
       const ROOT = location.origin + "/";
@@ -139,6 +138,7 @@
     }
 
     function setUI({eventId, singerId, singerLabel, voteUrl}){
+      setWelcome(eventId);
       eventPill.textContent = eventId;
       singerName.textContent = singerLabel || "—";
       voteUrlEl.textContent = voteUrl || "—";
@@ -147,10 +147,11 @@
 
     /************** FLOW **************/
     const { eventId, singerId } = getParams();
+    setWelcome(eventId);
     eventPill.textContent = eventId;
     let unsubscribe = null;
 
-    // Button handlers (enabled later once we have a URL)
+    // Buttons
     openVoteBtn.addEventListener("click", ()=> {
       const url = voteUrlEl.textContent.trim();
       if (url && url !== "—") window.open(url, "_blank", "noopener");
@@ -162,7 +163,6 @@
     });
 
     async function followStateMode(){
-      // Listen to events/{eventId}/state/current
       if (unsubscribe) unsubscribe();
       const ref = doc(db, "events", eventId, "state", "current");
       unsubscribe = onSnapshot(ref, async (snap)=>{
@@ -189,7 +189,7 @@
     }
 
     async function fixedSingerMode(id){
-      // Prefer label from singers/{id}; fall back to state/current name if same id
+      // Prefer label from singers/{id}; fall back to unknown
       let label = "(Loading…)";
       singerName.textContent = label;
       try {
@@ -205,7 +205,6 @@
       debug.textContent = "Fixed singer from URL (?singerId=...).";
     }
 
-    // Decide mode
     if (!eventId){
       singerName.textContent = "Missing eventId in URL.";
       debug.textContent = "Add ?eventId=YourEventId";
