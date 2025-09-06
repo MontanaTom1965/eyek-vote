@@ -2,94 +2,51 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Earn Your Encore Karaoke — Board</title>
+  <title>Encore Karaoke — Board</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta http-equiv="Cache-Control" content="no-store" />
   <style>
     :root{
-      --bg: #0b0b0f;
-      --card: #141826;
-      --accent: #7bc4ff;
-      --encore: #4ade80;
-      --another: #fbbf24;
-      --maybe: #f87171;
-      --text: #f7f8fc;
-      --muted: #b9c0d0;
-      --border: #26304a;
+      --bg:#0b0b0f; --card:#141826; --accent:#7bc4ff; --border:#26304a;
+      --text:#f7f8fc; --muted:#b9c0d0; --encore:#4ade80; --another:#fbbf24;
     }
     *{box-sizing:border-box}
     html,body{height:100%}
-    body{
-      margin:0;
-      background:linear-gradient(180deg, #0b0b0f 0%, #0e1220 100%);
-      color:var(--text);
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Helvetica Neue, Arial, Noto Sans, Apple Color Emoji, Segoe UI Emoji;
-    }
-    header{
-      display:flex;align-items:center;justify-content:space-between;
-      padding:18px 24px;border-bottom:1px solid var(--border);
-      background: rgba(20,24,38,0.6); backdrop-filter: blur(6px);
-      position:sticky;top:0;z-index:5;
-    }
-    .brand{display:flex;align-items:center;gap:14px;font-weight:800;letter-spacing:.3px;color:var(--text)}
-    .brand img{width:44px;height:44px;border-radius:10px}
-    .brand span{font-size:22px}
-    .event{font-size:16px;color:var(--muted)}
-    .wrap{padding:20px; max-width:1600px; margin:0 auto}
-    .grid{display:grid; gap:20px; grid-template-columns:repeat(3, minmax(0,1fr))}
-    @media (max-width:1100px){ .grid{grid-template-columns:1fr} }
-    .col{background:linear-gradient(180deg, rgba(20,24,38,.9), rgba(10,12,20,.9)); border:1px solid var(--border); border-radius:18px; padding:18px; min-height:260px; box-shadow: 0 10px 26px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.03)}
-    .col h2{margin:0 0 14px; font-size:28px; display:flex; gap:12px; align-items:center}
-    .dot{width:14px; height:14px; border-radius:999px; display:inline-block; box-shadow:0 0 10px currentColor}
-    .col.encore h2{color:var(--encore)} .col.another h2{color:var(--another)} .col.maybe h2{color:var(--maybe)}
-    .col ul{list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:10px}
-    .chip{display:flex; justify-content:space-between; align-items:center; gap:12px; padding:14px 16px; border-radius:12px; border:1px solid var(--border); background: rgba(10,14,26,.6); font-size:22px}
-    .counts{font-variant-numeric:tabular-nums; font-size:18px; color:var(--muted)}
-    .legend{margin-top:12px; color:var(--muted); font-size:15px}
-    .pill{display:inline-block;border:1px solid var(--border);padding:6px 10px;border-radius:999px; font-size:14px;margin-left:10px;color:var(--muted)}
-    .msg{padding:18px;border:1px dashed var(--border);border-radius:12px;background: rgba(10,12,20,.5);font-size:18px}
-    footer{color:var(--muted);font-size:14px;text-align:center;padding:16px}
+    body{margin:0; min-height:100vh; background:linear-gradient(180deg,#0b0b0f,#0e1220); color:var(--text); font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu;}
+    header{ padding:16px 18px; border-bottom:1px solid var(--border); background:rgba(0,0,0,.25) }
+    .title{ font-size:22px; font-weight:900 }
+    .muted{ color:var(--muted) }
+    main{ padding:24px; }
+    .grid{ display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+    @media (max-width:1100px){ .grid{ grid-template-columns:1fr } }
+    .col{ background:var(--card); border:1px solid var(--border); border-radius:16px; padding:16px; }
+    .col h2{ margin:0 0 12px; font-size:20px }
+    ul{ list-style:none; margin:0; padding:0 }
+    li{ display:flex; justify-content:space-between; align-items:center; padding:12px 14px; border:1px solid var(--border); border-radius:12px; background:#0f1322; margin-bottom:10px; }
+    .pill{ display:inline-block; border:1px solid var(--border); border-radius:999px; padding:6px 10px; color:var(--muted); font-size:12px }
+    footer{ padding:8px 16px; color:var(--muted); font-size:12px; border-top:1px solid var(--border) }
   </style>
 </head>
 <body>
   <header>
-    <div class="brand">
-      <img src="Earn Your Encore Karaoke - Icon.png" alt="EYEK Icon" onerror="this.style.display='none'">
-      <span>Earn Your Encore Karaoke — Live Board</span>
-    </div>
-    <div class="event">
-      <span id="eventLabel">Loading event…</span>
-      <span class="pill" id="modePill">Top-only per category</span>
-    </div>
+    <div class="title">Encore Karaoke — Live Board</div>
+    <div class="muted" id="eventName">Event: —</div>
   </header>
 
-  <div class="wrap">
-    <div id="status" class="msg" role="status">Connecting to votes…</div>
-
-    <div class="grid" aria-live="polite">
-      <section class="col encore" aria-labelledby="encoreHead">
-        <h2 id="encoreHead"><span class="dot" style="color:var(--encore)"></span>Encore</h2>
+  <main>
+    <div class="grid">
+      <section class="col">
+        <h2 style="color:var(--encore)">Encore Winners</h2>
         <ul id="encoreList"></ul>
-        <div class="legend">Shows singer(s) whose <strong>Encore</strong> count is highest among all Encore placements.</div>
       </section>
-
-      <section class="col another" aria-labelledby="anotherHead">
-        <h2 id="anotherHead"><span class="dot" style="color:var(--another)"></span>Another Shot</h2>
+      <section class="col">
+        <h2 style="color:var(--another)">Another Shot</h2>
         <ul id="anotherList"></ul>
-        <div class="legend">Shows singer(s) whose <strong>Another Shot</strong> count is highest among all Another placements.</div>
-      </section>
-
-      <section class="col maybe" aria-labelledby="maybeHead">
-        <h2 id="maybeHead"><span class="dot" style="color:var(--maybe)"></span>Maybe Next Time</h2>
-        <ul id="maybeList"></ul>
-        <div class="legend">Shows singer(s) whose <strong>Maybe</strong> count is highest among all Maybe placements.</div>
       </section>
     </div>
-  </div>
+  </main>
 
-  <footer>
-    Tie rules: (Another vs Maybe ⇒ <b>Another</b>), (Encore vs Another ⇒ <b>Encore</b>), (Encore vs Maybe ⇒ <b>Another</b>), <u>3-way tie ⇒ <b>Another</b></u>.
-  </footer>
+  <footer id="debug" class="muted"></footer>
 
   <script type="module">
     const FIREBASE_CONFIG = {
@@ -101,148 +58,109 @@
       appId: "1:954696683994:web:21a84298a94648ff0230e3"
     };
 
-    const USE_EVENTS_COLLECTION = true;
-    const FIELD_SINGER_ID = "singerId";
-    const FIELD_SINGER_NAME = "singerName";
-    const FIELD_CATEGORY = "category"; // "encore" | "another" | "maybe"
-    const TOP_ONLY_PER_CATEGORY = true;
-
-    document.getElementById("modePill").textContent = TOP_ONLY_PER_CATEGORY
-      ? "Top-only per category" : "All placements";
-
-    function getEventIdFromURL(){
-      const u = new URL(window.location.href);
-      return u.searchParams.get("eventId") || "default";
-    }
-    const EVENT_ID = getEventIdFromURL();
-    document.getElementById("eventLabel").textContent = USE_EVENTS_COLLECTION ? `Event: ${EVENT_ID}` : "All Votes";
-
-    function decideWinner({ encore, another, maybe }){
-      const e = encore|0, a = another|0, m = maybe|0;
-      const max = Math.max(e,a,m);
-      const ties = [];
-      if (e === max) ties.push("encore");
-      if (a === max) ties.push("another");
-      if (m === max) ties.push("maybe");
-      if (ties.length === 1) return ties[0];
-
-      const pair = ties.slice().sort().join("+");
-      if (pair === "another+maybe") return "another";
-      if (pair === "another+encore") return "encore";
-      if (pair === "encore+maybe")  return "another";
-      if (ties.length === 3) return "another"; // 3-way -> Another
-      return ties[0];
-    }
-
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getFirestore, collection, onSnapshot, query } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getFirestore, doc, onSnapshot, collection, query, onSnapshot as onColSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const app = initializeApp(FIREBASE_CONFIG);
     const db  = getFirestore(app);
 
-    function getVotesQuery(){
-      if (USE_EVENTS_COLLECTION) return collection(db,"events",EVENT_ID,"votes");
-      return collection(db,"votes");
-    }
+    const encoreList = document.getElementById("encoreList");
+    const anotherList= document.getElementById("anotherList");
+    const debug      = document.getElementById("debug");
+    const eventName  = document.getElementById("eventName");
 
-    const statusEl = document.getElementById("status");
-    const encoreListEl  = document.getElementById("encoreList");
-    const anotherListEl = document.getElementById("anotherList");
-    const maybeListEl   = document.getElementById("maybeList");
-
-    onSnapshot(query(getVotesQuery()), (snap)=>{
-      const votes = [];
-      snap.forEach(doc=>{
-        const d = doc.data()||{};
-        const singerId   = d[FIELD_SINGER_ID];
-        const singerName = d[FIELD_SINGER_NAME];
-        const category   = (d[FIELD_CATEGORY]||"").toLowerCase().trim();
-        if (!singerId || !singerName) return;
-        if (!["encore","another","maybe"].includes(category)) return;
-        votes.push({ singerId, singerName, category });
+    // Resolve event
+    function resolveEventId(cb){
+      const u = new URL(location.href);
+      const explicit = u.searchParams.get("eventId");
+      if (explicit){ cb(explicit, null); return; }
+      const unsub = onSnapshot(doc(db,"meta","active"), (snap)=>{
+        if (!snap.exists()){ cb(null, unsub); return; }
+        const d = snap.data()||{};
+        cb(d.eventId || null, unsub);
       });
-
-      statusEl.textContent = votes.length ? `Loaded ${votes.length} vote${votes.length===1?"":"s"}.` : "No votes yet.";
-      const { topEncore, topAnother, topMaybe } = computePlacement(votes, decideWinner, TOP_ONLY_PER_CATEGORY);
-      renderBoard({ topEncore, topAnother, topMaybe });
-    }, (err)=>{
-      statusEl.textContent = "Error loading votes: " + (err?.message || err);
-    });
-
-    function computePlacement(votes, decideFn, topOnly){
-      const tallies = {};
-      for (const v of votes){
-        if (!tallies[v.singerId]) tallies[v.singerId] = { name:v.singerName, encore:0, another:0, maybe:0 };
-        if (v.category === "encore") tallies[v.singerId].encore++;
-        else if (v.category === "another") tallies[v.singerId].another++;
-        else tallies[v.singerId].maybe++;
-      }
-
-      const placement = {};
-      for (const [sid, s] of Object.entries(tallies)){
-        placement[sid] = { name:s.name, winner:decideFn(s), counts:{...s} };
-      }
-
-      const encore=[], another=[], maybe=[];
-      for (const p of Object.values(placement)){
-        if (p.winner === "encore") encore.push(p);
-        else if (p.winner === "another") another.push(p);
-        else maybe.push(p);
-      }
-
-      let topEncore = encore.slice();
-      let topAnother = another.slice();
-      let topMaybe = maybe.slice();
-
-      if (topOnly){
-        const maxE = topEncore.reduce((m,p)=>Math.max(m,p.counts.encore),0);
-        const maxA = topAnother.reduce((m,p)=>Math.max(m,p.counts.another),0);
-        const maxM = topMaybe.reduce((m,p)=>Math.max(m,p.counts.maybe),0);
-        topEncore  = topEncore.filter(p=>p.counts.encore===maxE && maxE>0);
-        topAnother = topAnother.filter(p=>p.counts.another===maxA && maxA>0);
-        topMaybe   = topMaybe.filter(p=>p.counts.maybe===maxM && maxM>0);
-      }
-
-      const byCat = (cat)=>(a,b)=> (b.counts[cat]-a.counts[cat]) || a.name.localeCompare(b.name);
-      topEncore.sort(byCat("encore"));
-      topAnother.sort(byCat("another"));
-      topMaybe.sort(byCat("maybe"));
-
-      return { topEncore, topAnother, topMaybe };
     }
 
-    function renderBoard({ topEncore, topAnother, topMaybe }){
-      renderList(encoreListEl, topEncore, "encore");
-      renderList(anotherListEl, topAnother, "another");
-      renderList(maybeListEl, topMaybe, "maybe");
+    function decideBucket(c){
+      const e = c.encore|0, a = c.another|0, m = c.maybe|0;
+      if (e===0 && a===0 && m===0) return null;
 
-      if (!topEncore.length && !topAnother.length && !topMaybe.length){
-        document.getElementById("status").textContent = "No winners yet — cast some votes!";
-      }
+      // Strict winners
+      if (e>a && e>m) return "encore";
+      if (a>e && a>m) return "another";
+      if (m>e && m>a) return null; // "Maybe" alone is not shown
+
+      // Ties (your rules)
+      if (a===m && a>e) return "another";
+      if (e===a && e>m) return "encore";
+      if (e===m && e>a) return "another";
+      if (e===a && a===m && e>0) return "another"; // three-way
+      return null;
     }
 
-    function renderList(ul, arr, cat){
-      ul.innerHTML = "";
-      if (!arr.length){
+    function renderList(el, arr){
+      el.innerHTML = "";
+      if (!arr.length){ const li=document.createElement("li"); li.textContent="—"; el.appendChild(li); return; }
+      for (const {name,count} of arr){
         const li = document.createElement("li");
-        li.className = "chip";
-        li.textContent = "—";
-        ul.appendChild(li);
-        return;
-      }
-      for (const p of arr){
-        const li = document.createElement("li");
-        li.className = "chip";
-        const name = document.createElement("div");
-        name.textContent = p.name;
-        const counts = document.createElement("div");
-        counts.className = "counts";
-        counts.textContent = `(${p.counts.encore}/${p.counts.another}/${p.counts.maybe})`;
-        li.appendChild(name);
-        li.appendChild(counts);
-        ul.appendChild(li);
+        li.innerHTML = `<span>${name}</span><span class="pill">${count}</span>`;
+        el.appendChild(li);
       }
     }
+
+    function followEvent(eid){
+      if (!eid){ eventName.textContent = "Event: (no active)"; return; }
+      eventName.textContent = "Event: " + eid;
+
+      // Cache singers with their latestPerformanceId
+      let singers = {}; // singerId -> {name, latestPerformanceId}
+      onColSnapshot(query(collection(db,"events",eid,"singers")), (snap)=>{
+        singers = {};
+        snap.forEach(d=>{
+          const x = d.data()||{};
+          singers[d.id] = { name: x.name || "(Unknown)", latestPerformanceId: x.latestPerformanceId || null };
+        });
+        computeBoard(); // recompute when singers change
+      }, err=>{ debug.textContent = "Singers error: " + (err?.message||err); });
+
+      // Aggregate votes by performanceId
+      let byPerf = {}; // perfId -> {encore:a, another:b, maybe:c}
+      onColSnapshot(query(collection(db,"events",eid,"votes")), (snap)=>{
+        byPerf = {};
+        snap.forEach(d=>{
+          const v = d.data()||{};
+          const perfId = v.performanceId;
+          const cat = (v.category||"").toLowerCase();
+          if (!perfId || !['encore','another','maybe'].includes(cat)) return;
+          byPerf[perfId] = byPerf[perfId] || {encore:0, another:0, maybe:0};
+          byPerf[perfId][cat] += 1;
+        });
+        computeBoard();
+      }, err=>{ debug.textContent = "Votes error: " + (err?.message||err); });
+
+      function computeBoard(){
+        const encoreArr = [];
+        const anotherArr= [];
+        Object.entries(singers).forEach(([sid, info])=>{
+          const perf = info.latestPerformanceId;
+          if (!perf) return;
+          const counts = byPerf[perf] || {encore:0, another:0, maybe:0};
+          const bucket = decideBucket(counts);
+          if (!bucket) return;
+          const total = (counts.encore|0)+(counts.another|0)+(counts.maybe|0);
+          if (bucket === "encore") encoreArr.push({name: info.name, count: total});
+          if (bucket === "another") anotherArr.push({name: info.name, count: total});
+        });
+        // Sort by total desc, then name
+        encoreArr.sort((a,b)=>b.count-a.count || a.name.localeCompare(b.name));
+        anotherArr.sort((a,b)=>b.count-a.count || a.name.localeCompare(b.name));
+
+        renderList(encoreList, encoreArr);
+        renderList(anotherList, anotherArr);
+      }
+    }
+
+    resolveEventId((eid, unsub)=>{ followEvent(eid); });
   </script>
 </body>
 </html>
