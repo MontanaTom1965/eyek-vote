@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Earn Your Encore Karaoke — Scan to Vote</title>
+  <title>Earn Your Encore Karaoke — Vote Screen</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta http-equiv="Cache-Control" content="no-store" />
   <style>
@@ -14,47 +14,70 @@
     *{box-sizing:border-box}
     html,body{height:100%}
     body{
-      margin:0; min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center;
-      background:linear-gradient(180deg,#0b0b0f 0%,#0e1220 100%); color:var(--text);
-      font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Helvetica Neue,Arial,Noto Sans;
-      padding:24px;
+      margin:0; display:flex; flex-direction:column; min-height:100vh;
+      background:radial-gradient(1200px 1200px at 100% -10%, #122055 0%, #0b0b0f 50%);
+      color:var(--text); font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Helvetica Neue,Arial,Noto Sans;
     }
-    header{position:fixed; top:0; left:0; right:0; padding:14px 18px; display:flex; justify-content:space-between; align-items:center;
-      background:rgba(20,24,38,.6); border-bottom:1px solid var(--border); backdrop-filter:blur(6px)}
-    .brand{display:flex; align-items:center; gap:12px; font-weight:800}
-    .brand img{width:40px; height:40px; border-radius:10px}
-    .pill{display:inline-block; border:1px solid var(--border); border-radius:999px; padding:6px 10px; color:var(--muted); font-size:12px}
-    .wrap{display:flex; flex-direction:column; align-items:center; gap:18px; margin-top:60px}
-    h1{margin:0; text-align:center; font-size:32px}
-    .name{font-size:22px; color:var(--muted)}
-    .card{background:var(--card); border:1px solid var(--border); border-radius:18px; padding:18px; box-shadow:0 10px 26px rgba(0,0,0,.35)}
-    canvas{display:block; width:min(80vw,520px); height:auto}
-    .url{font-size:16px; color:var(--muted); word-break:break-all; text-align:center; max-width:min(90vw,720px)}
-    .note{color:var(--muted); font-size:14px}
-    .err{color:#fca5a5; font-weight:600}
+    header{
+      display:flex; align-items:center; gap:12px; padding:14px 18px; background:rgba(0,0,0,0.25);
+      border-bottom:1px solid var(--border);
+    }
+    header img{ width:36px; height:36px; border-radius:8px }
+    header h1{ font-size:18px; margin:0 }
+    main{ flex:1; display:grid; place-items:center; padding:24px }
+    .card{
+      width:min(1200px, 96vw);
+      background:var(--card); border:1px solid var(--border); border-radius:18px; padding:24px;
+      display:grid; grid-template-columns:1fr 1fr; gap:24px;
+    }
+    @media (max-width:1000px){ .card{ grid-template-columns:1fr } }
+    .qrWrap{
+      background:#0e1220; border:1px dashed var(--border); border-radius:14px;
+      display:flex; align-items:center; justify-content:center; padding:16px; min-height:520px;
+    }
+    .qrWrap img{ width:100%; height:auto; max-width:720px; border-radius:10px }
+    .meta{ display:flex; flex-direction:column; gap:12px }
+    .eyebrow{ font-size:12px; color:var(--muted); letter-spacing:.06em; text-transform:uppercase }
+    .big{ font-size:36px; font-weight:900; line-height:1.1 }
+    .pill{ display:inline-block; border:1px solid var(--border); border-radius:999px; padding:6px 10px; color:var(--muted); font-size:12px }
+    .url{ font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; word-break:break-all }
+    .stack{ display:flex; flex-wrap:wrap; gap:10px }
+    .btn{ padding:10px 14px; border:none; border-radius:10px; background:var(--accent); color:#000; font-weight:800; cursor:pointer }
+    .btn.secondary{ background:#0f1322; color:#fff; border:1px solid var(--border) }
+    .muted{ color:var(--muted) }
+    .warn{ color:#fbbf24 }
+    footer{ padding:8px 16px; color:var(--muted); font-size:12px; border-top:1px solid var(--border) }
   </style>
-  <!-- Tiny QR library (global QRCode) -->
-  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 </head>
 <body>
   <header>
-    <div class="brand">
-      <img src="Earn Your Encore Karaoke - Icon.png" alt="EYEK" onerror="this.style.display='none'"/>
-      <div>Scan to Vote</div>
-    </div>
-    <div class="pill" id="eventPill">Event: —</div>
+    <!-- Use absolute path so /screen/ subfolder finds it -->
+    <img src="/Earn Your Encore Karaoke - Icon.png" alt="EYEK" onerror="this.style.display='none'"/>
+    <h1>Audience Vote</h1>
   </header>
 
-  <div class="wrap">
-    <h1 id="headline">Vote for this singer</h1>
-    <div class="name" id="singerName">Waiting for singer…</div>
-    <div class="card"><canvas id="qrCanvas" width="1024" height="1024" aria-label="QR code to vote"></canvas></div>
-    <div class="url" id="voteUrl">—</div>
-    <div class="note">One vote per device per singer.</div>
-    <div class="err" id="status"></div>
-  </div>
+  <main>
+    <section class="card">
+      <div class="qrWrap">
+        <img id="qrImg" alt="QR code to vote" />
+      </div>
+      <div class="meta">
+        <div><span class="eyebrow">Event</span><div class="pill" id="eventPill">—</div></div>
+        <div><span class="eyebrow">Now Voting For</span><div class="big" id="singerName">Waiting for host…</div></div>
+        <div><span class="eyebrow">Vote URL</span><div class="url" id="voteUrl">—</div></div>
+        <div class="stack">
+          <button class="btn" id="openVote">Open Vote Page</button>
+          <button class="btn secondary" id="openQrInNewTab">Open QR in New Tab</button>
+        </div>
+        <div class="muted" id="note"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer id="debug" class="muted"></footer>
 
   <script type="module">
+    /************** FIREBASE CONFIG **************/
     const FIREBASE_CONFIG = {
       apiKey: "AIzaSyDGbC08WxruYIDPhZSlDlU-7Kzq-7mHENk",
       authDomain: "eyek-vote.firebaseapp.com",
@@ -64,74 +87,132 @@
       appId: "1:954696683994:web:21a84298a94648ff0230e3"
     };
 
+    /************** IMPORTS **************/
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getFirestore, doc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import {
+      getFirestore, doc, onSnapshot, getDoc
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const app = initializeApp(FIREBASE_CONFIG);
     const db  = getFirestore(app);
 
-    const qs = new URLSearchParams(location.search);
-    const EVENT_ID  = qs.get("eventId") || "default";
-    const SINGER_ID_PARAM = qs.get("singerId"); // optional; if missing we use state/current
+    /************** DOM **************/
+    const eventPill   = document.getElementById("eventPill");
+    const singerName  = document.getElementById("singerName");
+    const voteUrlEl   = document.getElementById("voteUrl");
+    const qrImg       = document.getElementById("qrImg");
+    const openVoteBtn = document.getElementById("openVote");
+    const openQrBtn   = document.getElementById("openQrInNewTab");
+    const note        = document.getElementById("note");
+    const debug       = document.getElementById("debug");
 
-    document.getElementById("eventPill").textContent = "Event: " + EVENT_ID;
+    /************** HELPERS **************/
+    function getParams(){
+      const u = new URL(window.location.href);
+      return {
+        eventId: u.searchParams.get("eventId") || "default",
+        singerId: u.searchParams.get("singerId") || null
+      };
+    }
+    function buildVoteUrl(eventId, singerId){
+      const ROOT = location.origin + "/";
+      let url = ROOT + "vote/index.html?eventId=" + encodeURIComponent(eventId);
+      if (singerId) url += "&singerId=" + encodeURIComponent(singerId);
+      return url;
+    }
+    function qrProvider1(data){ return "https://api.qrserver.com/v1/create-qr-code/?size=900x900&data=" + encodeURIComponent(data); }
+    function qrProvider2(data){ return "https://chart.googleapis.com/chart?cht=qr&chs=900x900&chl=" + encodeURIComponent(data); }
 
-    const singerNameEl = document.getElementById("singerName");
-    const headlineEl   = document.getElementById("headline");
-    const statusEl     = document.getElementById("status");
-    const qrCanvas     = document.getElementById("qrCanvas");
-    const voteUrlEl    = document.getElementById("voteUrl");
-
-    const ROOT = location.origin + "/"; // e.g. https://vote.earnyourencorekaraoke.com/
-
-    async function showForSingerId(singerId){
-      if(!singerId){ setError("No singer selected."); return; }
-      // Get singer name (best-effort)
-      let name = null;
-      try{
-        const sdoc = await getDoc(doc(db,"events",EVENT_ID,"singers",singerId));
-        if (sdoc.exists()) name = (sdoc.data()||{}).name || null;
-      }catch(e){ /* non-fatal */ }
-      singerNameEl.textContent = name ? name : "(Unknown Singer)";
-      const url = ROOT + "vote/index.html?eventId=" + encodeURIComponent(EVENT_ID) + "&singerId=" + encodeURIComponent(singerId);
-      voteUrlEl.textContent = url;
-      drawQR(url);
+    function setQrImageForUrl(url){
+      let triedFallback = false;
+      qrImg.onerror = () => {
+        if (!triedFallback){
+          triedFallback = true;
+          qrImg.src = qrProvider2(url);
+          note.innerHTML = `<span class="warn">Primary QR image blocked; switched to fallback.</span>`;
+        }else{
+          qrImg.alt = "QR unavailable";
+          note.innerHTML = `<span class="warn">Both QR providers blocked. Use “Open QR in New Tab”.</span>`;
+        }
+      };
+      qrImg.src = qrProvider1(url);
     }
 
-    function drawQR(url){
-      statusEl.textContent = "";
-      try{
-        // Use global QRCode from the CDN script
-        window.QRCode.toCanvas(qrCanvas, url, { width: 1024, margin: 2 }, (err)=>{
-          if (err){ setError("QR error: " + (err?.message || err)); }
-        });
-      }catch(e){
-        setError("QR library failed to load.");
-      }
+    function setUI({eventId, singerId, singerLabel, voteUrl}){
+      eventPill.textContent = eventId;
+      singerName.textContent = singerLabel || "—";
+      voteUrlEl.textContent = voteUrl || "—";
+      if (voteUrl) setQrImageForUrl(voteUrl);
     }
 
-    function setError(msg){
-      statusEl.textContent = msg || "";
+    /************** FLOW **************/
+    const { eventId, singerId } = getParams();
+    eventPill.textContent = eventId;
+    let unsubscribe = null;
+
+    // Button handlers (enabled later once we have a URL)
+    openVoteBtn.addEventListener("click", ()=> {
+      const url = voteUrlEl.textContent.trim();
+      if (url && url !== "—") window.open(url, "_blank", "noopener");
+    });
+    openQrBtn.addEventListener("click", ()=> {
+      const url = voteUrlEl.textContent.trim();
+      if (!url || url === "—") return;
+      window.open(qrProvider1(url), "_blank", "noopener");
+    });
+
+    async function followStateMode(){
+      // Listen to events/{eventId}/state/current
+      if (unsubscribe) unsubscribe();
+      const ref = doc(db, "events", eventId, "state", "current");
+      unsubscribe = onSnapshot(ref, async (snap)=>{
+        if (!snap.exists()){
+          setUI({ eventId, singerId:null, singerLabel:"Waiting for host…", voteUrl:null });
+          debug.textContent = "No current singer set.";
+          return;
+        }
+        const d = snap.data() || {};
+        const curId = d.currentSingerId || null;
+        const label = d.currentSingerName || "(Unknown)";
+        if (!curId){
+          setUI({ eventId, singerId:null, singerLabel:"Waiting for host…", voteUrl:null });
+          debug.textContent = "currentSingerId missing on state/current.";
+          return;
+        }
+        const url = buildVoteUrl(eventId, curId);
+        setUI({ eventId, singerId:curId, singerLabel:label, voteUrl:url });
+        debug.textContent = "Following host (state/current).";
+      }, (err)=>{
+        debug.textContent = "State listener error: " + (err?.message || err);
+        setUI({ eventId, singerId:null, singerLabel:"(Connection issue)", voteUrl:null });
+      });
     }
 
-    if (SINGER_ID_PARAM){
-      // Explicit singer passed in
-      headlineEl.textContent = "Scan to vote for this singer";
-      showForSingerId(SINGER_ID_PARAM);
+    async function fixedSingerMode(id){
+      // Prefer label from singers/{id}; fall back to state/current name if same id
+      let label = "(Loading…)";
+      singerName.textContent = label;
+      try {
+        const sref = doc(db, "events", eventId, "singers", id);
+        const sdoc = await getDoc(sref);
+        if (sdoc.exists()){
+          const d = sdoc.data() || {};
+          if (typeof d.name === "string" && d.name.trim()) label = d.name.trim();
+        }
+      } catch(_){}
+      const url = buildVoteUrl(eventId, id);
+      setUI({ eventId, singerId:id, singerLabel:label, voteUrl:url });
+      debug.textContent = "Fixed singer from URL (?singerId=...).";
+    }
+
+    // Decide mode
+    if (!eventId){
+      singerName.textContent = "Missing eventId in URL.";
+      debug.textContent = "Add ?eventId=YourEventId";
+    }else if (singerId){
+      fixedSingerMode(singerId);
     }else{
-      // Fall back to host-controlled "current" singer
-      headlineEl.textContent = "Scan to vote (Now Performing)";
-      onSnapshot(doc(db,"events",EVENT_ID,"state","current"), (snap)=>{
-        if (!snap.exists()){ singerNameEl.textContent = "Waiting for host…"; voteUrlEl.textContent = "—"; setError(""); return; }
-        const d = snap.data()||{};
-        const sid = d.currentSingerId || null;
-        const sname = d.currentSingerName || "(Unknown Singer)";
-        singerNameEl.textContent = sname;
-        if (!sid){ voteUrlEl.textContent="—"; setError("No current singer set."); return; }
-        const url = ROOT + "vote/index.html?eventId=" + encodeURIComponent(EVENT_ID) + "&singerId=" + encodeURIComponent(sid);
-        voteUrlEl.textContent = url;
-        drawQR(url);
-      }, (err)=> setError("Firestore error: " + (err?.message || err)));
+      followStateMode();
     }
   </script>
 </body>
