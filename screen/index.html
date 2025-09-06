@@ -1,47 +1,70 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Screen | Earn Your Encore Karaoke</title>
+  <title>Earn Your Encore Karaoke — Screen</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-store" />
   <style>
-    body { margin:0; background:#0e0d2b; color:#fff; font-family:system-ui,sans-serif; }
-    .wrap { max-width:1100px; margin:0 auto; padding:28px; }
-    h1 { color:#ffd24a; text-align:center; line-height:1.4; }
-    .screen { display:grid; grid-template-columns: 320px 1fr; gap:24px; align-items:center; }
-    .panel { background:#1e1d3a; border-radius:14px; padding:16px; }
-    .qr img { width:100%; max-width:280px; background:#fff; padding:10px; border-radius:10px; }
-    .link { font-size:14px; word-break:break-all; color:#ddd; text-align:center; margin-top:8px; }
-    .bar { background:#141335; border-radius:10px; padding:10px; margin:10px 0; }
-    .track { width:100%; background:#0f0e2a; border-radius:8px; height:22px; }
-    .fill { height:22px; width:0%; transition: width 400ms ease; }
-    .fill.ok { background:#27ae60; }
-    .fill.maybe { background:#f39c12; }
-    .fill.no { background:#c0392b; }
-    .pct { font-size:13px; margin-top:4px; }
-    @media (max-width: 860px) { .screen { grid-template-columns:1fr; } }
+    :root{
+      --bg:#0b0b0f;
+      --card:#141826;
+      --encore:#4ade80;
+      --another:#fbbf24;
+      --maybe:#f87171;
+      --text:#f7f8fc;
+      --muted:#b9c0d0;
+      --border:#26304a;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Helvetica Neue,Arial,Noto Sans;
+      background:linear-gradient(180deg,#0b0b0f 0%,#0e1220 100%);
+      color:var(--text);
+      display:flex;flex-direction:column;align-items:center;
+      min-height:100vh;
+      padding:20px;
+    }
+    h1{margin:0 0 20px 0;font-size:32px;text-align:center}
+    .grid{display:grid;gap:20px;grid-template-columns:repeat(3,1fr);width:100%;max-width:1200px}
+    .col{
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:18px;
+      padding:16px;
+      min-height:240px;
+    }
+    .col h2{margin:0 0 12px;font-size:26px}
+    .encore h2{color:var(--encore)}
+    .another h2{color:var(--another)}
+    .maybe h2{color:var(--maybe)}
+    ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+    li{background:rgba(255,255,255,.05);border:1px solid var(--border);padding:12px 14px;border-radius:12px;font-size:22px;display:flex;justify-content:space-between}
+    .counts{font-size:18px;color:var(--muted)}
+    #status{margin-top:20px;font-size:18px;color:var(--muted)}
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <h1>Did this singer earn an Encore?<br>Cast your vote now!</h1>
-    <div class="screen">
-      <div class="panel qr">
-        <img id="qr" alt="QR">
-        <div class="link" id="voteLink"></div>
-      </div>
-      <div class="panel">
-        <div class="bar"><label>🔥 Encore</label><div class="track"><div class="fill ok" id="barEncore"></div></div><div class="pct" id="pctEncore">0 votes</div></div>
-        <div class="bar"><label>🤔 One More Shot</label><div class="track"><div class="fill maybe" id="barOneMore"></div></div><div class="pct" id="pctOneMore">0 votes</div></div>
-        <div class="bar"><label>❌ Maybe Next Time</label><div class="track"><div class="fill no" id="barNextTime"></div></div><div class="pct" id="pctNextTime">0 votes</div></div>
-      </div>
+  <h1>Live Results</h1>
+  <div class="grid">
+    <div class="col encore">
+      <h2>Encore</h2>
+      <ul id="encoreList"></ul>
+    </div>
+    <div class="col another">
+      <h2>Another Shot</h2>
+      <ul id="anotherList"></ul>
+    </div>
+    <div class="col maybe">
+      <h2>Maybe Next Time</h2>
+      <ul id="maybeList"></ul>
     </div>
   </div>
+  <div id="status">Connecting…</div>
 
-  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore-compat.js"></script>
-  <script>
-    const firebaseConfig = {
+  <script type="module">
+    const FIREBASE_CONFIG = {
       apiKey: "AIzaSyDGbC08WxruYIDPhZSlDlU-7Kzq-7mHENk",
       authDomain: "eyek-vote.firebaseapp.com",
       projectId: "eyek-vote",
@@ -49,52 +72,62 @@
       messagingSenderId: "954696683994",
       appId: "1:954696683994:web:21a84298a94648ff0230e3"
     };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
 
-    const params = new URLSearchParams(location.search);
-    const sid    = params.get('sid')    || "TEST";
-    const singer = params.get('singer') || "this singer";
-    const showId = params.get('show')   || null;
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore, collection, onSnapshot, query } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-    document.querySelector('h1').innerHTML =
-      `Did ${singer} earn an Encore?<br>Cast your vote now!`;
+    const app = initializeApp(FIREBASE_CONFIG);
+    const db  = getFirestore(app);
 
-    const BASE = 'https://vote.earnyourencorekaraoke.com';
-    const voteURL = `${BASE}/vote/?sid=${encodeURIComponent(sid)}&singer=${encodeURIComponent(singer)}&show=${encodeURIComponent(showId||'')}`;
-    document.getElementById('voteLink').textContent = voteURL;
-    document.getElementById('qr').src = `https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=${encodeURIComponent(voteURL)}`;
-
-    db.collection('sessions').doc(sid).set({
-      singer,
-      status: 'open',
-      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-      ...(showId ? { showId } : {})
-    }, { merge: true });
-
-    let encore=0, one=0, nextt=0;
-    function render(){
-      const total = encore+one+nextt || 1;
-      document.getElementById('barEncore').style.width=(encore/total*100)+'%';
-      document.getElementById('barOneMore').style.width=(one/total*100)+'%';
-      document.getElementById('barNextTime').style.width=(nextt/total*100)+'%';
-      document.getElementById('pctEncore').textContent = `${encore} vote${encore===1?'':'s'}`;
-      document.getElementById('pctOneMore').textContent = `${one} vote${one===1?'':'s'}`;
-      document.getElementById('pctNextTime').textContent= `${nextt} vote${nextt===1?'':'s'}`;
+    function getEventIdFromURL() {
+      const u = new URL(window.location.href);
+      return u.searchParams.get("eventId") || "default";
     }
+    const EVENT_ID = getEventIdFromURL();
 
-    db.collection('sessions').doc(sid).collection('votes')
-      .orderBy('ts','asc')
-      .onSnapshot(snap=>{
-        encore=one=nextt=0;
-        snap.forEach(doc=>{
-          const v=doc.data().choice;
-          if(v==='encore') encore++;
-          if(v==='one_more') one++;
-          if(v==='next_time') nextt++;
-        });
-        render();
+    const encoreListEl = document.getElementById("encoreList");
+    const anotherListEl = document.getElementById("anotherList");
+    const maybeListEl = document.getElementById("maybeList");
+    const statusEl = document.getElementById("status");
+
+    onSnapshot(query(collection(db, "events", EVENT_ID, "votes")), (snap) => {
+      const tallies = {encore:{}, another:{}, maybe:{}};
+      snap.forEach(doc => {
+        const d = doc.data();
+        const name = d.singerName || "Anonymous";
+        const cat = (d.category||"").toLowerCase();
+        if(!["encore","another","maybe"].includes(cat)) return;
+        if(!tallies[cat][name]) tallies[cat][name] = 0;
+        tallies[cat][name]++;
       });
+
+      renderList(encoreListEl, tallies.encore);
+      renderList(anotherListEl, tallies.another);
+      renderList(maybeListEl, tallies.maybe);
+
+      statusEl.textContent = `Votes loaded: ${snap.size}`;
+    });
+
+    function renderList(el, obj){
+      el.innerHTML = "";
+      const arr = Object.entries(obj);
+      if(!arr.length){
+        const li=document.createElement("li");
+        li.textContent="—";
+        el.appendChild(li);
+        return;
+      }
+      arr.sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]));
+      for(const [name,count] of arr){
+        const li=document.createElement("li");
+        li.textContent=name;
+        const span=document.createElement("span");
+        span.className="counts";
+        span.textContent=`${count}`;
+        li.appendChild(span);
+        el.appendChild(li);
+      }
+    }
   </script>
 </body>
 </html>
