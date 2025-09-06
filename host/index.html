@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Earn Your Encore Karaoke — Vote Screen</title>
+  <title>Earn Your Encore Karaoke — Host</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta http-equiv="Cache-Control" content="no-store" />
   <style>
@@ -14,70 +14,159 @@
     *{box-sizing:border-box}
     html,body{height:100%}
     body{
-      margin:0; display:flex; flex-direction:column; min-height:100vh;
-      background:radial-gradient(1200px 1200px at 100% -10%, #122055 0%, #0b0b0f 50%);
+      margin:0; display:flex; min-height:100vh;
+      background:linear-gradient(180deg,#0b0b0f 0%,#0e1220 100%);
       color:var(--text); font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Helvetica Neue,Arial,Noto Sans;
     }
-    header{
-      display:flex; align-items:center; gap:12px; padding:14px 18px; background:rgba(0,0,0,0.25);
-      border-bottom:1px solid var(--border);
+    .sidebar{
+      width:340px; background:var(--panel); border-right:1px solid var(--border);
+      padding:18px; position:sticky; top:0; height:100vh; overflow:auto;
     }
-    header img{ width:36px; height:36px; border-radius:8px }
-    header h1{ font-size:18px; margin:0 }
-    main{ flex:1; display:grid; place-items:center; padding:24px }
-    .card{
-      width:min(1200px, 96vw);
-      background:var(--card); border:1px solid var(--border); border-radius:18px; padding:24px;
-      display:grid; grid-template-columns:1fr 1fr; gap:24px;
+    .brand{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+    .brand img{width:36px;height:36px;border-radius:8px}
+    .brand h1{font-size:18px;margin:0}
+    .muted{color:var(--muted)}
+    .group{margin-top:18px}
+    .pill{display:inline-block;border:1px solid var(--border);border-radius:999px;padding:6px 10px;color:var(--muted);font-size:12px}
+    .sidebar a, .sidebar button.link{
+      display:block;text-decoration:none;color:var(--text);background:#0f1322;border:1px solid var(--border);
+      padding:10px 12px;border-radius:10px;margin-bottom:10px;font-weight:600;text-align:center;cursor:pointer
     }
-    @media (max-width:1000px){ .card{ grid-template-columns:1fr } }
-    .qrWrap{
-      background:#0e1220; border:1px dashed var(--border); border-radius:14px;
-      display:flex; align-items:center; justify-content:center; padding:16px; min-height:520px;
+    .sidebar a:hover,.sidebar button.link:hover{outline:1px solid var(--accent)}
+    .qrWrap{margin-top:8px;background:#0e1220;border:1px dashed var(--border);border-radius:12px;padding:10px;text-align:center}
+    .qrWrap img{width:100%;height:auto;border-radius:6px}
+    .small{font-size:12px;color:var(--muted);word-break:break-all}
+
+    .main{flex:1;padding:20px}
+    .hero{
+      background:linear-gradient(90deg,#141b36 0%, transparent 100%);
+      border:1px solid var(--border); border-radius:16px; padding:16px 18px; margin-bottom:18px;
     }
-    .qrWrap img{ width:100%; height:auto; max-width:720px; border-radius:10px }
-    .meta{ display:flex; flex-direction:column; gap:12px }
-    .eyebrow{ font-size:12px; color:var(--muted); letter-spacing:.06em; text-transform:uppercase }
-    .big{ font-size:36px; font-weight:900; line-height:1.1 }
-    .pill{ display:inline-block; border:1px solid var(--border); border-radius:999px; padding:6px 10px; color:var(--muted); font-size:12px }
-    .url{ font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; word-break:break-all }
-    .stack{ display:flex; flex-wrap:wrap; gap:10px }
-    .btn{ padding:10px 14px; border:none; border-radius:10px; background:var(--accent); color:#000; font-weight:800; cursor:pointer }
-    .btn.secondary{ background:#0f1322; color:#fff; border:1px solid var(--border) }
-    .muted{ color:var(--muted) }
-    .warn{ color:#fbbf24 }
-    footer{ padding:8px 16px; color:var(--muted); font-size:12px; border-top:1px solid var(--border) }
+    .hero h2{margin:0;font-size:24px}
+    .hero .sub{margin-top:6px;color:var(--muted)}
+    .row{display:grid;gap:18px;grid-template-columns:1fr 1fr}
+    @media (max-width:1100px){.row{grid-template-columns:1fr}.sidebar{position:static;height:auto}}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px}
+    h2{margin:0 0 12px}
+    label{display:block;margin:10px 0 6px;font-weight:600}
+    input{padding:10px 12px;border-radius:10px;border:1px solid var(--border);width:100%;background:#0f1322;color:#f7f8fc}
+    .btn{padding:10px 14px;border:none;border-radius:10px;background:var(--accent);color:#000;font-weight:700;cursor:pointer}
+    .btn.secondary{background:#0f1322;color:#fff;border:1px solid var(--border)}
+    .btn.danger{background:#ef4444;color:#fff}
+    .stack{display:flex;gap:10px;flex-wrap:wrap}
+    ul{list-style:none;margin:0;padding:0}
+    li{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:#0f1322;margin-bottom:10px}
+    .hint{font-size:13px;color:var(--muted);margin-top:8px}
+    .ok{color:#86efac}.err{color:#fca5a5}
   </style>
 </head>
 <body>
-  <header>
-    <!-- Use absolute path so /screen/ subfolder finds it -->
-    <img src="/Earn Your Encore Karaoke - Icon.png" alt="EYEK" onerror="this.style.display='none'"/>
-    <h1>Audience Vote</h1>
-  </header>
+  <aside class="sidebar">
+    <div class="brand">
+      <img src="/Earn Your Encore Karaoke - Icon.png" alt="EYEK" onerror="this.style.display='none'"/>
+      <h1>Host Panel</h1>
+    </div>
 
-  <main>
-    <section class="card">
+    <div class="group">
+      <div class="muted">Current Event</div>
+      <div class="pill" id="currentEventPill">default</div>
+      <div class="small" id="listeningPill">Listening to: default</div>
+    </div>
+
+    <div class="group">
+      <div class="muted">Now Performing</div>
+      <div class="pill" id="nowPerfPill">None</div>
+      <div class="stack" style="margin-top:12px">
+        <button class="link" id="hostVoteEncore">Vote: Encore</button>
+        <button class="link" id="hostVoteAnother">Vote: Another</button>
+        <button class="link" id="hostVoteMaybe">Vote: Maybe</button>
+      </div>
+      <div class="small">Host votes are limited to one per device per singer.</div>
+    </div>
+
+    <div class="group">
+      <div class="muted">QR for Current Singer</div>
       <div class="qrWrap">
-        <img id="qrImg" alt="QR code to vote" />
+        <img id="qrImg" alt="QR code for current singer" />
       </div>
-      <div class="meta">
-        <div><span class="eyebrow">Event</span><div class="pill" id="eventPill">—</div></div>
-        <div><span class="eyebrow">Now Voting For</span><div class="big" id="singerName">Waiting for host…</div></div>
-        <div><span class="eyebrow">Vote URL</span><div class="url" id="voteUrl">—</div></div>
+      <div class="small" id="singerVoteUrl">—</div>
+      <div class="stack" style="margin-top:8px">
+        <button class="link" id="copySingerVoteUrl">Copy Singer Vote URL</button>
+        <button class="link" id="openQrScreen">Open Big QR Screen</button>
+        <button class="link" id="openQrInNewTab">Open QR in New Tab</button>
+      </div>
+      <div class="small" id="qrNote"></div>
+    </div>
+
+    <div class="group">
+      <div class="muted">Quick Links (event)</div>
+      <a id="voteLink"   target="_blank" rel="noopener">Open Vote Page</a>
+      <a id="screenLink" target="_blank" rel="noopener">Open Screen Display</a>
+      <a id="boardLink"  target="_blank" rel="noopener">Open Board (Encore/Another/Maybe)</a>
+      <button class="link" id="copyEventVoteUrl">Copy Event Vote URL</button>
+      <div class="small">The generic vote link follows “Now Performing”.</div>
+    </div>
+
+    <div class="group">
+      <div class="muted">Status</div>
+      <div class="small" id="statusSide">Idle…</div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="hero" id="eventHero" hidden>
+      <h2 id="eventHeroTitle">Encore Karaoke</h2>
+      <div class="sub">You’re controlling this event from the Host Panel.</div>
+    </div>
+
+    <div class="row">
+      <div class="card">
+        <h2>Event Controls</h2>
+        <label for="eventId">Event ID</label>
+        <input id="eventId" placeholder="e.g. My House" />
         <div class="stack">
-          <button class="btn" id="openVote">Open Vote Page</button>
-          <button class="btn secondary" id="openQrInNewTab">Open QR in New Tab</button>
+          <button class="btn" id="setEventBtn">Set / Switch Event</button>
+          <button class="btn secondary" id="clearVotesBtn">Clear All Votes</button>
         </div>
-        <div class="muted" id="note"></div>
+        <div class="hint">All pages use <code>?eventId=...</code>. The vote URL can also include <code>&singerId=...</code> for per-singer QR.</div>
       </div>
-    </section>
+
+      <div class="card">
+        <h2>Add Singer</h2>
+        <label for="singerName">Singer Name</label>
+        <input id="singerName" placeholder="Enter singer name" />
+        <div class="stack">
+          <button class="btn" id="addSingerBtn">Add Singer</button>
+        </div>
+        <div id="addSingerStatus" class="hint">Ready.</div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="card">
+        <h2>Current Singers</h2>
+        <ul id="singerList"></ul>
+        <div class="hint" id="singerReadNote"></div>
+      </div>
+
+      <div class="card">
+        <h2>Vote Tallies (raw)</h2>
+        <div class="row" style="grid-template-columns:1fr 1fr 1fr">
+          <div><strong style="color:var(--encore)">Encore</strong><ul id="encoreRaw"></ul></div>
+          <div><strong style="color:var(--another)">Another</strong><ul id="anotherRaw"></ul></div>
+          <div><strong style="color:var(--maybe)">Maybe</strong><ul id="maybeRaw"></ul></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Debug / Info</h2>
+      <div id="statusMain" class="hint">Waiting for changes…</div>
+    </div>
   </main>
 
-  <footer id="debug" class="muted"></footer>
-
   <script type="module">
-    /************** FIREBASE CONFIG **************/
+    /************** CONFIG **************/
     const FIREBASE_CONFIG = {
       apiKey: "AIzaSyDGbC08WxruYIDPhZSlDlU-7Kzq-7mHENk",
       authDomain: "eyek-vote.firebaseapp.com",
@@ -90,129 +179,457 @@
     /************** IMPORTS **************/
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import {
-      getFirestore, doc, onSnapshot, getDoc
+      getFirestore, collection, addDoc, getDocs, deleteDoc, doc, setDoc, onSnapshot, query
     } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
     const app = initializeApp(FIREBASE_CONFIG);
     const db  = getFirestore(app);
+    const auth = getAuth(app);
+
+    // Anonymous sign-in (host only)
+    signInAnonymously(auth).catch(e=>{
+      document.getElementById("statusSide").textContent = "Auth error: " + (e?.message || e);
+    });
+    onAuthStateChanged(auth, user=>{
+      document.getElementById("statusSide").textContent = user ? "Host signed in (anon)" : "Not signed in";
+    });
 
     /************** DOM **************/
-    const eventPill   = document.getElementById("eventPill");
-    const singerName  = document.getElementById("singerName");
-    const voteUrlEl   = document.getElementById("voteUrl");
-    const qrImg       = document.getElementById("qrImg");
-    const openVoteBtn = document.getElementById("openVote");
-    const openQrBtn   = document.getElementById("openQrInNewTab");
-    const note        = document.getElementById("note");
-    const debug       = document.getElementById("debug");
+    const eventIdInput    = document.getElementById("eventId");
+    const currentEventPill= document.getElementById("currentEventPill");
+    const listeningPill   = document.getElementById("listeningPill");
+    const nowPerfPill     = document.getElementById("nowPerfPill");
+    const eventHero       = document.getElementById("eventHero");
+    const eventHeroTitle  = document.getElementById("eventHeroTitle");
 
-    /************** HELPERS **************/
-    function getParams(){
-      const u = new URL(window.location.href);
-      return {
-        eventId: u.searchParams.get("eventId") || "default",
-        singerId: u.searchParams.get("singerId") || null
-      };
-    }
-    function buildVoteUrl(eventId, singerId){
+    const voteLink        = document.getElementById("voteLink");
+    const screenLink      = document.getElementById("screenLink");
+    const boardLink       = document.getElementById("boardLink");
+    const copyEventVoteUrl= document.getElementById("copyEventVoteUrl");
+
+    const copySingerVoteUrl = document.getElementById("copySingerVoteUrl");
+    const openQrScreen      = document.getElementById("openQrScreen");
+    const openQrInNewTab    = document.getElementById("openQrInNewTab");
+    const qrImg             = document.getElementById("qrImg");
+    const singerVoteUrlEl   = document.getElementById("singerVoteUrl");
+    const qrNote            = document.getElementById("qrNote");
+
+    const singerNameInput = document.getElementById("singerName");
+    const addSingerBtn    = document.getElementById("addSingerBtn");
+    const addSingerStatus = document.getElementById("addSingerStatus");
+    const singerListEl    = document.getElementById("singerList");
+    const singerReadNote  = document.getElementById("singerReadNote");
+
+    const statusSide      = document.getElementById("statusSide");
+    const statusMain      = document.getElementById("statusMain");
+    const encoreRaw       = document.getElementById("encoreRaw");
+    const anotherRaw      = document.getElementById("anotherRaw");
+    const maybeRaw        = document.getElementById("maybeRaw");
+
+    const hostVoteEncore  = document.getElementById("hostVoteEncore");
+    const hostVoteAnother = document.getElementById("hostVoteAnother");
+    const hostVoteMaybe   = document.getElementById("hostVoteMaybe");
+
+    document.getElementById("setEventBtn").addEventListener("click", onClickSetEvent);
+    document.getElementById("clearVotesBtn").addEventListener("click", clearVotes);
+    addSingerBtn.addEventListener("click", addSinger);
+    singerNameInput.addEventListener("keydown", (e)=>{ if (e.key === "Enter") addSinger(); });
+    eventIdInput.addEventListener("keydown", (e)=>{ if (e.key === "Enter") onClickSetEvent(); });
+
+    copyEventVoteUrl.addEventListener("click", () => {
+      navigator.clipboard.writeText(voteLink.href).then(()=>{ statusSide.textContent = "Event Vote URL copied."; });
+    });
+    copySingerVoteUrl.addEventListener("click", () => {
+      const url = singerVoteUrlEl.textContent.trim();
+      if (!url || url === "—") { statusSide.textContent = "No singer set."; return; }
+      navigator.clipboard.writeText(url).then(()=>{ statusSide.textContent = "Singer Vote URL copied."; });
+    });
+    openQrScreen.addEventListener("click", () => {
+      if (!STATE.currentSingerId) { statusSide.textContent = "No singer set."; return; }
       const ROOT = location.origin + "/";
-      let url = ROOT + "vote/index.html?eventId=" + encodeURIComponent(eventId);
-      if (singerId) url += "&singerId=" + encodeURIComponent(singerId);
-      return url;
-    }
-    function qrProvider1(data){ return "https://api.qrserver.com/v1/create-qr-code/?size=900x900&data=" + encodeURIComponent(data); }
-    function qrProvider2(data){ return "https://chart.googleapis.com/chart?cht=qr&chs=900x900&chl=" + encodeURIComponent(data); }
+      const url = ROOT + "screen/index.html?eventId=" + encodeURIComponent(getCurrentEventId())
+                  + "&singerId=" + encodeURIComponent(STATE.currentSingerId);
+      window.open(url, "_blank", "noopener");
+    });
+    openQrInNewTab.addEventListener("click", ()=>{
+      const url = singerVoteUrlEl.textContent.trim();
+      if (!url || url === "—") { statusSide.textContent = "No singer set."; return; }
+      window.open(buildQrProvider1(url), "_blank", "noopener");
+    });
 
-    function setQrImageForUrl(url){
+    hostVoteEncore.addEventListener("click", ()=> hostCastVote("encore"));
+    hostVoteAnother.addEventListener("click", ()=> hostCastVote("another"));
+    hostVoteMaybe.addEventListener("click", ()=> hostCastVote("maybe"));
+
+    /************** STATE **************/
+    const STATE = { currentSingerId:null, currentSingerName:null };
+    let unsubscribeSingers = null, unsubscribeVotes = null, unsubscribeState = null;
+    let lastRenderedSingers = [];
+
+    // Persistent event helpers
+    const LS_EVENT_KEY = "eyek_last_event";
+
+    function getCurrentEventId(){
+      const u = new URL(window.location.href);
+      const q = u.searchParams.get("eventId");
+      if (q && q.trim()) return q.trim();
+      const mem = localStorage.getItem(LS_EVENT_KEY);
+      return mem && mem.trim() ? mem.trim() : "default";
+    }
+
+    function applyEvent(eid){
+      // Update URL (so other pages you open inherit it)
+      const u = new URL(window.location.href);
+      u.searchParams.set("eventId", eid);
+      history.replaceState({}, "", u.toString());
+
+      // Persist locally for next sessions
+      try{ localStorage.setItem(LS_EVENT_KEY, eid); }catch{}
+
+      // UI
+      currentEventPill.textContent = eid;
+      listeningPill.textContent = "Listening to: " + eid;
+      eventHero.hidden = false;
+      eventHeroTitle.textContent = `Encore Karaoke at ${eid}`;
+
+      // Links
+      const ROOT = location.origin + "/";
+      voteLink.href   = ROOT + "vote/index.html?eventId="   + encodeURIComponent(eid);
+      screenLink.href = ROOT + "screen/index.html?eventId=" + encodeURIComponent(eid);
+      boardLink.href  = ROOT + "board/index.html?eventId="  + encodeURIComponent(eid);
+
+      // Rewire listeners
+      watchSingers(eid);
+      watchVotes(eid);
+      watchState(eid);
+
+      statusMain.textContent = "Event set to: " + eid;
+    }
+
+    function onClickSetEvent(){
+      const typed = (eventIdInput.value || "").trim();
+      const current = getCurrentEventId();
+
+      if (!typed){
+        statusMain.textContent = "Enter an event name to set/switch.";
+        return;
+      }
+      if (typed === current){
+        statusMain.textContent = `Already on event "${current}".`;
+        return;
+      }
+
+      const msg =
+`Switch event from "${current}" to "${typed}"?
+
+• This will NOT delete any singers or votes.
+• You’ll simply start controlling/listening to the "${typed}" event.
+• URLs & QR codes will point to "${typed}".`;
+
+      if (!window.confirm(msg)){
+        statusMain.textContent = "Event switch cancelled.";
+        return;
+      }
+
+      applyEvent(typed);
+    }
+
+    function getDeviceId(){
+      const KEY = "eyek_device_id";
+      let id = localStorage.getItem(KEY);
+      if (!id){
+        const arr = new Uint8Array(16); crypto.getRandomValues(arr);
+        id = Array.from(arr, b => b.toString(16).padStart(2,"0")).join("");
+        localStorage.setItem(KEY, id);
+      }
+      return id;
+    }
+    const DEVICE_ID = getDeviceId();
+
+    // ===== QR via image providers (no external JS lib) =====
+    function buildQrProvider1(data){
+      return "https://api.qrserver.com/v1/create-qr-code/?size=600x600&data=" + encodeURIComponent(data);
+    }
+    function buildQrProvider2(data){
+      return "https://chart.googleapis.com/chart?cht=qr&chs=512x512&chl=" + encodeURIComponent(data);
+    }
+    function setQrImageForUrl(dataUrl){
+      const p1 = buildQrProvider1(dataUrl);
+      const p2 = buildQrProvider2(dataUrl);
       let triedFallback = false;
       qrImg.onerror = () => {
         if (!triedFallback){
           triedFallback = true;
-          qrImg.src = qrProvider2(url);
-          note.innerHTML = `<span class="warn">Primary QR image blocked; switched to fallback.</span>`;
+          qrImg.src = p2;
+          qrNote.textContent = "Primary QR image blocked; using fallback provider.";
         }else{
           qrImg.alt = "QR unavailable";
-          note.innerHTML = `<span class="warn">Both QR providers blocked. Use “Open QR in New Tab”.</span>`;
+          qrNote.textContent = "Both QR image providers were blocked. Use “Open QR in New Tab”.";
         }
       };
-      qrImg.src = qrProvider1(url);
+      qrImg.src = p1;
     }
 
-    function setUI({eventId, singerId, singerLabel, voteUrl}){
-      eventPill.textContent = eventId;
-      singerName.textContent = singerLabel || "—";
-      voteUrlEl.textContent = voteUrl || "—";
-      if (voteUrl) setQrImageForUrl(voteUrl);
+    function updateSingerQr(){
+      const eid = getCurrentEventId();
+      if (!STATE.currentSingerId){
+        singerVoteUrlEl.textContent = "—";
+        qrImg.removeAttribute("src");
+        qrImg.alt = "No singer set";
+        qrNote.textContent = "";
+        return;
+      }
+      const ROOT = location.origin + "/";
+      const url = ROOT + "vote/index.html?eventId=" + encodeURIComponent(eid)
+                + "&singerId=" + encodeURIComponent(STATE.currentSingerId);
+      singerVoteUrlEl.textContent = url;
+      setQrImageForUrl(url);
+      qrNote.textContent = "";
     }
 
-    /************** FLOW **************/
-    const { eventId, singerId } = getParams();
-    eventPill.textContent = eventId;
-    let unsubscribe = null;
+    // Initialize with remembered or URL event
+    const START_EVENT = getCurrentEventId();
+    eventIdInput.value = START_EVENT;
+    applyEvent(START_EVENT);
 
-    // Button handlers (enabled later once we have a URL)
-    openVoteBtn.addEventListener("click", ()=> {
-      const url = voteUrlEl.textContent.trim();
-      if (url && url !== "—") window.open(url, "_blank", "noopener");
-    });
-    openQrBtn.addEventListener("click", ()=> {
-      const url = voteUrlEl.textContent.trim();
-      if (!url || url === "—") return;
-      window.open(qrProvider1(url), "_blank", "noopener");
-    });
+    /************** SINGERS (with robust fallback) **************/
+    function renderSingerList(items){
+      lastRenderedSingers = items.slice();
+      singerListEl.innerHTML = "";
+      if (!items.length){
+        const li = document.createElement("li");
+        li.textContent = "No singers yet.";
+        singerListEl.appendChild(li);
+        return;
+      }
+      items.sort((a,b)=>a.name.localeCompare(b.name, undefined, {sensitivity:"base"}));
+      for (const it of items){
+        const li = document.createElement("li");
+        const left = document.createElement("span"); left.textContent = it.name;
+        const right = document.createElement("div"); right.className = "stack";
+        const btnSet = document.createElement("button");
+        btnSet.className = "btn secondary";
+        btnSet.textContent = "Set Now Performing";
+        btnSet.addEventListener("click", ()=> setNowPerforming(getCurrentEventId(), it.id, it.name));
+        right.appendChild(btnSet);
+        li.appendChild(left); li.appendChild(right);
+        singerListEl.appendChild(li);
+      }
+    }
 
-    async function followStateMode(){
-      // Listen to events/{eventId}/state/current
-      if (unsubscribe) unsubscribe();
-      const ref = doc(db, "events", eventId, "state", "current");
-      unsubscribe = onSnapshot(ref, async (snap)=>{
-        if (!snap.exists()){
-          setUI({ eventId, singerId:null, singerLabel:"Waiting for host…", voteUrl:null });
-          debug.textContent = "No current singer set.";
-          return;
-        }
-        const d = snap.data() || {};
-        const curId = d.currentSingerId || null;
-        const label = d.currentSingerName || "(Unknown)";
-        if (!curId){
-          setUI({ eventId, singerId:null, singerLabel:"Waiting for host…", voteUrl:null });
-          debug.textContent = "currentSingerId missing on state/current.";
-          return;
-        }
-        const url = buildVoteUrl(eventId, curId);
-        setUI({ eventId, singerId:curId, singerLabel:label, voteUrl:url });
-        debug.textContent = "Following host (state/current).";
+    function lsKey(eid){ return "eyek_singers_" + eid; }
+    function saveLocalSingers(eid, items){
+      try{ localStorage.setItem(lsKey(eid), JSON.stringify(items)); }catch{}
+    }
+    function loadLocalSingers(eid){
+      try{
+        const raw = localStorage.getItem(lsKey(eid));
+        return raw ? JSON.parse(raw) : [];
+      }catch{ return []; }
+    }
+
+    async function loadSingersOnce(eid){
+      try{
+        const snap = await getDocs(collection(db,"events",eid,"singers"));
+        const items = snap.docs.map(d => ({ id:d.id, ...(d.data()||{}) }));
+        renderSingerList(items);
+        saveLocalSingers(eid, items);
+        singerReadNote.textContent = "";
+      }catch(e){
+        // Fall back to local cache
+        const items = loadLocalSingers(eid);
+        renderSingerList(items);
+        singerReadNote.innerHTML = `<span class="err">Live singers read blocked; showing local list. Check Firestore Rules for <code>events/${eid}/singers</code> read.</span>`;
+      }
+    }
+
+    function watchSingers(eid){
+      if (unsubscribeSingers) unsubscribeSingers();
+      // Show local cache immediately for snappy UI
+      renderSingerList(loadLocalSingers(eid));
+      // One-time load from Firestore (updates local cache)
+      loadSingersOnce(eid);
+      // Live listener
+      const qref = query(collection(db,"events",eid,"singers"));
+      unsubscribeSingers = onSnapshot(qref,(snap)=>{
+        const items = [];
+        snap.forEach(d=>{ const {name=""} = d.data()||{}; items.push({id:d.id, name}); });
+        renderSingerList(items);
+        saveLocalSingers(eid, items);
+        singerReadNote.textContent = "";
       }, (err)=>{
-        debug.textContent = "State listener error: " + (err?.message || err);
-        setUI({ eventId, singerId:null, singerLabel:"(Connection issue)", voteUrl:null });
+        // Keep whatever we have; note the issue
+        singerReadNote.innerHTML = `<span class="err">Realtime singers listener error: ${err?.message || err}. Using local list.</span>`;
       });
     }
 
-    async function fixedSingerMode(id){
-      // Prefer label from singers/{id}; fall back to state/current name if same id
-      let label = "(Loading…)";
-      singerName.textContent = label;
-      try {
-        const sref = doc(db, "events", eventId, "singers", id);
-        const sdoc = await getDoc(sref);
-        if (sdoc.exists()){
-          const d = sdoc.data() || {};
-          if (typeof d.name === "string" && d.name.trim()) label = d.name.trim();
+    async function addSinger(){
+      const name = singerNameInput.value.trim();
+      if(!name){ addSingerStatus.innerHTML = `<span class="err">Please enter a singer name.</span>`; return; }
+
+      const eid = getCurrentEventId();
+
+      // Make sure anonymous auth is available
+      if (!auth.currentUser){
+        try { await signInAnonymously(auth); }
+        catch(e){
+          const msg = (e && e.message) || String(e);
+          if (msg.includes("operation-not-allowed")){
+            addSingerStatus.innerHTML = `<span class="err">Anonymous sign-in is disabled. In Firebase Console → Authentication → Sign-in method → enable <strong>Anonymous</strong>.</span>`;
+          }else{
+            addSingerStatus.innerHTML = `<span class="err">Auth error: ${msg}</span>`;
+          }
+          return;
         }
-      } catch(_){}
-      const url = buildVoteUrl(eventId, id);
-      setUI({ eventId, singerId:id, singerLabel:label, voteUrl:url });
-      debug.textContent = "Fixed singer from URL (?singerId=...).";
+      }
+
+      addSingerBtn.disabled = true;
+      addSingerStatus.textContent = "Adding…";
+      try{
+        const ref = await addDoc(collection(db,"events",eid,"singers"), { name, ts: Date.now() });
+        singerNameInput.value = "";
+        addSingerStatus.innerHTML = `<span class="ok">Singer added to event “${eid}”.</span>`;
+
+        // Optimistic list update
+        const optimistic = lastRenderedSingers.slice();
+        if (!optimistic.find(s=>s.id === ref.id)){
+          optimistic.push({ id: ref.id, name });
+          renderSingerList(optimistic);
+          saveLocalSingers(eid, optimistic);
+        }
+
+        // If nothing is "Now Performing" yet, auto-set to this new singer
+        if (!STATE.currentSingerId){
+          await setNowPerforming(eid, ref.id, name);
+          addSingerStatus.innerHTML += ` <span class="ok">Also set as “Now Performing”.</span>`;
+        }
+      }catch(e){
+        const msg = (e && e.message) || String(e);
+        if (msg.toLowerCase().includes("missing or insufficient permissions")){
+          addSingerStatus.innerHTML = `<span class="err">Permissions error adding singer. Check Firestore Rules for <code>events/${eid}/singers</code> <em>create</em>, and be sure Rules were <strong>Published</strong>.</span>`;
+        }else{
+          addSingerStatus.innerHTML = `<span class="err">Error adding singer: ${msg}</span>`;
+        }
+      }finally{
+        addSingerBtn.disabled = false;
+      }
     }
 
-    // Decide mode
-    if (!eventId){
-      singerName.textContent = "Missing eventId in URL.";
-      debug.textContent = "Add ?eventId=YourEventId";
-    }else if (singerId){
-      fixedSingerMode(singerId);
-    }else{
-      followStateMode();
+    /************** NOW PERFORMING **************/
+    async function setNowPerforming(eid, singerId, singerName){
+      try{
+        await setDoc(doc(db,"events",eid,"state","current"), {
+          currentSingerId: singerId,
+          currentSingerName: singerName,
+          ts: Date.now()
+        });
+
+        // Update UI immediately (don’t wait for the listener)
+        STATE.currentSingerId = singerId;
+        STATE.currentSingerName = singerName;
+        nowPerfPill.textContent = singerName || "None";
+        updateSingerQr();
+
+        statusMain.innerHTML = `<span class="ok">Now Performing set to: ${singerName}</span>`;
+      }catch(e){
+        statusMain.innerHTML = `<span class="err">Error setting Now Performing: ${e?.message || e}</span>`;
+      }
+    }
+
+    function watchState(eid){
+      if (unsubscribeState) unsubscribeState();
+      unsubscribeState = onSnapshot(doc(db,"events",eid,"state","current"), (snap)=>{
+        if (!snap.exists()){
+          STATE.currentSingerId = null; STATE.currentSingerName = null;
+          nowPerfPill.textContent = "None";
+          updateSingerQr();
+        }else{
+          const d = snap.data()||{};
+          STATE.currentSingerId = d.currentSingerId || null;
+          STATE.currentSingerName = d.currentSingerName || "(Unknown)";
+          nowPerfPill.textContent = STATE.currentSingerName || "None";
+          updateSingerQr();
+        }
+      }, (err)=>{
+        statusMain.innerHTML = `<span class="err">State listener error: ${err?.message || err}</span>`;
+      });
+    }
+
+    /************** HOST VOTE (one per device per singer) **************/
+    async function hostCastVote(category){
+      if (!STATE.currentSingerId){
+        statusSide.textContent = "Set Now Performing first.";
+        return;
+      }
+      const eid = getCurrentEventId();
+      const docId = `${STATE.currentSingerId}__${DEVICE_ID}`;
+      const voteRef = doc(db,"events",eid,"votes",docId);
+      statusSide.textContent = "Submitting host vote…";
+      try{
+        await setDoc(voteRef, {
+          singerId: STATE.currentSingerId,
+          singerName: STATE.currentSingerName || "(Unknown)",
+          category,
+          deviceId: DEVICE_ID,
+          ts: Date.now()
+        }, { merge:false });
+        statusSide.textContent = "Host vote submitted.";
+      }catch(e){
+        const msg = (""+e?.message||"").toLowerCase();
+        if (msg.includes("permission") || msg.includes("already exists") || msg.includes("failed")){
+          statusSide.textContent = "This device already voted for this singer.";
+        }else{
+          statusSide.textContent = "Error submitting vote.";
+        }
+      }
+    }
+
+    /************** VOTES (raw preview) **************/
+    function watchVotes(eid){
+      if (unsubscribeVotes) unsubscribeVotes();
+      encoreRaw.innerHTML = ""; anotherRaw.innerHTML=""; maybeRaw.innerHTML="";
+      const qref = query(collection(db,"events",eid,"votes"));
+      unsubscribeVotes = onSnapshot(qref,(snap)=>{
+        statusSide.textContent = `Listening… (${snap.size} votes)`;
+        const t = {encore:{}, another:{}, maybe:{}};
+        snap.forEach(d=>{
+          const x = d.data()||{};
+          const name = x.singerName || "Anonymous";
+          const cat  = (x.category||"").toLowerCase();
+          if(!["encore","another","maybe"].includes(cat)) return;
+          if(!t[cat][name]) t[cat][name]=0;
+          t[cat][name]++;
+        });
+        renderRaw(encoreRaw, t.encore);
+        renderRaw(anotherRaw, t.another);
+        renderRaw(maybeRaw, t.maybe);
+      }, (err)=>{
+        statusMain.innerHTML = `<span class="err">Vote listener error: ${err?.message || err}</span>`;
+      });
+    }
+    function renderRaw(el, obj){
+      el.innerHTML = "";
+      const arr = Object.entries(obj);
+      if(!arr.length){ const li=document.createElement("li"); li.textContent="—"; el.appendChild(li); return; }
+      arr.sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]));
+      for(const [name,count] of arr){
+        const li = document.createElement("li");
+        li.innerHTML = `<span>${name}</span><span class="pill">${count}</span>`;
+        el.appendChild(li);
+      }
+    }
+
+    /************** CLEAR VOTES **************/
+    async function clearVotes(){
+      const eid = getCurrentEventId();
+      try{
+        const snap = await getDocs(collection(db,"events",eid,"votes"));
+        let n=0; for (const d of snap.docs){ await deleteDoc(doc(db,"events",eid,"votes",d.id)); n++; }
+        statusMain.innerHTML = `<span class="ok">Cleared ${n} votes for event "${eid}".</span>`;
+      }catch(e){
+        statusMain.innerHTML = `<span class="err">Error clearing votes: ${e?.message || e}</span>`;
+      }
     }
   </script>
 </body>
