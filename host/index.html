@@ -7,16 +7,9 @@
   <meta http-equiv="Cache-Control" content="no-store" />
   <style>
     :root{
-      --bg:#0b0b0f;
-      --panel:#101424;
-      --card:#141826;
-      --accent:#7bc4ff;
-      --text:#f7f8fc;
-      --muted:#b9c0d0;
-      --border:#26304a;
-      --encore:#4ade80;
-      --another:#fbbf24;
-      --maybe:#f87171;
+      --bg:#0b0b0f; --panel:#101424; --card:#141826; --accent:#7bc4ff;
+      --text:#f7f8fc; --muted:#b9c0d0; --border:#26304a;
+      --encore:#4ade80; --another:#fbbf24; --maybe:#f87171;
     }
     *{box-sizing:border-box}
     html,body{height:100%}
@@ -25,46 +18,37 @@
       background:linear-gradient(180deg,#0b0b0f 0%,#0e1220 100%);
       color:var(--text); font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Helvetica Neue,Arial,Noto Sans;
     }
-    .sidebar{
-      width:280px; background:var(--panel); border-right:1px solid var(--border); padding:18px; position:sticky; top:0; height:100vh;
-    }
+    .sidebar{width:300px;background:var(--panel);border-right:1px solid var(--border);padding:18px;position:sticky;top:0;height:100vh}
     .brand{display:flex;align-items:center;gap:10px;margin-bottom:14px}
     .brand img{width:36px;height:36px;border-radius:8px}
     .brand h1{font-size:18px;margin:0}
     .muted{color:var(--muted)}
-    .sidebar .group{margin-top:18px}
+    .group{margin-top:18px}
+    .pill{display:inline-block;border:1px solid var(--border);border-radius:999px;padding:6px 10px;color:var(--muted);font-size:12px}
     .sidebar a, .sidebar button.link{
-      display:block; text-decoration:none; color:var(--text);
-      background:#0f1322; border:1px solid var(--border);
-      padding:10px 12px; border-radius:10px; margin-bottom:10px; font-weight:600; text-align:center; cursor:pointer;
+      display:block;text-decoration:none;color:var(--text);background:#0f1322;border:1px solid var(--border);
+      padding:10px 12px;border-radius:10px;margin-bottom:10px;font-weight:600;text-align:center;cursor:pointer
     }
-    .sidebar a:hover, .sidebar button.link:hover { outline:1px solid var(--accent) }
-    .qrWrap{margin-top:8px; background:#0e1220; border:1px dashed var(--border); border-radius:12px; padding:10px; text-align:center}
-    .qrWrap canvas{width:100%; height:auto}
-    .small{font-size:12px; color:var(--muted); word-break:break-all}
+    .sidebar a:hover,.sidebar button.link:hover{outline:1px solid var(--accent)}
+    .qrWrap{margin-top:8px;background:#0e1220;border:1px dashed var(--border);border-radius:12px;padding:10px;text-align:center}
+    .qrWrap canvas{width:100%;height:auto}
+    .small{font-size:12px;color:var(--muted);word-break:break-all}
 
-    .main{flex:1; padding:20px}
-    .row{display:grid; gap:18px; grid-template-columns: 1fr 1fr}
-    @media (max-width: 1000px){ .row{grid-template-columns: 1fr} .sidebar{position:static;height:auto} }
-    .card{background:var(--card); border:1px solid var(--border); border-radius:14px; padding:18px}
+    .main{flex:1;padding:20px}
+    .row{display:grid;gap:18px;grid-template-columns:1fr 1fr}
+    @media (max-width:1100px){.row{grid-template-columns:1fr}.sidebar{position:static;height:auto}}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px}
     h2{margin:0 0 12px}
-    label{display:block; margin:10px 0 6px; font-weight:600}
-    input{
-      padding:10px 12px; border-radius:10px; border:1px solid var(--border); width:100%; background:#0f1322; color:#f7f8fc;
-    }
-    .btn{padding:10px 14px; border:none; border-radius:10px; background:var(--accent); color:#000; font-weight:700; cursor:pointer}
-    .btn.secondary{background:#0f1322; color:#fff; border:1px solid var(--border)}
-    .btn.danger{background:#ef4444; color:#fff}
-    .stack{display:flex; gap:10px; flex-wrap:wrap}
-    ul{list-style:none; margin:0; padding:0}
-    li{display:flex; align-items:center; justify-content:space-between; padding:10px 12px; border:1px solid var(--border); border-radius:10px; background:#0f1322; margin-bottom:10px}
-    .pill{display:inline-block; border:1px solid var(--border); border-radius:999px; padding:6px 10px; font-size:12px; color:var(--muted)}
-    .hint{font-size:13px; color:var(--muted); margin-top:8px}
-    .grid3{display:grid; gap:14px; grid-template-columns: repeat(3, minmax(0, 1fr))}
-    @media (max-width: 900px){ .grid3{grid-template-columns:1fr} }
-    .cat.encore{color:var(--encore)} .cat.another{color:var(--another)} .cat.maybe{color:var(--maybe)}
-    .ok{color:#86efac}
-    .err{color:#fca5a5}
+    label{display:block;margin:10px 0 6px;font-weight:600}
+    input{padding:10px 12px;border-radius:10px;border:1px solid var(--border);width:100%;background:#0f1322;color:#f7f8fc}
+    .btn{padding:10px 14px;border:none;border-radius:10px;background:var(--accent);color:#000;font-weight:700;cursor:pointer}
+    .btn.secondary{background:#0f1322;color:#fff;border:1px solid var(--border)}
+    .btn.danger{background:#ef4444;color:#fff}
+    .stack{display:flex;gap:10px;flex-wrap:wrap}
+    ul{list-style:none;margin:0;padding:0}
+    li{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:#0f1322;margin-bottom:10px}
+    .hint{font-size:13px;color:var(--muted);margin-top:8px}
+    .ok{color:#86efac}.err{color:#fca5a5}
   </style>
 </head>
 <body>
@@ -80,10 +64,15 @@
     </div>
 
     <div class="group">
+      <div class="muted">Now Performing</div>
+      <div class="pill" id="nowPerfPill">None</div>
+    </div>
+
+    <div class="group">
       <div class="muted" style="margin-bottom:8px">Quick Links</div>
-      <a id="voteLink" target="_blank" rel="noopener">Open Vote Page</a>
+      <a id="voteLink"   target="_blank" rel="noopener">Open Vote Page</a>
       <a id="screenLink" target="_blank" rel="noopener">Open Screen Display</a>
-      <a id="boardLink" target="_blank" rel="noopener">Open Board (Encore/Another/Maybe)</a>
+      <a id="boardLink"  target="_blank" rel="noopener">Open Board (Encore/Another/Maybe)</a>
       <button class="link" id="copyVoteUrl">Copy Vote URL</button>
       <div class="qrWrap">
         <canvas id="qrCanvas" width="256" height="256" aria-label="QR code"></canvas>
@@ -129,19 +118,10 @@
 
       <div class="card">
         <h2>Vote Tallies (raw)</h2>
-        <div class="grid3">
-          <div>
-            <div class="cat encore">Encore</div>
-            <ul id="encoreRaw"></ul>
-          </div>
-          <div>
-            <div class="cat another">Another Shot</div>
-            <ul id="anotherRaw"></ul>
-          </div>
-          <div>
-            <div class="cat maybe">Maybe Next Time</div>
-            <ul id="maybeRaw"></ul>
-          </div>
+        <div class="row" style="grid-template-columns:1fr 1fr 1fr">
+          <div><strong style="color:var(--encore)">Encore</strong><ul id="encoreRaw"></ul></div>
+          <div><strong style="color:var(--another)">Another</strong><ul id="anotherRaw"></ul></div>
+          <div><strong style="color:var(--maybe)">Maybe</strong><ul id="maybeRaw"></ul></div>
         </div>
       </div>
     </div>
@@ -153,7 +133,7 @@
   </main>
 
   <script type="module">
-    /************** CONFIG (YOUR PROJECT) **************/
+    /************** CONFIG **************/
     const FIREBASE_CONFIG = {
       apiKey: "AIzaSyDGbC08WxruYIDPhZSlDlU-7Kzq-7mHENk",
       authDomain: "eyek-vote.firebaseapp.com",
@@ -166,69 +146,61 @@
     /************** IMPORTS **************/
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import {
-      getFirestore, collection, addDoc, getDocs, deleteDoc, doc, onSnapshot, query
+      getFirestore, collection, addDoc, getDocs, deleteDoc, doc, setDoc, onSnapshot, query
     } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-    import {
-      getAuth, signInAnonymously, onAuthStateChanged
-    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
     const app = initializeApp(FIREBASE_CONFIG);
-    const db = getFirestore(app);
+    const db  = getFirestore(app);
     const auth = getAuth(app);
 
-    // Anonymous sign-in for the host page (Option B)
-    signInAnonymously(auth).catch(e => {
+    // Anonymous sign-in (host only)
+    signInAnonymously(auth).catch(e=>{
       document.getElementById("statusSide").textContent = "Auth error: " + (e?.message || e);
     });
-    onAuthStateChanged(auth, user => {
+    onAuthStateChanged(auth, user=>{
       document.getElementById("statusSide").textContent = user ? "Host signed in (anon)" : "Not signed in";
     });
 
     /************** DOM **************/
-    const eventIdInput = document.getElementById("eventId");
-    const currentEventPill = document.getElementById("currentEventPill");
-    const voteLink = document.getElementById("voteLink");
-    const screenLink = document.getElementById("screenLink");
-    const boardLink = document.getElementById("boardLink");
-    const copyVoteUrl = document.getElementById("copyVoteUrl");
-    const voteUrlText = document.getElementById("voteUrlText");
-    const qrCanvas = document.getElementById("qrCanvas");
+    const eventIdInput    = document.getElementById("eventId");
+    const currentEventPill= document.getElementById("currentEventPill");
+    const nowPerfPill     = document.getElementById("nowPerfPill");
+    const voteLink        = document.getElementById("voteLink");
+    const screenLink      = document.getElementById("screenLink");
+    const boardLink       = document.getElementById("boardLink");
+    const copyVoteUrl     = document.getElementById("copyVoteUrl");
+    const voteUrlText     = document.getElementById("voteUrlText");
+    const qrCanvas        = document.getElementById("qrCanvas");
     const singerNameInput = document.getElementById("singerName");
-    const addSingerBtn = document.getElementById("addSingerBtn");
+    const addSingerBtn    = document.getElementById("addSingerBtn");
     const addSingerStatus = document.getElementById("addSingerStatus");
-    const singerListEl = document.getElementById("singerList");
-    const statusSide = document.getElementById("statusSide");
-    const statusMain = document.getElementById("statusMain");
-    const encoreRaw = document.getElementById("encoreRaw");
-    const anotherRaw = document.getElementById("anotherRaw");
-    const maybeRaw = document.getElementById("maybeRaw");
+    const singerListEl    = document.getElementById("singerList");
+    const statusSide      = document.getElementById("statusSide");
+    const statusMain      = document.getElementById("statusMain");
+    const encoreRaw       = document.getElementById("encoreRaw");
+    const anotherRaw      = document.getElementById("anotherRaw");
+    const maybeRaw        = document.getElementById("maybeRaw");
 
     document.getElementById("setEventBtn").addEventListener("click", setEvent);
     document.getElementById("clearVotesBtn").addEventListener("click", clearVotes);
     addSingerBtn.addEventListener("click", addSinger);
-    singerNameInput.addEventListener("keydown", (e)=>{
-      if (e.key === "Enter") addSinger();
-    });
-    copyVoteUrl.addEventListener("click", () => {
-      navigator.clipboard.writeText(voteLink.href).then(()=>{ statusSide.textContent = "Vote URL copied."; });
-    });
+    singerNameInput.addEventListener("keydown", (e)=>{ if (e.key === "Enter") addSinger(); });
+    copyVoteUrl.addEventListener("click", ()=>{ navigator.clipboard.writeText(voteLink.href).then(()=>{ statusSide.textContent = "Vote URL copied."; }); });
 
-    /************** EVENT ID + ABSOLUTE LINKS **************/
+    /************** EVENT & LINKS **************/
     function getEventIdFromURL(){
       const u = new URL(window.location.href);
       return u.searchParams.get("eventId") || "default";
     }
-
-    // Build absolute links to root-level folders: /vote/, /screen/, /board/
     function setLinksForEvent(eid){
-      const ROOT = location.origin + "/"; // e.g., https://vote.earnyourencorekaraoke.com/
+      const ROOT = location.origin + "/";
       voteLink.href   = ROOT + "vote/index.html?eventId="   + encodeURIComponent(eid);
       screenLink.href = ROOT + "screen/index.html?eventId=" + encodeURIComponent(eid);
       boardLink.href  = ROOT + "board/index.html?eventId="  + encodeURIComponent(eid);
       voteUrlText.textContent = voteLink.href;
       drawQR(voteLink.href);
     }
-
     function setEvent(){
       const val = eventIdInput.value.trim() || "default";
       const u = new URL(window.location.href);
@@ -238,24 +210,23 @@
       setLinksForEvent(val);
       watchSingers(val);
       watchVotes(val);
+      watchState(val);
       statusMain.textContent = "Event set to: " + val;
     }
 
-    // Initialize with URL param
     let EVENT_ID = getEventIdFromURL();
     eventIdInput.value = EVENT_ID;
     currentEventPill.textContent = EVENT_ID;
     setLinksForEvent(EVENT_ID);
-    watchSingers(EVENT_ID);
-    watchVotes(EVENT_ID);
 
     /************** SINGERS **************/
-    let unsubscribeSingers = null;
+    let unsubscribeSingers = null, unsubscribeVotes = null, unsubscribeState = null;
+
     function watchSingers(eid){
       if (unsubscribeSingers) unsubscribeSingers();
       singerListEl.innerHTML = "";
       const qref = query(collection(db,"events",eid,"singers"));
-      unsubscribeSingers = onSnapshot(qref, (snap)=>{
+      unsubscribeSingers = onSnapshot(qref,(snap)=>{
         singerListEl.innerHTML = "";
         if (snap.empty){
           const li = document.createElement("li");
@@ -266,7 +237,14 @@
         snap.forEach(d=>{
           const {name=""} = d.data()||{};
           const li = document.createElement("li");
-          li.innerHTML = `<span>${name}</span>`;
+          const left = document.createElement("span"); left.textContent = name;
+          const right = document.createElement("div"); right.className = "stack";
+          const btnSet = document.createElement("button");
+          btnSet.className = "btn secondary";
+          btnSet.textContent = "Set Now Performing";
+          btnSet.addEventListener("click", ()=> setNowPerforming(eid, d.id, name));
+          right.appendChild(btnSet);
+          li.appendChild(left); li.appendChild(right);
           singerListEl.appendChild(li);
         });
       }, (err)=>{
@@ -276,27 +254,45 @@
 
     async function addSinger(){
       const name = singerNameInput.value.trim();
-      if(!name){
-        addSingerStatus.innerHTML = `<span class="err">Please enter a singer name.</span>`;
-        return;
-      }
+      if(!name){ addSingerStatus.innerHTML = `<span class="err">Please enter a singer name.</span>`; return; }
       const eid = getEventIdFromURL();
       addSingerBtn.disabled = true;
       addSingerStatus.textContent = "Adding…";
       try{
-        await addDoc(collection(db, "events", eid, "singers"), { name, ts: Date.now() });
+        await addDoc(collection(db,"events",eid,"singers"), { name, ts: Date.now() });
         singerNameInput.value = "";
         addSingerStatus.innerHTML = `<span class="ok">Singer added.</span>`;
       }catch(e){
-        console.error(e);
         addSingerStatus.innerHTML = `<span class="err">Error adding singer: ${e?.message || e}</span>`;
-      }finally{
-        addSingerBtn.disabled = false;
-      }
+      }finally{ addSingerBtn.disabled = false; }
     }
 
-    /************** VOTES (RAW TALLY PREVIEW) **************/
-    let unsubscribeVotes = null;
+    /************** NOW PERFORMING (state/current) **************/
+    async function setNowPerforming(eid, singerId, singerName){
+      try{
+        await setDoc(doc(db,"events",eid,"state","current"), {
+          currentSingerId: singerId,
+          currentSingerName: singerName,
+          ts: Date.now()
+        });
+        statusMain.innerHTML = `<span class="ok">Now Performing set to: ${singerName}</span>`;
+      }catch(e){
+        statusMain.innerHTML = `<span class="err">Error setting Now Performing: ${e?.message || e}</span>`;
+      }
+    }
+    function watchState(eid){
+      if (unsubscribeState) unsubscribeState();
+      unsubscribeState = onSnapshot(doc(db,"events",eid,"state","current"), (snap)=>{
+        if (!snap.exists()){
+          nowPerfPill.textContent = "None";
+        }else{
+          const d = snap.data()||{};
+          nowPerfPill.textContent = d.currentSingerName || "None";
+        }
+      });
+    }
+
+    /************** VOTES (raw preview) **************/
     function watchVotes(eid){
       if (unsubscribeVotes) unsubscribeVotes();
       encoreRaw.innerHTML = ""; anotherRaw.innerHTML=""; maybeRaw.innerHTML="";
@@ -336,25 +332,24 @@
       const eid = getEventIdFromURL();
       try{
         const snap = await getDocs(collection(db,"events",eid,"votes"));
-        let n = 0;
-        for (const d of snap.docs){ await deleteDoc(doc(db,"events",eid,"votes",d.id)); n++; }
+        let n=0; for (const d of snap.docs){ await deleteDoc(doc(db,"events",eid,"votes",d.id)); n++; }
         statusMain.innerHTML = `<span class="ok">Cleared ${n} votes for event "${eid}".</span>`;
       }catch(e){
         statusMain.innerHTML = `<span class="err">Error clearing votes: ${e?.message || e}</span>`;
       }
     }
 
-    /************** Tiny QR (placeholder, no deps) **************/
+    /************** INIT **************/
+    watchSingers(EVENT_ID);
+    watchVotes(EVENT_ID);
+    watchState(EVENT_ID);
+
     function drawQR(text){
       const c = qrCanvas, ctx = c.getContext("2d");
-      ctx.fillStyle = "#0b0b0f";
-      ctx.fillRect(0,0,c.width,c.height);
-      ctx.fillStyle = "#fff";
-      ctx.font = "16px system-ui";
-      ctx.textAlign = "center";
+      ctx.fillStyle = "#0b0b0f"; ctx.fillRect(0,0,c.width,c.height);
+      ctx.fillStyle = "#fff"; ctx.font = "16px system-ui"; ctx.textAlign = "center";
       ctx.fillText("Scan the Vote Link", c.width/2, c.height/2 - 6);
-      ctx.fillStyle = "#7bc4ff";
-      ctx.fillText("Use link above", c.width/2, c.height/2 + 16);
+      ctx.fillStyle = "#7bc4ff"; ctx.fillText("Use link above", c.width/2, c.height/2 + 16);
     }
   </script>
 </body>
