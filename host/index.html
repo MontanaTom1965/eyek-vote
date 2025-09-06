@@ -57,7 +57,8 @@
 <body>
   <aside class="sidebar">
     <div class="brand">
-      <img src="Earn Your Encore Karaoke - Icon.png" alt="EYEK" onerror="this.style.display='none'"/>
+      <!-- absolute path in case /host/ is a subfolder -->
+      <img src="/Earn Your Encore Karaoke - Icon.png" alt="EYEK" onerror="this.style.display='none'"/>
       <h1>Host Panel</h1>
     </div>
 
@@ -87,7 +88,9 @@
       <div class="stack" style="margin-top:8px">
         <button class="link" id="copySingerVoteUrl">Copy Singer Vote URL</button>
         <button class="link" id="openQrScreen">Open Big QR Screen</button>
+        <button class="link" id="openQrInNewTab">Open QR in New Tab</button>
       </div>
+      <div class="small" id="qrNote"></div>
     </div>
 
     <div class="group">
@@ -195,8 +198,10 @@
 
     const copySingerVoteUrl = document.getElementById("copySingerVoteUrl");
     const openQrScreen      = document.getElementById("openQrScreen");
+    const openQrInNewTab    = document.getElementById("openQrInNewTab");
     const qrImg             = document.getElementById("qrImg");
     const singerVoteUrlEl   = document.getElementById("singerVoteUrl");
+    const qrNote            = document.getElementById("qrNote");
 
     const singerNameInput = document.getElementById("singerName");
     const addSingerBtn    = document.getElementById("addSingerBtn");
@@ -234,6 +239,12 @@
       const url = ROOT + "screen/index.html?eventId=" + encodeURIComponent(getEventIdFromURL())
                   + "&singerId=" + encodeURIComponent(STATE.currentSingerId);
       window.open(url, "_blank", "noopener");
+    });
+    openQrInNewTab.addEventListener("click", ()=>{
+      const url = singerVoteUrlEl.textContent.trim();
+      if (!url || url === "—") { statusSide.textContent = "No singer set."; return; }
+      const provider = buildQrProviderUrl(url);
+      window.open(provider, "_blank", "noopener");
     });
 
     hostVoteEncore.addEventListener("click", ()=> hostCastVote("encore"));
@@ -288,21 +299,28 @@
       boardLink.href  = ROOT + "board/index.html?eventId="  + encodeURIComponent(eid);
     }
 
-    // ===== QR as image (no external QR lib) =====
-    function setQrImageForUrl(url){
-      const provider1 = "https://api.qrserver.com/v1/create-qr-code/?size=600x600&data=" + encodeURIComponent(url);
-      const provider2 = "https://chart.googleapis.com/chart?cht=qr&chs=512x512&chl=" + encodeURIComponent(url);
+    // ===== QR via external image provider with graceful fallback =====
+    function buildQrProviderUrl(data){
+      return "https://api.qrserver.com/v1/create-qr-code/?size=600x600&data=" + encodeURIComponent(data);
+    }
+    function buildQrProviderUrlFallback(data){
+      return "https://chart.googleapis.com/chart?cht=qr&chs=512x512&chl=" + encodeURIComponent(data);
+    }
+    function setQrImageForUrl(dataUrl){
+      const p1 = buildQrProviderUrl(dataUrl);
+      const p2 = buildQrProviderUrlFallback(dataUrl);
       let triedFallback = false;
       qrImg.onerror = () => {
         if (!triedFallback){
           triedFallback = true;
-          qrImg.src = provider2;
+          qrImg.src = p2;
+          qrNote.textContent = "Primary QR image blocked; using fallback provider.";
         }else{
           qrImg.alt = "QR unavailable";
-          statusSide.textContent = "QR image load failed.";
+          qrNote.textContent = "Both QR image providers were blocked by your host. Use “Open QR in New Tab”.";
         }
       };
-      qrImg.src = provider1;
+      qrImg.src = p1;
     }
 
     function updateSingerQr(){
@@ -311,6 +329,7 @@
         singerVoteUrlEl.textContent = "—";
         qrImg.removeAttribute("src");
         qrImg.alt = "No singer set";
+        qrNote.textContent = "";
         return;
       }
       const ROOT = location.origin + "/";
@@ -318,6 +337,7 @@
                 + "&singerId=" + encodeURIComponent(STATE.currentSingerId);
       singerVoteUrlEl.textContent = url;
       setQrImageForUrl(url);
+      qrNote.textContent = "";
     }
 
     function setEvent(){
