@@ -18,7 +18,10 @@
       background:linear-gradient(180deg,#0b0b0f 0%,#0e1220 100%);
       color:var(--text); font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Helvetica Neue,Arial,Noto Sans;
     }
-    .sidebar{width:300px;background:var(--panel);border-right:1px solid var(--border);padding:18px;position:sticky;top:0;height:100vh}
+    .sidebar{
+      width:320px; background:var(--panel); border-right:1px solid var(--border);
+      padding:18px; position:sticky; top:0; height:100vh; overflow:auto;
+    }
     .brand{display:flex;align-items:center;gap:10px;margin-bottom:14px}
     .brand img{width:36px;height:36px;border-radius:8px}
     .brand h1{font-size:18px;margin:0}
@@ -50,6 +53,8 @@
     .hint{font-size:13px;color:var(--muted);margin-top:8px}
     .ok{color:#86efac}.err{color:#fca5a5}
   </style>
+  <!-- QR code lib for the sidebar QR -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 </head>
 <body>
   <aside class="sidebar">
@@ -66,18 +71,33 @@
     <div class="group">
       <div class="muted">Now Performing</div>
       <div class="pill" id="nowPerfPill">None</div>
+      <div class="stack" style="margin-top:10px">
+        <button class="link" id="hostVoteEncore">Vote: Encore</button>
+        <button class="link" id="hostVoteAnother">Vote: Another</button>
+        <button class="link" id="hostVoteMaybe">Vote: Maybe</button>
+      </div>
+      <div class="small">Host votes are also limited to one per device per singer.</div>
     </div>
 
     <div class="group">
-      <div class="muted" style="margin-bottom:8px">Quick Links</div>
+      <div class="muted">QR for Current Singer</div>
+      <div class="qrWrap">
+        <canvas id="qrCanvas" width="400" height="400" aria-label="QR for current singer"></canvas>
+      </div>
+      <div class="small" id="singerVoteUrl">—</div>
+      <div class="stack" style="margin-top:8px">
+        <button class="link" id="copySingerVoteUrl">Copy Singer Vote URL</button>
+        <button class="link" id="openQrScreen">Open Big QR Screen</button>
+      </div>
+    </div>
+
+    <div class="group">
+      <div class="muted">Quick Links (event)</div>
       <a id="voteLink"   target="_blank" rel="noopener">Open Vote Page</a>
       <a id="screenLink" target="_blank" rel="noopener">Open Screen Display</a>
       <a id="boardLink"  target="_blank" rel="noopener">Open Board (Encore/Another/Maybe)</a>
-      <button class="link" id="copyVoteUrl">Copy Vote URL</button>
-      <div class="qrWrap">
-        <canvas id="qrCanvas" width="256" height="256" aria-label="QR code"></canvas>
-        <div class="small" id="voteUrlText"></div>
-      </div>
+      <button class="link" id="copyEventVoteUrl">Copy Event Vote URL</button>
+      <div class="small">Event Vote URL follows the “Now Performing” singer automatically.</div>
     </div>
 
     <div class="group">
@@ -96,7 +116,7 @@
           <button class="btn" id="setEventBtn">Set / Switch Event</button>
           <button class="btn secondary" id="clearVotesBtn">Clear All Votes</button>
         </div>
-        <div class="hint">Share the Vote link/QR with your audience. All pages use the same <code>?eventId=...</code>.</div>
+        <div class="hint">All pages use the same <code>?eventId=...</code>. The Vote link works even without a singerId because it follows “Now Performing”.</div>
       </div>
 
       <div class="card">
@@ -166,43 +186,110 @@
     const eventIdInput    = document.getElementById("eventId");
     const currentEventPill= document.getElementById("currentEventPill");
     const nowPerfPill     = document.getElementById("nowPerfPill");
+
     const voteLink        = document.getElementById("voteLink");
     const screenLink      = document.getElementById("screenLink");
     const boardLink       = document.getElementById("boardLink");
-    const copyVoteUrl     = document.getElementById("copyVoteUrl");
-    const voteUrlText     = document.getElementById("voteUrlText");
-    const qrCanvas        = document.getElementById("qrCanvas");
+    const copyEventVoteUrl= document.getElementById("copyEventVoteUrl");
+
+    const copySingerVoteUrl = document.getElementById("copySingerVoteUrl");
+    const openQrScreen      = document.getElementById("openQrScreen");
+    const qrCanvas          = document.getElementById("qrCanvas");
+    const singerVoteUrlEl   = document.getElementById("singerVoteUrl");
+
     const singerNameInput = document.getElementById("singerName");
     const addSingerBtn    = document.getElementById("addSingerBtn");
     const addSingerStatus = document.getElementById("addSingerStatus");
     const singerListEl    = document.getElementById("singerList");
+
     const statusSide      = document.getElementById("statusSide");
     const statusMain      = document.getElementById("statusMain");
     const encoreRaw       = document.getElementById("encoreRaw");
     const anotherRaw      = document.getElementById("anotherRaw");
     const maybeRaw        = document.getElementById("maybeRaw");
 
+    const hostVoteEncore  = document.getElementById("hostVoteEncore");
+    const hostVoteAnother = document.getElementById("hostVoteAnother");
+    const hostVoteMaybe   = document.getElementById("hostVoteMaybe");
+
     document.getElementById("setEventBtn").addEventListener("click", setEvent);
     document.getElementById("clearVotesBtn").addEventListener("click", clearVotes);
     addSingerBtn.addEventListener("click", addSinger);
     singerNameInput.addEventListener("keydown", (e)=>{ if (e.key === "Enter") addSinger(); });
-    copyVoteUrl.addEventListener("click", ()=>{ navigator.clipboard.writeText(voteLink.href).then(()=>{ statusSide.textContent = "Vote URL copied."; }); });
 
-    /************** EVENT & LINKS **************/
+    copyEventVoteUrl.addEventListener("click", () => {
+      navigator.clipboard.writeText(voteLink.href).then(()=>{ statusSide.textContent = "Event Vote URL copied."; });
+    });
+    copySingerVoteUrl.addEventListener("click", () => {
+      const url = singerVoteUrlEl.textContent.trim();
+      if (!url || url === "—") { statusSide.textContent = "No singer set."; return; }
+      navigator.clipboard.writeText(url).then(()=>{ statusSide.textContent = "Singer Vote URL copied."; });
+    });
+    openQrScreen.addEventListener("click", () => {
+      if (!STATE.currentSingerId) { statusSide.textContent = "No singer set."; return; }
+      const ROOT = location.origin + "/";
+      const url = ROOT + "screen/index.html?eventId=" + encodeURIComponent(getEventIdFromURL())
+                  + "&singerId=" + encodeURIComponent(STATE.currentSingerId);
+      window.open(url, "_blank", "noopener");
+    });
+
+    hostVoteEncore.addEventListener("click", ()=> hostCastVote("encore"));
+    hostVoteAnother.addEventListener("click", ()=> hostCastVote("another"));
+    hostVoteMaybe.addEventListener("click", ()=> hostCastVote("maybe"));
+
+    /************** STATE **************/
+    const STATE = { currentSingerId:null, currentSingerName:null };
+
     function getEventIdFromURL(){
       const u = new URL(window.location.href);
       return u.searchParams.get("eventId") || "default";
     }
+
+    function getDeviceId(){
+      const KEY = "eyek_device_id";
+      let id = localStorage.getItem(KEY);
+      if (!id){
+        const arr = new Uint8Array(16); crypto.getRandomValues(arr);
+        id = Array.from(arr, b => b.toString(16).padStart(2,"0")).join("");
+        localStorage.setItem(KEY, id);
+      }
+      return id;
+    }
+    const DEVICE_ID = getDeviceId();
+
+    // Build absolute links to root-level folders
     function setLinksForEvent(eid){
       const ROOT = location.origin + "/";
       voteLink.href   = ROOT + "vote/index.html?eventId="   + encodeURIComponent(eid);
       screenLink.href = ROOT + "screen/index.html?eventId=" + encodeURIComponent(eid);
       boardLink.href  = ROOT + "board/index.html?eventId="  + encodeURIComponent(eid);
-      voteUrlText.textContent = voteLink.href;
-      drawQR(voteLink.href);
     }
+
+    function updateSingerQr(){
+      const eid = getEventIdFromURL();
+      if (!STATE.currentSingerId){
+        singerVoteUrlEl.textContent = "—";
+        const ctx = qrCanvas.getContext("2d");
+        ctx.fillStyle = "#0b0b0f"; ctx.fillRect(0,0,qrCanvas.width,qrCanvas.height);
+        ctx.fillStyle = "#fff"; ctx.font = "16px system-ui"; ctx.textAlign = "center";
+        ctx.fillText("No singer set", qrCanvas.width/2, qrCanvas.height/2);
+        return;
+      }
+      const ROOT = location.origin + "/";
+      const url = ROOT + "vote/index.html?eventId=" + encodeURIComponent(eid)
+                + "&singerId=" + encodeURIComponent(STATE.currentSingerId);
+      singerVoteUrlEl.textContent = url;
+      try{
+        window.QRCode.toCanvas(qrCanvas, url, { width: 800, margin: 1 }, (err)=>{
+          if (err){ statusSide.textContent = "QR error: " + (err?.message || err); }
+        });
+      }catch(e){
+        statusSide.textContent = "QR library failed to load.";
+      }
+    }
+
     function setEvent(){
-      const val = eventIdInput.value.trim() || "default";
+      const val = (eventIdInput.value || "").trim() || "default";
       const u = new URL(window.location.href);
       u.searchParams.set("eventId", val);
       history.replaceState({}, "", u.toString());
@@ -214,10 +301,14 @@
       statusMain.textContent = "Event set to: " + val;
     }
 
+    // Initialize
     let EVENT_ID = getEventIdFromURL();
     eventIdInput.value = EVENT_ID;
     currentEventPill.textContent = EVENT_ID;
     setLinksForEvent(EVENT_ID);
+    watchSingers(EVENT_ID);
+    watchVotes(EVENT_ID);
+    watchState(EVENT_ID);
 
     /************** SINGERS **************/
     let unsubscribeSingers = null, unsubscribeVotes = null, unsubscribeState = null;
@@ -284,12 +375,46 @@
       if (unsubscribeState) unsubscribeState();
       unsubscribeState = onSnapshot(doc(db,"events",eid,"state","current"), (snap)=>{
         if (!snap.exists()){
+          STATE.currentSingerId = null; STATE.currentSingerName = null;
           nowPerfPill.textContent = "None";
+          updateSingerQr();
         }else{
           const d = snap.data()||{};
-          nowPerfPill.textContent = d.currentSingerName || "None";
+          STATE.currentSingerId = d.currentSingerId || null;
+          STATE.currentSingerName = d.currentSingerName || "(Unknown)";
+          nowPerfPill.textContent = STATE.currentSingerName || "None";
+          updateSingerQr();
         }
       });
+    }
+
+    /************** HOST VOTE (same one-per-device-per-singer logic) **************/
+    async function hostCastVote(category){
+      if (!STATE.currentSingerId){
+        statusSide.textContent = "Set Now Performing first.";
+        return;
+      }
+      const eid = getEventIdFromURL();
+      const docId = `${STATE.currentSingerId}__${DEVICE_ID}`;
+      const voteRef = doc(db,"events",eid,"votes",docId);
+      statusSide.textContent = "Submitting host vote…";
+      try{
+        await setDoc(voteRef, {
+          singerId: STATE.currentSingerId,
+          singerName: STATE.currentSingerName || "(Unknown)",
+          category,
+          deviceId: DEVICE_ID,
+          ts: Date.now()
+        }, { merge:false });
+        statusSide.textContent = "Host vote submitted.";
+      }catch(e){
+        const msg = (""+e?.message||"").toLowerCase();
+        if (msg.includes("permission") || msg.includes("already exists") || msg.includes("failed")){
+          statusSide.textContent = "This device already voted for this singer.";
+        }else{
+          statusSide.textContent = "Error submitting vote.";
+        }
+      }
     }
 
     /************** VOTES (raw preview) **************/
@@ -337,19 +462,6 @@
       }catch(e){
         statusMain.innerHTML = `<span class="err">Error clearing votes: ${e?.message || e}</span>`;
       }
-    }
-
-    /************** INIT **************/
-    watchSingers(EVENT_ID);
-    watchVotes(EVENT_ID);
-    watchState(EVENT_ID);
-
-    function drawQR(text){
-      const c = qrCanvas, ctx = c.getContext("2d");
-      ctx.fillStyle = "#0b0b0f"; ctx.fillRect(0,0,c.width,c.height);
-      ctx.fillStyle = "#fff"; ctx.font = "16px system-ui"; ctx.textAlign = "center";
-      ctx.fillText("Scan the Vote Link", c.width/2, c.height/2 - 6);
-      ctx.fillStyle = "#7bc4ff"; ctx.fillText("Use link above", c.width/2, c.height/2 + 16);
     }
   </script>
 </body>
