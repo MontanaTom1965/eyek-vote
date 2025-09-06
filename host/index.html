@@ -27,7 +27,7 @@
     .wrap{max-width:1250px; margin:0 auto; width:100%}
     .bar{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 16px}
     .title{font-size:1.4em; font-weight:900}
-    .pill{display:inline-block; border:2px solid var(--border); border-radius:999px; padding:.25em .6em; color:var(--muted); font-weight:800}
+    .pill{display:inline-block; border:2px solid var(--border); border-radius:999px; padding:.25em .6em; color:#cfe1ff; font-weight:800}
     .subbar{display:flex; align-items:center; gap:18px; padding:0 16px 12px}
     .subbar .hint{color:var(--muted)}
     main{padding:18px}
@@ -46,7 +46,7 @@
     .stack{display:flex; gap:10px; flex-wrap:wrap}
     .btn{
       appearance:none; padding:.75em 1em; border:2px solid var(--btnBorder); border-radius:12px;
-      background:var(--btn); color:#fff; font-weight:900; cursor:pointer; font-size:1.02em; letter-spacing:.2px;
+      background:#0f1732; color:#fff; font-weight:900; cursor:pointer; font-size:1.02em; letter-spacing:.2px;
       min-height:52px;
     }
     .btn[disabled]{opacity:.5; cursor:not-allowed}
@@ -61,11 +61,8 @@
       display:flex; align-items:center; justify-content:space-between; gap:10px;
       padding:.6em .7em; border:2px solid var(--border); border-radius:12px; background:#0f1732; margin:.45em 0;
     }
-    .smallQR{
-      display:flex; align-items:center; gap:12px; border:2px dashed var(--border);
-      border-radius:12px; padding:10px; background:#0d142b;
-    }
-    /* ~25% of the older "big" QR */
+    .li-removed{opacity:.55}
+    .smallQR{display:flex; align-items:center; gap:12px; border:2px dashed var(--border); border-radius:12px; padding:10px; background:#0d142b}
     .smallQR img{width:90px; height:90px; object-fit:contain; border-radius:10px}
     .controls .btn{min-width:200px}
     .status{position:sticky; bottom:0; background:linear-gradient(180deg,rgba(10,13,20,.5),rgba(10,13,20,.95)); border-top:2px solid var(--border); padding:10px 16px; font-weight:800}
@@ -152,7 +149,7 @@
           <div class="hint" id="singerReadNote"></div>
         </section>
 
-        <!-- Links -->
+        <!-- Open pages -->
         <section class="card">
           <h2>Open pages</h2>
           <div class="stack">
@@ -178,7 +175,7 @@
       <aside class="card">
         <h2>Still in it</h2>
         <ul id="stillInList"></ul>
-        <div class="hint" id="stillInNote">Shows singers whose latest outcome is Encore or Another.</div>
+        <div class="hint" id="stillInNote">Shows singers whose latest outcome is Encore or Another (and not Removed).</div>
       </aside>
     </div>
   </main>
@@ -197,7 +194,7 @@
 
   <!-- ========= CORE (no-module, compat builds) ========= -->
   <script>
-    // Error banner (always on)
+    // Error banner (always on) + A-/A+
     (function(){
       var fatalEl = document.getElementById('fatal');
       function showFatal(msg){ if(!msg) return; fatalEl.style.display='block'; fatalEl.textContent='Error: '+msg; }
@@ -205,9 +202,9 @@
       window.addEventListener('error', e=> showFatal((e.error && e.error.message) || e.message));
       window.addEventListener('unhandledrejection', e=> showFatal((e.reason && (e.reason.message||e.reason)) || 'Unhandled rejection'));
 
-      // A-/A+ available regardless of Firebase
       var Z_KEY='eyek_zoom', zoomLabel=document.getElementById('zoomLabel');
-      function setZoom(v){ v=Math.min(1.8,Math.max(0.7,v)); document.documentElement.style.setProperty('--scale',v); try{localStorage.setItem(Z_KEY,String(v))}catch(_){}
+      function setZoom(v){ v=Math.min(1.8,Math.max(0.7,v)); document.documentElement.style.setProperty('--scale',v);
+        try{localStorage.setItem(Z_KEY,String(v))}catch(_){}
         zoomLabel.textContent='Text: '+Math.round(v*100)+'%'; }
       document.getElementById('zoomDown').addEventListener('click', ()=> setZoom((+localStorage.getItem(Z_KEY)||1)-0.1));
       document.getElementById('zoomUp').addEventListener('click',   ()=> setZoom((+localStorage.getItem(Z_KEY)||1)+0.1));
@@ -222,7 +219,6 @@
 
   <script>
     (function(){
-      // Config
       var FIREBASE_CONFIG = {
         apiKey: "AIzaSyDGbC08WxruYIDPhZSlDlU-7Kzq-7mHENk",
         authDomain: "eyek-vote.firebaseapp.com",
@@ -232,22 +228,18 @@
         appId: "1:954696683994:web:21a84298a94648ff0230e3"
       };
 
-      // Guard if firebase failed to load
       if (!window.firebase || !firebase.initializeApp){
         return window.__showFatal('Firebase libraries failed to load.');
       }
 
-      // Init
       firebase.initializeApp(FIREBASE_CONFIG);
       var db = firebase.firestore();
       var auth = firebase.auth();
 
-      // DOM helpers
       function $(id){ return document.getElementById(id); }
       function setStatus(t){ $('statusBar').textContent='Status: '+t; }
       function urlRoot(){ return location.origin + '/'; }
 
-      // Elements
       var eventIdInput=$('eventId'), eventPill=$('eventPill'), setBtn=$('setEventBtn');
       var broadcastEl=$('broadcastActive'), lockEventEl=$('lockEvent'), eventNote=$('eventNote');
 
@@ -260,19 +252,15 @@
       var openPerfVote=$('openPerfVote');
       var openVote=$('openVote'), openScreen=$('openScreen'), openBoard=$('openBoard');
 
-      // Auth (anon)
       auth.signInAnonymously().catch(function(e){ setStatus('Auth error: ' + ((e&&e.message)||e)); });
 
-      // State
       var LS_EVENT='eyek_last_event';
       var STATE={ currentSingerId:null, currentSingerName:null, performanceId:null, performanceCloseAt:null, performanceStatus:'' };
       var unsubSingers=null, unsubState=null, unsubPerf=null;
       var countdownTimer=null, autoCloseTimer=null;
       var perfOutcomeCache={}; // perfId -> outcome
-      var cachedSingers=[];
-      var stillInCache=[];
+      var cachedSingers=[], stillInCache=[];
 
-      // Prompt once for event if missing
       (function(){
         var u=new URL(location.href), q=u.searchParams.get('eventId'), mem=localStorage.getItem(LS_EVENT);
         if(!q && !mem){
@@ -281,17 +269,14 @@
         }
       })();
 
-      // Restore toggles
       broadcastEl.checked=localStorage.getItem('eyek_broadcast_event')==='1';
       lockEventEl.checked=localStorage.getItem('eyek_lock_event')==='1';
       syncSetBtnDisabled(); if(lockEventEl.checked) eventNote.textContent='Event locked — switching disabled.';
 
-      // Start event
       var START_EVENT=(new URL(location.href)).searchParams.get('eventId') || localStorage.getItem(LS_EVENT) || 'default';
       eventIdInput.value=START_EVENT;
       applyEvent(START_EVENT);
 
-      // Listeners
       setBtn.addEventListener('click', onClickSetEvent);
       eventIdInput.addEventListener('keydown', function(e){ if(e.key==='Enter') onClickSetEvent(); });
       lockEventEl.addEventListener('change', function(){
@@ -323,7 +308,6 @@
         var url=urlRoot()+'vote/index.html?eventId='+encodeURIComponent(eid)+'&performanceId='+encodeURIComponent(STATE.performanceId);
         window.open(url,'_blank','noopener');
       });
-
       openVote.addEventListener('click', function(){
         var eid=getCurrentEventId();
         var base=urlRoot()+'vote/index.html?eventId='+encodeURIComponent(eid);
@@ -351,11 +335,7 @@
         if(lockEventEl.checked) return setStatus('Event is locked. Uncheck “Lock Event” to switch.');
         if(!typed) return setStatus('Enter an event name.');
         if(typed===current) return setStatus('Already on “'+current+'”.');
-
-        var ok=true;
-        try{
-          ok=confirm('Switch event from “'+current+'” to “'+typed+'”?\n\nThis will NOT delete singers or votes. TVs with Broadcast ON will follow the new event.');
-        }catch(_){ ok=true; }
+        var ok=true; try{ ok=confirm('Switch event to “'+typed+'”? (Does not delete singers or votes)'); }catch(_){ ok=true; }
         if(!ok) return setStatus('Event switch cancelled.');
         applyEvent(typed);
       }
@@ -364,10 +344,8 @@
         var u=new URL(window.location.href); u.searchParams.set('eventId',eid); history.replaceState({},'',u.toString());
         try{ localStorage.setItem(LS_EVENT,eid); }catch(_){}
         eventPill.textContent='Event: '+eid;
-
         watchSingers(eid);
         watchState(eid);
-
         if(broadcastEl.checked) broadcastActiveEvent(eid);
         setStatus('Event set to: '+eid);
       }
@@ -379,12 +357,11 @@
           .catch(function(e){ eventNote.textContent='Error broadcasting: '+((e&&e.message)||e); });
       }
 
-      // QR helpers (small)
+      // QR (small)
       function qrProvider1(d){ return 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&data='+encodeURIComponent(d); }
       function qrProvider2(d){ return 'https://chart.googleapis.com/chart?cht=qr&chs=160x160&chl='+encodeURIComponent(d); }
       function setQrImageForUrl(url){
-        var tried=false;
-        qrImg.onerror=function(){ if(!tried){ tried=true; qrImg.src=qrProvider2(url); } else { qrImg.alt='QR unavailable'; } };
+        var tried=false; qrImg.onerror=function(){ if(!tried){ tried=true; qrImg.src=qrProvider2(url); } else { qrImg.alt='QR unavailable'; } };
         qrImg.src=qrProvider1(url);
       }
       function updatePerfQr(){
@@ -443,7 +420,7 @@
         }, function(err){ setStatus('State listener error: '+((err&&err.message)||err)); });
       }
 
-      // Singers list (main + “Still in it”)
+      // Render lists (main + “Still in it”) with Remove/Restore
       function renderSingerList(items){
         cachedSingers=items.slice(); singerListEl.innerHTML='';
         var showRemoved=showHiddenEl.checked;
@@ -452,15 +429,21 @@
         var shown=0; stillInCache=[];
 
         function considerStillIn(it, outcome){
+          if (it.removed) return; // do not show removed in sidebar
           if (outcome==='encore' || outcome==='another') stillInCache.push({name: it.name, outcome: outcome});
         }
 
         function appendRow(it,outcome){
-          if(!showRemoved && outcome==='maybe') return;
+          // Hide removed by default unless Show Removed! is on
+          if (!showRemoved && it.removed) return;
+
           var li=document.createElement('li');
+          if (it.removed) li.classList.add('li-removed');
 
           var left=document.createElement('div');
-          left.innerHTML='<div style="font-weight:900">'+it.name+'</div><div class="hint">Latest: '+(it.latestPerformanceId||'—')+(outcome?(' ('+outcome+')'):'')+'</div>';
+          var badge = it.removed ? ' <span class="pill" style="margin-left:8px;border-color:#7a3a3a;color:#ffdddd;background:#3a0f0f;">REMOVED</span>' : '';
+          left.innerHTML='<div style="font-weight:900;display:flex;align-items:center;gap:6px">'+it.name+badge+'</div>'
+                        +'<div class="hint">Latest: '+(it.latestPerformanceId||'—')+(outcome?(' ('+outcome+')'):'')+'</div>';
 
           var right=document.createElement('div'); right.className='stack';
           var bVote=document.createElement('button'); bVote.className='btn warn'; bVote.textContent='Vote now (30s)';
@@ -475,10 +458,27 @@
             }
           });
 
+          // Remove / Restore
+          var bRemove=document.createElement('button');
+          if (!it.removed){
+            bRemove.className='btn danger';
+            bRemove.textContent='Remove';
+            bRemove.addEventListener('click', function(){
+              if (!confirm('Remove singer “'+it.name+'”? They will be hidden from lists and the Board.')) return;
+              updateSingerRemoved(it.id, true);
+            });
+          }else{
+            bRemove.className='btn good';
+            bRemove.textContent='Restore';
+            bRemove.addEventListener('click', function(){ updateSingerRemoved(it.id, false); });
+          }
+
           right.appendChild(bVote);
+          right.appendChild(bRemove);
           li.appendChild(left); li.appendChild(right);
           singerListEl.appendChild(li);
           shown++;
+
           considerStillIn(it, outcome);
         }
 
@@ -516,16 +516,40 @@
 
       function loadSingersOnce(eid){
         db.collection('events').doc(eid).collection('singers').get()
-          .then(function(snap){ var items=[]; snap.forEach(function(d){ var x=d.data()||{}; items.push({id:d.id, name:x.name||'', latestPerformanceId:x.latestPerformanceId||null}); }); renderSingerList(items); singerReadNote.textContent=''; })
+          .then(function(snap){
+            var items=[];
+            snap.forEach(function(d){
+              var x=d.data()||{};
+              items.push({id:d.id, name:x.name||'', latestPerformanceId:x.latestPerformanceId||null, removed: !!x.removed});
+            });
+            renderSingerList(items); singerReadNote.textContent='';
+          })
           .catch(function(){ renderSingerList([]); singerReadNote.textContent='Could not read singers (check rules).'; });
       }
       function watchSingers(eid){
         if(unsubSingers){ unsubSingers(); unsubSingers=null; }
         loadSingersOnce(eid);
         unsubSingers = db.collection('events').doc(eid).collection('singers').onSnapshot(function(snap){
-          var items=[]; snap.forEach(function(d){ var x=d.data()||{}; items.push({id:d.id, name:x.name||'', latestPerformanceId:x.latestPerformanceId||null}); });
+          var items=[];
+          snap.forEach(function(d){
+            var x=d.data()||{};
+            items.push({id:d.id, name:x.name||'', latestPerformanceId:x.latestPerformanceId||null, removed: !!x.removed});
+          });
           renderSingerList(items); singerReadNote.textContent='';
         }, function(err){ singerReadNote.textContent='Realtime singers error: '+((err&&err.message)||err); });
+      }
+
+      // Update removed flag
+      function updateSingerRemoved(singerId, removed){
+        var eid=getCurrentEventId();
+        db.collection('events').doc(eid).collection('singers').doc(singerId).set(
+          removed ? { removed:true, removedAt: Date.now() } : { removed:false },
+          { merge:true }
+        ).then(function(){
+          setStatus(removed ? 'Singer removed.' : 'Singer restored.');
+        }).catch(function(e){
+          setStatus('Error updating singer: '+((e&&e.message)||e));
+        });
       }
 
       // Add singer (auto-announce + show QR)
@@ -535,7 +559,7 @@
         var eid=getCurrentEventId();
         addSingerBtn.disabled=true; addSingerStatus.textContent='Adding…';
         auth.signInAnonymously().catch(function(){}).finally(function(){
-          db.collection('events').doc(eid).collection('singers').add({ name:name, ts:Date.now() })
+          db.collection('events').doc(eid).collection('singers').add({ name:name, ts:Date.now(), removed:false })
           .then(function(ref){
             singerNameInput.value=''; addSingerStatus.textContent='Singer added. Announcing…';
             announceExisting(ref.id,name).then(function(){ addSingerStatus.textContent='Singer added & announced.'; });
@@ -666,7 +690,11 @@
         if(unsubSingers){ unsubSingers(); unsubSingers=null; }
         loadSingersOnce(eid);
         unsubSingers = db.collection('events').doc(eid).collection('singers').onSnapshot(function(snap){
-          var items=[]; snap.forEach(function(d){ var x=d.data()||{}; items.push({id:d.id, name:x.name||'', latestPerformanceId:x.latestPerformanceId||null}); });
+          var items=[];
+          snap.forEach(function(d){
+            var x=d.data()||{};
+            items.push({id:d.id, name:x.name||'', latestPerformanceId:x.latestPerformanceId||null, removed: !!x.removed});
+          });
           renderSingerList(items); singerReadNote.textContent='';
         }, function(err){ singerReadNote.textContent='Realtime singers error: '+((err&&err.message)||err); });
       }
