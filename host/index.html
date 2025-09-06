@@ -53,6 +53,7 @@
     .hint{font-size:13px;color:var(--muted);margin-top:8px}
     .ok{color:#86efac}.err{color:#fca5a5}
   </style>
+  <!-- QR code lib for the sidebar QR -->
   <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 </head>
 <body>
@@ -110,7 +111,7 @@
       <div class="card">
         <h2>Event Controls</h2>
         <label for="eventId">Event ID</label>
-        <input id="eventId" placeholder="e.g. Eagles" />
+        <input id="eventId" placeholder="e.g. My House" />
         <div class="stack">
           <button class="btn" id="setEventBtn">Set / Switch Event</button>
           <button class="btn secondary" id="clearVotesBtn">Clear All Votes</button>
@@ -165,7 +166,7 @@
     /************** IMPORTS **************/
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import {
-      getFirestore, collection, addDoc, getDocs, deleteDoc, doc, setDoc, onSnapshot, query
+      getFirestore, collection, addDoc, getDocs, deleteDoc, doc, setDoc, onSnapshot, query, getDoc
     } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
     import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
@@ -388,7 +389,7 @@
         singerNameInput.value = "";
         addSingerStatus.innerHTML = `<span class="ok">Singer added to event “${eid}”.</span>`;
 
-        // NEW: if nothing is "Now Performing" yet, auto-set to this new singer
+        // If nothing is "Now Performing" yet, auto-set to this new singer
         if (!STATE.currentSingerId){
           await setNowPerforming(eid, ref.id, name);
           addSingerStatus.innerHTML += ` <span class="ok">Also set as “Now Performing”.</span>`;
@@ -413,11 +414,19 @@
           currentSingerName: singerName,
           ts: Date.now()
         });
+
+        // NEW: update UI immediately (don’t wait for the listener)
+        STATE.currentSingerId = singerId;
+        STATE.currentSingerName = singerName;
+        nowPerfPill.textContent = singerName || "None";
+        updateSingerQr();
+
         statusMain.innerHTML = `<span class="ok">Now Performing set to: ${singerName}</span>`;
       }catch(e){
         statusMain.innerHTML = `<span class="err">Error setting Now Performing: ${e?.message || e}</span>`;
       }
     }
+
     function watchState(eid){
       if (unsubscribeState) unsubscribeState();
       unsubscribeState = onSnapshot(doc(db,"events",eid,"state","current"), (snap)=>{
@@ -432,6 +441,8 @@
           nowPerfPill.textContent = STATE.currentSingerName || "None";
           updateSingerQr();
         }
+      }, (err)=>{
+        statusMain.innerHTML = `<span class="err">State listener error: ${err?.message || err}</span>`;
       });
     }
 
