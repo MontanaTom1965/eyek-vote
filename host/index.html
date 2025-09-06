@@ -76,7 +76,7 @@
         <button class="link" id="hostVoteAnother">Vote: Another</button>
         <button class="link" id="hostVoteMaybe">Vote: Maybe</button>
       </div>
-      <div class="small">Host votes are also limited to one per device per singer.</div>
+      <div class="small">Host votes are limited to one per device per singer.</div>
     </div>
 
     <div class="group">
@@ -97,7 +97,7 @@
       <a id="screenLink" target="_blank" rel="noopener">Open Screen Display</a>
       <a id="boardLink"  target="_blank" rel="noopener">Open Board (Encore/Another/Maybe)</a>
       <button class="link" id="copyEventVoteUrl">Copy Event Vote URL</button>
-      <div class="small">Event Vote URL follows the “Now Performing” singer automatically.</div>
+      <div class="small">The generic vote link follows “Now Performing”.</div>
     </div>
 
     <div class="group">
@@ -116,7 +116,7 @@
           <button class="btn" id="setEventBtn">Set / Switch Event</button>
           <button class="btn secondary" id="clearVotesBtn">Clear All Votes</button>
         </div>
-        <div class="hint">All pages use the same <code>?eventId=...</code>. The Vote link works even without a singerId because it follows “Now Performing”.</div>
+        <div class="hint">All pages use <code>?eventId=...</code>. The vote URL can also include <code>&singerId=...</code> for per-singer QR.</div>
       </div>
 
       <div class="card">
@@ -217,6 +217,9 @@
     addSingerBtn.addEventListener("click", addSinger);
     singerNameInput.addEventListener("keydown", (e)=>{ if (e.key === "Enter") addSinger(); });
 
+    // NEW: pressing Enter in the Event ID field sets the event immediately
+    eventIdInput.addEventListener("keydown", (e)=>{ if (e.key === "Enter") setEvent(); });
+
     copyEventVoteUrl.addEventListener("click", () => {
       navigator.clipboard.writeText(voteLink.href).then(()=>{ statusSide.textContent = "Event Vote URL copied."; });
     });
@@ -243,6 +246,26 @@
     function getEventIdFromURL(){
       const u = new URL(window.location.href);
       return u.searchParams.get("eventId") || "default";
+    }
+
+    function ensureEventId(){
+      // If the typed event differs from URL, set it automatically (prevents add-to-wrong-event).
+      const typed = (eventIdInput.value || "").trim();
+      const fromUrl = getEventIdFromURL();
+      const chosen = typed || fromUrl || "default";
+      if (chosen !== fromUrl){
+        const u = new URL(window.location.href);
+        u.searchParams.set("eventId", chosen);
+        history.replaceState({}, "", u.toString());
+        currentEventPill.textContent = chosen;
+        setLinksForEvent(chosen);
+        // refresh listeners for the new event
+        watchSingers(chosen);
+        watchVotes(chosen);
+        watchState(chosen);
+        statusMain.textContent = "Event set to: " + chosen;
+      }
+      return chosen;
     }
 
     function getDeviceId(){
@@ -346,16 +369,40 @@
     async function addSinger(){
       const name = singerNameInput.value.trim();
       if(!name){ addSingerStatus.innerHTML = `<span class="err">Please enter a singer name.</span>`; return; }
-      const eid = getEventIdFromURL();
+
+      // Ensure we’re on the intended event before adding (prevents “added to default”)
+      const eid = ensureEventId();
+
+      // Make sure we’re signed in (anonymous). If anon is disabled, surface a clear error.
+      if (!auth.currentUser){
+        try { await signInAnonymously(auth); }
+        catch(e){
+          const msg = (e && e.message) || String(e);
+          if (msg.includes("operation-not-allowed")){
+            addSingerStatus.innerHTML = `<span class="err">Anonymous sign-in is disabled. In Firebase Console → Authentication → Sign-in method → enable <strong>Anonymous</strong>.</span>`;
+          }else{
+            addSingerStatus.innerHTML = `<span class="err">Auth error: ${msg}</span>`;
+          }
+          return;
+        }
+      }
+
       addSingerBtn.disabled = true;
       addSingerStatus.textContent = "Adding…";
       try{
         await addDoc(collection(db,"events",eid,"singers"), { name, ts: Date.now() });
         singerNameInput.value = "";
-        addSingerStatus.innerHTML = `<span class="ok">Singer added.</span>`;
+        addSingerStatus.innerHTML = `<span class="ok">Singer added to event “${eid}”.</span>`;
       }catch(e){
-        addSingerStatus.innerHTML = `<span class="err">Error adding singer: ${e?.message || e}</span>`;
-      }finally{ addSingerBtn.disabled = false; }
+        const msg = (e && e.message) || String(e);
+        if (msg.toLowerCase().includes("missing or insufficient permissions")){
+          addSingerStatus.innerHTML = `<span class="err">Permissions error adding singer. Make sure your Firestore Rules allow hosts (anonymous auth) to <em>create</em> docs under <code>events/${eid}/singers</code>.</span>`;
+        }else{
+          addSingerStatus.innerHTML = `<span class="err">Error adding singer: ${msg}</span>`;
+        }
+      }finally{
+        addSingerBtn.disabled = false;
+      }
     }
 
     /************** NOW PERFORMING (state/current) **************/
@@ -388,7 +435,7 @@
       });
     }
 
-    /************** HOST VOTE (same one-per-device-per-singer logic) **************/
+    /************** HOST VOTE (one per device per singer) **************/
     async function hostCastVote(category){
       if (!STATE.currentSingerId){
         statusSide.textContent = "Set Now Performing first.";
