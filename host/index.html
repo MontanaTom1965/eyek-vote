@@ -25,13 +25,15 @@
     .fatal{position:sticky; top:0; z-index:9999; background:#b91c1c; color:#fff; padding:.5em .8em; font-weight:900; display:none}
     header{position:sticky; top:0; z-index:10; border-bottom:2px solid var(--border); background:linear-gradient(180deg,rgba(10,13,20,.92),rgba(10,13,20,.65)); backdrop-filter:blur(6px)}
     .wrap{max-width:1250px; margin:0 auto; width:100%}
-    .bar{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:14px 16px}
+    .bar{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 16px}
     .title{font-size:1.4em; font-weight:900}
     .pill{display:inline-block; border:2px solid var(--border); border-radius:999px; padding:.25em .6em; color:var(--muted); font-weight:800}
+    .subbar{display:flex; align-items:center; gap:18px; padding:0 16px 12px}
+    .subbar .hint{color:var(--muted)}
     main{padding:18px}
     .grid{display:grid; gap:16px}
-    .grid-2{grid-template-columns:1fr 1fr}
-    @media (max-width:1100px){ .grid-2{grid-template-columns:1fr} }
+    .grid-2-1{grid-template-columns:3fr 1fr}
+    @media (max-width:1100px){ .grid-2-1{grid-template-columns:1fr} }
     .card{background:var(--card); border:2px solid var(--border); border-radius:16px; padding:16px; box-shadow:0 6px 24px rgba(0,0,0,.25)}
     h2{margin:.1em 0 .5em; font-size:1.2em}
     label{display:block; margin:.55em 0 .25em; font-weight:800}
@@ -63,10 +65,11 @@
       display:flex; align-items:center; gap:12px; border:2px dashed var(--border);
       border-radius:12px; padding:10px; background:#0d142b;
     }
-    .smallQR img{width:140px; height:140px; object-fit:contain; border-radius:10px}
+    /* ~25% of the older "big" QR */
+    .smallQR img{width:90px; height:90px; object-fit:contain; border-radius:10px}
     .controls .btn{min-width:200px}
-    footer{margin:10px 0 20px}
     .status{position:sticky; bottom:0; background:linear-gradient(180deg,rgba(10,13,20,.5),rgba(10,13,20,.95)); border-top:2px solid var(--border); padding:10px 16px; font-weight:800}
+    footer{margin:10px 0 20px}
     .zoomBar{display:flex; gap:10px; align-items:center; justify-content:center}
     .zoomBar .btn{min-width:0; padding:.45em .7em}
   </style>
@@ -79,35 +82,19 @@
       <div class="title">Host Control</div>
       <div class="pill" id="eventPill">Event: —</div>
     </div>
+    <div class="wrap subbar">
+      <label class="row" style="font-weight:800"><input type="checkbox" id="lockEvent" /> Lock Event</label>
+      <label class="row" style="font-weight:800"><input type="checkbox" id="broadcastActive" /> Broadcast Active Event</label>
+      <div class="hint">When ON, TVs at <code>/screen</code> and <code>/board</code> (no params) auto-follow this event.</div>
+    </div>
   </header>
 
   <main class="wrap">
-    <!-- Event -->
-    <section class="card">
-      <h2>Event</h2>
-      <div class="row">
-        <div style="flex:1 1 380px; min-width:280px">
-          <label for="eventId">Event name (venue)</label>
-          <input id="eventId" placeholder="e.g. Eagles Nest" />
-        </div>
-        <div class="stack">
-          <label class="row" style="font-weight:800"><input type="checkbox" id="lockEvent" /> Lock Event</label>
-          <label class="row" style="font-weight:800"><input type="checkbox" id="broadcastActive" /> Broadcast Active Event</label>
-        </div>
-        <div>
-          <button class="btn primary" id="setEventBtn" title="Apply event">Event</button>
-        </div>
-      </div>
-      <div class="hint" id="eventNote" style="margin-top:.45em">
-        Broadcast Active Event: when ON, TVs at <code>/screen</code> and <code>/board</code> (no URL params) auto-follow this event.
-      </div>
-    </section>
-
-    <!-- Singer Add -->
+    <!-- Add singer (top) -->
     <section class="card">
       <h2>Add singer</h2>
       <div class="row">
-        <div style="flex:1 1 480px; min-width:280px">
+        <div style="flex:1 1 520px; min-width:280px">
           <label for="singerName">Singer name</label>
           <input id="singerName" placeholder="Type a name, press Enter" />
         </div>
@@ -118,56 +105,82 @@
       <div class="hint" id="addSingerStatus" style="margin-top:.35em">Ready.</div>
     </section>
 
-    <!-- Current Singers + Links -->
-    <div class="grid grid-2">
-      <section class="card">
-        <h2>Current singers</h2>
-        <div class="row" style="margin:.25em 0 .5em">
-          <label class="row"><input type="checkbox" id="showHidden" /> Show hidden (Maybe) singers</label>
+    <!-- Event controls -->
+    <section class="card">
+      <h2>Event</h2>
+      <div class="row">
+        <div style="flex:1 1 420px; min-width:260px">
+          <label for="eventId">Event name (venue)</label>
+          <input id="eventId" placeholder="e.g. Eagles Nest" />
         </div>
-        <ul id="singerList"></ul>
-        <div class="hint" id="singerReadNote"></div>
-      </section>
+        <div>
+          <button class="btn primary" id="setEventBtn" title="Apply event">Event</button>
+        </div>
+      </div>
+      <div class="hint" id="eventNote" style="margin-top:.45em"></div>
+    </section>
 
-      <!-- Now Performing with small QR + controls -->
-      <section class="card">
-        <h2>Now Performing</h2>
-        <div class="smallQR" style="margin:.4em 0 1em">
-          <img id="qrImg" alt="QR" />
-          <div>
-            <div style="font-weight:900; font-size:1.2em" id="nowPerfLabel">None</div>
-            <div class="hint" id="perfStatus">No performance yet</div>
-            <div class="hint" style="margin-top:.25em">Countdown: <span id="countdown" style="font-weight:900">—</span></div>
+    <!-- Main + Sidebar -->
+    <div class="grid grid-2-1">
+      <div class="grid" style="gap:16px">
+        <!-- Now Performing (small QR + controls) -->
+        <section class="card">
+          <h2>Now Performing</h2>
+          <div class="smallQR" style="margin:.4em 0 1em">
+            <img id="qrImg" alt="QR" />
+            <div>
+              <div style="font-weight:900; font-size:1.2em" id="nowPerfLabel">None</div>
+              <div class="hint" id="perfStatus">No performance yet</div>
+              <div class="hint" style="margin-top:.25em">Countdown: <span id="countdown" style="font-weight:900">—</span></div>
+            </div>
           </div>
-        </div>
-        <div class="controls stack">
-          <button class="btn warn" id="btnVoteNow">Vote now (30s)</button>
-          <button class="btn ghost" id="btnExtend15">Extend +15s</button>
-          <button class="btn danger" id="btnEndNow">End now</button>
-        </div>
-      </section>
+          <div class="controls stack">
+            <button class="btn warn" id="btnVoteNow">Vote now (30s)</button>
+            <button class="btn ghost" id="btnExtend15">Extend +15s</button>
+            <button class="btn danger" id="btnEndNow">End now</button>
+            <button class="btn ghost" id="openPerfVote">Vote</button>
+          </div>
+        </section>
+
+        <!-- Current singers -->
+        <section class="card">
+          <h2>Current singers</h2>
+          <div class="row" style="margin:.25em 0 .5em">
+            <label class="row"><input type="checkbox" id="showHidden" /> Show Removed!</label>
+          </div>
+          <ul id="singerList"></ul>
+          <div class="hint" id="singerReadNote"></div>
+        </section>
+
+        <!-- Links -->
+        <section class="card">
+          <h2>Open pages</h2>
+          <div class="stack">
+            <button class="btn ghost" id="openVote">Vote</button>
+            <button class="btn ghost" id="openScreen">Screen</button>
+            <button class="btn ghost" id="openBoard">Board</button>
+          </div>
+        </section>
+
+        <!-- Host vote -->
+        <section class="card">
+          <h2>Host vote (optional)</h2>
+          <div class="stack">
+            <button class="btn" id="hostVoteEncore"  style="background:var(--encore);color:#062">Encore</button>
+            <button class="btn" id="hostVoteAnother" style="background:var(--another);color:#231b00">Another</button>
+            <button class="btn" id="hostVoteMaybe"   style="background:var(--maybe)">Maybe Next Time</button>
+          </div>
+          <div class="hint" style="margin-top:.4em">One vote per device per performance (same as audience).</div>
+        </section>
+      </div>
+
+      <!-- Sidebar: Still in it -->
+      <aside class="card">
+        <h2>Still in it</h2>
+        <ul id="stillInList"></ul>
+        <div class="hint" id="stillInNote">Shows singers whose latest outcome is Encore or Another.</div>
+      </aside>
     </div>
-
-    <!-- Links -->
-    <section class="card">
-      <h2>Links (open in new tabs)</h2>
-      <div class="stack">
-        <button class="btn ghost" id="openVote">Vote</button>
-        <button class="btn ghost" id="openScreen">Screen</button>
-        <button class="btn ghost" id="openBoard">Board</button>
-      </div>
-    </section>
-
-    <!-- Host vote -->
-    <section class="card">
-      <h2>Host vote (optional)</h2>
-      <div class="stack">
-        <button class="btn" id="hostVoteEncore"  style="background:var(--encore);color:#062">Encore</button>
-        <button class="btn" id="hostVoteAnother" style="background:var(--another);color:#231b00">Another</button>
-        <button class="btn" id="hostVoteMaybe"   style="background:var(--maybe)">Maybe Next Time</button>
-      </div>
-      <div class="hint" style="margin-top:.4em">One vote per device per performance (same as audience).</div>
-    </section>
   </main>
 
   <div class="status">
@@ -244,6 +257,7 @@
       var nowPerfLabel=$('nowPerfLabel'), perfStatus=$('perfStatus'), countdownEl=$('countdown');
       var qrImg=$('qrImg');
 
+      var openPerfVote=$('openPerfVote');
       var openVote=$('openVote'), openScreen=$('openScreen'), openBoard=$('openBoard');
 
       // Auth (anon)
@@ -256,6 +270,7 @@
       var countdownTimer=null, autoCloseTimer=null;
       var perfOutcomeCache={}; // perfId -> outcome
       var cachedSingers=[];
+      var stillInCache=[];
 
       // Prompt once for event if missing
       (function(){
@@ -300,12 +315,18 @@
       $('hostVoteAnother').addEventListener('click', function(){ hostCastVote('another'); });
       $('hostVoteMaybe').addEventListener('click', function(){ hostCastVote('maybe'); });
 
-      showHiddenEl.addEventListener('change', function(){ renderSingerList(cachedSingers); });
+      showHiddenEl.addEventListener('change', function(){ renderSingerList(cachedSingers); renderStillInList(); });
+
+      openPerfVote.addEventListener('click', function(){
+        if(!STATE.performanceId) return setStatus('No performance.');
+        var eid=getCurrentEventId();
+        var url=urlRoot()+'vote/index.html?eventId='+encodeURIComponent(eid)+'&performanceId='+encodeURIComponent(STATE.performanceId);
+        window.open(url,'_blank','noopener');
+      });
 
       openVote.addEventListener('click', function(){
         var eid=getCurrentEventId();
         var base=urlRoot()+'vote/index.html?eventId='+encodeURIComponent(eid);
-        // If a performance exists, include it so you can test quickly
         if(STATE.performanceId) base+='&performanceId='+encodeURIComponent(STATE.performanceId);
         window.open(base,'_blank','noopener');
       });
@@ -359,8 +380,8 @@
       }
 
       // QR helpers (small)
-      function qrProvider1(d){ return 'https://api.qrserver.com/v1/create-qr-code/?size=280x280&data='+encodeURIComponent(d); }
-      function qrProvider2(d){ return 'https://chart.googleapis.com/chart?cht=qr&chs=240x240&chl='+encodeURIComponent(d); }
+      function qrProvider1(d){ return 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&data='+encodeURIComponent(d); }
+      function qrProvider2(d){ return 'https://chart.googleapis.com/chart?cht=qr&chs=160x160&chl='+encodeURIComponent(d); }
       function setQrImageForUrl(url){
         var tried=false;
         qrImg.onerror=function(){ if(!tried){ tried=true; qrImg.src=qrProvider2(url); } else { qrImg.alt='QR unavailable'; } };
@@ -380,7 +401,7 @@
         countdownEl.textContent=s+'s';
       }
       function startCountdown(){ stopCountdown(); renderCountdown(); countdownTimer=setInterval(renderCountdown,250); }
-      function stopCountdown(){ if(countdownTimer){ clearInterval(countownTimer); } countdownTimer=null; countdownEl.textContent='—'; }
+      function stopCountdown(){ if(countdownTimer){ clearInterval(countdownTimer); countdownTimer=null; } countdownEl.textContent='—'; }
       function armAutoClose(){
         if(autoCloseTimer){ clearTimeout(autoCloseTimer); autoCloseTimer=null; }
         if(!STATE.performanceCloseAt) return;
@@ -422,15 +443,20 @@
         }, function(err){ setStatus('State listener error: '+((err&&err.message)||err)); });
       }
 
-      // Singers list
+      // Singers list (main + “Still in it”)
       function renderSingerList(items){
         cachedSingers=items.slice(); singerListEl.innerHTML='';
-        var showHidden=showHiddenEl.checked;
+        var showRemoved=showHiddenEl.checked;
         items.sort(function(a,b){ return a.name.localeCompare(b.name,undefined,{sensitivity:'base'}); });
 
-        var shown=0;
+        var shown=0; stillInCache=[];
+
+        function considerStillIn(it, outcome){
+          if (outcome==='encore' || outcome==='another') stillInCache.push({name: it.name, outcome: outcome});
+        }
+
         function appendRow(it,outcome){
-          if(!showHidden && outcome==='maybe') return;
+          if(!showRemoved && outcome==='maybe') return;
           var li=document.createElement('li');
 
           var left=document.createElement('div');
@@ -453,6 +479,7 @@
           li.appendChild(left); li.appendChild(right);
           singerListEl.appendChild(li);
           shown++;
+          considerStillIn(it, outcome);
         }
 
         items.forEach(function(it){
@@ -462,12 +489,29 @@
           else if(cached!==undefined){ appendRow(it,cached); }
           else{
             db.collection('events').doc(getCurrentEventId()).collection('performances').doc(pid).get()
-            .then(function(s){ perfOutcomeCache[pid]=s.exists?(s.data().outcome||null):null; renderSingerList(cachedSingers); })
+            .then(function(s){ var outcome=s.exists?(s.data().outcome||null):null; perfOutcomeCache[pid]=outcome; renderSingerList(cachedSingers); })
             .catch(function(){ perfOutcomeCache[pid]=null; renderSingerList(cachedSingers); });
           }
         });
 
-        if(!shown){ var li=document.createElement('li'); li.textContent=showHidden?'No singers.':'No singers (Maybe singers hidden).'; singerListEl.appendChild(li); }
+        if(!shown){ var li=document.createElement('li'); li.textContent=showRemoved?'No singers.':'No singers (Removed hidden).'; singerListEl.appendChild(li); }
+
+        renderStillInList();
+      }
+
+      function renderStillInList(){
+        var stillEl = $('stillInList');
+        stillEl.innerHTML = '';
+        if (!stillInCache.length){
+          var li=document.createElement('li'); li.textContent='—'; stillEl.appendChild(li);
+          return;
+        }
+        stillInCache.sort(function(a,b){ return a.name.localeCompare(b.name,undefined,{sensitivity:'base'}); });
+        stillInCache.forEach(function(x){
+          var li=document.createElement('li');
+          li.innerHTML = '<div style="font-weight:900">'+x.name+'</div><div class="hint">'+x.outcome+'</div>';
+          stillEl.appendChild(li);
+        });
       }
 
       function loadSingersOnce(eid){
@@ -615,8 +659,6 @@
           else setStatus('Error submitting vote.');
         });
       }
-
-      // Expose a couple for debugging if needed
       window.hostCastVote=hostCastVote;
 
       // Realtime wiring
