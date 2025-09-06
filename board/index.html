@@ -7,13 +7,12 @@
   <meta http-equiv="Cache-Control" content="no-store" />
   <style>
     :root{
-      /* EYEK palette */
       --bg: #0b0b0f;
       --card: #141826;
       --accent: #7bc4ff;
-      --encore: #4ade80;   /* green */
-      --another: #fbbf24;  /* amber */
-      --maybe: #f87171;    /* red-ish */
+      --encore: #4ade80;
+      --another: #fbbf24;
+      --maybe: #f87171;
       --text: #f7f8fc;
       --muted: #b9c0d0;
       --border: #26304a;
@@ -24,7 +23,7 @@
       margin:0;
       background:linear-gradient(180deg, #0b0b0f 0%, #0e1220 100%);
       color:var(--text);
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji","Segoe UI Emoji";
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Helvetica Neue, Arial, Noto Sans, Apple Color Emoji, Segoe UI Emoji;
     }
     header{
       display:flex;align-items:center;justify-content:space-between;
@@ -32,71 +31,24 @@
       background: rgba(20,24,38,0.6); backdrop-filter: blur(6px);
       position:sticky;top:0;z-index:5;
     }
-    .brand{
-      display:flex;align-items:center;gap:14px;font-weight:800;
-      letter-spacing:.3px;color:var(--text);
-    }
+    .brand{display:flex;align-items:center;gap:14px;font-weight:800;letter-spacing:.3px;color:var(--text)}
     .brand img{width:44px;height:44px;border-radius:10px}
     .brand span{font-size:22px}
-    .event{
-      font-size:16px;color:var(--muted)
-    }
-
-    .wrap{
-      padding:20px;
-      max-width:1600px;margin:0 auto;
-    }
-    .grid{
-      display:grid;gap:20px;
-      grid-template-columns: repeat(3, minmax(0,1fr));
-    }
-    @media (max-width:1100px){
-      .grid{grid-template-columns: 1fr}
-    }
-
-    .col{
-      background:linear-gradient(180deg, rgba(20,24,38,.9), rgba(10,12,20,.9));
-      border:1px solid var(--border);
-      border-radius:18px;
-      padding:18px;
-      min-height:260px;
-      box-shadow: 0 10px 26px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.03);
-    }
-    .col h2{
-      margin:0 0 14px 0; font-size:28px; letter-spacing:.2px; display:flex; align-items:center; gap:12px;
-    }
-    .col h2 .dot{
-      width:14px;height:14px;border-radius:999px;display:inline-block;
-      box-shadow: 0 0 10px currentColor;
-    }
-    .col.encore h2{ color:var(--encore)}
-    .col.another h2{ color:var(--another)}
-    .col.maybe h2{ color:var(--maybe)}
-    .col ul{
-      list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:10px
-    }
-    .chip{
-      display:flex;justify-content:space-between;align-items:center;
-      gap:12px;
-      padding:14px 16px;border-radius:12px;border:1px solid var(--border);
-      background: rgba(10,14,26,.6);
-      font-size:22px; /* larger for readability */
-    }
-    .counts{
-      font-variant-numeric: tabular-nums;
-      font-size:18px;color:var(--muted)
-    }
-    .legend{
-      margin-top:12px;color:var(--muted);font-size:15px
-    }
-    footer{
-      color:var(--muted);font-size:14px;text-align:center;padding:16px
-    }
-    .pill{
-      display:inline-block;border:1px solid var(--border);padding:6px 10px;border-radius:999px;
-      font-size:14px;margin-left:10px;color:var(--muted);
-    }
+    .event{font-size:16px;color:var(--muted)}
+    .wrap{padding:20px; max-width:1600px; margin:0 auto}
+    .grid{display:grid; gap:20px; grid-template-columns:repeat(3, minmax(0,1fr))}
+    @media (max-width:1100px){ .grid{grid-template-columns:1fr} }
+    .col{background:linear-gradient(180deg, rgba(20,24,38,.9), rgba(10,12,20,.9)); border:1px solid var(--border); border-radius:18px; padding:18px; min-height:260px; box-shadow: 0 10px 26px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.03)}
+    .col h2{margin:0 0 14px; font-size:28px; display:flex; gap:12px; align-items:center}
+    .dot{width:14px; height:14px; border-radius:999px; display:inline-block; box-shadow:0 0 10px currentColor}
+    .col.encore h2{color:var(--encore)} .col.another h2{color:var(--another)} .col.maybe h2{color:var(--maybe)}
+    .col ul{list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:10px}
+    .chip{display:flex; justify-content:space-between; align-items:center; gap:12px; padding:14px 16px; border-radius:12px; border:1px solid var(--border); background: rgba(10,14,26,.6); font-size:22px}
+    .counts{font-variant-numeric:tabular-nums; font-size:18px; color:var(--muted)}
+    .legend{margin-top:12px; color:var(--muted); font-size:15px}
+    .pill{display:inline-block;border:1px solid var(--border);padding:6px 10px;border-radius:999px; font-size:14px;margin-left:10px;color:var(--muted)}
     .msg{padding:18px;border:1px dashed var(--border);border-radius:12px;background: rgba(10,12,20,.5);font-size:18px}
+    footer{color:var(--muted);font-size:14px;text-align:center;padding:16px}
   </style>
 </head>
 <body>
@@ -107,7 +59,7 @@
     </div>
     <div class="event">
       <span id="eventLabel">Loading event…</span>
-      <span class="pill" id="modePill" title="Placement is mutually exclusive; then each column shows the top count for that category.">Top-only per category</span>
+      <span class="pill" id="modePill">Top-only per category</span>
     </div>
   </header>
 
@@ -136,14 +88,10 @@
   </div>
 
   <footer>
-    Auto-refreshes in real time. Tie rules: (Another vs Maybe ⇒ <b>Another</b>), (Encore vs Another ⇒ <b>Encore</b>), (Encore vs Maybe ⇒ <b>Another</b>), <u>3-way tie ⇒ <b>Another</b></u>.
+    Tie rules: (Another vs Maybe ⇒ <b>Another</b>), (Encore vs Another ⇒ <b>Encore</b>), (Encore vs Maybe ⇒ <b>Another</b>), <u>3-way tie ⇒ <b>Another</b></u>.
   </footer>
 
-  <!-- Firebase (Module) -->
   <script type="module">
-    /*********************************************************
-     * 1) CONFIG — YOUR PROJECT
-     *********************************************************/
     const FIREBASE_CONFIG = {
       apiKey: "AIzaSyDGbC08WxruYIDPhZSlDlU-7Kzq-7mHENk",
       authDomain: "eyek-vote.firebaseapp.com",
@@ -153,82 +101,48 @@
       appId: "1:954696683994:web:21a84298a94648ff0230e3"
     };
 
-    // If you nest votes under an event, pass ?eventId=YOUR_EVENT_ID in the URL.
-    // Path will be: events/{eventId}/votes
-    // If you keep a flat "votes" collection, set USE_EVENTS_COLLECTION = false.
     const USE_EVENTS_COLLECTION = true;
-
-    // If your per-vote documents use different field names, change these here:
     const FIELD_SINGER_ID = "singerId";
     const FIELD_SINGER_NAME = "singerName";
     const FIELD_CATEGORY = "category"; // "encore" | "another" | "maybe"
-
-    // Whether to show only the TOP singer(s) in each category (after mutually-exclusive placement).
     const TOP_ONLY_PER_CATEGORY = true;
 
-    // Label in the header:
     document.getElementById("modePill").textContent = TOP_ONLY_PER_CATEGORY
-      ? "Top-only per category"
-      : "All placements";
+      ? "Top-only per category" : "All placements";
 
-    /*********************************************************
-     * 2) UTIL: Read eventId from URL (?eventId=xyz)
-     *********************************************************/
-    function getEventIdFromURL() {
+    function getEventIdFromURL(){
       const u = new URL(window.location.href);
       return u.searchParams.get("eventId") || "default";
     }
     const EVENT_ID = getEventIdFromURL();
-    document.getElementById("eventLabel").textContent =
-      USE_EVENTS_COLLECTION ? `Event: ${EVENT_ID}` : "All Votes";
+    document.getElementById("eventLabel").textContent = USE_EVENTS_COLLECTION ? `Event: ${EVENT_ID}` : "All Votes";
 
-    /*********************************************************
-     * 3) TIE-BREAK LOGIC (YOUR CUSTOM RULES)
-     *********************************************************/
-    function decideWinner({ encore, another, maybe }) {
+    function decideWinner({ encore, another, maybe }){
       const e = encore|0, a = another|0, m = maybe|0;
       const max = Math.max(e,a,m);
       const ties = [];
       if (e === max) ties.push("encore");
       if (a === max) ties.push("another");
       if (m === max) ties.push("maybe");
-
-      // Single clear winner:
       if (ties.length === 1) return ties[0];
 
-      // Custom pairwise rules:
-      // - Another vs Maybe  -> Another
-      // - Encore  vs Another -> Encore
-      // - Encore  vs Maybe  -> Another
-      const pair = ties.slice().sort().join("+"); // e.g. "another+maybe"
+      const pair = ties.slice().sort().join("+");
       if (pair === "another+maybe") return "another";
       if (pair === "another+encore") return "encore";
       if (pair === "encore+maybe")  return "another";
-
-      // Three-way tie => Another (per your preference)
-      if (ties.length === 3) return "another";
-
-      // Safety fallback:
+      if (ties.length === 3) return "another"; // 3-way -> Another
       return ties[0];
     }
 
-    /*********************************************************
-     * 4) FIREBASE WIRING
-     *********************************************************/
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import {
-      getFirestore, collection, onSnapshot, query
-    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getFirestore, collection, onSnapshot, query } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const app = initializeApp(FIREBASE_CONFIG);
     const db  = getFirestore(app);
 
-    function getVotesQuery() {
-      if (USE_EVENTS_COLLECTION) {
-        return collection(db, "events", EVENT_ID, "votes");
-      }
-      // Flat top-level "votes" collection:
-      return collection(db, "votes");
+    function getVotesQuery(){
+      if (USE_EVENTS_COLLECTION) return collection(db,"events",EVENT_ID,"votes");
+      return collection(db,"votes");
     }
 
     const statusEl = document.getElementById("status");
@@ -236,116 +150,94 @@
     const anotherListEl = document.getElementById("anotherList");
     const maybeListEl   = document.getElementById("maybeList");
 
-    onSnapshot(query(getVotesQuery()), (snap) => {
+    onSnapshot(query(getVotesQuery()), (snap)=>{
       const votes = [];
-      snap.forEach(doc => {
-        const d = doc.data() || {};
+      snap.forEach(doc=>{
+        const d = doc.data()||{};
         const singerId   = d[FIELD_SINGER_ID];
         const singerName = d[FIELD_SINGER_NAME];
-        const category   = (d[FIELD_CATEGORY] || "").toLowerCase().trim();
+        const category   = (d[FIELD_CATEGORY]||"").toLowerCase().trim();
         if (!singerId || !singerName) return;
         if (!["encore","another","maybe"].includes(category)) return;
         votes.push({ singerId, singerName, category });
       });
 
-      statusEl.textContent = votes.length
-        ? `Loaded ${votes.length} vote${votes.length===1?"":"s"}.`
-        : "No votes yet.";
-
-      const { placement, topEncore, topAnother, topMaybe } = computePlacement(votes, decideWinner, TOP_ONLY_PER_CATEGORY);
-      renderBoard({ placement, topEncore, topAnother, topMaybe });
-    }, (err) => {
-      statusEl.textContent = "Error loading votes: " + (err && err.message ? err.message : err);
+      statusEl.textContent = votes.length ? `Loaded ${votes.length} vote${votes.length===1?"":"s"}.` : "No votes yet.";
+      const { topEncore, topAnother, topMaybe } = computePlacement(votes, decideWinner, TOP_ONLY_PER_CATEGORY);
+      renderBoard({ topEncore, topAnother, topMaybe });
+    }, (err)=>{
+      statusEl.textContent = "Error loading votes: " + (err?.message || err);
     });
 
-    /*********************************************************
-     * 5) CORE TALLY + PLACEMENT + TOP-ONLY FILTER
-     *********************************************************/
-    function computePlacement(votes, decideFn, topOnly) {
-      // 1) Tally per singer
-      const tallies = {}; // singerId -> { name, encore, another, maybe }
-      for (const v of votes) {
-        if (!tallies[v.singerId]) {
-          tallies[v.singerId] = { name: v.singerName, encore:0, another:0, maybe:0 };
-        }
+    function computePlacement(votes, decideFn, topOnly){
+      const tallies = {};
+      for (const v of votes){
+        if (!tallies[v.singerId]) tallies[v.singerId] = { name:v.singerName, encore:0, another:0, maybe:0 };
         if (v.category === "encore") tallies[v.singerId].encore++;
         else if (v.category === "another") tallies[v.singerId].another++;
         else tallies[v.singerId].maybe++;
       }
 
-      // 2) Decide a single winner category per singer
-      const placement = {}; // singerId -> { name, winner, counts }
-      for (const [sid, s] of Object.entries(tallies)) {
-        const winner = decideFn(s);
-        placement[sid] = { name: s.name, winner, counts: { ...s } };
+      const placement = {};
+      for (const [sid, s] of Object.entries(tallies)){
+        placement[sid] = { name:s.name, winner:decideFn(s), counts:{...s} };
       }
 
-      // Build category buckets (mutually exclusive)
-      const encore = [], another = [], maybe = [];
-      for (const p of Object.values(placement)) {
-        if (p.winner === "encore")  encore.push(p);
+      const encore=[], another=[], maybe=[];
+      for (const p of Object.values(placement)){
+        if (p.winner === "encore") encore.push(p);
         else if (p.winner === "another") another.push(p);
         else maybe.push(p);
       }
 
-      // 3) Top-only filtering per category (by that category's own count)
       let topEncore = encore.slice();
       let topAnother = another.slice();
       let topMaybe = maybe.slice();
 
-      if (topOnly) {
-        const maxE = topEncore.reduce((m,p)=>Math.max(m, p.counts.encore), 0);
-        const maxA = topAnother.reduce((m,p)=>Math.max(m, p.counts.another), 0);
-        const maxM = topMaybe.reduce((m,p)=>Math.max(m, p.counts.maybe), 0);
-        topEncore  = topEncore.filter(p => p.counts.encore === maxE && maxE>0);
-        topAnother = topAnother.filter(p => p.counts.another === maxA && maxA>0);
-        topMaybe   = topMaybe.filter(p => p.counts.maybe === maxM && maxM>0);
+      if (topOnly){
+        const maxE = topEncore.reduce((m,p)=>Math.max(m,p.counts.encore),0);
+        const maxA = topAnother.reduce((m,p)=>Math.max(m,p.counts.another),0);
+        const maxM = topMaybe.reduce((m,p)=>Math.max(m,p.counts.maybe),0);
+        topEncore  = topEncore.filter(p=>p.counts.encore===maxE && maxE>0);
+        topAnother = topAnother.filter(p=>p.counts.another===maxA && maxA>0);
+        topMaybe   = topMaybe.filter(p=>p.counts.maybe===maxM && maxM>0);
       }
 
-      // deterministic sort: highest category count first, then name
-      const byCatThenName = (cat) => (a,b) => (b.counts[cat]-a.counts[cat]) || a.name.localeCompare(b.name);
+      const byCat = (cat)=>(a,b)=> (b.counts[cat]-a.counts[cat]) || a.name.localeCompare(b.name);
+      topEncore.sort(byCat("encore"));
+      topAnother.sort(byCat("another"));
+      topMaybe.sort(byCat("maybe"));
 
-      topEncore.sort(byCatThenName("encore"));
-      topAnother.sort(byCatThenName("another"));
-      topMaybe.sort(byCatThenName("maybe"));
-
-      return { placement, topEncore, topAnother, topMaybe };
+      return { topEncore, topAnother, topMaybe };
     }
 
-    /*********************************************************
-     * 6) RENDER
-     *********************************************************/
-    function renderBoard({ placement, topEncore, topAnother, topMaybe }) {
-      renderList(encoreListEl,  topEncore,  "encore");
+    function renderBoard({ topEncore, topAnother, topMaybe }){
+      renderList(encoreListEl, topEncore, "encore");
       renderList(anotherListEl, topAnother, "another");
-      renderList(maybeListEl,   topMaybe,   "maybe");
+      renderList(maybeListEl, topMaybe, "maybe");
 
-      // Empty state hints:
-      if (!topEncore.length && !topAnother.length && !topMaybe.length) {
+      if (!topEncore.length && !topAnother.length && !topMaybe.length){
         document.getElementById("status").textContent = "No winners yet — cast some votes!";
       }
     }
 
-    function renderList(ul, arr, cat) {
+    function renderList(ul, arr, cat){
       ul.innerHTML = "";
-      if (!arr.length) {
+      if (!arr.length){
         const li = document.createElement("li");
         li.className = "chip";
         li.textContent = "—";
         ul.appendChild(li);
         return;
       }
-      for (const p of arr) {
+      for (const p of arr){
         const li = document.createElement("li");
         li.className = "chip";
         const name = document.createElement("div");
         name.textContent = p.name;
-
         const counts = document.createElement("div");
         counts.className = "counts";
-        // Always show full triple so host can see context: (E/A/M)
         counts.textContent = `(${p.counts.encore}/${p.counts.another}/${p.counts.maybe})`;
-
         li.appendChild(name);
         li.appendChild(counts);
         ul.appendChild(li);
