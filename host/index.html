@@ -19,7 +19,7 @@
       color:var(--text); font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Helvetica Neue,Arial,Noto Sans;
     }
     .sidebar{
-      width:320px; background:var(--panel); border-right:1px solid var(--border);
+      width:340px; background:var(--panel); border-right:1px solid var(--border);
       padding:18px; position:sticky; top:0; height:100vh; overflow:auto;
     }
     .brand{display:flex;align-items:center;gap:10px;margin-bottom:14px}
@@ -52,6 +52,9 @@
     li{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:#0f1322;margin-bottom:10px}
     .hint{font-size:13px;color:var(--muted);margin-top:8px}
     .ok{color:#86efac}.err{color:#fca5a5}
+    .twoLine{display:flex;flex-direction:column;gap:6px}
+    .label{font-size:12px;color:var(--muted)}
+    .val{font-weight:800}
   </style>
   <!-- QR code lib for the sidebar QR -->
   <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
@@ -66,12 +69,19 @@
     <div class="group">
       <div class="muted">Current Event</div>
       <div class="pill" id="currentEventPill">default</div>
+      <div class="small" id="listeningPill">Listening to: default</div>
     </div>
 
     <div class="group">
-      <div class="muted">Now Performing</div>
-      <div class="pill" id="nowPerfPill">None</div>
-      <div class="stack" style="margin-top:10px">
+      <div class="twoLine">
+        <div class="label">Now Performing</div>
+        <div class="val" id="nowPerfPill">None</div>
+      </div>
+      <div class="twoLine" style="margin-top:8px">
+        <div class="label">Just Performed (local)</div>
+        <div class="val" id="lastPerfPill">—</div>
+      </div>
+      <div class="stack" style="margin-top:12px">
         <button class="link" id="hostVoteEncore">Vote: Encore</button>
         <button class="link" id="hostVoteAnother">Vote: Another</button>
         <button class="link" id="hostVoteMaybe">Vote: Maybe</button>
@@ -166,7 +176,7 @@
     /************** IMPORTS **************/
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import {
-      getFirestore, collection, addDoc, getDocs, deleteDoc, doc, setDoc, onSnapshot, query, getDoc
+      getFirestore, collection, addDoc, getDocs, deleteDoc, doc, setDoc, onSnapshot, query
     } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
     import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
@@ -185,7 +195,9 @@
     /************** DOM **************/
     const eventIdInput    = document.getElementById("eventId");
     const currentEventPill= document.getElementById("currentEventPill");
+    const listeningPill   = document.getElementById("listeningPill");
     const nowPerfPill     = document.getElementById("nowPerfPill");
+    const lastPerfPill    = document.getElementById("lastPerfPill");
 
     const voteLink        = document.getElementById("voteLink");
     const screenLink      = document.getElementById("screenLink");
@@ -239,7 +251,7 @@
     hostVoteMaybe.addEventListener("click", ()=> hostCastVote("maybe"));
 
     /************** STATE **************/
-    const STATE = { currentSingerId:null, currentSingerName:null };
+    const STATE = { currentSingerId:null, currentSingerName:null, lastSingerName:null };
 
     function getEventIdFromURL(){
       const u = new URL(window.location.href);
@@ -255,6 +267,7 @@
         u.searchParams.set("eventId", chosen);
         history.replaceState({}, "", u.toString());
         currentEventPill.textContent = chosen;
+        listeningPill.textContent = "Listening to: " + chosen;
         setLinksForEvent(chosen);
         watchSingers(chosen);
         watchVotes(chosen);
@@ -312,6 +325,7 @@
       u.searchParams.set("eventId", val);
       history.replaceState({}, "", u.toString());
       currentEventPill.textContent = val;
+      listeningPill.textContent = "Listening to: " + val;
       setLinksForEvent(val);
       watchSingers(val);
       watchVotes(val);
@@ -323,6 +337,7 @@
     let EVENT_ID = getEventIdFromURL();
     eventIdInput.value = EVENT_ID;
     currentEventPill.textContent = EVENT_ID;
+    listeningPill.textContent = "Listening to: " + EVENT_ID;
     setLinksForEvent(EVENT_ID);
     watchSingers(EVENT_ID);
     watchVotes(EVENT_ID);
@@ -343,19 +358,25 @@
           singerListEl.appendChild(li);
           return;
         }
+        const items = [];
         snap.forEach(d=>{
           const {name=""} = d.data()||{};
+          items.push({id:d.id, name});
+        });
+        // Sort by name for easier picking
+        items.sort((a,b)=>a.name.localeCompare(b.name, undefined, {sensitivity:"base"}));
+        for (const it of items){
           const li = document.createElement("li");
-          const left = document.createElement("span"); left.textContent = name;
+          const left = document.createElement("span"); left.textContent = it.name;
           const right = document.createElement("div"); right.className = "stack";
           const btnSet = document.createElement("button");
           btnSet.className = "btn secondary";
           btnSet.textContent = "Set Now Performing";
-          btnSet.addEventListener("click", ()=> setNowPerforming(eid, d.id, name));
+          btnSet.addEventListener("click", ()=> setNowPerforming(eid, it.id, it.name));
           right.appendChild(btnSet);
           li.appendChild(left); li.appendChild(right);
           singerListEl.appendChild(li);
-        });
+        }
       }, (err)=>{
         addSingerStatus.innerHTML = `<span class="err">Singer listener error: ${err?.message || err}</span>`;
       });
@@ -409,13 +430,19 @@
     /************** NOW PERFORMING (state/current) **************/
     async function setNowPerforming(eid, singerId, singerName){
       try{
+        // keep a local copy of the last performer for the sidebar
+        if (STATE.currentSingerName) {
+          STATE.lastSingerName = STATE.currentSingerName;
+          lastPerfPill.textContent = STATE.lastSingerName;
+        }
+
         await setDoc(doc(db,"events",eid,"state","current"), {
           currentSingerId: singerId,
           currentSingerName: singerName,
           ts: Date.now()
         });
 
-        // NEW: update UI immediately (don’t wait for the listener)
+        // Update UI immediately (don’t wait for the listener)
         STATE.currentSingerId = singerId;
         STATE.currentSingerName = singerName;
         nowPerfPill.textContent = singerName || "None";
@@ -431,11 +458,17 @@
       if (unsubscribeState) unsubscribeState();
       unsubscribeState = onSnapshot(doc(db,"events",eid,"state","current"), (snap)=>{
         if (!snap.exists()){
+          // do not clear last; just show none for current
           STATE.currentSingerId = null; STATE.currentSingerName = null;
           nowPerfPill.textContent = "None";
           updateSingerQr();
         }else{
           const d = snap.data()||{};
+          // if name changes to a different singer, move current to last (local)
+          if (STATE.currentSingerName && d.currentSingerName && d.currentSingerName !== STATE.currentSingerName) {
+            STATE.lastSingerName = STATE.currentSingerName;
+            lastPerfPill.textContent = STATE.lastSingerName;
+          }
           STATE.currentSingerId = d.currentSingerId || null;
           STATE.currentSingerName = d.currentSingerName || "(Unknown)";
           nowPerfPill.textContent = STATE.currentSingerName || "None";
