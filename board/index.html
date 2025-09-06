@@ -1,245 +1,83 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>KJ Board | Earn Your Encore Karaoke</title>
+  <meta charset="utf-8" />
+  <title>Earn Your Encore Karaoke — Board</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-store" />
   <style>
-    body { margin:0; font-family:system-ui,sans-serif; background:#0e0d2b; color:#fff; }
-    .wrap { max-width:1100px; margin:0 auto; padding:24px; }
-    h1 { color:#ffd24a; margin:0 0 10px; }
-    p.sub { color:#bfe; margin:0 0 16px; }
-    .panel { background:#1e1d3a; border-radius:12px; padding:16px; margin:16px 0; }
-    .row { display:grid; grid-template-columns: 1fr 1fr 1fr; gap:16px; }
-    @media (max-width:900px){ .row { grid-template-columns:1fr; } }
-    .col h2 { margin:0 0 8px; font-size:18px; }
-    .col ul { list-style:none; padding:0; margin:0; }
-    .col li { background:#141335; border-radius:8px; padding:10px 12px; margin:8px 0; display:flex; justify-content:space-between; gap:12px; }
-    .pill { font-size:12px; opacity:0.9; }
-    .small { font-size:12px; color:#bcd; margin-top:6px; }
-    .err { color:#ffb3b3; margin-top:10px; display:none; }
-    .center { text-align:center; }
-    .inputRow { display:flex; gap:8px; justify-content:center; margin-top:12px; flex-wrap:wrap; }
-    input[type="text"] { padding:10px; border:0; border-radius:8px; background:#141335; color:#fff; width:320px; }
-    button { border:0; border-radius:8px; padding:10px 14px; background:#2a2954; color:#fff; cursor:pointer; }
-    .controls { display:flex; gap:8px; align-items:center; justify-content:flex-end; }
-    .muted { color:#bcd; font-size:12px; }
-    .linkish a { color:#9ee7ff; word-break:break-all; }
-  </style>
-</head>
-<body>
-  <div class="wrap">
-    <div class="controls">
-      <span class="muted">Auto-refresh:</span>
-      <button id="toggleAuto">On (10s)</button>
-    </div>
-
-    <h1>KJ Board</h1>
-    <p class="sub">Show results for <code id="showLabel"></code>. (Open with <code>?show=YYYY-MM-DD_Venue</code> or enter below.)</p>
-
-    <div id="chooser" class="panel center" style="display:none">
-      <div>Enter Show ID to load results:</div>
-      <div class="inputRow">
-        <input id="showInput" type="text" placeholder="e.g., 2025-09-04_MyPlace">
-        <button id="loadBtn">Load</button>
-      </div>
-      <div class="small">Tip: We’ll remember this for next time.</div>
-    </div>
-
-    <div id="err" class="err"></div>
-    <div id="indexHint" class="panel linkish" style="display:none"></div>
-
-    <div class="row" id="results" style="display:none">
-      <div class="panel col">
-        <h2>🔥 Encore</h2>
-        <ul id="listEncore"></ul>
-      </div>
-      <div class="panel col">
-        <h2>🤔 One More Shot</h2>
-        <ul id="listOneMore"></ul>
-      </div>
-      <div class="panel col">
-        <h2>❌ Maybe Next Time</h2>
-        <ul id="listNextTime"></ul>
-      </div>
-    </div>
-    <div class="small">Counts shown as Encore/OneMore/Maybe (e.g., 7/3/2).</div>
-  </div>
-
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore-compat.js"></script>
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyDGbC08WxruYIDPhZSlDlU-7Kzq-7mHENk",
-      authDomain: "eyek-vote.firebaseapp.com",
-      projectId: "eyek-vote",
-      storageBucket: "eyek-vote.firebasestorage.app",
-      messagingSenderId: "954696683994",
-      appId: "1:954696683994:web:21a84298a94648ff0230e3"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-
-    // UI refs
-    const qs = new URLSearchParams(location.search);
-    let show = qs.get('show') || localStorage.getItem('eyek_last_show') || '';
-    const showLabel = document.getElementById('showLabel');
-    const errEl = document.getElementById('err');
-    const indexHint = document.getElementById('indexHint');
-    const chooser = document.getElementById('chooser');
-    const results = document.getElementById('results');
-    const listEncore = document.getElementById('listEncore');
-    const listOneMore = document.getElementById('listOneMore');
-    const listNextTime = document.getElementById('listNextTime');
-    const showInput = document.getElementById('showInput');
-    const loadBtn = document.getElementById('loadBtn');
-    const toggleAutoBtn = document.getElementById('toggleAuto');
-
-    // Auto-refresh
-    let AUTO_MS = 10000;
-    let autoOn = true;
-    let tm = null;
-
-    function setShow(id){
-      show = (id || '').trim();
-      if (!show) return;
-      localStorage.setItem('eyek_last_show', show);
-      const url = new URL(location.href);
-      url.searchParams.set('show', show);
-      history.replaceState(null, '', url.toString());
-      showLabel.textContent = show;
+    :root{
+      /* EYEK palette */
+      --bg: #0b0b0f;
+      --card: #141826;
+      --accent: #7bc4ff;
+      --encore: #4ade80;   /* green */
+      --another: #fbbf24;  /* amber */
+      --maybe: #f87171;    /* red-ish */
+      --text: #f7f8fc;
+      --muted: #b9c0d0;
+      --border: #26304a;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      background:linear-gradient(180deg, #0b0b0f 0%, #0e1220 100%);
+      color:var(--text);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji","Segoe UI Emoji";
+    }
+    header{
+      display:flex;align-items:center;justify-content:space-between;
+      padding:18px 24px;border-bottom:1px solid var(--border);
+      background: rgba(20,24,38,0.6); backdrop-filter: blur(6px);
+      position:sticky;top:0;z-index:5;
+    }
+    .brand{
+      display:flex;align-items:center;gap:14px;font-weight:800;
+      letter-spacing:.3px;color:var(--text);
+    }
+    .brand img{width:44px;height:44px;border-radius:10px}
+    .brand span{font-size:22px}
+    .event{
+      font-size:16px;color:var(--muted)
     }
 
-    function startAuto(){
-      if (!autoOn) return;
-      stopAuto();
-      tm = setInterval(()=> safeLoadShow(show), AUTO_MS);
-      toggleAutoBtn.textContent = 'On (10s)';
+    .wrap{
+      padding:20px;
+      max-width:1600px;margin:0 auto;
     }
-    function stopAuto(){ if (tm) { clearInterval(tm); tm = null; } }
-    toggleAutoBtn.addEventListener('click', ()=>{
-      autoOn = !autoOn;
-      if (autoOn) startAuto(); else { stopAuto(); toggleAutoBtn.textContent = 'Off'; }
-    });
-
-    function clearLists(){
-      listEncore.innerHTML = ''; listOneMore.innerHTML = ''; listNextTime.innerHTML = '';
+    .grid{
+      display:grid;gap:20px;
+      grid-template-columns: repeat(3, minmax(0,1fr));
     }
-    function showResults(showIt){ results.style.display = showIt ? 'grid' : 'none'; }
-    function showErr(msg){ errEl.style.display='block'; errEl.textContent = msg||''; }
-    function hideErr(){ errEl.style.display='none'; errEl.textContent=''; }
-    function showIndexHint(link){
-      indexHint.style.display = 'block';
-      indexHint.innerHTML = `
-        <div><strong>Index required:</strong> This query needs a Firestore index.</div>
-        <div>Click to create: <a href="${link}" target="_blank" rel="noopener">${link}</a></div>
-        <div class="small">After it shows “Ready”, this page will auto-retry.</div>
-      `;
-    }
-    function hideIndexHint(){ indexHint.style.display = 'none'; indexHint.innerHTML=''; }
-    function extractIndexLink(message){
-      const match = message && message.match(/https:\/\/console\.firebase\.google\.com\/[^\s)]+/);
-      return match ? match[0] : null;
+    @media (max-width:1100px){
+      .grid{grid-template-columns: 1fr}
     }
 
-    // Load show (no orderBy -> no index required). Sort client-side by createdAt || touchedAt.
-    async function loadShow(showId){
-      hideErr(); hideIndexHint(); showResults(false); clearLists();
-
-      let sessionsSnap;
-      try {
-        sessionsSnap = await db.collection('sessions')
-          .where('showId','==', showId)
-          .get(); // no orderBy here
-      } catch (e) {
-        if (e && (e.code === 'failed-precondition' || /index/i.test(e.message))) {
-          const link = extractIndexLink(e.message);
-          if (link) showIndexHint(link);
-          else showErr('This query requires a Firestore index (showId + createdAt ascending).');
-          throw e;
-        }
-        showErr(e.message || 'Failed to load sessions.');
-        throw e;
-      }
-
-      if (sessionsSnap.empty) { showResults(true); return; }
-
-      // Sort client-side: createdAt (if present) then touchedAt, oldest first
-      const sessions = sessionsSnap.docs
-        .map(d => ({ id: d.id, data: d.data() }))
-        .sort((a,b)=>{
-          const ta = (a.data.createdAt?.seconds ?? a.data.touchedAt?.seconds ?? 0);
-          const tb = (b.data.createdAt?.seconds ?? b.data.touchedAt?.seconds ?? 0);
-          return ta - tb;
-        });
-
-      showResults(true);
-
-      for (const s of sessions) {
-        const sid = s.id;
-        const singer = s.data.singer || '(unknown singer)';
-
-        const votesSnap = await db.collection('sessions').doc(sid).collection('votes').get();
-        let encore=0, one=0, nextt=0;
-        votesSnap.forEach(vd => {
-          const v = vd.data().choice;
-          if (v==='encore')    encore++;
-          if (v==='one_more')  one++;
-          if (v==='next_time') nextt++;
-        });
-
-        const total = encore+one+nextt;
-        const pill = total ? `${encore}/${one}/${nextt}` : '0/0/0';
-        const li = document.createElement('li');
-        li.innerHTML = `<span>${singer} <span class="pill">${pill}</span></span><span class="pill">${sid}</span>`;
-
-        const max = Math.max(encore, one, nextt);
-        if (max > 0) {
-          if (encore===max)   listEncore.appendChild(li.cloneNode(true));
-          if (one===max)      listOneMore.appendChild(li.cloneNode(true));
-          if (nextt===max)    listNextTime.appendChild(li.cloneNode(true));
-        }
-      }
+    .col{
+      background:linear-gradient(180deg, rgba(20,24,38,.9), rgba(10,12,20,.9));
+      border:1px solid var(--border);
+      border-radius:18px;
+      padding:18px;
+      min-height:260px;
+      box-shadow: 0 10px 26px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.03);
     }
-
-    let retryBackoffMs = 5000;
-    async function safeLoadShow(showId){
-      if (!showId) return;
-      try {
-        await loadShow(showId);
-        retryBackoffMs = 5000;
-      } catch (e) {
-        if (e && (e.code === 'failed-precondition' || /index/i.test(e.message))) {
-          setTimeout(()=> safeLoadShow(showId), retryBackoffMs);
-          retryBackoffMs = Math.min(retryBackoffMs * 1.5, 30000);
-          return;
-        }
-      }
+    .col h2{
+      margin:0 0 14px 0; font-size:28px; letter-spacing:.2px; display:flex; align-items:center; gap:12px;
     }
-
-    // Init
-    const qsShow = new URLSearchParams(location.search).get('show');
-    if (qsShow) { localStorage.setItem('eyek_last_show', qsShow); show = qsShow; }
-    if (show) {
-      showLabel.textContent = show;
-      safeLoadShow(show);
-      startAuto();
-    } else {
-      chooser.style.display = 'block';
-      showInput.focus();
-      toggleAutoBtn.textContent = 'Off';
-      autoOn = false;
+    .col h2 .dot{
+      width:14px;height:14px;border-radius:999px;display:inline-block;
+      box-shadow: 0 0 10px currentColor;
     }
-
-    loadBtn.addEventListener('click', ()=>{
-      const id = showInput.value.trim();
-      if (!id) return;
-      setShow(id);
-      chooser.style.display = 'none';
-      safeLoadShow(show);
-      startAuto();
-    });
-  </script>
-</body>
-</html>
+    .col.encore h2{ color:var(--encore)}
+    .col.another h2{ color:var(--another)}
+    .col.maybe h2{ color:var(--maybe)}
+    .col ul{
+      list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:10px
+    }
+    .chip{
+      display:flex;justify-content:space-between;align-items:center;
+      gap:12px;
+      padding:14px 16px;border-radius:12px;border:1px solid var(--border);
+      background: rgba(10,14,26,.6);
+      font-size:22px; /* larger*
