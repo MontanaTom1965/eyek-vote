@@ -63,6 +63,8 @@
     .grid3{display:grid; gap:14px; grid-template-columns: repeat(3, minmax(0, 1fr))}
     @media (max-width: 900px){ .grid3{grid-template-columns:1fr} }
     .cat.encore{color:var(--encore)} .cat.another{color:var(--another)} .cat.maybe{color:var(--maybe)}
+    .ok{color:#86efac}
+    .err{color:#fca5a5}
   </style>
 </head>
 <body>
@@ -115,7 +117,7 @@
         <div class="stack">
           <button class="btn" id="addSingerBtn">Add Singer</button>
         </div>
-        <div class="hint">Singers are optional for voting, but helpful for tracking.</div>
+        <div id="addSingerStatus" class="hint">Ready.</div>
       </div>
     </div>
 
@@ -180,6 +182,8 @@
     const voteUrlText = document.getElementById("voteUrlText");
     const qrCanvas = document.getElementById("qrCanvas");
     const singerNameInput = document.getElementById("singerName");
+    const addSingerBtn = document.getElementById("addSingerBtn");
+    const addSingerStatus = document.getElementById("addSingerStatus");
     const singerListEl = document.getElementById("singerList");
     const statusSide = document.getElementById("statusSide");
     const statusMain = document.getElementById("statusMain");
@@ -188,8 +192,11 @@
     const maybeRaw = document.getElementById("maybeRaw");
 
     document.getElementById("setEventBtn").addEventListener("click", setEvent);
-    document.getElementById("addSingerBtn").addEventListener("click", addSinger);
     document.getElementById("clearVotesBtn").addEventListener("click", clearVotes);
+    addSingerBtn.addEventListener("click", addSinger);
+    singerNameInput.addEventListener("keydown", (e)=>{
+      if (e.key === "Enter") addSinger();
+    });
     copyVoteUrl.addEventListener("click", () => {
       navigator.clipboard.writeText(voteLink.href).then(()=>{ statusSide.textContent = "Vote URL copied."; });
     });
@@ -247,14 +254,30 @@
           li.innerHTML = `<span>${name}</span>`;
           singerListEl.appendChild(li);
         });
+      }, (err)=>{
+        addSingerStatus.innerHTML = `<span class="err">Singer listener error: ${err?.message || err}</span>`;
       });
     }
+
     async function addSinger(){
       const name = singerNameInput.value.trim();
-      if(!name) return;
-      await addDoc(collection(db, "events", getEventIdFromURL(), "singers"), { name, ts: Date.now() });
-      singerNameInput.value = "";
-      statusMain.textContent = "Singer added.";
+      if(!name){
+        addSingerStatus.innerHTML = `<span class="err">Please enter a singer name.</span>`;
+        return;
+      }
+      const eid = getEventIdFromURL();
+      addSingerBtn.disabled = true;
+      addSingerStatus.textContent = "Adding…";
+      try{
+        await addDoc(collection(db, "events", eid, "singers"), { name, ts: Date.now() });
+        singerNameInput.value = "";
+        addSingerStatus.innerHTML = `<span class="ok">Singer added.</span>`;
+      }catch(e){
+        console.error(e);
+        addSingerStatus.innerHTML = `<span class="err">Error adding singer: ${e?.message || e}</span>`;
+      }finally{
+        addSingerBtn.disabled = false;
+      }
     }
 
     /************** VOTES (RAW TALLY PREVIEW) **************/
@@ -277,6 +300,8 @@
         renderRaw(encoreRaw, t.encore);
         renderRaw(anotherRaw, t.another);
         renderRaw(maybeRaw, t.maybe);
+      }, (err)=>{
+        statusMain.innerHTML = `<span class="err">Vote listener error: ${err?.message || err}</span>`;
       });
     }
     function renderRaw(el, obj){
@@ -294,18 +319,19 @@
     /************** CLEAR VOTES **************/
     async function clearVotes(){
       const eid = getEventIdFromURL();
-      const snap = await getDocs(collection(db,"events",eid,"votes"));
-      let n = 0;
-      for (const d of snap.docs){ await deleteDoc(doc(db,"events",eid,"votes",d.id)); n++; }
-      statusMain.textContent = `Cleared ${n} votes for event "${eid}".`;
+      try{
+        const snap = await getDocs(collection(db,"events",eid,"votes"));
+        let n = 0;
+        for (const d of snap.docs){ await deleteDoc(doc(db,"events",eid,"votes",d.id)); n++; }
+        statusMain.innerHTML = `<span class="ok">Cleared ${n} votes for event "${eid}".</span>`;
+      }catch(e){
+        statusMain.innerHTML = `<span class="err">Error clearing votes: ${e?.message || e}</span>`;
+      }
     }
 
-    /************** Tiny QR (no deps) **************/
-    // Simple 3rd-party-free QR generator (very basic). For production, use a lib like QRCode.js.
+    /************** Tiny QR (placeholder, no deps) **************/
     function drawQR(text){
       const c = qrCanvas, ctx = c.getContext("2d");
-      // Placeholder “QR-like” pattern to avoid extra libraries; replace with real QR if desired.
-      // (Still scannable? No. This is a visual placeholder. For a working QR, include a tiny QR lib.)
       ctx.fillStyle = "#0b0b0f";
       ctx.fillRect(0,0,c.width,c.height);
       ctx.fillStyle = "#fff";
@@ -318,4 +344,3 @@
   </script>
 </body>
 </html>
-    
