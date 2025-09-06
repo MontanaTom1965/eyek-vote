@@ -7,20 +7,9 @@
   <meta http-equiv="Cache-Control" content="no-store" />
   <style>
     :root{
-      /* Brand purple theme */
-      --bg:#2F0658;            /* main background */
-      --card:#401073;          /* panels/cards */
-      --border:#7E3CC0;        /* borders & outlines */
-      --text:#ffffff;          /* primary text */
-      --muted:#E3D6F4;         /* secondary text */
-      --accent:#D9B6FF;        /* subtle accent */
-
-      /* Category colors (kept for meaning) */
-      --encore:#22c55e; 
-      --another:#f59e0b; 
-      --maybe:#ef4444;
+      --bg:#2F0658; --card:#401073; --border:#7E3CC0; --text:#ffffff; --muted:#E3D6F4; --accent:#D9B6FF;
+      --encore:#22c55e; --another:#f59e0b; --maybe:#ef4444;
     }
-
     *{box-sizing:border-box}
     html,body{height:100%}
     body{
@@ -33,111 +22,54 @@
       font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu;
       font-size: clamp(18px, 2.2vw, 26px); /* TV size */
     }
-    .wrap{max-width:1800px; margin:0 auto; padding:24px 24px 96px} /* bottom pad for banner space */
-
-    header{
-      display:flex; align-items:flex-end; justify-content:space-between; gap:16px;
-      padding-bottom:12px; border-bottom:2px solid var(--border)
-    }
+    .wrap{max-width:1800px; margin:0 auto; padding:24px 24px 96px}
+    header{display:flex; align-items:flex-end; justify-content:space-between; gap:16px; padding-bottom:12px; border-bottom:2px solid var(--border)}
     h1{margin:0; font-size:clamp(2.2rem, 4.5vw, 4rem)}
-    .pill{
-      display:inline-block; border:2px solid var(--border); border-radius:999px;
-      padding:.2em .75em; color:#f5eaff; font-weight:900; background:rgba(127,60,192,.18)
-    }
-    .sub{color:var(--muted); margin-top:6px}
-
+    .pill{display:inline-block; border:2px solid var(--border); border-radius:999px; padding:.2em .75em; color:#f5eaff; font-weight:900; background:rgba(127,60,192,.18)}
     .grid{display:grid; gap:22px; grid-template-columns:1fr}
-    .card{
-      background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02)) , var(--card);
-      border:2px solid var(--border); border-radius:18px; padding:20px;
-      box-shadow:0 12px 40px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.06);
-    }
-
-    /* Now area with QR on the right */
+    .card{background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02)) , var(--card); border:2px solid var(--border); border-radius:18px; padding:20px; box-shadow:0 12px 40px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.06)}
     .now{display:flex; align-items:center; justify-content:space-between; gap:28px; flex-wrap:wrap}
     .leftNow .hint{color:var(--muted)}
     .leftNow h2{margin:.1em 0; font-size:clamp(1.8rem, 3.6vw, 3rem)}
     .rightNow{display:flex; align-items:flex-end; gap:18px; flex-wrap:wrap}
-    .statusBadge{
-      font-weight:900; padding:.35em .8em; border-radius:12px; border:2px solid var(--border);
-      color:#f3eaff; background:rgba(127,60,192,.18)
-    }
+    .statusBadge{font-weight:900; padding:.35em .8em; border-radius:12px; border:2px solid var(--border); color:#f3eaff; background:rgba(127,60,192,.18)}
     .statusOpen{border-color:#7ab1ff; background:rgba(122,177,255,.18)}
     .statusPending{border-color:#9c84c9}
     .statusClosed{border-color:#c77aa1; background:rgba(199,122,161,.18)}
     .countdown{font-size:1.2rem; font-weight:900; text-align:right}
-    .qr{
-      width:260px; height:260px; object-fit:contain; border-radius:14px; 
-      border:2px solid var(--border); background:rgba(0,0,0,.15)
-    }
-
-    /* Bars */
+    .qr{width:260px; height:260px; object-fit:contain; border-radius:14px; border:2px solid var(--border); background:rgba(0,0,0,.15)}
     .bars{display:grid; gap:16px; margin-top:10px}
     .row{display:flex; gap:14px; align-items:center}
     .label{min-width:260px; font-weight:900; font-size:clamp(1.4rem, 2.8vw, 2rem)}
-    .barWrap{
-      flex:1; height:60px; border:2px solid var(--border); border-radius:14px; overflow:hidden;
-      background:rgba(0,0,0,.18)
-    }
+    .barWrap{flex:1; height:60px; border:2px solid var(--border); border-radius:14px; overflow:hidden; background:rgba(0,0,0,.18)}
     .bar{height:100%; width:0%; transition:width .35s ease}
     .bar.enc{background:linear-gradient(90deg, #1ea854, #22c55e)}
     .bar.ano{background:linear-gradient(90deg, #d08a0a, #f59e0b)}
     .bar.may{background:linear-gradient(90deg, #cc2a2a, #ef4444)}
     .val{min-width:140px; text-align:right; font-weight:900; font-size:1.2rem}
-
-    /* flash on new vote */
     @keyframes flashPulse { 0%{filter:brightness(1)} 40%{filter:brightness(1.8)} 100%{filter:brightness(1)} }
     .flash{ animation: flashPulse .45s ease }
-
     .totals{margin-top:10px; color:var(--muted); font-weight:800}
-    .winner{
-      display:inline-block; margin-top:10px; padding:.35em .8em; border-radius:12px; border:2px solid var(--border);
-      font-weight:900; background:rgba(255,255,255,.05)
-    }
+    .winner{display:inline-block; margin-top:10px; padding:.35em .8em; border-radius:12px; border:2px solid var(--border); font-weight:900; background:rgba(255,255,255,.05)}
     .win-enc{border-color:#3aa66a; background:#0f2b1c}
     .win-ano{border-color:#9c6a14; background:#2b1f08}
     .win-may{border-color:#a83b3b; background:#2b0f10}
-
-    /* Bottom flash banner */
-    .flashBanner{
-      position:fixed; left:0; right:0; bottom:0;
-      display:none; text-align:center;
-      padding:18px 24px;
-      font-weight:1000; letter-spacing:.3px;
-      font-size:clamp(1.6rem, 3vw, 2.4rem);
-      border-top:4px solid;
-      z-index:50;
-    }
-    @keyframes encPulse {
-      0%{filter:brightness(1); box-shadow:0 0 0 rgba(34,197,94,0)}
-      50%{filter:brightness(1.6); box-shadow:0 0 40px rgba(34,197,94,.35)}
-      100%{filter:brightness(1); box-shadow:0 0 0 rgba(34,197,94,0)}
-    }
+    .flashBanner{position:fixed; left:0; right:0; bottom:0; display:none; text-align:center; padding:18px 24px; font-weight:1000; letter-spacing:.3px; font-size:clamp(1.6rem, 3vw, 2.4rem); border-top:4px solid; z-index:50}
+    @keyframes encPulse { 0%{filter:brightness(1); box-shadow:0 0 0 rgba(34,197,94,0)} 50%{filter:brightness(1.6); box-shadow:0 0 40px rgba(34,197,94,.35)} 100%{filter:brightness(1); box-shadow:0 0 0 rgba(34,197,94,0)} }
     @keyframes anoPulse { 0%{filter:brightness(1)} 50%{filter:brightness(1.25)} 100%{filter:brightness(1)} }
     @keyframes mayPulse { 0%{filter:brightness(1)} 50%{filter:brightness(1.15)} 100%{filter:brightness(1)} }
-    .banner-enc{
-      background:linear-gradient(180deg, rgba(34,197,94,.25), rgba(34,197,94,.05));
-      border-color:#22c55e; color:#eafff3; animation: encPulse .55s ease-in-out infinite;
-    }
-    .banner-ano{
-      background:linear-gradient(180deg, rgba(245,158,11,.18), rgba(245,158,11,.04));
-      border-color:#f59e0b; color:#fff6e0; animation: anoPulse 1.1s ease-in-out infinite;
-    }
-    .banner-may{
-      background:linear-gradient(180deg, rgba(239,68,68,.22), rgba(239,68,68,.06));
-      border-color:#ef4444; color:#ffe8e8; animation: mayPulse 1.35s ease-in-out infinite;
-    }
+    .banner-enc{background:linear-gradient(180deg, rgba(34,197,94,.25), rgba(34,197,94,.05)); border-color:#22c55e; color:#eafff3; animation: encPulse .55s ease-in-out infinite}
+    .banner-ano{background:linear-gradient(180deg, rgba(245,158,11,.18), rgba(245,158,11,.04)); border-color:#f59e0b; color:#fff6e0; animation: anoPulse 1.1s ease-in-out infinite}
+    .banner-may{background:linear-gradient(180deg, rgba(239,68,68,.22), rgba(239,68,68,.06)); border-color:#ef4444; color:#ffe8e8; animation: mayPulse 1.35s ease-in-out infinite}
   </style>
 </head>
 <body>
   <div class="wrap">
     <header>
       <h1>Encore Karaoke <span class="pill" id="eventPill">—</span></h1>
-      <div class="sub" id="topNote">Screens auto-follow the active event when no <code>?eventId=</code> is provided.</div>
     </header>
 
     <main class="grid" style="margin-top:18px">
-      <!-- Now singing + QR -->
       <section class="card">
         <div class="now">
           <div class="leftNow">
@@ -155,7 +87,6 @@
         </div>
       </section>
 
-      <!-- Live vote bars -->
       <section class="card">
         <div class="bars">
           <div class="row">
@@ -180,7 +111,6 @@
     </main>
   </div>
 
-  <!-- Bottom flash banner -->
   <div id="flashBanner" class="flashBanner">—</div>
 
   <!-- Firebase (compat) -->
@@ -189,7 +119,6 @@
 
   <script>
     (function(){
-      // --- Setup
       var FIREBASE_CONFIG = {
         apiKey: "AIzaSyDGbC08WxruYIDPhZSlDlU-7Kzq-7mHENk",
         authDomain: "eyek-vote.firebaseapp.com",
@@ -199,7 +128,6 @@
       firebase.initializeApp(FIREBASE_CONFIG);
       var db=firebase.firestore();
 
-      // --- DOM
       function $(id){ return document.getElementById(id); }
       function urlRoot(){ return location.origin + '/'; }
 
@@ -211,14 +139,12 @@
           totalsEl=$('totals'), winnerBadge=$('winnerBadge'), qrImg=$('qrImg'),
           flashBanner=$('flashBanner');
 
-      // --- State
       var unsubMeta=null, unsubState=null, unsubPerf=null, unsubVotes=null;
       var CURRENT={ eventId:null, performanceId:null, status:'', closeAt:null, singerName:'—' };
       var COUNTS={ encore:0, another:0, maybe:0 };
       var PREV={ encore:0, another:0, maybe:0 };
       var countdownTimer=null;
 
-      // --- Helpers
       function setBadge(status){
         statusBadge.className='statusBadge';
         if(status==='open'){ statusBadge.classList.add('statusOpen'); statusBadge.textContent='Voting OPEN'; }
@@ -276,14 +202,13 @@
         winnerBadge.style.display='inline-block';
       }
 
-      // Bottom flash banner control
       function hideFlashBanner(){
         flashBanner.style.display='none';
         flashBanner.className='flashBanner';
       }
       function showFlashBanner(kind){
         if(!kind){ hideFlashBanner(); return; }
-        flashBanner.className='flashBanner'; // reset
+        flashBanner.className='flashBanner';
         if(kind==='encore'){ flashBanner.classList.add('banner-enc'); }
         else if(kind==='another'){ flashBanner.classList.add('banner-ano'); }
         else if(kind==='maybe'){ flashBanner.classList.add('banner-may'); }
@@ -291,7 +216,6 @@
         flashBanner.style.display='block';
       }
 
-      // Tie-break logic (your exact rules)
       function decideOutcomeStrict(e,a,m){
         e|=0;a|=0;m|=0;
         if(e>a && e>m) return 'encore';
@@ -319,7 +243,6 @@
       function startCountdown(){ stopCountdown(); renderCountdown(); countdownTimer=setInterval(renderCountdown,250); }
       function stopCountdown(){ if(countdownTimer){ clearInterval(countdownTimer); countdownTimer=null; } countdownEl.textContent='—'; }
 
-      // QR: static providers (no library)
       function qrProvider1(d){ return 'https://api.qrserver.com/v1/create-qr-code/?size=260x260&data='+encodeURIComponent(d); }
       function qrProvider2(d){ return 'https://chart.googleapis.com/chart?cht=qr&chs=260x260&chl='+encodeURIComponent(d); }
       function setQrForUrl(url){
@@ -337,23 +260,21 @@
         setQrForUrl(url);
       }
 
-      // --- Wiring
       function followEvent(){
         var u=new URL(location.href), eid=u.searchParams.get('eventId');
         if(eid){ eventPill.textContent=eid; startForEvent(eid); }
         else{
-          unsubMeta = db.collection('meta').doc('active').onSnapshot(function(snap){
+          db.collection('meta').doc('active').onSnapshot(function(snap){
             var d=snap.data()||{}; var ev=d.eventId||'default';
             eventPill.textContent=ev;
             startForEvent(ev);
-          }, function(err){ console.error(err); });
+          });
         }
       }
 
       function startForEvent(eid){
         if(CURRENT.eventId===eid) return;
         CURRENT.eventId=eid;
-        // Reset listeners
         if(unsubState){ unsubState(); unsubState=null; }
         if(unsubPerf){ unsubPerf(); unsubPerf=null; }
         if(unsubVotes){ unsubVotes(); unsubVotes=null; }
@@ -371,7 +292,7 @@
             var singer = d.currentSingerName || '—';
             nowSinger.textContent = singer;
             watchPerformance(perfId);
-          }, function(err){ console.error(err); });
+          });
       }
 
       function watchPerformance(perfId){
@@ -382,7 +303,7 @@
         if(!perfId){
           setBadge('pending'); perfMsg.textContent='Waiting for the host to start voting…'; stopCountdown(); setQrForUrl(null); hideFlashBanner(); return;
         }
-        updateQr(); // show QR immediately in pending/open/closed
+        updateQr();
 
         unsubPerf = db.collection('events').doc(CURRENT.eventId).collection('performances').doc(perfId)
           .onSnapshot(function(snap){
@@ -413,7 +334,7 @@
               updateQr();
               hideFlashBanner();
             }
-          }, function(err){ console.error(err); });
+          });
       }
 
       function watchVotes(perfId){
@@ -430,10 +351,9 @@
             });
             flashIfIncreased();
             renderBars();
-          }, function(err){ console.error(err); });
+          });
       }
 
-      // Begin
       followEvent();
     })();
   </script>
