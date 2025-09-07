@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Earn Your Encore Karaoke – Host</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <style>
+    :root {
+      --blue:#003e81; --gold:#eaba54; --purple:#2F0658; --light:#79aec1; --white:#fff; --black:#000;
+    }
+    body { margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',Arial,sans-serif; background:#0f0a18; color:#fff; }
+    header { padding:18px 16px; background:linear-gradient(90deg,var(--blue),var(--purple)); text-align:center; }
+    h1 { margin:0; font-size:1.4rem; }
+    .card { max-width:800px; margin:20px auto; background:#1b1430; padding:20px; border-radius:16px; box-shadow:0 8px 24px rgba(0,0,0,.4); }
+    .btn { padding:10px 16px; border:0; border-radius:10px; font-weight:600; cursor:pointer; margin:5px 0; }
+    .btn-blue { background:var(--blue); color:#fff; }
+    .btn-gold { background:var(--gold); color:#000; }
+    .btn-red { background:#ff4c61; color:#fff; }
+    label { display:block; margin:8px 0 4px; }
+    input { width:100%; padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,.2); background:#120c22; color:#fff; }
+    .muted { opacity:.8; font-size:.9rem; }
+    .divider { height:1px; background:rgba(255,255,255,.15); margin:16px 0; }
+  </style>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+</head>
+<body>
+  <header>
+    <h1>🎤 Earn Your Encore Karaoke • Host Controls</h1>
+  </header>
+
+  <div class="card">
+    <h2>Manage Tonight’s Event</h2>
+    <label>Event ID</label>
+    <input id="hostEventId" placeholder="e.g. KALISPELL-0912" />
+
+    <div class="divider"></div>
+
+    <h3>Attendance PIN</h3>
+    <label>Set Tonight’s PIN</label>
+    <input id="hostPin" placeholder="1234" />
+    <button class="btn btn-gold" id="savePinBtn">Save PIN</button>
+
+    <div class="divider"></div>
+
+    <h3>Voting Controls</h3>
+    <button class="btn btn-blue" id="openVotingBtn">Open Voting</button>
+    <button class="btn btn-red" id="closeVotingBtn">Close Voting</button>
+
+    <div class="divider"></div>
+
+    <h3>Rounds</h3>
+    <button class="btn btn-blue" id="nextRoundBtn">Next Round</button>
+    <p class="muted">Each new round creates a new round ID (usually per singer).</p>
+
+    <div id="hostMsg" class="muted" style="margin-top:10px"></div>
+  </div>
+
+  <script>
+    // --- Firebase config (replace with your actual project config) ---
+    const firebaseConfig = {
+      // Your Firebase project keys here
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // Helpers
+    const $ = id => document.getElementById(id);
+    const hostMsg = $('hostMsg');
+    function hostEventRef() {
+      const id = $('hostEventId').value.trim();
+      if (!id) { hostMsg.textContent = '⚠️ Enter Event ID first.'; return null; }
+      return db.collection('events').doc(id);
+    }
+
+    // Save PIN
+    $('savePinBtn').addEventListener('click', async ()=>{
+      const ref = hostEventRef(); if (!ref) return;
+      const p = $('hostPin').value.trim();
+      if (!p) { hostMsg.textContent = '⚠️ Enter a PIN value.'; return; }
+      try {
+        await ref.set({ activePin: p }, { merge:true });
+        hostMsg.textContent = '✅ PIN saved.';
+      } catch(e){ hostMsg.textContent = '❌ Error saving PIN.'; console.error(e); }
+    });
+
+    // Open voting
+    $('openVotingBtn').addEventListener('click', async ()=>{
+      const ref = hostEventRef(); if (!ref) return;
+      try {
+        await ref.set({ isVotingOpen:true }, { merge:true });
+        hostMsg.textContent = '✅ Voting opened.';
+      } catch(e){ hostMsg.textContent = '❌ Error opening voting.'; console.error(e); }
+    });
+
+    // Close voting
+    $('closeVotingBtn').addEventListener('click', async ()=>{
+      const ref = hostEventRef(); if (!ref) return;
+      try {
+        await ref.set({ isVotingOpen:false }, { merge:true });
+        hostMsg.textContent = '✅ Voting closed.';
+      } catch(e){ hostMsg.textContent = '❌ Error closing voting.'; console.error(e); }
+    });
+
+    // Next round
+    $('nextRoundBtn').addEventListener('click', async ()=>{
+      const ref = hostEventRef(); if (!ref) return;
+      const newRound = new Date().toISOString();
+      try {
+        await ref.set({ roundId:newRound, isVotingOpen:true }, { merge:true });
+        hostMsg.textContent = '✅ Advanced to next round & opened voting.';
+      } catch(e){ hostMsg.textContent = '❌ Error advancing round.'; console.error(e); }
+    });
+  </script>
+</body>
+</html>
