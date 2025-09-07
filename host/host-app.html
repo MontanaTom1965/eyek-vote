@@ -539,17 +539,10 @@
                         
                         const singerButton = document.createElement('button');
                         singerButton.textContent = 'Start Singing';
-                        singerButton.className = 'singing-now-btn btn btn-green text-sm';
+                        singerButton.className = `singing-now-btn btn text-sm ${singer.result === 'Another Shot!' ? 'bg-yellow-500 text-black' : 'bg-green-500'}`;
                         singerButton.dataset.id = doc.id;
                         singerButton.dataset.name = singer.name;
                         singerButton.dataset.song = singer.song;
-
-                        // Add the vote result dot if it exists
-                        if (singer.result) {
-                            const dot = document.createElement('span');
-                            dot.className = `dot ${singer.result === 'Encore!' ? 'dot-green' : 'dot-yellow'}`;
-                            li.appendChild(dot);
-                        }
 
                         const singerSpan = document.createElement('span');
                         singerSpan.textContent = `${singer.name} - "${singer.song}"`;
