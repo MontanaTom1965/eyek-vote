@@ -6,21 +6,38 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <style>
-    :root {
-      --blue:#003e81; --gold:#eaba54; --purple:#2F0658; --light:#79aec1; --white:#fff; --black:#000;
-    }
+    :root { --blue:#003e81; --gold:#eaba54; --purple:#2F0658; --light:#79aec1; --white:#fff; --black:#000; }
+    *{box-sizing:border-box}
     body { margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',Arial,sans-serif; background:#0f0a18; color:#fff; }
-    header { padding:18px 16px; background:linear-gradient(90deg,var(--blue),var(--purple)); text-align:center; }
-    h1 { margin:0; font-size:1.4rem; }
-    .card { max-width:800px; margin:20px auto; background:#1b1430; padding:20px; border-radius:16px; box-shadow:0 8px 24px rgba(0,0,0,.4); }
-    .btn { padding:10px 16px; border:0; border-radius:10px; font-weight:600; cursor:pointer; margin:5px 0; }
+    header { padding:18px 16px; background:linear-gradient(90deg,var(--blue),var(--purple)); display:flex; align-items:center; justify-content:space-between; gap:12px; }
+    h1 { margin:0; font-size:1.25rem; }
+    .container { display:grid; grid-template-columns:280px 1fr; gap:16px; padding:16px; }
+    .sidebar { background:#1b1430; border:1px solid rgba(255,255,255,.08); border-radius:16px; padding:14px; max-height:calc(100vh - 90px); overflow:auto; }
+    .main { display:grid; gap:16px; }
+    .card { background:#1b1430; border:1px solid rgba(255,255,255,.08); border-radius:16px; padding:16px; box-shadow:0 8px 24px rgba(0,0,0,.4); }
+    label { display:block; margin:8px 0 6px; }
+    input, select { width:100%; padding:12px; border-radius:10px; border:1px solid rgba(255,255,255,.15); background:#120c22; color:#fff; }
+    .row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .btn { padding:10px 14px; border:0; border-radius:10px; font-weight:700; cursor:pointer; }
     .btn-blue { background:var(--blue); color:#fff; }
     .btn-gold { background:var(--gold); color:#000; }
-    .btn-red { background:#ff4c61; color:#fff; }
-    label { display:block; margin:8px 0 4px; }
-    input { width:100%; padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,.2); background:#120c22; color:#fff; }
-    .muted { opacity:.8; font-size:.9rem; }
-    .divider { height:1px; background:rgba(255,255,255,.15); margin:16px 0; }
+    .btn-red  { background:#ff4c61; color:#fff; }
+    .muted { opacity:.85; font-size:.92rem; }
+    .divider { height:1px; background:rgba(255,255,255,.12); margin:14px 0; }
+    .pill { display:inline-block; padding:6px 10px; border-radius:999px; background:#271c44; }
+    .singer { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:10px; border-radius:10px; border:1px solid rgba(255,255,255,.08); margin-bottom:8px; background:#170f2a; }
+    .singer .name { font-weight:800; }
+    .singer .song { font-size:.9rem; opacity:.9 }
+    .singer .mini { display:flex; gap:6px }
+    .small { font-size:.9rem }
+    .topline { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+    .topline .path { opacity:.8; }
+    /* Modal */
+    .modal-backdrop{ position:fixed; inset:0; background:rgba(0,0,0,.55); display:none; align-items:center; justify-content:center; z-index:50; }
+    .modal{ width:min(560px,calc(100% - 32px)); background:#1b1430; border:1px solid rgba(255,255,255,.12); border-radius:16px; padding:16px; }
+    .modal.show{ display:flex; }
+    .venue-item{ padding:10px; border-radius:10px; border:1px solid rgba(255,255,255,.08); margin-bottom:8px; cursor:pointer; background:#170f2a; }
+    .venue-item:hover{ background:#201637; }
   </style>
 
   <!-- Firebase SDKs -->
@@ -30,34 +47,112 @@
 </head>
 <body>
   <header>
-    <h1>🎤 Earn Your Encore Karaoke • Host Controls</h1>
+    <h1>🎤 Earn Your Encore Karaoke • Host</h1>
+    <div class="topline">
+      <span class="path">Audience: vote.earnyourencorekaraoke.com/<b>vote/index.html</b></span>
+      <span class="pill" id="eventBadge">Event: —</span>
+      <span class="pill" id="roundBadge">Round: —</span>
+      <span class="pill" id="statusBadge">Status: —</span>
+    </div>
   </header>
 
-  <div class="card">
-    <h2>Manage Tonight’s Event</h2>
-    <label>Event ID</label>
-    <input id="hostEventId" placeholder="e.g. KALISPELL-0912" />
+  <div class="container">
+    <!-- LEFT: Singers list -->
+    <aside class="sidebar">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px">
+        <div style="font-weight:800">Singers (this event)</div>
+        <button class="btn btn-blue small" id="refreshSingersBtn">Refresh</button>
+      </div>
+      <div id="singersList"></div>
+      <div class="divider"></div>
+      <div class="muted small">Tip: Click “Set Current” to push the singer & song to the event and open a new round.</div>
+    </aside>
 
-    <div class="divider"></div>
+    <!-- RIGHT: Controls -->
+    <main class="main">
+      <div class="card">
+        <div class="row">
+          <div>
+            <label>Event (Venue) ID</label>
+            <div style="display:flex;gap:8px">
+              <input id="hostEventId" placeholder="e.g. The Raven – Bigfork" />
+              <button class="btn btn-blue" id="pickVenueBtn" title="Choose prior venue">Pick</button>
+            </div>
+            <div class="muted small" style="margin-top:6px">Use the **venue name** here. We’ll also save it to your venues list.</div>
+          </div>
+          <div>
+            <label>Tonight’s PIN</label>
+            <div style="display:flex;gap:8px">
+              <input id="hostPin" placeholder="1234" />
+              <button class="btn btn-gold" id="savePinBtn">Save PIN</button>
+            </div>
+          </div>
+        </div>
 
-    <h3>Attendance PIN</h3>
-    <label>Set Tonight’s PIN</label>
-    <input id="hostPin" placeholder="1234" />
-    <button class="btn btn-gold" id="savePinBtn">Save PIN</button>
+        <div class="divider"></div>
 
-    <div class="divider"></div>
+        <div class="row">
+          <div>
+            <label>KJ Name</label>
+            <input id="kjName" placeholder="KJ first & last" />
+          </div>
+          <div>
+            <label>KJ Company</label>
+            <input id="kjCompany" placeholder="Company brand" />
+          </div>
+        </div>
+        <div style="margin-top:10px">
+          <button class="btn btn-blue" id="saveKJBtn">Save KJ / Venue Info</button>
+          <span class="muted small">Saves to the event and (if new) adds venue to your master list.</span>
+        </div>
+      </div>
 
-    <h3>Voting Controls</h3>
-    <button class="btn btn-blue" id="openVotingBtn">Open Voting</button>
-    <button class="btn btn-red" id="closeVotingBtn">Close Voting</button>
+      <div class="card">
+        <h3 style="margin-top:0">Current Singer & Song</h3>
+        <div class="row">
+          <div>
+            <label>Singer Name</label>
+            <input id="singerName" placeholder="e.g. Jane Doe" />
+          </div>
+          <div>
+            <label>Song (Artist – Title)</label>
+            <input id="singerSong" placeholder="e.g. Journey – Don’t Stop Believin’" />
+          </div>
+        </div>
+        <div style="display:flex; gap:8px; margin-top:10px">
+          <button class="btn btn-blue" id="addSingerBtn">Add/Update Singer in List</button>
+          <button class="btn btn-gold" id="setCurrentBtn">Set Current + Open Voting</button>
+        </div>
+        <div class="divider"></div>
+        <div style="display:flex; gap:8px">
+          <button class="btn btn-blue" id="openVotingBtn">Open Voting</button>
+          <button class="btn btn-red" id="closeVotingBtn">Close Voting</button>
+          <button class="btn btn-blue" id="nextRoundBtn">Next Round</button>
+        </div>
+        <div id="hostMsg" class="muted" style="margin-top:10px"></div>
+      </div>
+    </main>
+  </div>
 
-    <div class="divider"></div>
-
-    <h3>Rounds</h3>
-    <button class="btn btn-blue" id="nextRoundBtn">Next Round</button>
-    <p class="muted">Each new round creates a new round ID (usually per singer).</p>
-
-    <div id="hostMsg" class="muted" style="margin-top:10px"></div>
+  <!-- Venue Picker Modal -->
+  <div class="modal-backdrop" id="venueModal">
+    <div class="modal">
+      <h3 style="margin-top:0">Select a Venue</h3>
+      <div id="venuesList" style="max-height:50vh; overflow:auto; margin-bottom:10px"></div>
+      <div class="divider"></div>
+      <div class="row">
+        <div>
+          <label>Add New Venue</label>
+          <input id="newVenue" placeholder="Enter new venue name" />
+        </div>
+        <div style="display:flex;align-items:flex-end">
+          <button class="btn btn-gold" id="addVenueBtn">Add Venue</button>
+        </div>
+      </div>
+      <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:12px">
+        <button class="btn btn-red" id="closeVenueBtn">Close</button>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -68,52 +163,229 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // Helpers
+    // ===== Helpers =====
     const $ = id => document.getElementById(id);
     const hostMsg = $('hostMsg');
-    function hostEventRef() {
+    const eventBadge = $('eventBadge');
+    const roundBadge = $('roundBadge');
+    const statusBadge = $('statusBadge');
+    const singersList = $('singersList');
+
+    function eventRef() {
       const id = $('hostEventId').value.trim();
-      if (!id) { hostMsg.textContent = '⚠️ Enter Event ID first.'; return null; }
+      if (!id) { hostMsg.textContent = '⚠️ Enter Event (Venue) ID first.'; return null; }
       return db.collection('events').doc(id);
     }
 
-    // Save PIN
+    function toast(msg){ hostMsg.textContent = msg; }
+
+    // ===== Venue Picker =====
+    const venueModal = $('venueModal');
+    const venuesList = $('venuesList');
+
+    $('pickVenueBtn').addEventListener('click', async ()=>{
+      await loadVenues();
+      venueModal.classList.add('show');
+    });
+    $('closeVenueBtn').addEventListener('click', ()=>venueModal.classList.remove('show'));
+
+    async function loadVenues(){
+      venuesList.innerHTML = '<div class="muted">Loading…</div>';
+      const snap = await db.collection('venues').orderBy('name').limit(200).get();
+      venuesList.innerHTML = '';
+      if (snap.empty){
+        venuesList.innerHTML = '<div class="muted">No venues yet. Add one below.</div>';
+      }
+      snap.forEach(doc=>{
+        const v = doc.data();
+        const div = document.createElement('div');
+        div.className = 'venue-item';
+        div.textContent = v.name;
+        div.onclick = ()=>{
+          $('hostEventId').value = v.name;
+          venueModal.classList.remove('show');
+          // Also write base event doc if missing
+          db.collection('events').doc(v.name).set({ venueName: v.name }, { merge: true });
+          eventBadge.textContent = 'Event: ' + v.name;
+          wireEventListener();
+          loadSingers();
+        };
+        venuesList.appendChild(div);
+      });
+    }
+
+    $('addVenueBtn').addEventListener('click', async ()=>{
+      const name = $('newVenue').value.trim();
+      if (!name) return;
+      const id = name;
+      try {
+        await db.collection('venues').doc(id).set({
+          name, createdAt: firebase.firestore.FieldValue.serverTimestamp(), lastUsedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+        $('hostEventId').value = name;
+        await db.collection('events').doc(name).set({ venueName: name }, { merge: true });
+        eventBadge.textContent = 'Event: ' + name;
+        toast('✅ Venue added & selected.');
+        $('newVenue').value = '';
+        await loadVenues();
+        wireEventListener();
+        loadSingers();
+      } catch(e){ console.error(e); toast('❌ Error adding venue.'); }
+    });
+
+    // ===== Save PIN =====
     $('savePinBtn').addEventListener('click', async ()=>{
-      const ref = hostEventRef(); if (!ref) return;
+      const ref = eventRef(); if (!ref) return;
       const p = $('hostPin').value.trim();
-      if (!p) { hostMsg.textContent = '⚠️ Enter a PIN value.'; return; }
+      if (!p) { toast('⚠️ Enter a PIN value.'); return; }
       try {
         await ref.set({ activePin: p }, { merge:true });
-        hostMsg.textContent = '✅ PIN saved.';
-      } catch(e){ hostMsg.textContent = '❌ Error saving PIN.'; console.error(e); }
+        toast('✅ PIN saved.');
+      } catch(e){ console.error(e); toast('❌ Error saving PIN.'); }
     });
 
-    // Open voting
+    // ===== Save KJ / Venue Info =====
+    $('saveKJBtn').addEventListener('click', async ()=>{
+      const ref = eventRef(); if (!ref) return;
+      const venueName = $('hostEventId').value.trim();
+      const kjName = $('kjName').value.trim();
+      const kjCompany = $('kjCompany').value.trim();
+      try {
+        await ref.set({
+          venueName, kjName, kjCompany,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+
+        // Touch venues list
+        if (venueName){
+          await db.collection('venues').doc(venueName).set({
+            name: venueName, lastUsedAt: firebase.firestore.FieldValue.serverTimestamp()
+          }, { merge: true });
+        }
+        eventBadge.textContent = 'Event: ' + venueName;
+        toast('✅ Event/KJ info saved.');
+      } catch(e){ console.error(e); toast('❌ Error saving event info.'); }
+    });
+
+    // ===== Singer list (per event) =====
+    $('addSingerBtn').addEventListener('click', async ()=>{
+      const ref = eventRef(); if (!ref) return;
+      const name = $('singerName').value.trim();
+      const song = $('singerSong').value.trim();
+      if (!name){ toast('⚠️ Enter singer name.'); return; }
+      try {
+        const singerId = name.toLowerCase().replace(/[^\w]+/g,'-').replace(/(^-|-$)/g,'') || 'singer';
+        await ref.collection('singers').doc(singerId).set({
+          name, lastSong: song || '', updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+        toast('✅ Singer added/updated.');
+        loadSingers();
+      } catch(e){ console.error(e); toast('❌ Error adding singer.'); }
+    });
+
+    async function loadSingers(){
+      singersList.innerHTML = '<div class="muted">Loading…</div>';
+      const ref = eventRef(); if (!ref) return;
+      const qs = await ref.collection('singers').orderBy('updatedAt','desc').limit(200).get();
+      singersList.innerHTML = '';
+      if (qs.empty){
+        singersList.innerHTML = '<div class="muted small">No singers yet.</div>';
+      }
+      qs.forEach(doc=>{
+        const s = doc.data();
+        const row = document.createElement('div');
+        row.className = 'singer';
+        row.innerHTML = `
+          <div style="min-width:0">
+            <div class="name">${s.name || '(no name)'}</div>
+            <div class="song">${s.lastSong ? s.lastSong : ''}</div>
+          </div>
+          <div class="mini">
+            <button class="btn btn-blue small" data-id="${doc.id}" data-name="${s.name||''}" data-song="${s.lastSong||''}">Set Current</button>
+          </div>
+        `;
+        row.querySelector('button').onclick = async (e)=>{
+          const name = e.target.getAttribute('data-name');
+          const song = e.target.getAttribute('data-song');
+          $('singerName').value = name;
+          $('singerSong').value = song;
+          await setCurrentAndOpen();
+        };
+        singersList.appendChild(row);
+      });
+    }
+    $('refreshSingersBtn').addEventListener('click', loadSingers);
+
+    // ===== Voting controls & Current singer management =====
     $('openVotingBtn').addEventListener('click', async ()=>{
-      const ref = hostEventRef(); if (!ref) return;
-      try {
-        await ref.set({ isVotingOpen:true }, { merge:true });
-        hostMsg.textContent = '✅ Voting opened.';
-      } catch(e){ hostMsg.textContent = '❌ Error opening voting.'; console.error(e); }
+      const ref = eventRef(); if (!ref) return;
+      try { await ref.set({ isVotingOpen:true }, { merge:true }); toast('✅ Voting opened.'); }
+      catch(e){ console.error(e); toast('❌ Error opening voting.'); }
     });
 
-    // Close voting
     $('closeVotingBtn').addEventListener('click', async ()=>{
-      const ref = hostEventRef(); if (!ref) return;
-      try {
-        await ref.set({ isVotingOpen:false }, { merge:true });
-        hostMsg.textContent = '✅ Voting closed.';
-      } catch(e){ hostMsg.textContent = '❌ Error closing voting.'; console.error(e); }
+      const ref = eventRef(); if (!ref) return;
+      try { await ref.set({ isVotingOpen:false }, { merge:true }); toast('✅ Voting closed.'); }
+      catch(e){ console.error(e); toast('❌ Error closing voting.'); }
     });
 
-    // Next round
     $('nextRoundBtn').addEventListener('click', async ()=>{
-      const ref = hostEventRef(); if (!ref) return;
+      const ref = eventRef(); if (!ref) return;
       const newRound = new Date().toISOString();
       try {
         await ref.set({ roundId:newRound, isVotingOpen:true }, { merge:true });
-        hostMsg.textContent = '✅ Advanced to next round & opened voting.';
-      } catch(e){ hostMsg.textContent = '❌ Error advancing round.'; console.error(e); }
+        toast('✅ Advanced to next round & opened voting.');
+      } catch(e){ console.error(e); toast('❌ Error advancing round.'); }
+    });
+
+    $('setCurrentBtn').addEventListener('click', setCurrentAndOpen);
+
+    async function setCurrentAndOpen(){
+      const ref = eventRef(); if (!ref) return;
+      const name = $('singerName').value.trim();
+      const song = $('singerSong').value.trim();
+      if (!name){ toast('⚠️ Enter singer name.'); return; }
+      const newRound = new Date().toISOString();
+      try {
+        await ref.set({
+          currentSingerName: name,
+          currentSong: song || '',
+          roundId: newRound,
+          isVotingOpen: true,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+        // ensure in list
+        const singerId = name.toLowerCase().replace(/[^\w]+/g,'-').replace(/(^-|-$)/g,'') || 'singer';
+        await ref.collection('singers').doc(singerId).set({
+          name, lastSong: song || '', updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+        toast('✅ Current singer set & voting opened.');
+        loadSingers();
+      } catch(e){ console.error(e); toast('❌ Error setting current singer.'); }
+    }
+
+    // ===== Live event badges =====
+    let eventUnsub = null;
+    function wireEventListener(){
+      if (eventUnsub) eventUnsub();
+      const ref = eventRef(); if (!ref) return;
+      eventUnsub = ref.onSnapshot(snap=>{
+        const d = snap.data()||{};
+        eventBadge.textContent = 'Event: ' + (d.venueName || $('hostEventId').value.trim() || '—');
+        roundBadge.textContent = 'Round: ' + (d.roundId || '—');
+        statusBadge.textContent = 'Status: ' + (d.isVotingOpen ? 'Voting Open' : 'Voting Closed');
+      });
+    }
+
+    // Wire initial listeners if the host types an event name
+    $('hostEventId').addEventListener('change', ()=>{
+      if ($('hostEventId').value.trim()){
+        db.collection('events').doc($('hostEventId').value.trim())
+          .set({ venueName: $('hostEventId').value.trim() }, { merge:true });
+        wireEventListener();
+        loadSingers();
+      }
     });
   </script>
 </body>
