@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Earn Your Encore! Live Results</title>
+    <title>Earn Your Encore! Karaoke Host</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -20,42 +20,131 @@
             background-color: var(--background-purple);
         }
         .container {
-            max-width: 1200px;
+            max-width: 600px;
+        }
+        .btn {
+            background-color: var(--gold);
+            color: var(--purple);
+            font-weight: bold;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            transition: transform 0.1s;
+        }
+        .btn:hover {
+            transform: scale(1.02);
+        }
+        .input-field {
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            border: 1px solid var(--light-blue);
+            background-color: #ffffff;
+            color: #000000;
+        }
+        .btn-green {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .btn-red {
+            background-color: #f44336;
+            color: white;
+        }
+        .btn-yellow {
+            background-color: #ffeb3b;
+            color: #222;
+        }
+        .status-badge {
+            padding: 0.5rem 1rem;
+            border-radius: 9999px;
+            font-weight: bold;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+        .status-inactive {
+            background-color: #f44336;
+        }
+        .status-active {
+            background-color: #4CAF50;
+        }
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 4px solid white;
+            width: 24px;
+            height: 24px;
+            -webkit-animation: spin 1s linear infinite;
+            animation: spin 1s linear infinite;
+        }
+        @-webkit-keyframes spin {
+            0% { -webkit-transform: rotate(0deg); }
+            100% { -webkit-transform: rotate(360deg); }
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
     </style>
 </head>
 <body class="text-white flex flex-col items-center justify-center min-h-screen p-4">
 
-    <!-- Main Container -->
     <div class="container mx-auto p-8 rounded-3xl bg-gray-800 shadow-xl space-y-8 text-center">
 
-        <!-- Header -->
-        <header>
-            <h1 class="text-6xl font-extrabold text-[var(--gold)]">Earn Your Encore!</h1>
-            <p class="text-2xl text-[var(--light-blue)] mt-4">Live Voting & Results</p>
+        <header class="mb-6">
+            <h1 class="text-6xl font-extrabold text-[var(--gold)]">Host Panel</h1>
         </header>
 
-        <!-- Dynamic Content Section -->
-        <main id="main-content" class="space-y-6">
+        <!-- KJ Login Section -->
+        <section id="login-section" class="bg-gray-700 p-6 rounded-lg space-y-4">
+            <h2 class="text-2xl font-bold text-[var(--light-blue)]">KJ Login</h2>
+            <input type="email" id="kj-email" placeholder="KJ Email" class="input-field w-full">
+            <input type="password" id="kj-password" placeholder="Password" class="input-field w-full">
+            <button id="login-btn" class="btn w-full">Log In</button>
+            <p id="login-error" class="text-red-400 text-center text-sm hidden"></p>
+        </section>
 
-            <!-- Countdown Section (visible during voting) -->
-            <section id="countdown-section" class="hidden">
-                <h2 id="current-singer-info" class="text-4xl font-bold text-white mb-4"></h2>
-                <h3 id="current-song-info" class="text-2xl text-[var(--light-blue)] mb-6"></h3>
-                <div class="flex justify-center items-center">
-                    <div id="timer-display" class="text-9xl font-extrabold text-white bg-gold rounded-full w-48 h-48 flex justify-center items-center"></div>
+        <!-- Main Host Panel -->
+        <main id="host-panel" class="hidden space-y-6">
+            
+            <!-- Event Status & Controls -->
+            <div id="event-controls" class="bg-gray-700 p-6 rounded-lg space-y-4">
+                <h2 class="text-2xl font-bold text-white">Event Status: <span id="event-status" class="status-badge status-inactive">Inactive</span></h2>
+                <div id="event-inactive-controls" class="space-y-2">
+                    <input type="text" id="event-name-input" placeholder="Enter Event Name" class="input-field w-full">
+                    <button id="start-event-btn" class="btn btn-green w-full">Start Event</button>
                 </div>
-                <p class="mt-4 text-xl font-bold text-white animate-pulse">VOTING IS OPEN!</p>
-            </section>
+                <div id="event-active-controls" class="hidden space-y-2">
+                    <p class="text-lg">Event Name: <span id="current-event-name" class="font-bold"></span></p>
+                    <button id="end-event-btn" class="btn btn-red w-full">End Event</button>
+                </div>
+            </div>
 
-            <!-- Results Section (visible after voting) -->
-            <section id="results-section" class="hidden">
-                <h2 class="text-4xl font-bold text-[var(--gold)]">The Final Tally</h2>
-                <div class="mt-8 space-y-4">
-                    <div id="results-container" class="bg-[var(--purple)] p-6 rounded-lg">
-                        <p class="text-lg text-white">Fetching results...</p>
+            <!-- Singer Management -->
+            <div id="singer-controls" class="bg-gray-700 p-6 rounded-lg space-y-4">
+                <h2 class="text-2xl font-bold text-white">Manage Singers</h2>
+                <div class="space-y-2">
+                    <input type="text" id="singer-name-input" placeholder="Singer Name" class="input-field w-full">
+                    <input type="text" id="singer-song-input" placeholder="Song Title" class="input-field w-full">
+                    <button id="add-singer-btn" class="btn w-full">Add to Queue</button>
+                </div>
+                <ul id="singer-queue" class="space-y-2 text-left"></ul>
+                
+                <h3 id="current-singer-status" class="text-xl font-bold mt-4">No Singer is currently active.</h3>
+                
+                <div id="current-singer-controls" class="hidden">
+                    <h3 id="current-singer-name-display" class="text-2xl font-bold text-[var(--gold)]"></h3>
+                    <p id="current-singer-song-display" class="text-xl text-[var(--light-blue)]"></p>
+                    <div class="flex justify-center mt-4 space-x-2">
+                        <button id="start-voting-btn" class="btn btn-green">Start Voting</button>
+                        <button id="end-voting-btn" class="btn btn-red">End Voting</button>
+                        <button id="extend-voting-btn" class="btn btn-yellow hidden">Extend 15s</button>
                     </div>
                 </div>
+            </div>
+
+            <!-- Final Tally Section -->
+            <section id="final-tally" class="hidden bg-gray-700 p-6 rounded-lg space-y-4">
+                <h2 class="text-2xl font-bold text-[var(--light-blue)]">Final Tally</h2>
+                <div id="tally-display" class="space-y-2 text-left"></div>
+                <button id="back-to-host-btn" class="btn w-full">Back to Host Panel</button>
             </section>
         </main>
     </div>
@@ -63,7 +152,8 @@
     <!-- Firebase Scripts -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
-        import { getFirestore, doc, onSnapshot, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot, getDocs, collection, deleteDoc, addDoc, query, where, updateDoc } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
 
         // --- PASTE YOUR FIREBASE CONFIGURATION HERE ---
         const firebaseConfig = {
@@ -78,103 +168,324 @@
 
         // --- Firebase Initialization ---
         const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // UI Elements
-        const countdownSection = document.getElementById('countdown-section');
-        const resultsSection = document.getElementById('results-section');
-        const timerDisplay = document.getElementById('timer-display');
-        const currentSingerInfo = document.getElementById('current-singer-info');
-        const currentSongInfo = document.getElementById('current-song-info');
-        const resultsContainer = document.getElementById('results-container');
+        // --- UI Elements ---
+        const loginSection = document.getElementById('login-section');
+        const hostPanel = document.getElementById('host-panel');
+        const loginBtn = document.getElementById('login-btn');
+        const kjEmail = document.getElementById('kj-email');
+        const kjPassword = document.getElementById('kj-password');
+        const loginError = document.getElementById('login-error');
+        const eventStatusBadge = document.getElementById('event-status');
+        const eventInactiveControls = document.getElementById('event-inactive-controls');
+        const eventActiveControls = document.getElementById('event-active-controls');
+        const eventNameInput = document.getElementById('event-name-input');
+        const startEventBtn = document.getElementById('start-event-btn');
+        const endEventBtn = document.getElementById('end-event-btn');
+        const currentEventName = document.getElementById('current-event-name');
+        const singerNameInput = document.getElementById('singer-name-input');
+        const singerSongInput = document.getElementById('singer-song-input');
+        const addSingerBtn = document.getElementById('add-singer-btn');
+        const singerQueueList = document.getElementById('singer-queue');
+        const currentSingerStatus = document.getElementById('current-singer-status');
+        const currentSingerControls = document.getElementById('current-singer-controls');
+        const currentSingerNameDisplay = document.getElementById('current-singer-name-display');
+        const currentSingerSongDisplay = document.getElementById('current-singer-song-display');
+        const startVotingBtn = document.getElementById('start-voting-btn');
+        const endVotingBtn = document.getElementById('end-voting-btn');
+        const extendVotingBtn = document.getElementById('extend-voting-btn');
+        const finalTallySection = document.getElementById('final-tally');
+        const tallyDisplay = document.getElementById('tally-display');
+        const backToHostBtn = document.getElementById('back-to-host-btn');
 
-        let countdownInterval = null;
+        // --- Firebase References ---
+        const eventsDocRef = doc(db, `artifacts/${appId}/public/data/events`, 'currentEvent');
+        const singerQueueCollectionRef = collection(db, `artifacts/${appId}/public/data/singerQueue`);
+        const eventVotesCollectionRef = collection(db, `artifacts/${appId}/public/data/eventVotes`);
+        const boardCollectionRef = collection(db, `artifacts/${appId}/public/data/board`);
 
-        // --- Real-time Listeners ---
-        const eventDocRef = doc(db, `artifacts/${appId}/public/data/events`, 'currentEvent');
-        onSnapshot(eventDocRef, async (docSnap) => {
-            if (docSnap.exists() && docSnap.data().status === 'active') {
-                const event = docSnap.data();
-                const votingStatus = event.votingStatus;
+        // --- State Variables ---
+        let currentSinger = null;
+        let votingTimer = null;
+        let timerDuration = 30; // 30 seconds for voting
+        let votingCountdown = timerDuration;
+        let isVoting = false;
 
-                if (votingStatus === 'active') {
-                    showCountdown(event.votingEndTime.toDate());
-                    const currentSinger = event.currentSinger;
-                    if (currentSinger) {
-                        currentSingerInfo.textContent = currentSinger.name;
-                        currentSongInfo.textContent = `"${currentSinger.song}"`;
-                    }
-                } else if (votingStatus === 'completed') {
-                    showResults(event.currentSinger.id);
-                } else {
-                    showIdle();
-                }
-            } else {
-                showIdle();
+        // --- Event Handlers ---
+        loginBtn.addEventListener('click', async () => {
+            const email = kjEmail.value;
+            const password = kjPassword.value;
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+            } catch (error) {
+                console.error("Login error:", error);
+                loginError.textContent = "Invalid credentials. Please try again.";
+                loginError.classList.remove('hidden');
             }
         });
 
-        // --- UI Display Logic ---
-        function showCountdown(endTime) {
-            clearInterval(countdownInterval);
-            countdownSection.classList.remove('hidden');
-            resultsSection.classList.add('hidden');
+        startEventBtn.addEventListener('click', async () => {
+            const eventName = eventNameInput.value;
+            if (!eventName) {
+                alert("Please enter an event name.");
+                return;
+            }
+            try {
+                await setDoc(eventsDocRef, {
+                    name: eventName,
+                    status: 'active',
+                    currentSinger: null,
+                    votingStatus: 'inactive',
+                    singerQueue: []
+                });
+            } catch (error) {
+                console.error("Error starting event:", error);
+            }
+        });
 
-            const updateTimer = () => {
-                const remainingTime = Math.max(0, endTime.getTime() - Date.now());
-                const seconds = Math.ceil(remainingTime / 1000);
-                timerDisplay.textContent = seconds;
-                if (seconds <= 0) {
-                    clearInterval(countdownInterval);
+        endEventBtn.addEventListener('click', async () => {
+            try {
+                await deleteDoc(eventsDocRef);
+                const querySnapshot = await getDocs(singerQueueCollectionRef);
+                querySnapshot.forEach(async (doc) => {
+                    await deleteDoc(doc.ref);
+                });
+            } catch (error) {
+                console.error("Error ending event:", error);
+            }
+        });
+
+        addSingerBtn.addEventListener('click', async () => {
+            const singerName = singerNameInput.value;
+            const singerSong = singerSongInput.value;
+            if (singerName && singerSong) {
+                try {
+                    const docRef = await addDoc(singerQueueCollectionRef, {
+                        name: singerName,
+                        song: singerSong,
+                        timestamp: new Date()
+                    });
+                    singerNameInput.value = '';
+                    singerSongInput.value = '';
+                } catch (error) {
+                    console.error("Error adding singer:", error);
                 }
-            };
+            } else {
+                alert("Please enter both a singer name and a song.");
+            }
+        });
 
-            updateTimer();
-            countdownInterval = setInterval(updateTimer, 1000);
-        }
+        startVotingBtn.addEventListener('click', async () => {
+            if (currentSinger) {
+                isVoting = true;
+                votingCountdown = timerDuration;
+                startVotingBtn.classList.add('hidden');
+                endVotingBtn.classList.remove('hidden');
+                extendVotingBtn.classList.remove('hidden');
+                
+                await updateDoc(eventsDocRef, {
+                    votingStatus: 'active',
+                    currentSinger: {
+                        id: currentSinger.id,
+                        name: currentSinger.name,
+                        song: currentSinger.song,
+                        votingEndsAt: new Date(Date.now() + votingCountdown * 1000).toISOString()
+                    }
+                });
+                
+                votingTimer = setInterval(async () => {
+                    votingCountdown--;
+                    if (votingCountdown <= 0) {
+                        clearInterval(votingTimer);
+                        isVoting = false;
+                        await endVoting();
+                    }
+                }, 1000);
+            }
+        });
+        
+        endVotingBtn.addEventListener('click', async () => {
+            clearInterval(votingTimer);
+            isVoting = false;
+            await endVoting();
+        });
 
-        async function showResults(singerId) {
-            clearInterval(countdownInterval);
-            countdownSection.classList.add('hidden');
-            resultsSection.classList.remove('hidden');
-            resultsContainer.innerHTML = 'Calculating votes...';
-
-            const votesRef = collection(db, `artifacts/${appId}/public/data/eventVotes`);
-            const q = query(votesRef, where('singerId', '==', singerId));
-            const querySnapshot = await getDocs(q);
-
-            const voteCounts = {
-                'Encore!': 0,
-                'Another Shot!': 0,
-                'Maybe Next Time!': 0
-            };
-            
-            querySnapshot.forEach(doc => {
-                const vote = doc.data().vote;
-                if (vote in voteCounts) {
-                    voteCounts[vote]++;
-                }
+        extendVotingBtn.addEventListener('click', async () => {
+            votingCountdown += 15;
+            await updateDoc(eventsDocRef, {
+                'currentSinger.votingEndsAt': new Date(Date.now() + votingCountdown * 1000).toISOString()
             });
+        });
 
-            const resultsHTML = `
-                <div class="space-y-2">
-                    <p class="text-3xl font-bold text-[var(--gold)]">Encore!: <span class="text-white">${voteCounts['Encore!']}</span></p>
-                    <p class="text-3xl font-bold text-[var(--light-blue)]">Another Shot!: <span class="text-white">${voteCounts['Another Shot!']}</span></p>
-                    <p class="text-3xl font-bold text-[var(--purple)]">Maybe Next Time!: <span class="text-white">${voteCounts['Maybe Next Time!']}</span></p>
-                </div>
-            `;
-            resultsContainer.innerHTML = resultsHTML;
+        backToHostBtn.addEventListener('click', async () => {
+            finalTallySection.classList.add('hidden');
+            singerControls.classList.remove('hidden');
+            currentSingerStatus.classList.remove('hidden');
+            currentSingerControls.classList.add('hidden');
+            currentSinger = null;
+        });
+
+        // --- Utility Functions ---
+        async function endVoting() {
+            try {
+                const votes = await getDocs(query(eventVotesCollectionRef, where('singerId', '==', currentSinger.id)));
+                const voteCounts = {
+                    'Encore!': 0,
+                    'Another Shot!': 0,
+                    'Maybe Next Time!': 0
+                };
+                votes.forEach(doc => {
+                    const vote = doc.data().vote;
+                    if (voteCounts[vote] !== undefined) {
+                        voteCounts[vote]++;
+                    }
+                });
+
+                const result = determineResult(voteCounts);
+
+                await updateDoc(eventsDocRef, {
+                    votingStatus: 'inactive',
+                    'currentSinger.result': result,
+                    'currentSinger.voteCounts': voteCounts
+                });
+
+                if (result === 'Encore!' || result === 'Another Shot!') {
+                    await addDoc(boardCollectionRef, {
+                        singerName: currentSinger.name,
+                        singerSong: currentSinger.song,
+                        result: result,
+                        timestamp: new Date()
+                    });
+                }
+                
+                await deleteDoc(doc(singerQueueCollectionRef, currentSinger.id));
+
+                // Display final tally and hide singer controls
+                currentSingerStatus.classList.add('hidden');
+                currentSingerControls.classList.add('hidden');
+                finalTallySection.classList.remove('hidden');
+                tallyDisplay.innerHTML = `
+                    <h4 class="text-xl font-bold">${currentSinger.name} - "${currentSinger.song}"</h4>
+                    <p class="text-lg">Result: <span class="font-bold">${result}</span></p>
+                    <p>Encore! Votes: ${voteCounts['Encore!']}</p>
+                    <p>Another Shot! Votes: ${voteCounts['Another Shot!']}</p>
+                    <p>Maybe Next Time! Votes: ${voteCounts['Maybe Next Time!']}</p>
+                `;
+                
+                currentSinger = null;
+                startVotingBtn.classList.remove('hidden');
+                endVotingBtn.classList.add('hidden');
+                extendVotingBtn.classList.add('hidden');
+
+            } catch (error) {
+                console.error("Error ending voting:", error);
+            }
+        }
+        
+        function determineResult(voteCounts) {
+            if (voteCounts['Encore!'] > voteCounts['Another Shot!'] && voteCounts['Encore!'] > voteCounts['Maybe Next Time!']) {
+                return 'Encore!';
+            } else if (voteCounts['Another Shot!'] > voteCounts['Maybe Next Time!']) {
+                return 'Another Shot!';
+            } else {
+                return 'Maybe Next Time!';
+            }
         }
 
-        function showIdle() {
-            clearInterval(countdownInterval);
-            countdownSection.classList.add('hidden');
-            resultsSection.classList.remove('hidden');
-            resultsContainer.innerHTML = `
-                <h2 class="text-3xl font-bold text-white mb-4">No active vote.</h2>
-                <p class="text-xl text-[var(--light-blue)]">Check with the KJ to see who's up next!</p>
-            `;
-        }
+        // --- Real-time Listeners ---
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                loginSection.classList.add('hidden');
+                hostPanel.classList.remove('hidden');
+                
+                // Event status listener
+                onSnapshot(eventsDocRef, (docSnap) => {
+                    if (docSnap.exists() && docSnap.data().status === 'active') {
+                        eventStatusBadge.textContent = 'Active';
+                        eventStatusBadge.classList.remove('status-inactive');
+                        eventStatusBadge.classList.add('status-active');
+                        eventInactiveControls.classList.add('hidden');
+                        eventActiveControls.classList.remove('hidden');
+                        currentEventName.textContent = docSnap.data().name;
+                        
+                        const currentSingerData = docSnap.data().currentSinger;
+                        if (currentSingerData && docSnap.data().votingStatus === 'active') {
+                            currentSingerStatus.textContent = `Voting for ${currentSingerData.name} - ${currentSingerData.song}...`;
+                            currentSingerControls.classList.remove('hidden');
+                            currentSingerNameDisplay.textContent = currentSingerData.name;
+                            currentSingerSongDisplay.textContent = currentSingerData.song;
+                            startVotingBtn.classList.add('hidden');
+                            endVotingBtn.classList.remove('hidden');
+                            extendVotingBtn.classList.remove('hidden');
+                        } else if (currentSingerData) {
+                             currentSingerStatus.textContent = 'Voting ended for ' + currentSingerData.name;
+                             currentSingerControls.classList.remove('hidden');
+                             currentSingerNameDisplay.textContent = currentSingerData.name;
+                             currentSingerSongDisplay.textContent = currentSingerData.song;
+                             startVotingBtn.classList.remove('hidden');
+                             endVotingBtn.classList.add('hidden');
+                             extendVotingBtn.classList.add('hidden');
+                        } else {
+                             currentSingerStatus.textContent = 'No Singer is currently active.';
+                             currentSingerControls.classList.add('hidden');
+                        }
+                    } else {
+                        eventStatusBadge.textContent = 'Inactive';
+                        eventStatusBadge.classList.remove('status-active');
+                        eventStatusBadge.classList.add('status-inactive');
+                        eventInactiveControls.classList.remove('hidden');
+                        eventActiveControls.classList.add('hidden');
+                        finalTallySection.classList.add('hidden');
+                        currentSingerStatus.classList.add('hidden');
+                    }
+                });
+                
+                // Singer queue listener
+                onSnapshot(query(singerQueueCollectionRef), (querySnapshot) => {
+                    singerQueueList.innerHTML = '';
+                    querySnapshot.forEach((doc) => {
+                        const singer = { id: doc.id, ...doc.data() };
+                        const li = document.createElement('li');
+                        li.className = 'bg-gray-800 p-2 rounded-lg flex justify-between items-center';
+                        li.innerHTML = `
+                            <span>${singer.name} - "${singer.song}"</span>
+                            <button data-id="${singer.id}" data-name="${singer.name}" data-song="${singer.song}" class="start-singer-btn btn btn-green text-sm">Start Voting</button>
+                        `;
+                        singerQueueList.appendChild(li);
+                    });
+                    
+                    document.querySelectorAll('.start-singer-btn').forEach(button => {
+                        button.addEventListener('click', async (e) => {
+                            const singerId = e.target.dataset.id;
+                            const singerName = e.target.dataset.name;
+                            const singerSong = e.target.dataset.song;
+                            
+                            currentSinger = { id: singerId, name: singerName, song: singerSong };
+                            currentSingerStatus.textContent = 'Current Singer: ';
+                            currentSingerControls.classList.remove('hidden');
+                            currentSingerNameDisplay.textContent = currentSinger.name;
+                            currentSingerSongDisplay.textContent = currentSinger.song;
+                            startVotingBtn.classList.remove('hidden');
+                            
+                            // Update active event with current singer
+                            await updateDoc(eventsDocRef, {
+                                currentSinger: {
+                                    id: currentSinger.id,
+                                    name: currentSinger.name,
+                                    song: currentSinger.song,
+                                    votingStatus: 'inactive'
+                                }
+                            });
+                        });
+                    });
+                });
+            } else {
+                loginSection.classList.remove('hidden');
+                hostPanel.classList.add('hidden');
+            }
+        });
     </script>
 </body>
 </html>
