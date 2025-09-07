@@ -37,7 +37,7 @@
     @media (max-width:900px){.row{grid-template-columns:1fr}.col-4,.col-8{grid-column:span 12}.grid2{grid-template-columns:1fr}}
   </style>
 
-  <!-- Firebase SDKs -->
+  <!-- Firebase SDKs (compat) -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
@@ -51,8 +51,8 @@
     <div class="card">
       <div class="row">
         <div class="col-4">
-          <label class="label" for="eventId">Event ID</label>
-          <input id="eventId" placeholder="e.g. KALISPELL-0912" />
+          <label class="label" for="eventId">Event (auto; override if needed)</label>
+          <input id="eventId" placeholder="Auto-selected from Host" />
         </div>
         <div class="col-8 state">
           <div>Round: <span id="roundId" class="pill">—</span></div>
@@ -62,7 +62,7 @@
           <div>Total Voters: <span id="totalVoters" class="pill">0</span></div>
         </div>
       </div>
-      <p class="muted" style="margin-top:10px">Board auto-refreshes once you enter a valid Event ID.</p>
+      <p class="muted" style="margin-top:10px">Auto-selects from Host (app/state). You can override by typing a venue.</p>
     </div>
 
     <div class="grid2">
@@ -95,14 +95,19 @@
   </div>
 
 <script>
-/* ====== Firebase config (add yours) ====== */
+/* Firebase init (your config) */
 const firebaseConfig = {
-  // Your Firebase config here
+  apiKey: "AIzaSyDGbC08WxruYIDPhZSlDlU-7Kzq-7mHENk",
+  authDomain: "eyek-vote.firebaseapp.com",
+  projectId: "eyek-vote",
+  storageBucket: "eyek-vote.firebasestorage.app",
+  messagingSenderId: "954696683994",
+  appId: "1:954696683994:web:21a84298a94648ff0230e3"
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-/* ====== DOM helpers ====== */
+/* DOM helpers */
 const $ = id => document.getElementById(id);
 const eventIdInput = $('eventId');
 const roundIdEl = $('roundId');
@@ -112,8 +117,17 @@ const encCountEl = $('encCount'), oneCountEl = $('oneCount'), negCountEl = $('ne
 const encFill = $('encFill'), oneFill = $('oneFill'), negFill = $('negFill');
 const percentagesEl = $('percentages'), leaderEl = $('leader'), tieNoteEl = $('tieNote');
 
-let eventUnsub = null, votesUnsub = null;
+let appUnsub = null, eventUnsub = null, votesUnsub = null;
 let eventId = null, roundId = null, isVotingOpen = false;
+
+/* Auto-select current event from Host (app/state) */
+appUnsub = db.collection('app').doc('state').onSnapshot(s=>{
+  const d = s.data() || {};
+  if (d.currentEventId && eventIdInput.value.trim() !== d.currentEventId){
+    eventIdInput.value = d.currentEventId;
+    wireUp();
+  }
+});
 
 eventIdInput.addEventListener('change', wireUp);
 eventIdInput.addEventListener('keyup', e=>{ if(e.key==='Enter') wireUp(); });
@@ -173,7 +187,6 @@ function updateTally(qs){
   negFill.style.width = pct(neg)+'%';
   percentagesEl.textContent = total ? `Encore ${pct(enc)}% • One More ${pct(one)}% • Maybe ${pct(neg)}%` : '—';
 
-  // leader
   const max = Math.max(enc,one,neg);
   const leaders = [];
   if (enc===max && max>0) leaders.push('Encore!');
