@@ -422,12 +422,18 @@
         totalsEl.textContent = 'Total votes: ' + fmt(t);
 
         if(CURRENT.status==='open'){
-          updateLeaderBadge(t); hideFlashBanner();
+          setWinnerVisible(true);        // show while voting so "Leading:" is visible
+          updateLeaderBadge(t);
+          hideFlashBanner();
         }else if(CURRENT.status==='closed'){
           var final = decideOutcomeStrict(COUNTS.encore, COUNTS.another, COUNTS.maybe);
-          showWinnerBadge(final, false, t); showFlashBanner(final);
+          setWinnerVisible(false);       // hide the "Winner:" badge after close
+          showFlashBanner(final);
         }else{
-          showWinnerBadge(null, true, t); hideFlashBanner();
+          // pending
+          setWinnerVisible(true);
+          showWinnerBadge(null, true, t);
+          hideFlashBanner();
         }
       }
 
@@ -453,9 +459,11 @@
         winnerBadge.textContent = (live ? 'Leading: ' : 'Winner: ') + labelFromKind(kind);
       }
 
+      // NEW: control visibility of the winner badge
       function setWinnerVisible(show){
-  winnerBadge.style.display = show ? 'inline-block' : 'none';
-}
+        winnerBadge.style.display = show ? 'inline-block' : 'none';
+      }
+
       function pulseWinner(){
         winnerBadge.classList.remove('flash');
         void winnerBadge.offsetWidth;
