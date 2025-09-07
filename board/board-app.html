@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Earn Your Encore! Encore Board</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --purple: #3a115f;
+            --gold: #eaba54;
+            --light-blue: #79aec1;
+            --background-purple: #2F0658;
+            --dark-gray: #1f2937;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background-purple);
+        }
+        .container {
+            max-width: 1200px;
+        }
+        .list-item {
+            background-color: var(--dark-gray);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body class="text-white flex flex-col items-center min-h-screen p-4">
+
+    <!-- Main Container -->
+    <div class="container mx-auto p-8 rounded-3xl bg-gray-800 shadow-xl mt-8 space-y-8 text-center">
+
+        <!-- Header -->
+        <header>
+            <h1 class="text-5xl font-extrabold text-[var(--gold)]">The Encore Board</h1>
+            <p class="text-2xl text-[var(--light-blue)] mt-2">Tonight's top singers who earned another chance!</p>
+        </header>
+
+        <main class="space-y-12">
+            <!-- Encore! Section -->
+            <section class="space-y-4">
+                <h2 class="text-4xl font-bold text-gold">Encore!</h2>
+                <ul id="encore-list" class="space-y-4">
+                    <li class="text-xl list-item text-gray-400">No singers have earned an Encore! yet.</li>
+                </ul>
+            </section>
+
+            <!-- Another Shot! Section -->
+            <section class="space-y-4">
+                <h2 class="text-4xl font-bold text-light-blue">Another Shot!</h2>
+                <ul id="another-shot-list" class="space-y-4">
+                    <li class="text-xl list-item text-gray-400">No singers have earned another shot yet.</li>
+                </ul>
+            </section>
+        </main>
+    </div>
+
+    <!-- Firebase Scripts -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
+        import { getFirestore, collection, onSnapshot, query, where, getDocs } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
+
+        // --- PASTE YOUR FIREBASE CONFIGURATION HERE ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyDGbC08WxruYIDPhZSlDlU-7Kzq-7mHENk",
+            authDomain: "eyek-vote.firebaseapp.com",
+            projectId: "eyek-vote",
+            storageBucket: "eyek-vote.firebasestorage.app",
+            messagingSenderId: "954696683994",
+            appId: "1:954696683994:web:21a84298a94648ff0230e3"
+        };
+        const appId = firebaseConfig.appId;
+
+        // --- Firebase Initialization ---
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // UI Elements
+        const encoreList = document.getElementById('encore-list');
+        const anotherShotList = document.getElementById('another-shot-list');
+
+        // --- Real-time Listeners ---
+        onSnapshot(collection(db, `artifacts/${appId}/public/data/singerQueue`), (snapshot) => {
+            const singers = [];
+            snapshot.forEach(doc => {
+                const singer = doc.data();
+                const singerId = doc.id;
+                singers.push({ ...singer, id: singerId });
+            });
+            updateLists(singers);
+        });
+
+        // --- UI Update Logic ---
+        async function updateLists(allSingers) {
+            encoreList.innerHTML = '';
+            anotherShotList.innerHTML = '';
+
+            const encoreSingers = [];
+            const anotherShotSingers = [];
+
+            // A map to store votes for each singer
+            const singerVotes = new Map();
+
+            for (const singer of allSingers) {
+                const votesRef = collection(db, `artifacts/${appId}/public/data/eventVotes`);
+                const q = query(votesRef, where('singerId', '==', singer.id));
+                const querySnapshot = await getDocs(q);
+
+                const voteCounts = {
+                    'Encore!': 0,
+                    'Another Shot!': 0,
+                    'Maybe Next Time!': 0
+                };
+                
+                querySnapshot.forEach(doc => {
+                    const vote = doc.data().vote;
+                    if (vote in voteCounts) {
+                        voteCounts[vote]++;
+                    }
+                });
+
+                singerVotes.set(singer.id, voteCounts);
+
+                // Add singer to the appropriate list based on their votes
+                const totalVotes = voteCounts['Encore!'] + voteCounts['Another Shot!'] + voteCounts['Maybe Next Time!'];
+                const encorePercentage = totalVotes > 0 ? (voteCounts['Encore!'] / totalVotes) * 100 : 0;
+                const anotherShotPercentage = totalVotes > 0 ? (voteCounts['Another Shot!'] / totalVotes) * 100 : 0;
+                
+                // You can customize the logic here for what constitutes an "Encore!" or "Another Shot!"
+                // Example: If "Encore!" votes are more than 50% of the total
+                if (encorePercentage >= 50) {
+                    encoreSingers.push(singer);
+                }
+                // Example: If "Another Shot!" votes are more than 50% of the total
+                else if (anotherShotPercentage >= 50) {
+                    anotherShotSingers.push(singer);
+                }
+            }
+
+            // Render Encore! singers
+            if (encoreSingers.length > 0) {
+                encoreSingers.forEach(singer => {
+                    const li = document.createElement('li');
+                    li.className = "text-xl list-item text-white";
+                    li.innerHTML = `<span class="font-bold text-gold">${singer.name}</span> - "${singer.song}"`;
+                    encoreList.appendChild(li);
+                });
+            } else {
+                const li = document.createElement('li');
+                li.className = "text-xl list-item text-gray-400";
+                li.textContent = "No singers have earned an Encore! yet.";
+                encoreList.appendChild(li);
+            }
+
+            // Render Another Shot! singers
+            if (anotherShotSingers.length > 0) {
+                anotherShotSingers.forEach(singer => {
+                    const li = document.createElement('li');
+                    li.className = "text-xl list-item text-white";
+                    li.innerHTML = `<span class="font-bold text-light-blue">${singer.name}</span> - "${singer.song}"`;
+                    anotherShotList.appendChild(li);
+                });
+            } else {
+                const li = document.createElement('li');
+                li.className = "text-xl list-item text-gray-400";
+                li.textContent = "No singers have earned another shot yet.";
+                anotherShotList.appendChild(li);
+            }
+        }
+    </script>
+</body>
+</html>
