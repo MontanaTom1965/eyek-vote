@@ -32,15 +32,16 @@
     .small { font-size:.9rem }
     .topline { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
     .topline .path { opacity:.8; }
+
     /* Modal */
     .modal-backdrop{ position:fixed; inset:0; background:rgba(0,0,0,.55); display:none; align-items:center; justify-content:center; z-index:50; }
+    .modal-backdrop.show{ display:flex; }
     .modal{ width:min(560px,calc(100% - 32px)); background:#1b1430; border:1px solid rgba(255,255,255,.12); border-radius:16px; padding:16px; }
-    .modal.show{ display:flex; }
     .venue-item{ padding:10px; border-radius:10px; border:1px solid rgba(255,255,255,.08); margin-bottom:8px; cursor:pointer; background:#170f2a; }
     .venue-item:hover{ background:#201637; }
   </style>
 
-  <!-- Firebase SDKs -->
+  <!-- Firebase SDKs (compat) -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
@@ -73,12 +74,12 @@
       <div class="card">
         <div class="row">
           <div>
-            <label>Event (Venue) ID</label>
+            <label>Event (Venue)</label>
             <div style="display:flex;gap:8px">
               <input id="hostEventId" placeholder="e.g. The Raven – Bigfork" />
               <button class="btn btn-blue" id="pickVenueBtn" title="Choose prior venue">Pick</button>
             </div>
-            <div class="muted small" style="margin-top:6px">Use the **venue name** here. We’ll also save it to your venues list.</div>
+            <div class="muted small" style="margin-top:6px">Use the <b>venue name</b> here. We’ll also save it to your venues list.</div>
           </div>
           <div>
             <label>Tonight’s PIN</label>
@@ -156,14 +157,23 @@
   </div>
 
   <script>
-    // --- Firebase config (replace with your actual project config) ---
+    /* =======================
+       Firebase initialization
+       ======================= */
     const firebaseConfig = {
-      // Your Firebase project keys here
+      apiKey: "AIzaSyDGbC08WxruYIDPhZSlDlU-7Kzq-7mHENk",
+      authDomain: "eyek-vote.firebaseapp.com",
+      projectId: "eyek-vote",
+      storageBucket: "eyek-vote.firebasestorage.app",
+      messagingSenderId: "954696683994",
+      appId: "1:954696683994:web:21a84298a94648ff0230e3"
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // ===== Helpers =====
+    /* =======================
+       Helpers & DOM bindings
+       ======================= */
     const $ = id => document.getElementById(id);
     const hostMsg = $('hostMsg');
     const eventBadge = $('eventBadge');
@@ -171,15 +181,31 @@
     const statusBadge = $('statusBadge');
     const singersList = $('singersList');
 
-    function eventRef() {
-      const id = $('hostEventId').value.trim();
-      if (!id) { hostMsg.textContent = '⚠️ Enter Event (Venue) ID first.'; return null; }
+    function toast(msg){ hostMsg.textContent = msg; }
+
+    function currentEventName(){
+      return $('hostEventId').value.trim();
+    }
+    function eventRef(){
+      const id = currentEventName();
+      if (!id) { toast('⚠️ Enter Event (Venue) first.'); return null; }
       return db.collection('events').doc(id);
     }
 
-    function toast(msg){ hostMsg.textContent = msg; }
+    // Update global app state so Screen/Board can auto-select the event
+    async function setGlobalCurrentEvent(venueName){
+      if (!venueName) return;
+      try {
+        await db.collection('app').doc('state').set({
+          currentEventId: venueName,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge:true });
+      } catch(e){ console.error('Failed to set app/state:', e); }
+    }
 
-    // ===== Venue Picker =====
+    /* ==============
+       Venue Picker
+       ============== */
     const venueModal = $('venueModal');
     const venuesList = $('venuesList');
 
@@ -191,49 +217,60 @@
 
     async function loadVenues(){
       venuesList.innerHTML = '<div class="muted">Loading…</div>';
-      const snap = await db.collection('venues').orderBy('name').limit(200).get();
-      venuesList.innerHTML = '';
-      if (snap.empty){
-        venuesList.innerHTML = '<div class="muted">No venues yet. Add one below.</div>';
+      try{
+        const snap = await db.collection('venues').orderBy('lastUsedAt','desc').limit(200).get();
+        venuesList.innerHTML = '';
+        if (snap.empty){
+          venuesList.innerHTML = '<div class="muted">No venues yet. Add one below.</div>';
+          return;
+        }
+        snap.forEach(doc=>{
+          const v = doc.data();
+          const div = document.createElement('div');
+          div.className = 'venue-item';
+          div.textContent = v.name;
+          div.onclick = async ()=>{
+            $('hostEventId').value = v.name;
+            venueModal.classList.remove('show');
+            await db.collection('events').doc(v.name).set({ venueName: v.name }, { merge: true });
+            eventBadge.textContent = 'Event: ' + v.name;
+            await setGlobalCurrentEvent(v.name);
+            wireEventListener();
+            loadSingers();
+          };
+          venuesList.appendChild(div);
+        });
+      }catch(e){
+        console.error(e);
+        venuesList.innerHTML = '<div class="muted">Error loading venues.</div>';
       }
-      snap.forEach(doc=>{
-        const v = doc.data();
-        const div = document.createElement('div');
-        div.className = 'venue-item';
-        div.textContent = v.name;
-        div.onclick = ()=>{
-          $('hostEventId').value = v.name;
-          venueModal.classList.remove('show');
-          // Also write base event doc if missing
-          db.collection('events').doc(v.name).set({ venueName: v.name }, { merge: true });
-          eventBadge.textContent = 'Event: ' + v.name;
-          wireEventListener();
-          loadSingers();
-        };
-        venuesList.appendChild(div);
-      });
     }
 
     $('addVenueBtn').addEventListener('click', async ()=>{
       const name = $('newVenue').value.trim();
       if (!name) return;
-      const id = name;
       try {
-        await db.collection('venues').doc(id).set({
-          name, createdAt: firebase.firestore.FieldValue.serverTimestamp(), lastUsedAt: firebase.firestore.FieldValue.serverTimestamp()
+        await db.collection('venues').doc(name).set({
+          name,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+          lastUsedAt: firebase.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
         $('hostEventId').value = name;
         await db.collection('events').doc(name).set({ venueName: name }, { merge: true });
         eventBadge.textContent = 'Event: ' + name;
+        await setGlobalCurrentEvent(name);
         toast('✅ Venue added & selected.');
         $('newVenue').value = '';
         await loadVenues();
+        venueModal.classList.remove('show');
         wireEventListener();
         loadSingers();
       } catch(e){ console.error(e); toast('❌ Error adding venue.'); }
     });
 
-    // ===== Save PIN =====
+    /* ======================
+       Save PIN / KJ / Venue
+       ====================== */
     $('savePinBtn').addEventListener('click', async ()=>{
       const ref = eventRef(); if (!ref) return;
       const p = $('hostPin').value.trim();
@@ -244,10 +281,9 @@
       } catch(e){ console.error(e); toast('❌ Error saving PIN.'); }
     });
 
-    // ===== Save KJ / Venue Info =====
     $('saveKJBtn').addEventListener('click', async ()=>{
       const ref = eventRef(); if (!ref) return;
-      const venueName = $('hostEventId').value.trim();
+      const venueName = currentEventName();
       const kjName = $('kjName').value.trim();
       const kjCompany = $('kjCompany').value.trim();
       try {
@@ -256,18 +292,22 @@
           updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
 
-        // Touch venues list
+        // Touch venues list + global current event
         if (venueName){
           await db.collection('venues').doc(venueName).set({
             name: venueName, lastUsedAt: firebase.firestore.FieldValue.serverTimestamp()
           }, { merge: true });
+          await setGlobalCurrentEvent(venueName);
         }
+
         eventBadge.textContent = 'Event: ' + venueName;
         toast('✅ Event/KJ info saved.');
       } catch(e){ console.error(e); toast('❌ Error saving event info.'); }
     });
 
-    // ===== Singer list (per event) =====
+    /* =================
+       Singer management
+       ================= */
     $('addSingerBtn').addEventListener('click', async ()=>{
       const ref = eventRef(); if (!ref) return;
       const name = $('singerName').value.trim();
@@ -287,37 +327,45 @@
     async function loadSingers(){
       singersList.innerHTML = '<div class="muted">Loading…</div>';
       const ref = eventRef(); if (!ref) return;
-      const qs = await ref.collection('singers').orderBy('updatedAt','desc').limit(200).get();
-      singersList.innerHTML = '';
-      if (qs.empty){
-        singersList.innerHTML = '<div class="muted small">No singers yet.</div>';
+      try{
+        const qs = await ref.collection('singers').orderBy('updatedAt','desc').limit(200).get();
+        singersList.innerHTML = '';
+        if (qs.empty){
+          singersList.innerHTML = '<div class="muted small">No singers yet.</div>';
+          return;
+        }
+        qs.forEach(doc=>{
+          const s = doc.data();
+          const row = document.createElement('div');
+          row.className = 'singer';
+          row.innerHTML = `
+            <div style="min-width:0">
+              <div class="name">${s.name || '(no name)'}</div>
+              <div class="song">${s.lastSong ? s.lastSong : ''}</div>
+            </div>
+            <div class="mini">
+              <button class="btn btn-blue small" data-id="${doc.id}" data-name="${s.name||''}" data-song="${s.lastSong||''}">Set Current</button>
+            </div>
+          `;
+          row.querySelector('button').onclick = async (e)=>{
+            const name = e.target.getAttribute('data-name');
+            const song = e.target.getAttribute('data-song');
+            $('singerName').value = name;
+            $('singerSong').value = song;
+            await setCurrentAndOpen();
+          };
+          singersList.appendChild(row);
+        });
+      }catch(e){
+        console.error(e);
+        singersList.innerHTML = '<div class="muted">Error loading singers.</div>';
       }
-      qs.forEach(doc=>{
-        const s = doc.data();
-        const row = document.createElement('div');
-        row.className = 'singer';
-        row.innerHTML = `
-          <div style="min-width:0">
-            <div class="name">${s.name || '(no name)'}</div>
-            <div class="song">${s.lastSong ? s.lastSong : ''}</div>
-          </div>
-          <div class="mini">
-            <button class="btn btn-blue small" data-id="${doc.id}" data-name="${s.name||''}" data-song="${s.lastSong||''}">Set Current</button>
-          </div>
-        `;
-        row.querySelector('button').onclick = async (e)=>{
-          const name = e.target.getAttribute('data-name');
-          const song = e.target.getAttribute('data-song');
-          $('singerName').value = name;
-          $('singerSong').value = song;
-          await setCurrentAndOpen();
-        };
-        singersList.appendChild(row);
-      });
     }
     $('refreshSingersBtn').addEventListener('click', loadSingers);
 
-    // ===== Voting controls & Current singer management =====
+    /* =========================
+       Voting + Current singer
+       ========================= */
     $('openVotingBtn').addEventListener('click', async ()=>{
       const ref = eventRef(); if (!ref) return;
       try { await ref.set({ isVotingOpen:true }, { merge:true }); toast('✅ Voting opened.'); }
@@ -355,38 +403,53 @@
           isVotingOpen: true,
           updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
-        // ensure in list
+
+        // ensure singer exists/updates in list
         const singerId = name.toLowerCase().replace(/[^\w]+/g,'-').replace(/(^-|-$)/g,'') || 'singer';
         await ref.collection('singers').doc(singerId).set({
           name, lastSong: song || '', updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
+
         toast('✅ Current singer set & voting opened.');
         loadSingers();
       } catch(e){ console.error(e); toast('❌ Error setting current singer.'); }
     }
 
-    // ===== Live event badges =====
+    /* ==================
+       Live event badges
+       ================== */
     let eventUnsub = null;
     function wireEventListener(){
       if (eventUnsub) eventUnsub();
       const ref = eventRef(); if (!ref) return;
       eventUnsub = ref.onSnapshot(snap=>{
         const d = snap.data()||{};
-        eventBadge.textContent = 'Event: ' + (d.venueName || $('hostEventId').value.trim() || '—');
+        eventBadge.textContent = 'Event: ' + (d.venueName || currentEventName() || '—');
         roundBadge.textContent = 'Round: ' + (d.roundId || '—');
         statusBadge.textContent = 'Status: ' + (d.isVotingOpen ? 'Voting Open' : 'Voting Closed');
-      });
+      }, err=>console.error(err));
     }
 
-    // Wire initial listeners if the host types an event name
-    $('hostEventId').addEventListener('change', ()=>{
-      if ($('hostEventId').value.trim()){
-        db.collection('events').doc($('hostEventId').value.trim())
-          .set({ venueName: $('hostEventId').value.trim() }, { merge:true });
+    // When host types/changes the event name
+    $('hostEventId').addEventListener('keyup', e=>{
+      if (e.key==='Enter'){ handleEventChanged(); }
+    });
+    $('hostEventId').addEventListener('change', handleEventChanged);
+
+    async function handleEventChanged(){
+      const name = currentEventName();
+      if (!name) return;
+      try {
+        await db.collection('events').doc(name).set({ venueName: name }, { merge:true });
+        await db.collection('venues').doc(name).set({
+          name, lastUsedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge:true });
+        await setGlobalCurrentEvent(name);
+        eventBadge.textContent = 'Event: ' + name;
         wireEventListener();
         loadSingers();
-      }
-    });
+      }catch(e){ console.error(e); }
+    }
   </script>
 </body>
 </html>
