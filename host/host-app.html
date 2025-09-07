@@ -307,9 +307,23 @@
                 
                 if(currentSingerElement){
                     currentSingerElement.classList.remove('singer-highlight');
+                    const oldSingingButton = currentSingerElement.querySelector('.singing-now-btn');
+                    if (oldSingingButton) {
+                        oldSingingButton.disabled = false;
+                        oldSingingButton.textContent = 'Start Singing';
+                        oldSingingButton.classList.remove('bg-gray-400');
+                        oldSingingButton.classList.add('bg-green-500');
+                    }
                 }
+                
                 currentSingerElement = target.closest('li');
                 currentSingerElement.classList.add('singer-highlight');
+                
+                target.disabled = true;
+                target.textContent = 'Now Singing';
+                target.classList.remove('bg-green-500');
+                target.classList.add('bg-gray-400');
+
 
                 currentSinger = { id: singerId, name: singerName, song: singerSong };
 
@@ -322,52 +336,56 @@
                     }
                 });
 
-                // Clear the voting controls
-                const votingControls = currentSingerElement.querySelector('.voting-controls');
-                if (votingControls) votingControls.remove();
-
-            } else if (target.matches('#start-voting-btn')) {
-                 if (currentSinger && !isVoting) {
-                    isVoting = true;
-                    votingCountdown = timerDuration;
-                    
-                    await updateDoc(eventsDocRef, {
-                        votingStatus: 'active',
-                        'currentSinger.votingEndsAt': new Date(Date.now() + votingCountdown * 1000).toISOString()
-                    });
-                    
-                    votingSound.play();
-                    
-                    votingTimer = setInterval(async () => {
-                        votingCountdown--;
-                        if (votingCountdown <= 0) {
-                            clearInterval(votingTimer);
-                            votingSound.pause();
-                            isVoting = false;
-                            await endVoting();
-                        }
-                    }, 1000);
-                }
-            } else if (target.matches('#end-voting-btn')) {
-                 if (isVoting) {
-                    clearInterval(votingTimer);
-                    votingSound.pause();
-                    isVoting = false;
-                    await endVoting();
-                }
-            } else if (target.matches('#extend-voting-btn')) {
-                if (isVoting) {
-                    votingCountdown += 15;
-                    await updateDoc(eventsDocRef, {
-                        'currentSinger.votingEndsAt': new Date(Date.now() + votingCountdown * 1000).toISOString()
-                    });
-                }
-            } else if (target.matches('#back-to-host-btn')) {
-                 await updateDoc(eventsDocRef, {
-                     currentSinger: null
-                 });
-                 document.getElementById('final-tally').classList.add('hidden');
             }
+        });
+
+        startVotingBtn.addEventListener('click', async () => {
+            if (currentSinger && !isVoting) {
+                isVoting = true;
+                votingCountdown = timerDuration;
+                
+                await updateDoc(eventsDocRef, {
+                    votingStatus: 'active',
+                    'currentSinger.votingEndsAt': new Date(Date.now() + votingCountdown * 1000).toISOString()
+                });
+                
+                votingSound.play();
+                
+                votingTimer = setInterval(async () => {
+                    votingCountdown--;
+                    if (votingCountdown <= 0) {
+                        clearInterval(votingTimer);
+                        votingSound.pause();
+                        isVoting = false;
+                        await endVoting();
+                    }
+                }, 1000);
+            }
+        });
+        
+        endVotingBtn.addEventListener('click', async () => {
+            if (isVoting) {
+                clearInterval(votingTimer);
+                votingSound.pause();
+                isVoting = false;
+                await endVoting();
+            }
+        });
+
+        extendVotingBtn.addEventListener('click', async () => {
+            if (isVoting) {
+                votingCountdown += 15;
+                await updateDoc(eventsDocRef, {
+                    'currentSinger.votingEndsAt': new Date(Date.now() + votingCountdown * 1000).toISOString()
+                });
+            }
+        });
+
+        backToHostBtn.addEventListener('click', async () => {
+            await updateDoc(eventsDocRef, {
+                 currentSinger: null
+            });
+            document.getElementById('final-tally').classList.add('hidden');
         });
 
         async function endVoting() {
@@ -400,6 +418,7 @@
                         result: result,
                         timestamp: new Date()
                     });
+                    // Also update the result in the singer queue for the button background
                     await updateDoc(doc(singerQueueCollectionRef, currentSinger.id), { result: result });
                 }
                 
@@ -503,20 +522,23 @@
                         
                         let buttonText = "Begin Warmup!";
                         let buttonClass = 'warmup-btn';
+                        let buttonColorClass = 'bg-green-500';
+
                         if (singer.warmupComplete) {
                             buttonText = "Start Singing";
                             buttonClass = 'start-singing-btn';
+                            buttonColorClass = singer.result === 'Another Shot!' ? 'bg-yellow-500 text-black' : 'bg-green-500';
                         }
                         
                         const singerButton = document.createElement('button');
                         singerButton.textContent = buttonText;
-                        singerButton.className = `singing-now-btn btn text-sm ${singer.result === 'Another Shot!' ? 'bg-yellow-500 text-black' : 'bg-green-500'} ${buttonClass}`;
+                        singerButton.className = `singing-now-btn btn text-sm ${buttonClass} ${buttonColorClass}`;
                         singerButton.dataset.id = doc.id;
                         singerButton.dataset.name = singer.name;
                         singerButton.dataset.song = singer.song;
 
                         const singerSpan = document.createElement('span');
-                        singerSpan.textContent = `${singer.name} - "${singer.song}"`;
+                        singerSpan.textContent = `${singer.name}`;
                         
                         li.appendChild(singerButton);
                         li.appendChild(singerSpan);
