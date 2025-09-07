@@ -129,7 +129,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, onSnapshot, collection, query, where, addDoc, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, onSnapshot, collection, query, where, addDoc, getDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
 
         // --- PASTE YOUR FIREBASE CONFIGURATION HERE ---
         const firebaseConfig = {
@@ -201,17 +201,15 @@
                 return;
             }
             try {
-                // Check for an existing active event
-                const eventsRef = collection(db, `artifacts/${appId}/public/data/events`);
-                const q = query(eventsRef, where('status', '==', 'active'));
-                const querySnapshot = await getDocs(q);
-                
-                if (!querySnapshot.empty) {
+                // Check if the currentEvent document exists
+                const docRef = doc(db, `artifacts/${appId}/public/data/events`, 'currentEvent');
+                const docSnap = await getDoc(docRef);
+
+                if (docSnap.exists() && docSnap.data().status === 'active') {
                     eventStatusEl.textContent = "An event is already active.";
                     return;
                 }
 
-                const docRef = doc(db, `artifacts/${appId}/public/data/events`, 'currentEvent');
                 await setDoc(docRef, {
                     name: eventName,
                     status: 'active',
@@ -227,11 +225,9 @@
 
         endEventBtn.addEventListener('click', async () => {
             try {
-                if (activeEventId) {
-                     const docRef = doc(db, `artifacts/${appId}/public/data/events`, activeEventId);
-                     await setDoc(docRef, { status: 'ended', endTime: new Date() }, { merge: true });
-                     eventStatusEl.textContent = "Event has ended.";
-                }
+                const docRef = doc(db, `artifacts/${appId}/public/data/events`, 'currentEvent');
+                await deleteDoc(docRef);
+                eventStatusEl.textContent = "Event has ended.";
             } catch (error) {
                 console.error("Error ending event:", error);
                 eventStatusEl.textContent = "Error ending event. Check console for details.";
