@@ -339,6 +339,8 @@
                     if (singingButton) {
                         singingButton.disabled = false;
                         singingButton.textContent = 'Start Singing';
+                        singingButton.classList.remove('bg-gray-400');
+                        singingButton.classList.add('bg-green-500');
                     }
                 }
 
@@ -346,6 +348,9 @@
                 currentSingerElement.classList.add('singer-highlight');
                 e.target.disabled = true;
                 e.target.textContent = 'Now Singing';
+                e.target.classList.remove('bg-green-500');
+                e.target.classList.add('bg-gray-400');
+
 
                 currentSinger = { id: singerId, name: singerName, song: singerSong };
 
