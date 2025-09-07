@@ -135,13 +135,19 @@
     <!-- Firebase Scripts -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, collection, onSnapshot, query, where, getDocs, addDoc, getDoc, serverTimestamp, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Global variables for Firebase configuration, provided by the Canvas environment.
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        // IMPORTANT: Replace the placeholder configuration with your own Firebase project's credentials.
+        // You can find this in your Firebase console under Project settings.
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "YOUR_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
 
         // --- Firebase Initialization and Authentication ---
         const app = initializeApp(firebaseConfig);
@@ -172,33 +178,28 @@
 
         // State variables
         let userId = null;
-        let isAuthReady = false;
         let currentEventId = null;
         let currentSinger = null;
 
-        // Initial sign-in with custom token or anonymously
-        onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                userId = user.uid;
-                isAuthReady = true;
-                showVotingInterface();
-                // Display the complete user ID for multi-user collaboration
-                userDisplay.textContent = `User ID: ${userId}`;
-                startRealtimeListeners();
-            } else {
-                isAuthReady = true;
-                // Sign in with custom token or anonymously
-                if (initialAuthToken) {
-                    try {
-                        await signInWithCustomToken(auth, initialAuthToken);
-                    } catch (error) {
-                        console.error("Error signing in with custom token, signing in anonymously:", error);
-                        await signInAnonymously(auth);
-                    }
+        document.addEventListener('DOMContentLoaded', () => {
+             // Initial check for auth state
+            onAuthStateChanged(auth, async (user) => {
+                if (user) {
+                    userId = user.uid;
+                    showVotingInterface();
+                    userDisplay.textContent = `User ID: ${userId}`;
+                    startRealtimeListeners();
                 } else {
-                    await signInAnonymously(auth);
+                    showAuthState();
+                    userId = null;
+                    // Reset UI if user logs out
+                    currentSingerNameEl.textContent = "";
+                    currentSongTitleEl.textContent = "";
+                    eventTitleEl.textContent = "";
+                    voteMessageEl.textContent = "";
+                    disableVotingButtons();
                 }
-            }
+            });
         });
 
         // UI Management Functions
@@ -233,7 +234,6 @@
         document.getElementById('logout-btn').addEventListener('click', async () => {
             try {
                 await signOut(auth);
-                showAuthState();
             } catch (error) {
                 console.error("Error signing out:", error);
             }
@@ -258,7 +258,7 @@
                 
                 // Store additional user data in Firestore
                 // Path: /artifacts/{appId}/users/{userId}/profile/data
-                const userDocRef = doc(db, `artifacts/${appId}/users/${user.uid}/profile`, 'data');
+                const userDocRef = doc(db, `artifacts/${firebaseConfig.appId}/users/${user.uid}/profile`, 'data');
                 await setDoc(userDocRef, {
                     name: name,
                     email: email,
@@ -297,8 +297,8 @@
             } catch (error) {
                 console.error("Error logging in:", error);
                 let message = "Invalid email or password. Please try again.";
-                if (error.code === 'auth/invalid-email') {
-                    message = "Invalid email address.";
+                if (error.code === 'auth/invalid-credential') {
+                     message = "Invalid email or password. Please try again.";
                 }
                 loginErrorEl.textContent = message;
                 loginErrorEl.classList.remove('hidden');
@@ -308,7 +308,7 @@
         // --- Firestore Real-time Listeners and Voting Logic ---
         function startRealtimeListeners() {
             // Path: /artifacts/{appId}/public/data/events
-            const eventsCollection = collection(db, `artifacts/${appId}/public/data/events`);
+            const eventsCollection = collection(db, `artifacts/${firebaseConfig.appId}/public/data/events`);
             const q = query(eventsCollection, where('status', '==', 'active'));
 
             onSnapshot(q, (snapshot) => {
@@ -318,9 +318,7 @@
                     eventTitleEl.textContent = "No active event.";
                     currentSingerNameEl.textContent = "";
                     currentSongTitleEl.textContent = "";
-                    maybeNextTimeBtn.disabled = true;
-                    anotherShotBtn.disabled = true;
-                    encoreBtn.disabled = true;
+                    disableVotingButtons();
                     voteMessageEl.textContent = "";
                     return;
                 }
@@ -336,7 +334,7 @@
                         currentSongTitleEl.textContent = currentSinger.song;
                         
                         // Check if the user has already voted for this singer in this event
-                        const voteDocRef = doc(db, `artifacts/${appId}/users/${userId}/votes`, `${currentEventId}-${currentSinger.name.replace(/ /g, '-')}`);
+                        const voteDocRef = doc(db, `artifacts/${firebaseConfig.appId}/users/${userId}/votes`, `${currentEventId}-${currentSinger.name.replace(/ /g, '-')}`);
                         const voteDoc = await getDoc(voteDocRef);
                         if (voteDoc.exists()) {
                             disableVotingButtons();
@@ -383,7 +381,7 @@
             }
 
             // Path: /artifacts/{appId}/users/{userId}/votes
-            const userVotesCollection = collection(db, `artifacts/${appId}/users/${userId}/votes`);
+            const userVotesCollection = collection(db, `artifacts/${firebaseConfig.appId}/users/${userId}/votes`);
             
             // To prevent duplicate votes from a single user for the same singer at the same event,
             // we create a unique document ID based on the event and singer.
@@ -391,7 +389,7 @@
             const voteDocRef = doc(userVotesCollection, voteDocId);
 
             // Path: /artifacts/{appId}/public/data/eventVotes
-            const eventVotesCollection = collection(db, `artifacts/${appId}/public/data/eventVotes`);
+            const eventVotesCollection = collection(db, `artifacts/${firebaseConfig.appId}/public/data/eventVotes`);
 
             try {
                 // Check if the user has already voted for this singer
