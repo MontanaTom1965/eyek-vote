@@ -311,9 +311,10 @@
             const singerSong = singerSongInput.value;
             if (singerName && singerSong) {
                 try {
-                    const docRef = await addDoc(singerQueueCollectionRef, {
+                    await addDoc(singerQueueCollectionRef, {
                         name: singerName,
                         song: singerSong,
+                        result: null,
                         timestamp: new Date()
                     });
                     singerNameInput.value = '';
@@ -438,6 +439,8 @@
                         result: result,
                         timestamp: new Date()
                     });
+                    // Also update the result in the singer queue for the dot
+                    await updateDoc(doc(singerQueueCollectionRef, currentSinger.id), { result: result });
                 }
                 
                 if (result === 'Maybe Next Time!') {
@@ -535,6 +538,13 @@
                         singerButton.dataset.id = doc.id;
                         singerButton.dataset.name = singer.name;
                         singerButton.dataset.song = singer.song;
+
+                        // Add the vote result dot if it exists
+                        if (singer.result) {
+                            const dot = document.createElement('span');
+                            dot.className = `dot ${singer.result === 'Encore!' ? 'dot-green' : 'dot-yellow'}`;
+                            li.appendChild(dot);
+                        }
 
                         const singerSpan = document.createElement('span');
                         singerSpan.textContent = `${singer.name} - "${singer.song}"`;
