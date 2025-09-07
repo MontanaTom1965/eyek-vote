@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE ahtml>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -134,20 +134,21 @@
 
     <!-- Firebase Scripts -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, collection, onSnapshot, query, where, getDocs, addDoc, getDoc, serverTimestamp, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, collection, onSnapshot, query, where, getDocs, addDoc, getDoc, serverTimestamp, setLogLevel } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
 
-        // IMPORTANT: Replace the placeholder configuration with your own Firebase project's credentials.
+        // IMPORTANT: Replace the placeholder configuration below with your own Firebase project's credentials.
         // You can find this in your Firebase console under Project settings.
         const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_PROJECT_ID.appspot.com",
-            messagingSenderId: "YOUR_SENDER_ID",
-            appId: "YOUR_APP_ID"
+            apiKey: "AIzaSyDGbC08WxruYIDPhZSlDlU-7Kzq-7mHENk",
+            authDomain: "eyek-vote.firebaseapp.com",
+            projectId: "eyek-vote",
+            storageBucket: "eyek-vote.firebasestorage.app",
+            messagingSenderId: "954696683994",
+            appId: "1:954696683994:web:21a84298a94648ff0230e3"
         };
+        const appId = firebaseConfig.appId;
 
         // --- Firebase Initialization and Authentication ---
         const app = initializeApp(firebaseConfig);
@@ -258,7 +259,7 @@
                 
                 // Store additional user data in Firestore
                 // Path: /artifacts/{appId}/users/{userId}/profile/data
-                const userDocRef = doc(db, `artifacts/${firebaseConfig.appId}/users/${user.uid}/profile`, 'data');
+                const userDocRef = doc(db, `artifacts/${appId}/users/${user.uid}/profile`, 'data');
                 await setDoc(userDocRef, {
                     name: name,
                     email: email,
@@ -278,6 +279,8 @@
                     message = "This email is already in use. Please log in or use a different email.";
                 } else if (error.code === 'auth/weak-password') {
                     message = "Password is too weak. Please use a stronger password.";
+                } else if (error.code === 'auth/network-request-failed') {
+                    message = "Network error. Please check your internet connection and try again.";
                 }
                 signupErrorEl.textContent = message;
                 signupErrorEl.classList.remove('hidden');
@@ -308,7 +311,7 @@
         // --- Firestore Real-time Listeners and Voting Logic ---
         function startRealtimeListeners() {
             // Path: /artifacts/{appId}/public/data/events
-            const eventsCollection = collection(db, `artifacts/${firebaseConfig.appId}/public/data/events`);
+            const eventsCollection = collection(db, `artifacts/${appId}/public/data/events`);
             const q = query(eventsCollection, where('status', '==', 'active'));
 
             onSnapshot(q, (snapshot) => {
@@ -334,7 +337,7 @@
                         currentSongTitleEl.textContent = currentSinger.song;
                         
                         // Check if the user has already voted for this singer in this event
-                        const voteDocRef = doc(db, `artifacts/${firebaseConfig.appId}/users/${userId}/votes`, `${currentEventId}-${currentSinger.name.replace(/ /g, '-')}`);
+                        const voteDocRef = doc(db, `artifacts/${appId}/users/${userId}/votes`, `${currentEventId}-${currentSinger.name.replace(/ /g, '-')}`);
                         const voteDoc = await getDoc(voteDocRef);
                         if (voteDoc.exists()) {
                             disableVotingButtons();
@@ -381,7 +384,7 @@
             }
 
             // Path: /artifacts/{appId}/users/{userId}/votes
-            const userVotesCollection = collection(db, `artifacts/${firebaseConfig.appId}/users/${userId}/votes`);
+            const userVotesCollection = collection(db, `artifacts/${appId}/users/${userId}/votes`);
             
             // To prevent duplicate votes from a single user for the same singer at the same event,
             // we create a unique document ID based on the event and singer.
@@ -389,7 +392,7 @@
             const voteDocRef = doc(userVotesCollection, voteDocId);
 
             // Path: /artifacts/{appId}/public/data/eventVotes
-            const eventVotesCollection = collection(db, `artifacts/${firebaseConfig.appId}/public/data/eventVotes`);
+            const eventVotesCollection = collection(db, `artifacts/${appId}/public/data/eventVotes`);
 
             try {
                 // Check if the user has already voted for this singer
