@@ -1,4 +1,4 @@
-!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -98,6 +98,10 @@
             text-align: center;
             box-shadow: 0 0 20px rgba(0,0,0,0.5);
             max-width: 90%;
+        }
+        .singer-highlight {
+            background-color: #3f0f62; /* A slightly lighter shade of purple */
+            border: 2px solid var(--gold);
         }
     </style>
 </head>
@@ -239,6 +243,7 @@
         const timerDuration = 30;
         let votingCountdown = timerDuration;
         let isVoting = false;
+        let currentSingerElement = null; // Store a reference to the highlighted element
         
         const votingSound = new Audio('https://vote.earnyourencorekaraoke.com/vote/quiz-countdown.mp3');
 
@@ -310,6 +315,22 @@
                 const singerName = e.target.dataset.name;
                 const singerSong = e.target.dataset.song;
                 
+                // Remove existing highlight
+                if(currentSingerElement){
+                    currentSingerElement.classList.remove('singer-highlight');
+                    const singingButton = currentSingerElement.querySelector('.singing-now-btn');
+                    if (singingButton) {
+                        singingButton.disabled = false;
+                        singingButton.textContent = 'Start Singing';
+                    }
+                }
+
+                // Add highlight to new singer
+                currentSingerElement = e.target.closest('li');
+                currentSingerElement.classList.add('singer-highlight');
+                e.target.disabled = true;
+                e.target.textContent = 'Now Singing';
+
                 currentSinger = { id: singerId, name: singerName, song: singerSong };
 
                 await updateDoc(eventsDocRef, {
@@ -410,14 +431,25 @@
 
                 document.getElementById('final-tally').classList.remove('hidden');
                 document.getElementById('tally-display').innerHTML = `
-                    <h4 class="text-xl font-bold">${currentSinger.name} - "${currentSinger.song}"</h4>
-                    <p class="text-lg">Result: <span class="font-bold">${result}</span></p>
-                    <p>Encore! Votes: ${voteCounts['Encore!']}</p>
-                    <p>Another Shot! Votes: ${voteCounts['Another Shot!']}</p>
-                    <p>Maybe Next Time! Votes: ${voteCounts['Maybe Next Time!']}</p>
+                    <div class="space-y-1">
+                        <h4 class="text-lg font-bold">${currentSinger.name} - "${currentSinger.song}"</h4>
+                        <p class="text-base">Result: <span class="font-bold">${result}</span></p>
+                        <p class="text-sm">Encore! Votes: ${voteCounts['Encore!']}</p>
+                        <p class="text-sm">Another Shot! Votes: ${voteCounts['Another Shot!']}</p>
+                        <p class="text-sm">Maybe Next Time! Votes: ${voteCounts['Maybe Next Time!']}</p>
+                    </div>
                 `;
                 
                 currentSinger = null;
+                if(currentSingerElement){
+                    currentSingerElement.classList.remove('singer-highlight');
+                    const singingButton = currentSingerElement.querySelector('.singing-now-btn');
+                    if (singingButton) {
+                        singingButton.disabled = false;
+                        singingButton.textContent = 'Start Singing';
+                    }
+                }
+
 
             } catch (error) {
                 console.error("Error ending voting:", error);
@@ -466,6 +498,7 @@
                             currentSingerControls.classList.add('hidden');
                         }
                     } else {
+                        document.querySelector('body > div > main > header').classList.remove('hidden');
                         eventStatusBadge.textContent = 'Inactive';
                         eventStatusBadge.classList.remove('status-active');
                         eventStatusBadge.classList.add('status-inactive');
@@ -480,31 +513,30 @@
                     querySnapshot.forEach((doc) => {
                         const singer = { id: doc.id, ...doc.data() };
                         const li = document.createElement('li');
-                        li.className = 'bg-gray-800 p-2 rounded-lg flex justify-between items-center';
-                        li.innerHTML = `
-                            <button data-id="${singer.id}" data-name="${singer.name}" data-song="${singer.song}" class="singing-now-btn btn btn-green text-sm">Start Singing</button>
-                            <span>${singer.name} - "${singer.song}"</span>
-                        `;
+                        li.className = 'bg-gray-800 p-2 rounded-lg flex items-center space-x-2';
+                        
+                        const singerButton = document.createElement('button');
+                        singerButton.textContent = 'Start Singing';
+                        singerButton.className = 'singing-now-btn btn btn-green text-sm';
+                        singerButton.dataset.id = doc.id;
+                        singerButton.dataset.name = singer.name;
+                        singerButton.dataset.song = singer.song;
+
+                        const singerSpan = document.createElement('span');
+                        singerSpan.textContent = `${singer.name} - "${singer.song}"`;
+                        
+                        li.appendChild(singerButton);
+                        li.appendChild(singerSpan);
+                        
                         singerQueueSidebar.appendChild(li);
                     });
                 });
             } else {
-                loginSection.classList.remove('hidden');
-                hostPanel.classList.add('hidden');
+                 document.querySelector('body > div > main > header').classList.remove('hidden');
+                 loginSection.classList.remove('hidden');
+                 hostPanel.classList.add('hidden');
             }
         });
     </script>
 </body>
-</html>" code between  and  in the most up-to-date Canvas "Earn Your Encore! Karaoke Host Site" document above and am asking a query about/based on this code below.
-Instructions to follow:
-  * Don't output/edit the document if the query is Direct/Simple. For example, if the query asks for a simple explanation, output a direct answer.
-  * Make sure to **edit** the document if the query shows the intent of editing the document, in which case output the entire edited document, **not just that section or the edits**.
-    * Don't output the same document/empty document and say that you have edited it.
-    * Don't change unrelated code in the document.
-  * Don't output  and  in your final response.
-  * Any references like "this" or "selected code" refers to the code between  and  tags.
-  * Just acknowledge my request in the introduction.
-  * Make sure to refer to the document as "Canvas" in your response.
-
-(actual user query begins now)
-Can you fix the highlighting when I select the singer to sing?  I would like the "Start Singing" button to shade out or be disabled and the singer name to be highlighted.  Then when I hit "Start Voting", the highlight should stay and the button for "Start Singing" should stay shaded out.  Once the vote is over, the highlight and the shade of the button should go away. Also, the final tally should have a smaller font and a much smaller button please. I would also like the singer to be removed from the queue if they get "Maybe Next Time!". Also, when the event is inactive, please only have the Login button and the header visible please.
+</html>
