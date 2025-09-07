@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Earn Your Encore! Karaoke</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --purple: #3a115f;
+            --gold: #eaba54;
+            --light-blue: #79aec1;
+            --background-purple: #2F0658;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background-purple);
+        }
+        .container {
+            max-width: 480px;
+        }
+        .btn-primary {
+            background-color: var(--gold);
+            color: var(--background-purple);
+            transition: transform 0.1s ease-in-out;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+        }
+        .input-field, .select-field {
+            border: 1px solid var(--gold);
+            color: white;
+            background-color: transparent;
+        }
+        .input-field::placeholder {
+            color: var(--light-blue);
+        }
+    </style>
+</head>
+<body class="text-white flex flex-col items-center min-h-screen p-4">
+
+    <!-- Main Container -->
+    <div class="container mx-auto p-6 rounded-3xl bg-[var(--purple)] shadow-xl mt-8">
+
+        <!-- Header and Logo -->
+        <header class="text-center mb-6">
+            <img src="https://placehold.co/150x150/2F0658/EABA54?text=EYE" alt="Earn Your Encore! Logo" class="mx-auto rounded-full mb-4">
+            <h1 class="text-4xl font-bold text-[var(--gold)]">Earn Your Encore!</h1>
+            <p class="text-[var(--light-blue)] mt-2">The Audience is Your Judge.</p>
+        </header>
+
+        <!-- Dynamic Content Area -->
+        <div id="app-container" class="space-y-6">
+
+            <!-- Authentication State - Not Logged In -->
+            <div id="auth-state" class="text-center space-y-4">
+                <p>Sign up or log in to vote for tonight's singers!</p>
+                <div class="space-y-2">
+                    <button id="show-signup" class="btn-primary w-full p-3 rounded-lg font-bold">Sign Up</button>
+                    <button id="show-login" class="btn-primary w-full p-3 rounded-lg font-bold">Log In</button>
+                </div>
+            </div>
+
+            <!-- Sign Up Form -->
+            <div id="signup-form" class="hidden space-y-4">
+                <h2 class="text-2xl font-bold text-center text-[var(--gold)]">Create Account</h2>
+                <form id="signup-form-el" class="space-y-4">
+                    <input type="text" id="signup-name" placeholder="Full Name" required class="input-field p-3 w-full rounded-lg">
+                    <input type="email" id="signup-email" placeholder="Email Address" required class="input-field p-3 w-full rounded-lg">
+                    <input type="password" id="signup-password" placeholder="Password" required class="input-field p-3 w-full rounded-lg">
+                    <input type="tel" id="signup-phone" placeholder="Phone Number (optional)" class="input-field p-3 w-full rounded-lg">
+                    <input type="text" id="signup-address" placeholder="City, State" class="input-field p-3 w-full rounded-lg">
+                    <div class="flex flex-col md:flex-row md:space-x-4 space-y-4 md:space-y-0">
+                        <input type="number" id="signup-age" placeholder="Age (optional)" class="input-field p-3 w-full rounded-lg">
+                        <select id="signup-gender" class="select-field p-3 w-full rounded-lg">
+                            <option value="" disabled selected>Gender (optional)</option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Non-binary">Non-binary</option>
+                            <option value="Prefer not to say">Prefer not to say</option>
+                        </select>
+                    </div>
+                    <div class="flex items-start">
+                        <input type="checkbox" id="signup-terms" required class="mt-1 mr-2 rounded text-[var(--gold)] focus:ring-0">
+                        <label for="signup-terms" class="text-sm text-[var(--light-blue)]">
+                            I agree to the <a href="#" class="text-[var(--gold)] underline">terms and conditions</a> and privacy policy.
+                        </label>
+                    </div>
+                    <button type="submit" class="btn-primary w-full p-3 rounded-lg font-bold">Sign Up</button>
+                    <p id="signup-error" class="text-red-400 text-center text-sm hidden"></p>
+                    <button type="button" id="back-to-auth-from-signup" class="text-[var(--light-blue)] text-sm mt-4">&larr; Back to Login</button>
+                </form>
+            </div>
+
+            <!-- Login Form -->
+            <div id="login-form" class="hidden space-y-4">
+                <h2 class="text-2xl font-bold text-center text-[var(--gold)]">Log In</h2>
+                <form id="login-form-el" class="space-y-4">
+                    <input type="email" id="login-email" placeholder="Email Address" required class="input-field p-3 w-full rounded-lg">
+                    <input type="password" id="login-password" placeholder="Password" required class="input-field p-3 w-full rounded-lg">
+                    <button type="submit" class="btn-primary w-full p-3 rounded-lg font-bold">Log In</button>
+                    <p id="login-error" class="text-red-400 text-center text-sm hidden"></p>
+                    <button type="button" id="back-to-auth-from-login" class="text-[var(--light-blue)] text-sm mt-4">&larr; Back to Sign Up</button>
+                </form>
+            </div>
+
+            <!-- Main Voting Interface - Logged In -->
+            <div id="voting-interface" class="hidden space-y-6">
+                <div class="flex justify-between items-center text-sm text-[var(--light-blue)]">
+                    <p id="user-display">Logged in as: </p>
+                    <button id="logout-btn" class="text-[var(--gold)]">Log Out</button>
+                </div>
+                <div id="event-display" class="text-center space-y-2">
+                    <p id="event-title" class="text-xl font-bold text-[var(--gold)]"></p>
+                    <p id="current-singer-name" class="text-4xl font-bold text-white"></p>
+                    <p id="current-song-title" class="text-xl text-[var(--light-blue)]"></p>
+                </div>
+                <div id="voting-area" class="space-y-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <button id="encore-vote-btn" class="btn-primary p-4 rounded-lg font-bold">Encore!</button>
+                        <button id="another-shot-vote-btn" class="btn-primary p-4 rounded-lg font-bold">Another Shot!</button>
+                        <button id="maybe-next-time-vote-btn" class="btn-primary p-4 rounded-lg font-bold">Maybe Next Time!</button>
+                    </div>
+                </div>
+                <div id="vote-message" class="text-center text-sm font-bold text-[var(--light-blue)]"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Firebase Scripts -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, collection, onSnapshot, query, where, getDocs, addDoc, getDoc, serverTimestamp, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global variables for Firebase configuration, provided by the Canvas environment.
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        // --- Firebase Initialization and Authentication ---
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        
+        // Log all debug messages from Firebase
+        setLogLevel('debug');
+        
+        // UI elements
+        const appContainer = document.getElementById('app-container');
+        const authStateView = document.getElementById('auth-state');
+        const signupFormView = document.getElementById('signup-form');
+        const loginFormView = document.getElementById('login-form');
+        const votingInterfaceView = document.getElementById('voting-interface');
+        const userDisplay = document.getElementById('user-display');
+        const signupFormEl = document.getElementById('signup-form-el');
+        const loginFormEl = document.getElementById('login-form-el');
+        const signupErrorEl = document.getElementById('signup-error');
+        const loginErrorEl = document.getElementById('login-error');
+        const currentSingerNameEl = document.getElementById('current-singer-name');
+        const currentSongTitleEl = document.getElementById('current-song-title');
+        const eventTitleEl = document.getElementById('event-title');
+        const voteMessageEl = document.getElementById('vote-message');
+        const encoreBtn = document.getElementById('encore-vote-btn');
+        const anotherShotBtn = document.getElementById('another-shot-vote-btn');
+        const maybeNextTimeBtn = document.getElementById('maybe-next-time-vote-btn');
+
+        // State variables
+        let userId = null;
+        let isAuthReady = false;
+        let currentEventId = null;
+        let currentSinger = null;
+
+        // Initial sign-in with custom token or anonymously
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                userId = user.uid;
+                isAuthReady = true;
+                showVotingInterface();
+                // Display the complete user ID for multi-user collaboration
+                userDisplay.textContent = `User ID: ${userId}`;
+                startRealtimeListeners();
+            } else {
+                isAuthReady = true;
+                // Sign in with custom token or anonymously
+                if (initialAuthToken) {
+                    try {
+                        await signInWithCustomToken(auth, initialAuthToken);
+                    } catch (error) {
+                        console.error("Error signing in with custom token, signing in anonymously:", error);
+                        await signInAnonymously(auth);
+                    }
+                } else {
+                    await signInAnonymously(auth);
+                }
+            }
+        });
+
+        // UI Management Functions
+        function showView(viewToShow) {
+            const views = [authStateView, signupFormView, loginFormView, votingInterfaceView];
+            views.forEach(view => {
+                view.classList.add('hidden');
+            });
+            viewToShow.classList.remove('hidden');
+        }
+
+        function showAuthState() {
+            showView(authStateView);
+        }
+
+        function showSignupForm() {
+            showView(signupFormView);
+        }
+
+        function showLoginForm() {
+            showView(loginFormView);
+        }
+        
+        function showVotingInterface() {
+            showView(votingInterfaceView);
+        }
+
+        document.getElementById('show-signup').addEventListener('click', showSignupForm);
+        document.getElementById('show-login').addEventListener('click', showLoginForm);
+        document.getElementById('back-to-auth-from-signup').addEventListener('click', showAuthState);
+        document.getElementById('back-to-auth-from-login').addEventListener('click', showAuthState);
+        document.getElementById('logout-btn').addEventListener('click', async () => {
+            try {
+                await signOut(auth);
+                showAuthState();
+            } catch (error) {
+                console.error("Error signing out:", error);
+            }
+        });
+
+        // --- Authentication Logic ---
+        signupFormEl.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            signupErrorEl.classList.add('hidden');
+
+            const name = document.getElementById('signup-name').value;
+            const email = document.getElementById('signup-email').value;
+            const password = document.getElementById('signup-password').value;
+            const phone = document.getElementById('signup-phone').value;
+            const address = document.getElementById('signup-address').value;
+            const age = document.getElementById('signup-age').value;
+            const gender = document.getElementById('signup-gender').value;
+
+            try {
+                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                const user = userCredential.user;
+                
+                // Store additional user data in Firestore
+                // Path: /artifacts/{appId}/users/{userId}/profile/data
+                const userDocRef = doc(db, `artifacts/${appId}/users/${user.uid}/profile`, 'data');
+                await setDoc(userDocRef, {
+                    name: name,
+                    email: email,
+                    phone: phone,
+                    address: address,
+                    age: age ? Number(age) : null,
+                    gender: gender,
+                    createdAt: serverTimestamp()
+                });
+
+                console.log("User created and data saved successfully!");
+                // onAuthStateChanged will handle showing the voting interface
+            } catch (error) {
+                console.error("Error signing up:", error);
+                let message = "An unknown error occurred.";
+                if (error.code === 'auth/email-already-in-use') {
+                    message = "This email is already in use. Please log in or use a different email.";
+                } else if (error.code === 'auth/weak-password') {
+                    message = "Password is too weak. Please use a stronger password.";
+                }
+                signupErrorEl.textContent = message;
+                signupErrorEl.classList.remove('hidden');
+            }
+        });
+
+        loginFormEl.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            loginErrorEl.classList.add('hidden');
+
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+                // onAuthStateChanged will handle showing the voting interface
+            } catch (error) {
+                console.error("Error logging in:", error);
+                let message = "Invalid email or password. Please try again.";
+                if (error.code === 'auth/invalid-email') {
+                    message = "Invalid email address.";
+                }
+                loginErrorEl.textContent = message;
+                loginErrorEl.classList.remove('hidden');
+            }
+        });
+
+        // --- Firestore Real-time Listeners and Voting Logic ---
+        function startRealtimeListeners() {
+            // Path: /artifacts/{appId}/public/data/events
+            const eventsCollection = collection(db, `artifacts/${appId}/public/data/events`);
+            const q = query(eventsCollection, where('status', '==', 'active'));
+
+            onSnapshot(q, (snapshot) => {
+                if (snapshot.empty) {
+                    currentEventId = null;
+                    currentSinger = null;
+                    eventTitleEl.textContent = "No active event.";
+                    currentSingerNameEl.textContent = "";
+                    currentSongTitleEl.textContent = "";
+                    maybeNextTimeBtn.disabled = true;
+                    anotherShotBtn.disabled = true;
+                    encoreBtn.disabled = true;
+                    voteMessageEl.textContent = "";
+                    return;
+                }
+                
+                snapshot.forEach(async (doc) => {
+                    const eventData = doc.data();
+                    currentEventId = doc.id;
+                    eventTitleEl.textContent = eventData.name;
+                    currentSinger = eventData.currentSinger;
+
+                    if (currentSinger) {
+                        currentSingerNameEl.textContent = currentSinger.name;
+                        currentSongTitleEl.textContent = currentSinger.song;
+                        
+                        // Check if the user has already voted for this singer in this event
+                        const voteDocRef = doc(db, `artifacts/${appId}/users/${userId}/votes`, `${currentEventId}-${currentSinger.name.replace(/ /g, '-')}`);
+                        const voteDoc = await getDoc(voteDocRef);
+                        if (voteDoc.exists()) {
+                            disableVotingButtons();
+                            voteMessageEl.textContent = `You have already voted for ${currentSinger.name} with a vote of "${voteDoc.data().vote}".`;
+                        } else {
+                            enableVotingButtons();
+                            voteMessageEl.textContent = "Cast your vote!";
+                        }
+                    } else {
+                        currentSingerNameEl.textContent = "A new singer is about to begin...";
+                        currentSongTitleEl.textContent = "";
+                        disableVotingButtons();
+                        voteMessageEl.textContent = "Get ready to vote!";
+                    }
+                });
+            }, (error) => {
+                console.error("Error listening to events:", error);
+            });
+        }
+
+        function disableVotingButtons() {
+            encoreBtn.disabled = true;
+            anotherShotBtn.disabled = true;
+            maybeNextTimeBtn.disabled = true;
+            encoreBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            anotherShotBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            maybeNextTimeBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        }
+
+        function enableVotingButtons() {
+            encoreBtn.disabled = false;
+            anotherShotBtn.disabled = false;
+            maybeNextTimeBtn.disabled = false;
+            encoreBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            anotherShotBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            maybeNextTimeBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        }
+
+        // --- Vote Submission Logic ---
+        async function castVote(voteType) {
+            if (!userId || !currentEventId || !currentSinger) {
+                console.error("Cannot cast vote: Missing user, event, or singer information.");
+                return;
+            }
+
+            // Path: /artifacts/{appId}/users/{userId}/votes
+            const userVotesCollection = collection(db, `artifacts/${appId}/users/${userId}/votes`);
+            
+            // To prevent duplicate votes from a single user for the same singer at the same event,
+            // we create a unique document ID based on the event and singer.
+            const voteDocId = `${currentEventId}-${currentSinger.name.replace(/ /g, '-')}`;
+            const voteDocRef = doc(userVotesCollection, voteDocId);
+
+            // Path: /artifacts/{appId}/public/data/eventVotes
+            const eventVotesCollection = collection(db, `artifacts/${appId}/public/data/eventVotes`);
+
+            try {
+                // Check if the user has already voted for this singer
+                const voteDoc = await getDoc(voteDocRef);
+                if (voteDoc.exists()) {
+                    voteMessageEl.textContent = "You have already cast your vote for this singer!";
+                    return;
+                }
+
+                // Add the vote to the user's private collection
+                await setDoc(voteDocRef, {
+                    event: currentEventId,
+                    singerName: currentSinger.name,
+                    songTitle: currentSinger.song,
+                    vote: voteType,
+                    timestamp: serverTimestamp()
+                });
+
+                // Add the vote to a public collection for easy aggregation by the KJ
+                await addDoc(eventVotesCollection, {
+                    eventId: currentEventId,
+                    singerName: currentSinger.name,
+                    songTitle: currentSinger.song,
+                    vote: voteType,
+                    timestamp: serverTimestamp()
+                });
+
+                disableVotingButtons();
+                voteMessageEl.textContent = `Your vote of "${voteType}" has been cast! Thank you!`;
+                console.log(`Vote of "${voteType}" cast successfully for ${currentSinger.name}.`);
+            } catch (error) {
+                console.error("Error casting vote:", error);
+                voteMessageEl.textContent = "There was an error casting your vote. Please try again.";
+            }
+        }
+
+        encoreBtn.addEventListener('click', () => castVote("Encore!"));
+        anotherShotBtn.addEventListener('click', () => castVote("Another Shot!"));
+        maybeNextTimeBtn.addEventListener('click', () => castVote("Maybe Next Time!"));
+    </script>
+
+</body>
+</html>
