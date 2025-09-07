@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Earn Your Encore Karaoke – Board</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root{
+      --blue:#003e81; --gold:#eaba54; --purple:#2F0658; --light:#79aec1; --white:#fff; --black:#000;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:#0f0a18;color:#fff;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',Arial,sans-serif}
+    header{padding:18px 16px;background:linear-gradient(90deg,var(--blue),var(--purple));text-align:center}
+    h1{margin:0;font-size:1.35rem}
+    .wrap{max-width:1200px;margin:18px auto;padding:0 16px}
+    .card{background:#1b1430;border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:18px;margin-bottom:16px;box-shadow:0 12px 32px rgba(0,0,0,.4)}
+    .row{display:grid;grid-template-columns:repeat(12,1fr);gap:16px}
+    .col-4{grid-column:span 4}
+    .col-8{grid-column:span 8}
+    .label{display:inline-block;font-size:.9rem;opacity:.85;margin-right:8px}
+    input,button{border-radius:12px;border:1px solid rgba(255,255,255,.12);background:#120c22;color:#fff;padding:12px}
+    input{width:100%}
+    button{cursor:pointer}
+    .btn{font-weight:700}
+    .pill{display:inline-block;padding:6px 10px;border-radius:999px;background:#271c44;font-size:.85rem;margin-left:8px}
+    .muted{opacity:.85}
+    .tally{display:grid;grid-template-columns:1fr 80px 100px;gap:10px;align-items:center;margin:10px 0}
+    .bar{height:16px;border-radius:999px;background:#241a3f;overflow:hidden}
+    .fill{height:100%;width:0;transition:width .25s ease}
+    .enc{background:linear-gradient(180deg,#ffefc2,var(--gold))}
+    .one{background:linear-gradient(180deg,#9fd3ff,#4aa3ff)}
+    .neg{background:linear-gradient(180deg,#ffc2d1,#ff4971)}
+    .big{font-size:1.25rem;font-weight:800}
+    .state{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .state .on{color:#c7ffbf}.state .off{color:#ffc5c5}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+    @media (max-width:900px){.row{grid-template-columns:1fr}.col-4,.col-8{grid-column:span 12}.grid2{grid-template-columns:1fr}}
+  </style>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+</head>
+<body>
+  <header>
+    <h1>🎤 Earn Your Encore Karaoke • Board</h1>
+  </header>
+
+  <div class="wrap">
+    <div class="card">
+      <div class="row">
+        <div class="col-4">
+          <label class="label" for="eventId">Event ID</label>
+          <input id="eventId" placeholder="e.g. KALISPELL-0912" />
+        </div>
+        <div class="col-8 state">
+          <div>Round: <span id="roundId" class="pill">—</span></div>
+          <div>Status:
+            <span id="status" class="pill">loading…</span>
+          </div>
+          <div>Total Voters: <span id="totalVoters" class="pill">0</span></div>
+        </div>
+      </div>
+      <p class="muted" style="margin-top:10px">Board auto-refreshes once you enter a valid Event ID.</p>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <div class="big">Live Tally</div>
+        <div class="tally">
+          <div>🔥 Encore!</div>
+          <div id="encCount" style="text-align:right">0</div>
+          <div class="bar"><div class="fill enc" id="encFill"></div></div>
+        </div>
+        <div class="tally">
+          <div>🤔 One More Shot</div>
+          <div id="oneCount" style="text-align:right">0</div>
+          <div class="bar"><div class="fill one" id="oneFill"></div></div>
+        </div>
+        <div class="tally">
+          <div>❌ Maybe Next Time</div>
+          <div id="negCount" style="text-align:right">0</div>
+          <div class="bar"><div class="fill neg" id="negFill"></div></div>
+        </div>
+        <div class="muted" id="percentages" style="margin-top:8px">—</div>
+      </div>
+
+      <div class="card">
+        <div class="big">Current Leader</div>
+        <div id="leader" style="font-size:2rem;font-weight:900;margin-top:6px">—</div>
+        <div class="muted" id="tieNote" style="margin-top:8px"></div>
+      </div>
+    </div>
+  </div>
+
+<script>
+/* ====== Firebase config (add yours) ====== */
+const firebaseConfig = {
+  // Your Firebase config here
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+/* ====== DOM helpers ====== */
+const $ = id => document.getElementById(id);
+const eventIdInput = $('eventId');
+const roundIdEl = $('roundId');
+const statusEl = $('status');
+const totalVotersEl = $('totalVoters');
+const encCountEl = $('encCount'), oneCountEl = $('oneCount'), negCountEl = $('negCount');
+const encFill = $('encFill'), oneFill = $('oneFill'), negFill = $('negFill');
+const percentagesEl = $('percentages'), leaderEl = $('leader'), tieNoteEl = $('tieNote');
+
+let eventUnsub = null, votesUnsub = null;
+let eventId = null, roundId = null, isVotingOpen = false;
+
+eventIdInput.addEventListener('change', wireUp);
+eventIdInput.addEventListener('keyup', e=>{ if(e.key==='Enter') wireUp(); });
+
+function wireUp(){
+  const v = eventIdInput.value.trim();
+  if (!v) return;
+  eventId = v;
+  if (eventUnsub) eventUnsub();
+  if (votesUnsub) votesUnsub();
+
+  eventUnsub = db.collection('events').doc(eventId).onSnapshot(snap=>{
+    const d = snap.data()||{};
+    roundId = d.roundId || null;
+    isVotingOpen = !!d.isVotingOpen;
+    roundIdEl.textContent = roundId || '—';
+    statusEl.textContent = isVotingOpen ? 'Voting Open' : 'Voting Closed';
+    statusEl.className = 'pill ' + (isVotingOpen ? 'on' : 'off');
+
+    if (roundId){
+      listenVotes(roundId);
+    } else {
+      clearTally();
+      if (votesUnsub) { votesUnsub(); votesUnsub=null; }
+    }
+  }, err=>{
+    statusEl.textContent = 'Error';
+    console.error(err);
+  });
+}
+
+function listenVotes(rid){
+  if (votesUnsub) votesUnsub();
+  votesUnsub = db.collection('events').doc(eventId)
+                 .collection('rounds').doc(rid)
+                 .collection('votes')
+                 .onSnapshot(updateTally, console.error);
+}
+
+function updateTally(qs){
+  let enc=0, one=0, neg=0;
+  qs.forEach(doc=>{
+    const v = doc.data().choice;
+    if (v==='encore') enc++;
+    else if (v==='one_more') one++;
+    else if (v==='next_time') neg++;
+  });
+  const total = enc+one+neg;
+  encCountEl.textContent = enc;
+  oneCountEl.textContent = one;
+  negCountEl.textContent = neg;
+  totalVotersEl.textContent = total;
+
+  const pct = (n)=> total? Math.round(n*100/total):0;
+  encFill.style.width = pct(enc)+'%';
+  oneFill.style.width = pct(one)+'%';
+  negFill.style.width = pct(neg)+'%';
+  percentagesEl.textContent = total ? `Encore ${pct(enc)}% • One More ${pct(one)}% • Maybe ${pct(neg)}%` : '—';
+
+  // leader
+  const max = Math.max(enc,one,neg);
+  const leaders = [];
+  if (enc===max && max>0) leaders.push('Encore!');
+  if (one===max && max>0) leaders.push('One More Shot');
+  if (neg===max && max>0) leaders.push('Maybe Next Time');
+
+  if (leaders.length===0){ leaderEl.textContent = '—'; tieNoteEl.textContent=''; }
+  else if (leaders.length===1){ leaderEl.textContent = leaders[0]; tieNoteEl.textContent=''; }
+  else { leaderEl.textContent = 'Tied'; tieNoteEl.textContent = leaders.join(' • '); }
+}
+
+function clearTally(){
+  encCountEl.textContent=oneCountEl.textContent=negCountEl.textContent='0';
+  encFill.style.width=oneFill.style.width=negFill.style.width='0%';
+  percentagesEl.textContent='—';
+  leaderEl.textContent='—';
+  tieNoteEl.textContent='';
+}
+</script>
+</body>
+</html>
