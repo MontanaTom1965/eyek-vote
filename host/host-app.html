@@ -470,10 +470,8 @@
                         
                         const currentSingerData = docSnap.data().currentSinger;
                         if (currentSingerData) {
-                             currentSingerStatus.textContent = 'Current Singer: ';
+                             currentSingerStatus.textContent = `Current Singer: ${currentSingerData.name} - "${currentSingerData.song}"`;
                              currentSingerControls.classList.remove('hidden');
-                             currentSingerNameDisplay.textContent = currentSingerData.name;
-                             currentSingerSongDisplay.textContent = currentSingerData.song;
                              
                              if (docSnap.data().votingStatus === 'active') {
                                 startVotingBtn.classList.add('hidden');
@@ -487,8 +485,6 @@
                         } else {
                              currentSingerStatus.textContent = 'No Singer is currently active.';
                              currentSingerControls.classList.add('hidden');
-                             currentSingerNameDisplay.textContent = '';
-                             currentSingerSongDisplay.textContent = '';
                         }
                     } else {
                         eventStatusBadge.textContent = 'Inactive';
