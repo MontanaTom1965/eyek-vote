@@ -121,14 +121,15 @@
         </main>
         
         <!-- View Board Button -->
-        <a id="view-board-btn" href="../screen-app.html" class="inline-block btn mt-8">View Live Display</a>
+        <a id="view-board-btn" href="../screen/screen-app.html" class="inline-block btn mt-8">View Live Display</a>
+        <a id="view-board-btn" href="../board/board-app.html" class="inline-block btn mt-2">View Encore Board</a>
     </div>
 
     <!-- Firebase Scripts -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, onSnapshot, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
 
         // --- PASTE YOUR FIREBASE CONFIGURATION HERE ---
         const firebaseConfig = {
@@ -227,11 +228,16 @@
         nextTimeBtn.addEventListener('click', () => submitVote('Maybe Next Time!'));
 
         // --- Firebase Auth State Listener ---
-        onAuthStateChanged(auth, (user) => {
+        onAuthStateChanged(auth, async (user) => {
             if (user) {
                 authSection.classList.add('hidden');
                 votingSection.classList.remove('hidden');
-                userGreeting.textContent = `Welcome, ${user.displayName || 'Guest'}!`;
+                
+                const profileDocRef = doc(db, `artifacts/${appId}/users/${user.uid}/profile`, 'data');
+                const profileSnap = await getDoc(profileDocRef);
+                const userName = profileSnap.exists() ? profileSnap.data().name : 'Guest';
+                userGreeting.textContent = `Welcome, ${userName}!`;
+
                 // Start listening for active event
                 const eventDocRef = doc(db, `artifacts/${appId}/public/data/events`, 'currentEvent');
                 onSnapshot(eventDocRef, (docSnap) => {
@@ -275,23 +281,28 @@
             const currentSingerId = eventSnap.data().currentSinger.id;
 
             try {
-                // Save vote to public collection
-                await setDoc(doc(db, `artifacts/${appId}/public/data/eventVotes`, `${currentSingerId}_${user.uid}`), {
-                    userId: user.uid,
-                    singerId: currentSingerId,
-                    vote: vote,
-                    timestamp: new Date()
-                });
+                // Check if the user has already voted for this singer
+                const voteDocRef = doc(db, `artifacts/${appId}/public/data/eventVotes`, `${currentSingerId}_${user.uid}`);
+                const voteSnap = await getDoc(voteDocRef);
 
+                if (voteSnap.exists()) {
+                    // Update existing vote
+                    await updateDoc(voteDocRef, {
+                        vote: vote,
+                        timestamp: new Date()
+                    });
+                } else {
+                    // Create new vote
+                    await setDoc(voteDocRef, {
+                        userId: user.uid,
+                        singerId: currentSingerId,
+                        vote: vote,
+                        timestamp: new Date()
+                    });
+                }
+                
                 // Update the UI
                 voteStatus.textContent = `Your vote for "${vote}" has been cast!`;
-
-                // Update the user's private vote history
-                await setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/votes`, `${currentSingerId}_${new Date().toISOString()}`), {
-                    singerId: currentSingerId,
-                    vote: vote,
-                    timestamp: new Date()
-                });
 
             } catch (error) {
                 console.error("Error submitting vote:", error);
