@@ -28,7 +28,7 @@
     .err{color:#ffc5c5}
   </style>
 
-  <!-- Firebase SDKs -->
+  <!-- Firebase SDKs (compat) -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
@@ -133,9 +133,14 @@
   </div>
 
 <script>
-/*** Firebase init ***/
+/*** Firebase init (your config) ***/
 const firebaseConfig = {
-  // YOUR firebase config goes here
+  apiKey: "AIzaSyDGbC08WxruYIDPhZSlDlU-7Kzq-7mHENk",
+  authDomain: "eyek-vote.firebaseapp.com",
+  projectId: "eyek-vote",
+  storageBucket: "eyek-vote.firebasestorage.app",
+  messagingSenderId: "954696683994",
+  appId: "1:954696683994:web:21a84298a94648ff0230e3"
 };
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
@@ -149,7 +154,7 @@ const uiConfig = {
     { provider: firebase.auth.EmailAuthProvider.PROVIDER_ID, requireDisplayName: true }
   ],
   callbacks: { signInSuccessWithAuthResult: () => false },
-  signInFlow: 'popup'
+  signInFlow: 'popup' // you can change to 'redirect' if popups are blocked
 };
 ui.start('#firebaseui-auth-container', uiConfig);
 
@@ -182,9 +187,7 @@ auth.onAuthStateChanged(async (user)=>{
     show(authCard); hide(profileCard); hide(pinCard); hide(voteCard);
     return;
   }
-  // signed in
   hide(authCard);
-  // Prefill profile
   $('pEmail').value = user.email || '';
   const up = await db.collection('users').doc(user.uid).get().catch(()=>null);
   if (up && up.exists){
