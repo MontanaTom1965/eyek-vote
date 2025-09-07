@@ -5,11 +5,8 @@
   <title>Earn Your Encore Karaoke – Vote</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <!-- Brand colors -->
   <style>
-    :root{
-      --blue:#003e81; --gold:#eaba54; --purple:#2F0658; --light:#79aec1; --white:#fff; --black:#000;
-    }
+    :root{ --blue:#003e81; --gold:#eaba54; --purple:#2F0658; --light:#79aec1; --white:#fff; --black:#000; }
     body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',Arial,sans-serif;background:#0f0a18;color:#fff;}
     header{padding:18px 16px;background:linear-gradient(90deg,var(--blue),var(--purple));text-align:center;}
     h1{font-size:1.25rem;margin:0;font-weight:700;letter-spacing:.3px}
@@ -21,9 +18,10 @@
     .btn-next{background:linear-gradient(180deg,#ffc2d1,#ff4971);color:#2b0013}
     .muted{opacity:.8;font-size:.92rem}
     .row{display:grid;gap:10px}
+    .two{grid-template-columns:1fr 1fr}
     .hidden{display:none!important}
     label{display:block;margin:8px 0 6px}
-    input{width:100%;padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,.15);background:#120c22;color:#fff}
+    input,select{width:100%;padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,.15);background:#120c22;color:#fff}
     .pill{display:inline-block;padding:4px 10px;border-radius:999px;background:#271c44;font-size:.85rem}
     .divider{height:1px;background:rgba(255,255,255,.08);margin:16px 0}
     .ok{color:#c3ffbd}
@@ -44,19 +42,65 @@
     <h1>Earn Your Encore Karaoke • Vote</h1>
   </header>
 
+  <!-- Auth -->
   <div class="card" id="authCard">
     <h2>Sign in</h2>
-    <p class="muted">Use Google or Email to create your account. You’ll enter tonight’s PIN after signing in.</p>
+    <p class="muted">Use Google or Email to create your account.</p>
     <div id="firebaseui-auth-container"></div>
     <div id="loader">Loading…</div>
   </div>
 
+  <!-- Profile -->
+  <div class="card hidden" id="profileCard">
+    <h2>Your Profile</h2>
+    <p class="muted">We ask a few details so we can understand our audience. Your email is taken from your login.</p>
+    <div class="row two">
+      <div>
+        <label>Email</label>
+        <input id="pEmail" disabled />
+      </div>
+      <div>
+        <label>ZIP Code</label>
+        <input id="pZip" placeholder="e.g. 59901" inputmode="numeric" />
+      </div>
+    </div>
+    <div class="row two">
+      <div>
+        <label>First Name</label>
+        <input id="pFirst" placeholder="First name" />
+      </div>
+      <div>
+        <label>Last Name</label>
+        <input id="pLast" placeholder="Last name" />
+      </div>
+    </div>
+    <div class="row two">
+      <div>
+        <label>Age</label>
+        <input id="pAge" placeholder="e.g. 29" inputmode="numeric" />
+      </div>
+      <div>
+        <label>Gender</label>
+        <select id="pGender">
+          <option value="">Prefer not to say</option>
+          <option>Female</option>
+          <option>Male</option>
+          <option>Non-binary</option>
+          <option>Other</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn btn-one" id="saveProfileBtn">Save Profile</button>
+    <div id="profileMsg" class="muted"></div>
+  </div>
+
+  <!-- PIN -->
   <div class="card hidden" id="pinCard">
     <h2>Verify Attendance</h2>
-    <p class="muted">Enter the <span class="pill">Event ID</span> and tonight’s <span class="pill">PIN</span> shown on the screen.</p>
+    <p class="muted">Enter the <span class="pill">Event (Venue)</span> and tonight’s <span class="pill">PIN</span> from the screen.</p>
     <div class="row">
-      <label for="eventId">Event ID</label>
-      <input id="eventId" placeholder="e.g. KALISPELL-0912" autocomplete="off" />
+      <label for="eventId">Event (Venue)</label>
+      <input id="eventId" placeholder="e.g. The Raven – Bigfork" autocomplete="off" />
       <label for="nightPin">Tonight’s PIN</label>
       <input id="nightPin" placeholder="4–8 digits" inputmode="numeric" autocomplete="one-time-code" />
       <button class="btn btn-one" id="verifyPinBtn">Verify & Continue</button>
@@ -64,6 +108,7 @@
     </div>
   </div>
 
+  <!-- Vote -->
   <div class="card hidden" id="voteCard">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
       <div>
@@ -88,34 +133,33 @@
   </div>
 
 <script>
-/*** 1) Firebase config — keep yours here ***/
+/*** Firebase init ***/
 const firebaseConfig = {
-  // YOUR firebase config goes here (unchanged from your current app)
+  // YOUR firebase config goes here
 };
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-/*** 2) FirebaseUI ***/
+/*** FirebaseUI ***/
 const ui = new firebaseui.auth.AuthUI(auth);
 const uiConfig = {
   signInOptions: [
     firebase.auth.GoogleAuthProvider.PROVIDER_ID,
     { provider: firebase.auth.EmailAuthProvider.PROVIDER_ID, requireDisplayName: true }
   ],
-  callbacks: {
-    signInSuccessWithAuthResult: () => false
-  },
+  callbacks: { signInSuccessWithAuthResult: () => false },
   signInFlow: 'popup'
 };
 ui.start('#firebaseui-auth-container', uiConfig);
 
-/*** 3) UI helpers ***/
+/*** UI helpers ***/
 const $ = (id)=>document.getElementById(id);
 const show = (el)=>el.classList.remove('hidden');
 const hide = (el)=>el.classList.add('hidden');
 
 const authCard = $('authCard');
+const profileCard = $('profileCard');
 const pinCard  = $('pinCard');
 const voteCard = $('voteCard');
 const who      = $('who');
@@ -123,37 +167,71 @@ const pinMsg   = $('pinMsg');
 const voteMsg  = $('voteMsg');
 const eventBadge = $('eventBadge');
 const roundBadge = $('roundBadge');
+const profileMsg = $('profileMsg');
 
-/*** 4) App State ***/
 let currentUser = null;
 let eventId = null;
 let activePin = null;
 let roundId = null;
 let isVotingOpen = false;
 
-/*** 5) After sign-in, ask for Event ID + PIN ***/
+/*** Sign-in flow ***/
 auth.onAuthStateChanged(async (user)=>{
   currentUser = user;
   if (!user) {
-    show(authCard); hide(pinCard); hide(voteCard);
+    show(authCard); hide(profileCard); hide(pinCard); hide(voteCard);
     return;
   }
   // signed in
   hide(authCard);
-  show(pinCard);
+  // Prefill profile
+  $('pEmail').value = user.email || '';
+  const up = await db.collection('users').doc(user.uid).get().catch(()=>null);
+  if (up && up.exists){
+    const d = up.data();
+    $('pFirst').value = d.firstName || '';
+    $('pLast').value  = d.lastName || '';
+    $('pZip').value   = d.zip || '';
+    $('pAge').value   = d.age || '';
+    $('pGender').value= d.gender || '';
+  }
+  show(profileCard);
   who.textContent = user.displayName || user.email || user.uid;
-
-  // If you have a single active event, you could preload it here.
 });
 
-/*** 6) Verify attendance against tonight’s PIN ***/
+/*** Save profile ***/
+$('saveProfileBtn').addEventListener('click', async ()=>{
+  profileMsg.textContent = '';
+  if (!currentUser){ return; }
+  const data = {
+    email: currentUser.email || '',
+    firstName: $('pFirst').value.trim(),
+    lastName: $('pLast').value.trim(),
+    zip: $('pZip').value.trim(),
+    age: $('pAge').value.trim(),
+    gender: $('pGender').value,
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  };
+  try{
+    await db.collection('users').doc(currentUser.uid).set(data, { merge: true });
+    profileMsg.textContent = '✅ Profile saved.';
+    hide(profileCard);
+    show(pinCard);
+  }catch(e){
+    console.error(e);
+    profileMsg.innerHTML = '<span class="err">Could not save profile. Try again.</span>';
+  }
+});
+
+/*** Verify attendance against tonight’s PIN ***/
 $('verifyPinBtn').addEventListener('click', async ()=>{
   pinMsg.textContent = '';
   eventId = $('eventId').value.trim();
   const pinInput = $('nightPin').value.trim();
 
   if (!eventId || !pinInput) {
-    pinMsg.innerHTML = '<span class="err">Please enter both Event ID and the PIN.</span>';
+    pinMsg.innerHTML = '<span class="err">Please enter both Event and PIN.</span>';
     return;
   }
 
@@ -161,7 +239,7 @@ $('verifyPinBtn').addEventListener('click', async ()=>{
     const eventRef = db.collection('events').doc(eventId);
     const snap = await eventRef.get();
     if (!snap.exists) {
-      pinMsg.innerHTML = '<span class="err">Event not found. Check the Event ID on the screen.</span>';
+      pinMsg.innerHTML = '<span class="err">Event not found. Check the Event on the screen.</span>';
       return;
     }
     const data = snap.data();
@@ -178,23 +256,35 @@ $('verifyPinBtn').addEventListener('click', async ()=>{
       return;
     }
 
-    // Mark this user as an attendee (server-enforced in rules)
+    // Mark this user as an attendee (and mirror profile basics)
+    const profileSnap = await db.collection('users').doc(currentUser.uid).get();
+    const prof = profileSnap.exists ? profileSnap.data() : {};
+    const att = {
+      verified: true,
+      verifiedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      email: currentUser.email || '',
+      firstName: prof.firstName || '',
+      lastName: prof.lastName || '',
+      zip: prof.zip || '',
+      age: prof.age || '',
+      gender: prof.gender || ''
+    };
     const attRef = eventRef.collection('attendees').doc(currentUser.uid);
-    await attRef.set({ verified: true, verifiedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
+    await attRef.set(att, { merge: true });
 
     // Move to voting
     eventBadge.textContent = `Event: ${eventId}`;
     roundBadge.textContent = roundId ? `Round: ${roundId}` : 'Round: pending';
     hide(pinCard);
     show(voteCard);
-    refreshRoundBadge(); // start a lightweight listener so round updates live
+    refreshRoundBadge(); // live listener
   } catch (e) {
     console.error(e);
     pinMsg.innerHTML = '<span class="err">Error verifying PIN. Please try again.</span>';
   }
 });
 
-/*** 7) Live round listener (optional but useful) ***/
+/*** Live round listener ***/
 let eventUnsub = null;
 function refreshRoundBadge() {
   if (eventUnsub) eventUnsub();
@@ -206,7 +296,7 @@ function refreshRoundBadge() {
   });
 }
 
-/*** 8) Submit a vote (one per user per round, enforced by rules) ***/
+/*** Submit a vote (one per user per round, enforced by rules) ***/
 async function cast(choice) {
   voteMsg.textContent = '';
   if (!eventId || !roundId) {
@@ -226,12 +316,11 @@ async function cast(choice) {
       choice,
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
       displayName: currentUser.displayName || ''
-    }, { merge: false }); // merge:false so a second write fails client-side if attempted
+    }, { merge: false });
 
     voteMsg.innerHTML = '✅ Vote received! Thanks for participating.';
   } catch (e) {
     console.error(e);
-    // If doc exists, this will fail due to rules
     voteMsg.innerHTML = '<span class="err">You’ve already voted this round.</span>';
   }
 }
