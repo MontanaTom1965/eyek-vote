@@ -124,6 +124,14 @@
         <!-- Main Host Panel -->
         <main id="host-panel" class="hidden space-y-6">
             
+            <!-- Public Links -->
+            <div id="public-links" class="bg-gray-700 p-6 rounded-lg space-y-2">
+                <h2 class="text-2xl font-bold text-white">Public Links</h2>
+                <a href="https://vote.earnyourencorekaraoke.com/vote/vote-app.html" target="_blank" class="block btn btn-yellow">Audience Voting Page</a>
+                <a href="https://vote.earnyourencorekaraoke.com/screen/screen-app.html" target="_blank" class="block btn btn-yellow">Live Display Screen</a>
+                <a href="https://vote.earnyourencorekaraoke.com/board/board-app.html" target="_blank" class="block btn btn-yellow">Encore Board</a>
+            </div>
+
             <!-- Event Status & Controls -->
             <div id="event-controls" class="bg-gray-700 p-6 rounded-lg space-y-4">
                 <h2 class="text-2xl font-bold text-white">Event Status: <span id="event-status" class="status-badge status-inactive">Inactive</span></h2>
@@ -426,6 +434,7 @@
                     <p>Maybe Next Time! Votes: ${voteCounts['Maybe Next Time!']}</p>
                 `;
                 
+                // Clear the current singer section after the popup is closed
                 currentSinger = null;
 
             } catch (error) {
@@ -478,6 +487,8 @@
                         } else {
                              currentSingerStatus.textContent = 'No Singer is currently active.';
                              currentSingerControls.classList.add('hidden');
+                             currentSingerNameDisplay.textContent = '';
+                             currentSingerSongDisplay.textContent = '';
                         }
                     } else {
                         eventStatusBadge.textContent = 'Inactive';
@@ -498,7 +509,7 @@
                         li.className = 'bg-gray-800 p-2 rounded-lg flex justify-between items-center';
                         li.innerHTML = `
                             <span>${singer.name} - "${singer.song}"</span>
-                            <button data-id="${singer.id}" data-name="${singer.name}" data-song="${singer.song}" class="singing-now-btn btn btn-green text-sm">Singing Now</button>
+                            <button data-id="${singer.id}" data-name="${singer.name}" data-song="${singer.song}" class="singing-now-btn btn btn-green text-sm">Start Singing</button>
                         `;
                         singerQueueList.appendChild(li);
                     });
