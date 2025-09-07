@@ -209,9 +209,11 @@
         // --- State Variables ---
         let currentSinger = null;
         let votingTimer = null;
-        let timerDuration = 30; // 30 seconds for voting
+        const timerDuration = 30; // 30 seconds for voting
         let votingCountdown = timerDuration;
         let isVoting = false;
+        
+        const votingSound = new Audio('https://vote.earnyourencorekaraoke.com/vote/quiz-countdown.mp3');
 
         // --- Event Handlers ---
         loginBtn.addEventListener('click', async () => {
@@ -237,8 +239,7 @@
                     name: eventName,
                     status: 'active',
                     currentSinger: null,
-                    votingStatus: 'inactive',
-                    singerQueue: []
+                    votingStatus: 'inactive'
                 });
             } catch (error) {
                 console.error("Error starting event:", error);
@@ -277,28 +278,44 @@
             }
         });
 
-        startVotingBtn.addEventListener('click', async () => {
-            if (currentSinger) {
-                isVoting = true;
-                votingCountdown = timerDuration;
-                startVotingBtn.classList.add('hidden');
-                endVotingBtn.classList.remove('hidden');
-                extendVotingBtn.classList.remove('hidden');
+        // Click handler for the "Singing Now" button in the queue
+        document.addEventListener('click', async (e) => {
+            if (e.target.matches('.singing-now-btn')) {
+                const singerId = e.target.dataset.id;
+                const singerName = e.target.dataset.name;
+                const singerSong = e.target.dataset.song;
                 
+                currentSinger = { id: singerId, name: singerName, song: singerSong };
+
+                // Update active event with current singer
                 await updateDoc(eventsDocRef, {
-                    votingStatus: 'active',
                     currentSinger: {
                         id: currentSinger.id,
                         name: currentSinger.name,
                         song: currentSinger.song,
-                        votingEndsAt: new Date(Date.now() + votingCountdown * 1000).toISOString()
+                        votingStatus: 'inactive'
                     }
                 });
+            }
+        });
+
+        startVotingBtn.addEventListener('click', async () => {
+            if (currentSinger && !isVoting) {
+                isVoting = true;
+                votingCountdown = timerDuration;
+                
+                await updateDoc(eventsDocRef, {
+                    votingStatus: 'active',
+                    'currentSinger.votingEndsAt': new Date(Date.now() + votingCountdown * 1000).toISOString()
+                });
+                
+                votingSound.play();
                 
                 votingTimer = setInterval(async () => {
                     votingCountdown--;
                     if (votingCountdown <= 0) {
                         clearInterval(votingTimer);
+                        votingSound.pause();
                         isVoting = false;
                         await endVoting();
                     }
@@ -307,24 +324,26 @@
         });
         
         endVotingBtn.addEventListener('click', async () => {
-            clearInterval(votingTimer);
-            isVoting = false;
-            await endVoting();
+            if (isVoting) {
+                clearInterval(votingTimer);
+                votingSound.pause();
+                isVoting = false;
+                await endVoting();
+            }
         });
 
         extendVotingBtn.addEventListener('click', async () => {
-            votingCountdown += 15;
-            await updateDoc(eventsDocRef, {
-                'currentSinger.votingEndsAt': new Date(Date.now() + votingCountdown * 1000).toISOString()
-            });
+            if (isVoting) {
+                votingCountdown += 15;
+                await updateDoc(eventsDocRef, {
+                    'currentSinger.votingEndsAt': new Date(Date.now() + votingCountdown * 1000).toISOString()
+                });
+            }
         });
 
         backToHostBtn.addEventListener('click', async () => {
             finalTallySection.classList.add('hidden');
-            singerControls.classList.remove('hidden');
-            currentSingerStatus.classList.remove('hidden');
-            currentSingerControls.classList.add('hidden');
-            currentSinger = null;
+            document.getElementById('singer-controls').classList.remove('hidden');
         });
 
         // --- Utility Functions ---
@@ -363,8 +382,7 @@
                 await deleteDoc(doc(singerQueueCollectionRef, currentSinger.id));
 
                 // Display final tally and hide singer controls
-                currentSingerStatus.classList.add('hidden');
-                currentSingerControls.classList.add('hidden');
+                document.getElementById('singer-controls').classList.add('hidden');
                 finalTallySection.classList.remove('hidden');
                 tallyDisplay.innerHTML = `
                     <h4 class="text-xl font-bold">${currentSinger.name} - "${currentSinger.song}"</h4>
@@ -375,9 +393,6 @@
                 `;
                 
                 currentSinger = null;
-                startVotingBtn.classList.remove('hidden');
-                endVotingBtn.classList.add('hidden');
-                extendVotingBtn.classList.add('hidden');
 
             } catch (error) {
                 console.error("Error ending voting:", error);
@@ -411,22 +426,21 @@
                         currentEventName.textContent = docSnap.data().name;
                         
                         const currentSingerData = docSnap.data().currentSinger;
-                        if (currentSingerData && docSnap.data().votingStatus === 'active') {
-                            currentSingerStatus.textContent = `Voting for ${currentSingerData.name} - ${currentSingerData.song}...`;
-                            currentSingerControls.classList.remove('hidden');
-                            currentSingerNameDisplay.textContent = currentSingerData.name;
-                            currentSingerSongDisplay.textContent = currentSingerData.song;
-                            startVotingBtn.classList.add('hidden');
-                            endVotingBtn.classList.remove('hidden');
-                            extendVotingBtn.classList.remove('hidden');
-                        } else if (currentSingerData) {
-                             currentSingerStatus.textContent = 'Voting ended for ' + currentSingerData.name;
+                        if (currentSingerData) {
+                             currentSingerStatus.textContent = 'Current Singer: ';
                              currentSingerControls.classList.remove('hidden');
                              currentSingerNameDisplay.textContent = currentSingerData.name;
                              currentSingerSongDisplay.textContent = currentSingerData.song;
-                             startVotingBtn.classList.remove('hidden');
-                             endVotingBtn.classList.add('hidden');
-                             extendVotingBtn.classList.add('hidden');
+                             
+                             if (docSnap.data().votingStatus === 'active') {
+                                startVotingBtn.classList.add('hidden');
+                                endVotingBtn.classList.remove('hidden');
+                                extendVotingBtn.classList.remove('hidden');
+                             } else {
+                                startVotingBtn.classList.remove('hidden');
+                                endVotingBtn.classList.add('hidden');
+                                extendVotingBtn.classList.add('hidden');
+                             }
                         } else {
                              currentSingerStatus.textContent = 'No Singer is currently active.';
                              currentSingerControls.classList.add('hidden');
@@ -438,7 +452,6 @@
                         eventInactiveControls.classList.remove('hidden');
                         eventActiveControls.classList.add('hidden');
                         finalTallySection.classList.add('hidden');
-                        currentSingerStatus.classList.add('hidden');
                     }
                 });
                 
@@ -451,34 +464,9 @@
                         li.className = 'bg-gray-800 p-2 rounded-lg flex justify-between items-center';
                         li.innerHTML = `
                             <span>${singer.name} - "${singer.song}"</span>
-                            <button data-id="${singer.id}" data-name="${singer.name}" data-song="${singer.song}" class="start-singer-btn btn btn-green text-sm">Start Voting</button>
+                            <button data-id="${singer.id}" data-name="${singer.name}" data-song="${singer.song}" class="singing-now-btn btn btn-green text-sm">Singing Now</button>
                         `;
                         singerQueueList.appendChild(li);
-                    });
-                    
-                    document.querySelectorAll('.start-singer-btn').forEach(button => {
-                        button.addEventListener('click', async (e) => {
-                            const singerId = e.target.dataset.id;
-                            const singerName = e.target.dataset.name;
-                            const singerSong = e.target.dataset.song;
-                            
-                            currentSinger = { id: singerId, name: singerName, song: singerSong };
-                            currentSingerStatus.textContent = 'Current Singer: ';
-                            currentSingerControls.classList.remove('hidden');
-                            currentSingerNameDisplay.textContent = currentSinger.name;
-                            currentSingerSongDisplay.textContent = currentSinger.song;
-                            startVotingBtn.classList.remove('hidden');
-                            
-                            // Update active event with current singer
-                            await updateDoc(eventsDocRef, {
-                                currentSinger: {
-                                    id: currentSinger.id,
-                                    name: currentSinger.name,
-                                    song: currentSinger.song,
-                                    votingStatus: 'inactive'
-                                }
-                            });
-                        });
                     });
                 });
             } else {
