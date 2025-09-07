@@ -1,4 +1,4 @@
-<!DOCTYPE ahtml>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -20,126 +20,117 @@
             background-color: var(--background-purple);
         }
         .container {
-            max-width: 480px;
+            max-width: 600px;
         }
-        .btn-primary {
+        .btn {
             background-color: var(--gold);
-            color: var(--background-purple);
-            transition: transform 0.1s ease-in-out;
+            color: var(--purple);
+            font-weight: bold;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            transition: transform 0.1s;
         }
-        .btn-primary:hover {
-            transform: translateY(-2px);
+        .btn:hover {
+            transform: scale(1.02);
         }
-        .input-field, .select-field {
-            border: 1px solid var(--gold);
-            color: white;
-            background-color: transparent;
+        .input-field {
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            border: 1px solid var(--light-blue);
+            background-color: #ffffff;
+            color: #000000;
         }
-        .input-field::placeholder {
-            color: var(--light-blue);
+        .vote-btn-encore {
+            background-color: var(--gold);
+            color: var(--purple);
+        }
+        .vote-btn-shot {
+            background-color: var(--light-blue);
+            color: var(--purple);
+        }
+        .vote-btn-next-time {
+            background-color: var(--purple);
+            color: var(--gold);
+            border: 2px solid var(--gold);
         }
     </style>
 </head>
-<body class="text-white flex flex-col items-center min-h-screen p-4">
+<body class="text-white flex flex-col items-center justify-center min-h-screen p-4">
 
     <!-- Main Container -->
-    <div class="container mx-auto p-6 rounded-3xl bg-[var(--purple)] shadow-xl mt-8">
+    <div class="container mx-auto p-8 rounded-3xl bg-gray-800 shadow-xl space-y-8 text-center">
 
-        <!-- Header and Logo -->
-        <header class="text-center mb-6">
-            <img src="https://placehold.co/150x150/2F0658/EABA54?text=EYE" alt="Earn Your Encore! Logo" class="mx-auto rounded-full mb-4">
-            <h1 class="text-4xl font-bold text-[var(--gold)]">Earn Your Encore!</h1>
-            <p class="text-[var(--light-blue)] mt-2">The Audience is Your Judge.</p>
+        <!-- Header -->
+        <header>
+            <h1 class="text-6xl font-extrabold text-[var(--gold)]">Earn Your Encore!</h1>
+            <p class="text-2xl text-[var(--light-blue)] mt-4">Audience Voting</p>
         </header>
 
-        <!-- Dynamic Content Area -->
-        <div id="app-container" class="space-y-6">
+        <!-- Dynamic Content Section -->
+        <main id="main-content" class="space-y-6">
 
-            <!-- Authentication State - Not Logged In -->
-            <div id="auth-state" class="text-center space-y-4">
-                <p>Sign up or log in to vote for tonight's singers!</p>
+            <!-- Authentication Section (visible before login) -->
+            <section id="auth-section" class="space-y-4">
                 <div class="space-y-2">
-                    <button id="show-signup" class="btn-primary w-full p-3 rounded-lg font-bold">Sign Up</button>
-                    <button id="show-login" class="btn-primary w-full p-3 rounded-lg font-bold">Log In</button>
+                    <button id="show-signup-btn" class="btn w-full">Sign Up</button>
+                    <button id="show-login-btn" class="btn w-full">Log In</button>
                 </div>
-            </div>
 
-            <!-- Sign Up Form -->
-            <div id="signup-form" class="hidden space-y-4">
-                <h2 class="text-2xl font-bold text-center text-[var(--gold)]">Create Account</h2>
-                <form id="signup-form-el" class="space-y-4">
-                    <input type="text" id="signup-name" placeholder="Full Name" required class="input-field p-3 w-full rounded-lg">
-                    <input type="email" id="signup-email" placeholder="Email Address" required class="input-field p-3 w-full rounded-lg">
-                    <input type="password" id="signup-password" placeholder="Password" required class="input-field p-3 w-full rounded-lg">
-                    <input type="tel" id="signup-phone" placeholder="Phone Number (optional)" class="input-field p-3 w-full rounded-lg">
-                    <input type="text" id="signup-address" placeholder="City, State" class="input-field p-3 w-full rounded-lg">
-                    <div class="flex flex-col md:flex-row md:space-x-4 space-y-4 md:space-y-0">
-                        <input type="number" id="signup-age" placeholder="Age (optional)" class="input-field p-3 w-full rounded-lg">
-                        <select id="signup-gender" class="select-field p-3 w-full rounded-lg">
-                            <option value="" disabled selected>Gender (optional)</option>
-                            <option value="Male">Male</option>
-                            <option value="Female">Female</option>
-                            <option value="Non-binary">Non-binary</option>
-                            <option value="Prefer not to say">Prefer not to say</option>
-                        </select>
-                    </div>
-                    <div class="flex items-start">
-                        <input type="checkbox" id="signup-terms" required class="mt-1 mr-2 rounded text-[var(--gold)] focus:ring-0">
-                        <label for="signup-terms" class="text-sm text-[var(--light-blue)]">
-                            I agree to the <a href="#" class="text-[var(--gold)] underline">terms and conditions</a> and privacy policy.
-                        </label>
-                    </div>
-                    <button type="submit" class="btn-primary w-full p-3 rounded-lg font-bold">Sign Up</button>
-                    <p id="signup-error" class="text-red-400 text-center text-sm hidden"></p>
-                    <button type="button" id="back-to-auth-from-signup" class="text-[var(--light-blue)] text-sm mt-4">&larr; Back to Login</button>
+                <!-- Sign Up Form -->
+                <form id="signup-form" class="hidden space-y-4">
+                    <h2 class="text-xl font-bold text-[var(--light-blue)]">Create an Account</h2>
+                    <input type="email" id="signup-email" placeholder="Email" class="input-field w-full">
+                    <input type="password" id="signup-password" placeholder="Password (6+ chars)" class="input-field w-full">
+                    <input type="text" id="signup-name" placeholder="Full Name" class="input-field w-full">
+                    <input type="text" id="signup-address" placeholder="Address" class="input-field w-full">
+                    <input type="text" id="signup-phone" placeholder="Phone" class="input-field w-full">
+                    <input type="text" id="signup-gender" placeholder="Gender" class="input-field w-full">
+                    <input type="number" id="signup-age" placeholder="Age" class="input-field w-full">
+                    <button type="submit" class="btn w-full">Submit</button>
+                    <p id="signup-error" class="text-red-400 text-sm hidden"></p>
                 </form>
-            </div>
 
-            <!-- Login Form -->
-            <div id="login-form" class="hidden space-y-4">
-                <h2 class="text-2xl font-bold text-center text-[var(--gold)]">Log In</h2>
-                <form id="login-form-el" class="space-y-4">
-                    <input type="email" id="login-email" placeholder="Email Address" required class="input-field p-3 w-full rounded-lg">
-                    <input type="password" id="login-password" placeholder="Password" required class="input-field p-3 w-full rounded-lg">
-                    <button type="submit" class="btn-primary w-full p-3 rounded-lg font-bold">Log In</button>
-                    <p id="login-error" class="text-red-400 text-center text-sm hidden"></p>
-                    <button type="button" id="back-to-auth-from-login" class="text-[var(--light-blue)] text-sm mt-4">&larr; Back to Sign Up</button>
+                <!-- Log In Form -->
+                <form id="login-form" class="hidden space-y-4">
+                    <h2 class="text-xl font-bold text-[var(--light-blue)]">Log In</h2>
+                    <input type="email" id="login-email" placeholder="Email" class="input-field w-full">
+                    <input type="password" id="login-password" placeholder="Password" class="input-field w-full">
+                    <button type="submit" class="btn w-full">Log In</button>
+                    <p id="login-error" class="text-red-400 text-sm hidden"></p>
                 </form>
-            </div>
+            </section>
 
-            <!-- Main Voting Interface - Logged In -->
-            <div id="voting-interface" class="hidden space-y-6">
-                <div class="flex justify-between items-center text-sm text-[var(--light-blue)]">
-                    <p id="user-display">Logged in as: </p>
-                    <button id="logout-btn" class="text-[var(--gold)]">Log Out</button>
+            <!-- Voting Section (visible after login) -->
+            <section id="voting-section" class="hidden space-y-6">
+                <h2 id="user-greeting" class="text-2xl font-bold text-white"></h2>
+                
+                <!-- Display Area -->
+                <div id="singer-display" class="bg-gray-700 p-6 rounded-lg space-y-2">
+                    <h3 id="singer-name" class="text-3xl font-bold text-[var(--gold)]">No Singer Active</h3>
+                    <p id="singer-song" class="text-xl text-[var(--light-blue)]">Waiting for the next performance...</p>
                 </div>
-                <div id="event-display" class="text-center space-y-2">
-                    <p id="event-title" class="text-xl font-bold text-[var(--gold)]"></p>
-                    <p id="current-singer-name" class="text-4xl font-bold text-white"></p>
-                    <p id="current-song-title" class="text-xl text-[var(--light-blue)]"></p>
+                
+                <!-- Voting Buttons -->
+                <div id="vote-buttons" class="space-y-4 hidden">
+                    <button id="encore-btn" class="btn vote-btn-encore w-full text-2xl">Encore!</button>
+                    <button id="shot-btn" class="btn vote-btn-shot w-full text-2xl">Another Shot!</button>
+                    <button id="next-time-btn" class="btn vote-btn-next-time w-full text-2xl">Maybe Next Time!</button>
+                    <p id="vote-status" class="text-lg font-bold"></p>
                 </div>
-                <div id="voting-area" class="space-y-4">
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <button id="encore-vote-btn" class="btn-primary p-4 rounded-lg font-bold">Encore!</button>
-                        <button id="another-shot-vote-btn" class="btn-primary p-4 rounded-lg font-bold">Another Shot!</button>
-                        <button id="maybe-next-time-vote-btn" class="btn-primary p-4 rounded-lg font-bold">Maybe Next Time!</button>
-                    </div>
-                </div>
-                <div id="vote-message" class="text-center text-sm font-bold text-[var(--light-blue)]"></div>
-            </div>
-
-        </div>
-
+            </section>
+        </main>
+        
+        <!-- View Board Button -->
+        <a id="view-board-btn" href="../screen-app.html" class="inline-block btn mt-8">View Live Display</a>
     </div>
 
     <!-- Firebase Scripts -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
-        import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, collection, onSnapshot, query, where, getDocs, addDoc, getDoc, serverTimestamp, setLogLevel } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
 
-        // IMPORTANT: Replace the placeholder configuration below with your own Firebase project's credentials.
-        // You can find this in your Firebase console under Project settings.
+        // --- PASTE YOUR FIREBASE CONFIGURATION HERE ---
         const firebaseConfig = {
             apiKey: "AIzaSyDGbC08WxruYIDPhZSlDlU-7Kzq-7mHENk",
             authDomain: "eyek-vote.firebaseapp.com",
@@ -150,289 +141,163 @@
         };
         const appId = firebaseConfig.appId;
 
-        // --- Firebase Initialization and Authentication ---
+        // --- Firebase Initialization ---
         const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
         const auth = getAuth(app);
-        
-        // Log all debug messages from Firebase
-        setLogLevel('debug');
-        
-        // UI elements
-        const appContainer = document.getElementById('app-container');
-        const authStateView = document.getElementById('auth-state');
-        const signupFormView = document.getElementById('signup-form');
-        const loginFormView = document.getElementById('login-form');
-        const votingInterfaceView = document.getElementById('voting-interface');
-        const userDisplay = document.getElementById('user-display');
-        const signupFormEl = document.getElementById('signup-form-el');
-        const loginFormEl = document.getElementById('login-form-el');
-        const signupErrorEl = document.getElementById('signup-error');
-        const loginErrorEl = document.getElementById('login-error');
-        const currentSingerNameEl = document.getElementById('current-singer-name');
-        const currentSongTitleEl = document.getElementById('current-song-title');
-        const eventTitleEl = document.getElementById('event-title');
-        const voteMessageEl = document.getElementById('vote-message');
-        const encoreBtn = document.getElementById('encore-vote-btn');
-        const anotherShotBtn = document.getElementById('another-shot-vote-btn');
-        const maybeNextTimeBtn = document.getElementById('maybe-next-time-vote-btn');
+        const db = getFirestore(app);
 
-        // State variables
-        let userId = null;
-        let currentEventId = null;
-        let currentSinger = null;
+        // --- UI Elements ---
+        const authSection = document.getElementById('auth-section');
+        const showSignupBtn = document.getElementById('show-signup-btn');
+        const showLoginBtn = document.getElementById('show-login-btn');
+        const signupForm = document.getElementById('signup-form');
+        const loginForm = document.getElementById('login-form');
+        const signupEmail = document.getElementById('signup-email');
+        const signupPassword = document.getElementById('signup-password');
+        const signupName = document.getElementById('signup-name');
+        const signupAddress = document.getElementById('signup-address');
+        const signupPhone = document.getElementById('signup-phone');
+        const signupGender = document.getElementById('signup-gender');
+        const signupAge = document.getElementById('signup-age');
+        const signupError = document.getElementById('signup-error');
+        const loginEmail = document.getElementById('login-email');
+        const loginPassword = document.getElementById('login-password');
+        const loginError = document.getElementById('login-error');
+        const votingSection = document.getElementById('voting-section');
+        const userGreeting = document.getElementById('user-greeting');
+        const singerNameDisplay = document.getElementById('singer-name');
+        const singerSongDisplay = document.getElementById('singer-song');
+        const voteButtons = document.getElementById('vote-buttons');
+        const encoreBtn = document.getElementById('encore-btn');
+        const shotBtn = document.getElementById('shot-btn');
+        const nextTimeBtn = document.getElementById('next-time-btn');
+        const voteStatus = document.getElementById('vote-status');
 
-        document.addEventListener('DOMContentLoaded', () => {
-             // Initial check for auth state
-            onAuthStateChanged(auth, async (user) => {
-                if (user) {
-                    userId = user.uid;
-                    showVotingInterface();
-                    userDisplay.textContent = `User ID: ${userId}`;
-                    startRealtimeListeners();
-                } else {
-                    showAuthState();
-                    userId = null;
-                    // Reset UI if user logs out
-                    currentSingerNameEl.textContent = "";
-                    currentSongTitleEl.textContent = "";
-                    eventTitleEl.textContent = "";
-                    voteMessageEl.textContent = "";
-                    disableVotingButtons();
-                }
-            });
+        // --- Event Listeners ---
+        showSignupBtn.addEventListener('click', () => {
+            signupForm.classList.remove('hidden');
+            loginForm.classList.add('hidden');
+            signupError.classList.add('hidden');
+        });
+        showLoginBtn.addEventListener('click', () => {
+            loginForm.classList.remove('hidden');
+            signupForm.classList.add('hidden');
+            loginError.classList.add('hidden');
         });
 
-        // UI Management Functions
-        function showView(viewToShow) {
-            const views = [authStateView, signupFormView, loginFormView, votingInterfaceView];
-            views.forEach(view => {
-                view.classList.add('hidden');
-            });
-            viewToShow.classList.remove('hidden');
-        }
-
-        function showAuthState() {
-            showView(authStateView);
-        }
-
-        function showSignupForm() {
-            showView(signupFormView);
-        }
-
-        function showLoginForm() {
-            showView(loginFormView);
-        }
-        
-        function showVotingInterface() {
-            showView(votingInterfaceView);
-        }
-
-        document.getElementById('show-signup').addEventListener('click', showSignupForm);
-        document.getElementById('show-login').addEventListener('click', showLoginForm);
-        document.getElementById('back-to-auth-from-signup').addEventListener('click', showAuthState);
-        document.getElementById('back-to-auth-from-login').addEventListener('click', showAuthState);
-        document.getElementById('logout-btn').addEventListener('click', async () => {
-            try {
-                await signOut(auth);
-            } catch (error) {
-                console.error("Error signing out:", error);
-            }
-        });
-
-        // --- Authentication Logic ---
-        signupFormEl.addEventListener('submit', async (e) => {
+        signupForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            signupErrorEl.classList.add('hidden');
-
-            const name = document.getElementById('signup-name').value;
-            const email = document.getElementById('signup-email').value;
-            const password = document.getElementById('signup-password').value;
-            const phone = document.getElementById('signup-phone').value;
-            const address = document.getElementById('signup-address').value;
-            const age = document.getElementById('signup-age').value;
-            const gender = document.getElementById('signup-gender').value;
-
+            const email = signupEmail.value;
+            const password = signupPassword.value;
+            const name = signupName.value;
+            const address = signupAddress.value;
+            const phone = signupPhone.value;
+            const gender = signupGender.value;
+            const age = signupAge.value;
             try {
                 const userCredential = await createUserWithEmailAndPassword(auth, email, password);
                 const user = userCredential.user;
-                
-                // Store additional user data in Firestore
-                // Path: /artifacts/{appId}/users/{userId}/profile/data
-                const userDocRef = doc(db, `artifacts/${appId}/users/${user.uid}/profile`, 'data');
-                await setDoc(userDocRef, {
-                    name: name,
-                    email: email,
-                    phone: phone,
-                    address: address,
-                    age: age ? Number(age) : null,
-                    gender: gender,
-                    createdAt: serverTimestamp()
+                await setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/profile`, 'data'), {
+                    name, email, address, phone, gender, age
                 });
-
-                console.log("User created and data saved successfully!");
-                // onAuthStateChanged will handle showing the voting interface
+                signupError.classList.add('hidden');
             } catch (error) {
-                console.error("Error signing up:", error);
-                let message = "An unknown error occurred.";
-                if (error.code === 'auth/email-already-in-use') {
-                    message = "This email is already in use. Please log in or use a different email.";
-                } else if (error.code === 'auth/weak-password') {
-                    message = "Password is too weak. Please use a stronger password.";
-                } else if (error.code === 'auth/network-request-failed') {
-                    message = "Network error. Please check your internet connection and try again.";
-                }
-                signupErrorEl.textContent = message;
-                signupErrorEl.classList.remove('hidden');
+                console.error("Signup error:", error);
+                signupError.textContent = `Error: ${error.message}`;
+                signupError.classList.remove('hidden');
             }
         });
 
-        loginFormEl.addEventListener('submit', async (e) => {
+        loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            loginErrorEl.classList.add('hidden');
-
-            const email = document.getElementById('login-email').value;
-            const password = document.getElementById('login-password').value;
-
+            const email = loginEmail.value;
+            const password = loginPassword.value;
             try {
                 await signInWithEmailAndPassword(auth, email, password);
-                // onAuthStateChanged will handle showing the voting interface
+                loginError.classList.add('hidden');
             } catch (error) {
-                console.error("Error logging in:", error);
-                let message = "Invalid email or password. Please try again.";
-                if (error.code === 'auth/invalid-credential') {
-                     message = "Invalid email or password. Please try again.";
-                }
-                loginErrorEl.textContent = message;
-                loginErrorEl.classList.remove('hidden');
+                console.error("Login error:", error);
+                loginError.textContent = `Error: ${error.message}`;
+                loginError.classList.remove('hidden');
             }
         });
 
-        // --- Firestore Real-time Listeners and Voting Logic ---
-        function startRealtimeListeners() {
-            // Path: /artifacts/{appId}/public/data/events
-            const eventsCollection = collection(db, `artifacts/${appId}/public/data/events`);
-            const q = query(eventsCollection, where('status', '==', 'active'));
+        encoreBtn.addEventListener('click', () => submitVote('Encore!'));
+        shotBtn.addEventListener('click', () => submitVote('Another Shot!'));
+        nextTimeBtn.addEventListener('click', () => submitVote('Maybe Next Time!'));
 
-            onSnapshot(q, (snapshot) => {
-                if (snapshot.empty) {
-                    currentEventId = null;
-                    currentSinger = null;
-                    eventTitleEl.textContent = "No active event.";
-                    currentSingerNameEl.textContent = "";
-                    currentSongTitleEl.textContent = "";
-                    disableVotingButtons();
-                    voteMessageEl.textContent = "";
-                    return;
-                }
-                
-                snapshot.forEach(async (doc) => {
-                    const eventData = doc.data();
-                    currentEventId = doc.id;
-                    eventTitleEl.textContent = eventData.name;
-                    currentSinger = eventData.currentSinger;
-
-                    if (currentSinger) {
-                        currentSingerNameEl.textContent = currentSinger.name;
-                        currentSongTitleEl.textContent = currentSinger.song;
-                        
-                        // Check if the user has already voted for this singer in this event
-                        const voteDocRef = doc(db, `artifacts/${appId}/users/${userId}/votes`, `${currentEventId}-${currentSinger.name.replace(/ /g, '-')}`);
-                        const voteDoc = await getDoc(voteDocRef);
-                        if (voteDoc.exists()) {
-                            disableVotingButtons();
-                            voteMessageEl.textContent = `You have already voted for ${currentSinger.name} with a vote of "${voteDoc.data().vote}".`;
-                        } else {
-                            enableVotingButtons();
-                            voteMessageEl.textContent = "Cast your vote!";
-                        }
+        // --- Firebase Auth State Listener ---
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                authSection.classList.add('hidden');
+                votingSection.classList.remove('hidden');
+                userGreeting.textContent = `Welcome, ${user.displayName || 'Guest'}!`;
+                // Start listening for active event
+                const eventDocRef = doc(db, `artifacts/${appId}/public/data/events`, 'currentEvent');
+                onSnapshot(eventDocRef, (docSnap) => {
+                    if (docSnap.exists() && docSnap.data().status === 'active' && docSnap.data().votingStatus === 'active') {
+                        const currentSinger = docSnap.data().currentSinger;
+                        singerNameDisplay.textContent = currentSinger.name;
+                        singerSongDisplay.textContent = `"${currentSinger.song}"`;
+                        voteButtons.classList.remove('hidden');
+                        voteStatus.textContent = '';
                     } else {
-                        currentSingerNameEl.textContent = "A new singer is about to begin...";
-                        currentSongTitleEl.textContent = "";
-                        disableVotingButtons();
-                        voteMessageEl.textContent = "Get ready to vote!";
+                        singerNameDisplay.textContent = "No Singer Active";
+                        singerSongDisplay.textContent = "Waiting for the next performance...";
+                        voteButtons.classList.add('hidden');
+                        voteStatus.textContent = '';
                     }
                 });
-            }, (error) => {
-                console.error("Error listening to events:", error);
-            });
-        }
+            } else {
+                authSection.classList.remove('hidden');
+                votingSection.classList.add('hidden');
+                signupForm.classList.remove('hidden');
+                loginForm.classList.add('hidden');
+            }
+        });
 
-        function disableVotingButtons() {
-            encoreBtn.disabled = true;
-            anotherShotBtn.disabled = true;
-            maybeNextTimeBtn.disabled = true;
-            encoreBtn.classList.add('opacity-50', 'cursor-not-allowed');
-            anotherShotBtn.classList.add('opacity-50', 'cursor-not-allowed');
-            maybeNextTimeBtn.classList.add('opacity-50', 'cursor-not-allowed');
-        }
-
-        function enableVotingButtons() {
-            encoreBtn.disabled = false;
-            anotherShotBtn.disabled = false;
-            maybeNextTimeBtn.disabled = false;
-            encoreBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-            anotherShotBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-            maybeNextTimeBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-        }
-
-        // --- Vote Submission Logic ---
-        async function castVote(voteType) {
-            if (!userId || !currentEventId || !currentSinger) {
-                console.error("Cannot cast vote: Missing user, event, or singer information.");
+        // --- Voting Logic ---
+        async function submitVote(vote) {
+            const user = auth.currentUser;
+            if (!user) {
+                console.error("User not logged in.");
+                voteStatus.textContent = "You must be logged in to vote.";
                 return;
             }
 
-            // Path: /artifacts/{appId}/users/{userId}/votes
-            const userVotesCollection = collection(db, `artifacts/${appId}/users/${userId}/votes`);
-            
-            // To prevent duplicate votes from a single user for the same singer at the same event,
-            // we create a unique document ID based on the event and singer.
-            const voteDocId = `${currentEventId}-${currentSinger.name.replace(/ /g, '-')}`;
-            const voteDocRef = doc(userVotesCollection, voteDocId);
+            const eventDocRef = doc(db, `artifacts/${appId}/public/data/events`, 'currentEvent');
+            const eventSnap = await getDoc(eventDocRef);
+            if (!eventSnap.exists() || eventSnap.data().votingStatus !== 'active') {
+                voteStatus.textContent = "Voting is not currently open.";
+                return;
+            }
 
-            // Path: /artifacts/{appId}/public/data/eventVotes
-            const eventVotesCollection = collection(db, `artifacts/${appId}/public/data/eventVotes`);
+            const currentSingerId = eventSnap.data().currentSinger.id;
 
             try {
-                // Check if the user has already voted for this singer
-                const voteDoc = await getDoc(voteDocRef);
-                if (voteDoc.exists()) {
-                    voteMessageEl.textContent = "You have already cast your vote for this singer!";
-                    return;
-                }
-
-                // Add the vote to the user's private collection
-                await setDoc(voteDocRef, {
-                    event: currentEventId,
-                    singerName: currentSinger.name,
-                    songTitle: currentSinger.song,
-                    vote: voteType,
-                    timestamp: serverTimestamp()
+                // Save vote to public collection
+                await setDoc(doc(db, `artifacts/${appId}/public/data/eventVotes`, `${currentSingerId}_${user.uid}`), {
+                    userId: user.uid,
+                    singerId: currentSingerId,
+                    vote: vote,
+                    timestamp: new Date()
                 });
 
-                // Add the vote to a public collection for easy aggregation by the KJ
-                await addDoc(eventVotesCollection, {
-                    eventId: currentEventId,
-                    singerName: currentSinger.name,
-                    songTitle: currentSinger.song,
-                    vote: voteType,
-                    timestamp: serverTimestamp()
+                // Update the UI
+                voteStatus.textContent = `Your vote for "${vote}" has been cast!`;
+
+                // Update the user's private vote history
+                await setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/votes`, `${currentSingerId}_${new Date().toISOString()}`), {
+                    singerId: currentSingerId,
+                    vote: vote,
+                    timestamp: new Date()
                 });
 
-                disableVotingButtons();
-                voteMessageEl.textContent = `Your vote of "${voteType}" has been cast! Thank you!`;
-                console.log(`Vote of "${voteType}" cast successfully for ${currentSinger.name}.`);
             } catch (error) {
-                console.error("Error casting vote:", error);
-                voteMessageEl.textContent = "There was an error casting your vote. Please try again.";
+                console.error("Error submitting vote:", error);
+                voteStatus.textContent = "An error occurred. Please try again.";
             }
         }
-
-        encoreBtn.addEventListener('click', () => castVote("Encore!"));
-        anotherShotBtn.addEventListener('click', () => castVote("Another Shot!"));
-        maybeNextTimeBtn.addEventListener('click', () => castVote("Maybe Next Time!"));
     </script>
-
 </body>
 </html>
