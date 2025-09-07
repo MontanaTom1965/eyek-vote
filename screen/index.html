@@ -453,6 +453,9 @@
         winnerBadge.textContent = (live ? 'Leading: ' : 'Winner: ') + labelFromKind(kind);
       }
 
+      function setWinnerVisible(show){
+  winnerBadge.style.display = show ? 'inline-block' : 'none';
+}
       function pulseWinner(){
         winnerBadge.classList.remove('flash');
         void winnerBadge.offsetWidth;
