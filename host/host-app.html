@@ -82,6 +82,26 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        .popup {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+        .popup-content {
+            background-color: var(--background-purple);
+            padding: 2rem;
+            border-radius: 1rem;
+            text-align: center;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            max-width: 90%;
+        }
     </style>
 </head>
 <body class="text-white flex flex-col items-center justify-center min-h-screen p-4">
@@ -149,6 +169,15 @@
         </main>
     </div>
 
+    <!-- Final Tally Pop-up -->
+    <div id="tally-popup" class="popup hidden">
+        <div class="popup-content space-y-4">
+            <h2 class="text-2xl font-bold text-[var(--light-blue)]">Final Tally</h2>
+            <div id="popup-tally-display" class="space-y-2 text-left"></div>
+            <button id="popup-close-btn" class="btn w-full">Close</button>
+        </div>
+    </div>
+
     <!-- Firebase Scripts -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
@@ -199,6 +228,9 @@
         const finalTallySection = document.getElementById('final-tally');
         const tallyDisplay = document.getElementById('tally-display');
         const backToHostBtn = document.getElementById('back-to-host-btn');
+        const tallyPopup = document.getElementById('tally-popup');
+        const popupTallyDisplay = document.getElementById('popup-tally-display');
+        const popupCloseBtn = document.getElementById('popup-close-btn');
 
         // --- Firebase References ---
         const eventsDocRef = doc(db, `artifacts/${appId}/public/data/events`, 'currentEvent');
@@ -341,8 +373,11 @@
             }
         });
 
-        backToHostBtn.addEventListener('click', async () => {
-            finalTallySection.classList.add('hidden');
+        popupCloseBtn.addEventListener('click', () => {
+            tallyPopup.classList.add('hidden');
+            // Reset to host panel
+            currentSingerStatus.textContent = 'No Singer is currently active.';
+            currentSingerControls.classList.add('hidden');
             document.getElementById('singer-controls').classList.remove('hidden');
         });
 
@@ -381,10 +416,9 @@
                 
                 await deleteDoc(doc(singerQueueCollectionRef, currentSinger.id));
 
-                // Display final tally and hide singer controls
-                document.getElementById('singer-controls').classList.add('hidden');
-                finalTallySection.classList.remove('hidden');
-                tallyDisplay.innerHTML = `
+                // Show the final tally pop-up
+                tallyPopup.classList.remove('hidden');
+                popupTallyDisplay.innerHTML = `
                     <h4 class="text-xl font-bold">${currentSinger.name} - "${currentSinger.song}"</h4>
                     <p class="text-lg">Result: <span class="font-bold">${result}</span></p>
                     <p>Encore! Votes: ${voteCounts['Encore!']}</p>
