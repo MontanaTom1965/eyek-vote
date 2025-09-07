@@ -425,8 +425,9 @@
                 await deleteDoc(doc(singerQueueCollectionRef, currentSinger.id));
 
                 // Show the final tally pop-up
-                tallyPopup.classList.remove('hidden');
-                popupTallyDisplay.innerHTML = `
+                tallyPopup.classList.add('hidden');
+                document.getElementById('final-tally').classList.remove('hidden');
+                document.getElementById('tally-display').innerHTML = `
                     <h4 class="text-xl font-bold">${currentSinger.name} - "${currentSinger.song}"</h4>
                     <p class="text-lg">Result: <span class="font-bold">${result}</span></p>
                     <p>Encore! Votes: ${voteCounts['Encore!']}</p>
