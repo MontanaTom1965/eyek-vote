@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -184,15 +184,21 @@
             <div id="popup-tally-display" class="space-y-2 text-left"></div>
             <button id="popup-close-btn" class="btn w-full">Close</button>
         </div>
+    </section>
+
+    <div id="tally-popup" class="popup hidden">
+        <div class="popup-content space-y-4">
+            <h2 class="text-2xl font-bold text-[var(--light-blue)]">Final Tally</h2>
+            <div id="popup-tally-display" class="space-y-2 text-left"></div>
+            <button id="popup-close-btn" class="btn w-full">Close</button>
+        </div>
     </div>
 
-    <!-- Firebase Scripts -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, onSnapshot, getDocs, collection, deleteDoc, addDoc, query, where, updateDoc } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
 
-        // --- PASTE YOUR FIREBASE CONFIGURATION HERE ---
         const firebaseConfig = {
             apiKey: "AIzaSyDGbC08WxruYIDPhZSlDlU-7Kzq-7mHENk",
             authDomain: "eyek-vote.firebaseapp.com",
@@ -203,12 +209,10 @@
         };
         const appId = firebaseConfig.appId;
 
-        // --- Firebase Initialization ---
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // --- UI Elements ---
         const loginSection = document.getElementById('login-section');
         const hostPanel = document.getElementById('host-panel');
         const loginBtn = document.getElementById('login-btn');
@@ -236,26 +240,20 @@
         const finalTallySection = document.getElementById('final-tally');
         const tallyDisplay = document.getElementById('tally-display');
         const backToHostBtn = document.getElementById('back-to-host-btn');
-        const tallyPopup = document.getElementById('tally-popup');
-        const popupTallyDisplay = document.getElementById('popup-tally-display');
-        const popupCloseBtn = document.getElementById('popup-close-btn');
 
-        // --- Firebase References ---
         const eventsDocRef = doc(db, `artifacts/${appId}/public/data/events`, 'currentEvent');
         const singerQueueCollectionRef = collection(db, `artifacts/${appId}/public/data/singerQueue`);
         const eventVotesCollectionRef = collection(db, `artifacts/${appId}/public/data/eventVotes`);
         const boardCollectionRef = collection(db, `artifacts/${appId}/public/data/board`);
 
-        // --- State Variables ---
         let currentSinger = null;
         let votingTimer = null;
-        const timerDuration = 30; // 30 seconds for voting
+        const timerDuration = 30;
         let votingCountdown = timerDuration;
         let isVoting = false;
         
         const votingSound = new Audio('https://vote.earnyourencorekaraoke.com/vote/quiz-countdown.mp3');
 
-        // --- Event Handlers ---
         loginBtn.addEventListener('click', async () => {
             const email = kjEmail.value;
             const password = kjPassword.value;
@@ -318,7 +316,6 @@
             }
         });
 
-        // Click handler for the "Start Singing" button in the queue
         document.addEventListener('click', async (e) => {
             if (e.target.matches('.singing-now-btn')) {
                 const singerId = e.target.dataset.id;
@@ -327,7 +324,6 @@
                 
                 currentSinger = { id: singerId, name: singerName, song: singerSong };
 
-                // Update active event with current singer
                 await updateDoc(eventsDocRef, {
                     currentSinger: {
                         id: currentSinger.id,
@@ -382,14 +378,12 @@
         });
 
         backToHostBtn.addEventListener('click', async () => {
-             // Clear the current singer section after the popup is closed
             await updateDoc(eventsDocRef, {
                  currentSinger: null
             });
             document.getElementById('final-tally').classList.add('hidden');
         });
 
-        // --- Utility Functions ---
         async function endVoting() {
             try {
                 const votes = await getDocs(query(eventVotesCollectionRef, where('singerId', '==', currentSinger.id)));
@@ -422,12 +416,10 @@
                     });
                 }
                 
-                // Remove the singer from the queue if they get "Maybe Next Time!"
                 if (result === 'Maybe Next Time!') {
                     await deleteDoc(doc(singerQueueCollectionRef, currentSinger.id));
                 }
 
-                // Show the final tally pop-up
                 document.getElementById('final-tally').classList.remove('hidden');
                 document.getElementById('tally-display').innerHTML = `
                     <h4 class="text-xl font-bold">${currentSinger.name} - "${currentSinger.song}"</h4>
@@ -437,7 +429,6 @@
                     <p>Maybe Next Time! Votes: ${voteCounts['Maybe Next Time!']}</p>
                 `;
                 
-                // Clear the current singer section after the popup is closed
                 currentSinger = null;
 
             } catch (error) {
@@ -455,13 +446,11 @@
             }
         }
 
-        // --- Real-time Listeners ---
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 loginSection.classList.add('hidden');
                 hostPanel.classList.remove('hidden');
                 
-                // Event status listener
                 onSnapshot(eventsDocRef, (docSnap) => {
                     if (docSnap.exists() && docSnap.data().status === 'active') {
                         eventStatusBadge.textContent = 'Active';
@@ -499,7 +488,6 @@
                     }
                 });
                 
-                // Singer queue listener
                 onSnapshot(query(singerQueueCollectionRef), (querySnapshot) => {
                     singerQueueList.innerHTML = '';
                     querySnapshot.forEach((doc) => {
