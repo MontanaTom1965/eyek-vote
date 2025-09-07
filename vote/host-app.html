@@ -129,7 +129,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, onSnapshot, collection, query, where, addDoc, getDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, onSnapshot, collection, query, where, addDoc, getDoc, deleteDoc, getDocs } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
 
         // --- PASTE YOUR FIREBASE CONFIGURATION HERE ---
         const firebaseConfig = {
@@ -165,6 +165,8 @@
         const singerQueueList = document.getElementById('singer-queue-list');
         
         let activeEventId = null;
+        let countdownTimer = null;
+        let audio = new Audio('https://vote.earnyourencorekaraoke.com/vote/quiz-countdown.mp3');
 
         // --- Authentication & UI State ---
         onAuthStateChanged(auth, (user) => {
@@ -214,6 +216,9 @@
                     name: eventName,
                     status: 'active',
                     currentSinger: null,
+                    votingStatus: 'idle',
+                    votingStartTime: null,
+                    votingEndTime: null,
                     startTime: new Date()
                 });
                 eventStatusEl.textContent = `Event "${eventName}" is now active.`;
@@ -233,6 +238,51 @@
                 eventStatusEl.textContent = "Error ending event. Check console for details.";
             }
         });
+
+        // --- Voting Logic for Host ---
+        async function startVoting(singer) {
+            const docRef = doc(db, `artifacts/${appId}/public/data/events`, 'currentEvent');
+            const votingEndTime = new Date(Date.now() + 30 * 1000);
+            await setDoc(docRef, {
+                currentSinger: { id: singer.id, name: singer.name, song: singer.song },
+                votingStatus: 'active',
+                votingStartTime: new Date(),
+                votingEndTime: votingEndTime
+            }, { merge: true });
+
+            audio.play();
+
+            countdownTimer = setInterval(() => {
+                const remainingTime = Math.max(0, votingEndTime.getTime() - Date.now());
+                if (remainingTime <= 0) {
+                    clearInterval(countdownTimer);
+                    endVoting();
+                }
+            }, 1000);
+        }
+
+        async function extendVoting() {
+            if (activeEventId) {
+                const docRef = doc(db, `artifacts/${appId}/public/data/events`, activeEventId);
+                const currentEventSnap = await getDoc(docRef);
+                const currentEvent = currentEventSnap.data();
+                if (currentEvent.votingStatus === 'active') {
+                    const newEndTime = new Date(currentEvent.votingEndTime.toDate().getTime() + 15 * 1000);
+                    await setDoc(docRef, { votingEndTime: newEndTime }, { merge: true });
+                    audio.play(); // Restart the countdown sound
+                }
+            }
+        }
+        
+        async function endVoting() {
+            if (activeEventId) {
+                clearInterval(countdownTimer);
+                const docRef = doc(db, `artifacts/${appId}/public/data/events`, activeEventId);
+                await setDoc(docRef, { votingStatus: 'completed' }, { merge: true });
+                audio.pause();
+                audio.currentTime = 0;
+            }
+        }
 
         // --- Singer & Queue Management ---
         addSingerBtn.addEventListener('click', async () => {
@@ -265,16 +315,7 @@
                 const songName = e.target.dataset.song;
 
                 // Set this singer as the current active singer for voting
-                const eventsRef = doc(db, `artifacts/${appId}/public/data/events`, 'currentEvent');
-                await setDoc(eventsRef, {
-                    currentSinger: { id: singerId, name: singerName, song: songName }
-                }, { merge: true });
-                
-                // Update singer status to 'singing' in the queue
-                const singerRef = doc(db, `artifacts/${appId}/public/data/singerQueue`, singerId);
-                await setDoc(singerRef, { status: 'singing' }, { merge: true });
-
-                // TODO: Add logic to display votes in real-time
+                startVoting({ id: singerId, name: singerName, song: songName });
             }
         });
 
