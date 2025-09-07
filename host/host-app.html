@@ -411,7 +411,7 @@
                         result: result,
                         timestamp: new Date()
                     });
-                    // Also update the result in the singer queue for the dot
+                    // Also update the result in the singer queue for the button background
                     await updateDoc(doc(singerQueueCollectionRef, currentSinger.id), { result: result });
                 }
                 
