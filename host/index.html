@@ -1,615 +1,349 @@
-<!-- EYEK /host/index.html v2025-09-06.22 -->
-<!DOCTYPE html>
+!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <title>Encore Karaoke — Host</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta http-equiv="Cache-Control" content="no-store" />
-  <style>
-    :root{
-      --bg:#2F0658; --card:#401073; --border:#7E3CC0; --text:#ffffff; --muted:#E3D6F4; --accent:#D9B6FF;
-      --good:#22c55e; --warn:#f59e0b; --bad:#ef4444; --info:#38bdf8;
-      --tile:#2b1250; --tileBorder:#7a52b7;
-    }
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{
-      margin:0; color:var(--text);
-      background:
-        radial-gradient(1200px 600px at 15% -10%, #6A2BB3 0%, rgba(106,43,179,0) 60%),
-        radial-gradient(1000px 520px at 85% -10%, #4E1E8E 0%, rgba(78,30,142,0) 55%),
-        var(--bg);
-      font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu;
-      font-size: clamp(17px, 2.0vw, 22px);
-    }
-    .wrap{max-width:1450px; margin:0 auto; padding:22px}
-    header{padding-bottom:10px; border-bottom:2px solid var(--border)}
-    h1{margin:.1em 0 .2em; font-size:clamp(2.0rem, 4.7vw, 3.4rem)}
-    .pill{display:inline-block; border:2px solid var(--border); border-radius:999px; padding:.15em .7em; background:rgba(127,60,192,.18); font-weight:1000}
-
-    .layout{
-      display:grid; gap:22px; margin-top:18px;
-      grid-template-columns: 320px 1fr;
-    }
-    @media (max-width: 1100px){ .layout{ grid-template-columns: 1fr } }
-
-    .card{
-      background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02)) , var(--card);
-      border:2px solid var(--border); border-radius:18px; padding:18px;
-      box-shadow:0 12px 40px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.06)
-    }
-
-    /* Buttons */
-    .btn{
-      appearance:none; cursor:pointer; user-select:none;
-      border-radius:12px; padding:.7em 1em; font-weight:1000; border:2px solid transparent;
-      transition:transform .06s ease, filter .12s ease, opacity .2s ease;
-      color:#0b1220; background:#e5e7eb; /* neutral */
-    }
-    .btn:hover{ transform:translateY(-1px); filter:brightness(1.05) }
-    .btn:active{ transform:translateY(0); filter:brightness(.98) }
-    .btn:disabled{ opacity:.55; cursor:not-allowed; }
-    .btn-row{ display:flex; gap:10px; flex-wrap:wrap }
-    .btn.good{ background:var(--good); border-color:#16a34a; color:#fff }
-    .btn.warn{ background:var(--warn); border-color:#d97706; color:#111 }
-    .btn.bad{  background:var(--bad); border-color:#dc2626; color:#fff }
-    .btn.info{ background:var(--info); border-color:#0891b2; color:#061b2a }
-
-    /* Event box */
-    .eventBox h2{ margin:.1em 0 .6em; font-size:clamp(1.3rem, 2.5vw, 1.8rem) }
-    .row{ display:flex; gap:12px; align-items:center; flex-wrap:wrap }
-    .field{ flex:1; min-width:200px }
-    input[type=text]{ width:100%; font:inherit; padding:.6em .7em; border-radius:12px; border:2px solid var(--border); background:rgba(0,0,0,.18); color:#fff }
-    label{ font-weight:900 }
-
-    /* Singer input 50% width on desktop */
-    .singer-field{ width:100%; max-width:100% }
-    @media (min-width:900px){ .singer-field{ width:50% } }
-
-    /* Sidebar singer list */
-    .side h3{ margin:.2em 0 .6em }
-    .singers{ list-style:disc; padding-left:1.2em; margin:0 }
-    .singers li{
-      margin:.45em 0; display:flex; align-items:center; gap:10px; flex-wrap:wrap
-    }
-    .singerNameBtn{
-      background:none; border:none; color:#fff; font-weight:1000; cursor:pointer; padding:0;
-      text-decoration:underline; text-underline-offset:3px;
-      font-size:1.22em; /* larger names */
-    }
-    .tag{ font-size:.85em; color:var(--muted); font-weight:800 }
-    .removeBtn, .restoreBtn{
-      margin-left:auto;
-      font-size:.72em; padding:.2em .4em; border-radius:10px; line-height:1;
-      border:2px solid var(--border); background:rgba(0,0,0,.15); color:#fff; cursor:pointer;
-    }
-    .removeBtn{ border-color:#dc2626 }
-    .restoreBtn{ border-color:#22c55e }
-
-    /* Now performing tile */
-    .nowTile{
-      display:grid; grid-template-columns: 1fr auto; gap:16px; align-items:center;
-      background:
-        radial-gradient(180% 140% at 120% -20%, rgba(217,182,255,.22), rgba(0,0,0,0)),
-        linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.015)),
-        var(--tile);
-      border:2px solid var(--tileBorder); border-radius:14px; padding:14px;
-    }
-    .qr{ width:120px; height:120px; object-fit:contain; border-radius:10px; border:2px solid var(--border); background:rgba(0,0,0,.18) }
-
-    .divider{ height:2px; background:var(--border); margin:12px 0 }
-
-    /* Voting controls + Host vote layout */
-    .controlsWrap{
-      display:flex; gap:16px; align-items:flex-start; justify-content:space-between; flex-wrap:wrap;
-    }
-    .hostVoteBox{ min-width: 280px; text-align:right }
-    .hostVoteBox .label{ display:block; font-weight:900; color:var(--muted); margin-bottom:6px; text-align:right }
-    .hostBtns{ display:flex; gap:8px; justify-content:flex-end; flex-wrap:wrap }
-    .hostBtn-enc{ background:var(--good); border-color:#16a34a; color:#fff }
-    .hostBtn-ano{ background:var(--warn); border-color:#d97706; color:#111 }
-    .hostBtn-may{ background:var(--bad);  border-color:#dc2626; color:#fff }
-
-    /* Toast */
-    .toast{
-      position:fixed; left:50%; transform:translateX(-50%); bottom:18px;
-      padding:.6em .9em; border-radius:10px; border:2px solid var(--border);
-      background:rgba(0,0,0,.45); color:#fff; font-weight:1000; z-index:80; display:none;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Earn Your Encore! KJ Host</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --purple: #3a115f;
+            --gold: #eaba54;
+            --light-blue: #79aec1;
+            --background-purple: #2F0658;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background-purple);
+        }
+        .container {
+            max-width: 800px;
+        }
+        .btn {
+            background-color: var(--gold);
+            color: var(--background-purple);
+            transition: transform 0.1s ease-in-out;
+            border-radius: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            font-weight: bold;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        .input-field {
+            border: 1px solid var(--gold);
+            background-color: transparent;
+            color: white;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+        }
+        .input-field::placeholder {
+            color: var(--light-blue);
+        }
+        .singer-list-item {
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .singer-list-item:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        .result-bar {
+            background-color: var(--light-blue);
+        }
+        .result-bar-encore {
+            background-color: var(--gold);
+        }
+        .result-bar-another {
+            background-color: var(--light-blue);
+        }
+        .result-bar-next {
+            background-color: var(--purple);
+        }
+    </style>
 </head>
-<body>
-  <div class="wrap">
-    <header>
-      <h1 id="eventHeading">Encore Karaoke — <span class="pill" id="eventPill">Set Event</span></h1>
-    </header>
+<body class="text-white flex flex-col items-center min-h-screen p-4">
 
-    <div class="layout">
-      <!-- Sidebar: Singers -->
-      <aside class="side card">
-        <h3>Singers</h3>
-        <ul id="singerList" class="singers"><li class="tag">— none yet —</li></ul>
-        <div class="divider"></div>
-        <label><input type="checkbox" id="showRemovedChk" /> Show Removed!</label>
-      </aside>
+    <!-- Main Container -->
+    <div class="container mx-auto p-6 rounded-3xl bg-[var(--purple)] shadow-xl mt-8 space-y-6">
 
-      <!-- Main column -->
-      <main class="mainCol">
-        <!-- Event box -->
-        <section class="card eventBox">
-          <h2 id="eventTitle">Event</h2>
-          <div class="row">
-            <div class="field"><input id="eventIdInput" type="text" placeholder="Enter event id (e.g., MyHouse)" /></div>
-            <button id="setEventBtn" class="btn info" type="button">CHANGE</button>
-            <label><input type="checkbox" id="lockEventChk" /> Lock Event</label>
-          </div>
-        </section>
+        <!-- Header -->
+        <header class="text-center mb-6">
+            <h1 class="text-4xl font-bold text-[var(--gold)]">KJ Host Panel</h1>
+            <p class="text-[var(--light-blue)] mt-2">Manage the Encore! show</p>
+        </header>
 
-        <!-- Displays box -->
-        <section class="card">
-          <h2>Displays & Links</h2>
-          <div class="btn-row">
-            <button id="openVoteBtn"   class="btn">Vote</button>
-            <button id="openScreenBtn" class="btn">Screen</button>
-            <button id="openBoardBtn"  class="btn">Board</button>
-          </div>
-        </section>
-
-        <!-- Singer entry -->
-        <section class="card">
-          <h2>Add / Announce Singer</h2>
-          <div class="row">
-            <input id="singerNameInput" class="singer-field" type="text" placeholder="Singer name" />
-            <button id="addSingerBtn" class="btn good" type="button" aria-label="Enter singer">Enter</button>
-          </div>
-          <div class="tag" style="margin-top:8px">Tip: Click a singer’s name in the sidebar to announce them again.</div>
-        </section>
-
-        <!-- Now performing + vote controls -->
-        <section class="card">
-          <h2>Now Performing</h2>
-          <div class="nowTile">
-            <div>
-              <div class="tag">Singer</div>
-              <div style="font-weight:1000; font-size:1.4em" id="nowSinger">—</div>
-              <div class="tag" id="perfIdTag" style="margin-top:4px">—</div>
+        <!-- Current Event Management -->
+        <section class="bg-gray-800 p-4 rounded-lg space-y-4">
+            <h2 class="text-xl font-bold text-[var(--gold)]">Current Event</h2>
+            <div id="event-controls" class="space-y-2">
+                <input type="text" id="event-name-input" placeholder="Enter Event Name (e.g., Friday Night Karaoke)" class="input-field w-full">
+                <div class="flex space-x-2">
+                    <button id="start-event-btn" class="btn w-1/2">Start Event</button>
+                    <button id="end-event-btn" class="btn w-1/2">End Event</button>
+                </div>
             </div>
-            <img id="qrImg" class="qr" alt="QR" />
-          </div>
+            <p id="event-status" class="text-center text-lg"></p>
+        </section>
 
-          <div class="divider"></div>
+        <!-- Singer Management -->
+        <section class="bg-gray-800 p-4 rounded-lg space-y-4">
+            <h2 class="text-xl font-bold text-[var(--gold)]">Singer Queue</h2>
+            <div class="space-y-2">
+                <input type="text" id="singer-name-input" placeholder="Singer's Name" class="input-field w-full">
+                <input type="text" id="song-title-input" placeholder="Song Title" class="input-field w-full">
+                <button id="add-singer-btn" class="btn w-full">Add to Queue</button>
+            </div>
+            <ul id="singer-list" class="space-y-2">
+                <!-- Singers will be dynamically added here -->
+            </ul>
+        </section>
 
-          <h2>Voting Controls</h2>
-          <div class="controlsWrap">
-            <!-- Left: open/extend/end -->
-            <div class="btn-row">
-              <button id="voteNowBtn"    class="btn good">Vote Now (30s)</button>
-              <button id="extendBtn"     class="btn warn">Extend +15s</button>
-              <button id="endNowBtn"     class="btn bad">End Now</button>
+        <!-- Current Voting & Results -->
+        <section class="bg-gray-800 p-4 rounded-lg space-y-4">
+            <h2 class="text-xl font-bold text-[var(--gold)]">Current Singer</h2>
+            <div id="current-singer-info" class="text-center space-y-2">
+                <p id="current-singer-name" class="text-3xl font-bold">No Singer Active</p>
+                <p id="current-song-title" class="text-lg text-[var(--light-blue)]"></p>
+                <button id="clear-singer-btn" class="btn w-full" disabled>End Voting & Announce Results</button>
             </div>
 
-            <!-- Right: Host vote -->
-            <div class="hostVoteBox">
-              <span class="label">Host Vote</span>
-              <div class="hostBtns">
-                <button id="hostVoteEnc" class="btn hostBtn-enc" type="button" title="Encore!">Encore!</button>
-                <button id="hostVoteAno" class="btn hostBtn-ano" type="button" title="Another Shot!">Another Shot!</button>
-                <button id="hostVoteMay" class="btn hostBtn-may" type="button" title="Maybe Next Time!">Maybe Next Time!</button>
-              </div>
+            <!-- Vote Tally Section -->
+            <div id="vote-tally" class="mt-6 space-y-4">
+                <h3 class="text-lg font-bold">Live Vote Tally</h3>
+                <div class="space-y-2">
+                    <div class="relative h-8 rounded-lg overflow-hidden bg-gray-700">
+                        <div id="encore-bar" class="result-bar result-bar-encore absolute h-full transition-all duration-500"></div>
+                        <span class="absolute top-1/2 left-2 transform -translate-y-1/2 font-bold z-10">Encore! (<span id="encore-count">0</span>)</span>
+                    </div>
+                    <div class="relative h-8 rounded-lg overflow-hidden bg-gray-700">
+                        <div id="another-shot-bar" class="result-bar result-bar-another absolute h-full transition-all duration-500"></div>
+                        <span class="absolute top-1/2 left-2 transform -translate-y-1/2 font-bold z-10">Another Shot! (<span id="another-shot-count">0</span>)</span>
+                    </div>
+                    <div class="relative h-8 rounded-lg overflow-hidden bg-gray-700">
+                        <div id="maybe-next-time-bar" class="result-bar result-bar-next absolute h-full transition-all duration-500"></div>
+                        <span class="absolute top-1/2 left-2 transform -translate-y-1/2 font-bold z-10">Maybe Next Time! (<span id="maybe-next-time-count">0</span>)</span>
+                    </div>
+                </div>
             </div>
-          </div>
-
-          <div style="margin-top:8px" class="tag">Status: <span id="statusText">pending</span> · Time left: <span id="timeLeft">—</span></div>
         </section>
-      </main>
+
     </div>
-  </div>
 
-  <div id="toast" class="toast">—</div>
+    <!-- Firebase Scripts -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signInWithCustomToken, signInAnonymously } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, collection, onSnapshot, query, where, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
 
-  <!-- Firebase (compat) -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+        // Firebase credentials will be automatically populated by the environment.
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
-  <script>
-  (function(){
-    /* --- Firebase --- */
-    var FIREBASE_CONFIG = {
-      apiKey:"AIzaSyDGbC08WxruYIDPhZSlDlU-7Kzq-7mHENk",
-      authDomain:"eyek-vote.firebaseapp.com",
-      projectId:"eyek-vote"
-    };
-    if(!firebase || !firebase.initializeApp){ alert('Firebase failed to load.'); return; }
-    firebase.initializeApp(FIREBASE_CONFIG);
-    var db=firebase.firestore();
-    var auth=firebase.auth();
+        // --- Firebase Initialization and Authentication ---
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        let userId = null;
 
-    /* --- Elements --- */
-    function $(id){ return document.getElementById(id); }
-    var eventHeading=$('eventHeading'), eventPill=$('eventPill'), eventTitle=$('eventTitle'),
-        eventIdInput=$('eventIdInput'), setEventBtn=$('setEventBtn'), lockEventChk=$('lockEventChk'),
-        openVoteBtn=$('openVoteBtn'), openScreenBtn=$('openScreenBtn'), openBoardBtn=$('openBoardBtn'),
-        singerNameInput=$('singerNameInput'), addSingerBtn=$('addSingerBtn'),
-        singerList=$('singerList'), showRemovedChk=$('showRemovedChk'),
-        nowSinger=$('nowSinger'), perfIdTag=$('perfIdTag'), qrImg=$('qrImg'),
-        voteNowBtn=$('voteNowBtn'), extendBtn=$('extendBtn'), endNowBtn=$('endNowBtn'),
-        hostVoteEnc=$('hostVoteEnc'), hostVoteAno=$('hostVoteAno'), hostVoteMay=$('hostVoteMay'),
-        statusText=$('statusText'), timeLeft=$('timeLeft'),
-        toast=$('toast');
+        // UI Elements
+        const eventNameInput = document.getElementById('event-name-input');
+        const startEventBtn = document.getElementById('start-event-btn');
+        const endEventBtn = document.getElementById('end-event-btn');
+        const eventStatusEl = document.getElementById('event-status');
+        const singerNameInput = document.getElementById('singer-name-input');
+        const songTitleInput = document.getElementById('song-title-input');
+        const addSingerBtn = document.getElementById('add-singer-btn');
+        const singerListEl = document.getElementById('singer-list');
+        const currentSingerNameEl = document.getElementById('current-singer-name');
+        const currentSongTitleEl = document.getElementById('current-song-title');
+        const clearSingerBtn = document.getElementById('clear-singer-btn');
+        const encoreCountEl = document.getElementById('encore-count');
+        const anotherShotCountEl = document.getElementById('another-shot-count');
+        const maybeNextTimeCountEl = document.getElementById('maybe-next-time-count');
+        const encoreBarEl = document.getElementById('encore-bar');
+        const anotherShotBarEl = document.getElementById('another-shot-bar');
+        const maybeNextTimeBarEl = document.getElementById('maybe-next-time-bar');
 
-    /* --- State --- */
-    var CURRENT={ eventId:null, performanceId:null, status:'pending', openAt:null, durationSec:0, closeAt:null, singerName:'—' };
-    var unsubState=null, unsubPerf=null, unsubSingers=null;
-    var countdownTimer=null;
-    var autoCloseTimer=null;
+        // State
+        let currentEventId = null;
+        let activeSinger = null;
 
-    /* --- Utils --- */
-    function showToast(msg){ toast.textContent=msg||'Done'; toast.style.display='block'; setTimeout(()=>toast.style.display='none', 1800); }
-    function urlRoot(){ return location.origin + '/'; }
-    function saveEventId(eid){ try{ localStorage.setItem('eyek_event_id', eid); }catch(_){} }
-    function loadEventId(){ try{ return localStorage.getItem('eyek_event_id')||''; }catch(_){ return ''; } }
-    function computeCloseAtFrom(d){
-      if(d && d.openAt && d.durationSec){ return firebase.firestore.Timestamp.fromDate(new Date(d.openAt.toMillis() + (d.durationSec|0)*1000)); }
-      return d && d.closeAt ? d.closeAt : null;
-    }
-    function msLeft(){ if(!CURRENT.closeAt) return 0; return Math.max(0, CURRENT.closeAt.toMillis() - Date.now()); }
-    function getDeviceId(){
-      try{
-        var k='eyek_device_id', id=localStorage.getItem(k);
-        if(!id){ var a=new Uint8Array(16); crypto.getRandomValues(a); id=Array.from(a,b=>b.toString(16).padStart(2,'0')).join(''); localStorage.setItem(k,id); }
-        return id;
-      }catch(_){ return 'dev'; }
-    }
-
-    function qrProvider1(d){ return 'https://api.qrserver.com/v1/create-qr-code/?size=120x120&data='+encodeURIComponent(d); }
-    function qrProvider2(d){ return 'https://chart.googleapis.com/chart?cht=qr&chs=120x120&chl='+encodeURIComponent(d); }
-    function setQrForUrl(url){
-      if(!qrImg) return;
-      if(!url){ qrImg.removeAttribute('src'); qrImg.alt=''; return; }
-      var tried=false;
-      qrImg.onerror=function(){ if(!tried){ tried=true; qrImg.src=qrProvider2(url); } else { qrImg.alt='QR unavailable'; } };
-      qrImg.src=qrProvider1(url);
-      qrImg.alt='QR';
-    }
-    function updateQr(){
-      if(!CURRENT.eventId || !CURRENT.performanceId){ setQrForUrl(null); return; }
-      var url = urlRoot() + 'vote/index.html?eventId=' + encodeURIComponent(CURRENT.eventId) + '&performanceId=' + encodeURIComponent(CURRENT.performanceId);
-      setQrForUrl(url);
-    }
-
-    function renderHeader(){
-      var eid = CURRENT.eventId || 'Set Event';
-      eventPill.textContent = eid;
-      eventTitle.textContent = 'Event';
-      eventHeading.querySelector('#eventPill').textContent = eid;
-    }
-
-    function renderStatus(){
-      statusText.textContent = CURRENT.status;
-      if(CURRENT.status==='open'){ var ms = msLeft(); var s = Math.max(0, Math.ceil(ms/1000)); timeLeft.textContent = s+'s'; }
-      else{ timeLeft.textContent = '—'; }
-      var enableHost = (CURRENT.status==='open' && CURRENT.performanceId && CURRENT.eventId);
-      [hostVoteEnc, hostVoteAno, hostVoteMay].forEach(function(b){ b.disabled = !enableHost; });
-    }
-
-    function startCountdown(){
-      stopCountdown();
-      countdownTimer=setInterval(function(){
-        if(CURRENT.status!=='open'){ stopCountdown(); return; }
-        renderStatus();
-      }, 250);
-    }
-    function stopCountdown(){ if(countdownTimer){ clearInterval(countdownTimer); } countdownTimer=null; }
-
-    /* --- Auto-close helpers --- */
-    function clearAutoClose(){ if(autoCloseTimer){ clearTimeout(autoCloseTimer); autoCloseTimer=null; } }
-    function scheduleAutoClose(){
-      clearAutoClose();
-      if(CURRENT.status!=='open' || !CURRENT.performanceId || !CURRENT.eventId || !CURRENT.closeAt) return;
-      var remaining = msLeft();
-      if(remaining <= 200){
-        var ref = db.collection('events').doc(CURRENT.eventId).collection('performances').doc(CURRENT.performanceId);
-        ref.set({ status:'closed', closeAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true }).catch(()=>{});
-        return;
-      }
-      autoCloseTimer = setTimeout(function(){
-        if(CURRENT.status!=='open'){ return; }
-        if(msLeft() > 0){ scheduleAutoClose(); return; }
-        var ref = db.collection('events').doc(CURRENT.eventId).collection('performances').doc(CURRENT.performanceId);
-        ref.set({ status:'closed', closeAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true }).catch(()=>{});
-      }, remaining + 120);
-    }
-
-    /* --- Auth (anon) --- */
-    function ensureAuth(){ return auth.signInAnonymously().catch(()=>{}); }
-
-    /* --- Event handling --- */
-    function setEventFromInput(){
-      var eid = (eventIdInput.value||'').trim();
-      if(!eid){ alert('Please enter an event id.'); return; }
-      setEvent(eid);
-    }
-    function setEvent(eid){
-      CURRENT.eventId = eid;
-      saveEventId(eid);
-      renderHeader();
-      wireEvent(eid);
-      // Auto-broadcast active event (no button needed)
-      db.collection('meta').doc('active').set({ eventId:eid, updatedAt: firebase.firestore.FieldValue.serverTimestamp() }).catch(()=>{});
-      showToast('Event set to: '+eid);
-    }
-    function lockEventUI(applyLock){
-      var locked = !!applyLock;
-      eventIdInput.disabled = locked;
-      setEventBtn.disabled = locked;
-      lockEventChk.checked = locked;
-      if(locked){ showToast('Event locked'); }
-    }
-
-    function wireEvent(eid){
-      if(unsubState){ unsubState(); unsubState=null; }
-      if(unsubPerf){ unsubPerf(); unsubPerf=null; }
-      if(unsubSingers){ unsubSingers(); unsubSingers=null; }
-      clearAutoClose();
-
-      unsubState = db.collection('events').doc(eid).collection('state').doc('current')
-        .onSnapshot(function(snap){
-          var d=snap.data()||{};
-          CURRENT.performanceId = d.performanceId || null;
-          CURRENT.singerName = d.currentSingerName || '—';
-          nowSinger.textContent = CURRENT.singerName;
-          perfIdTag.textContent = CURRENT.performanceId ? ('#'+CURRENT.performanceId) : '—';
-          updateQr();
-          watchPerfDoc();
-        });
-
-      unsubSingers = db.collection('events').doc(eid).collection('singers')
-        .orderBy('createdAt','asc')
-        .onSnapshot(function(qs){
-          var showRemoved = !!showRemovedChk.checked;
-          var any=false;
-          singerList.innerHTML='';
-          qs.forEach(function(doc){
-            var s = doc.data()||{};
-            var removed = !!s.removed;
-            if(removed && !showRemoved) return;
-
-            any=true;
-            var li=document.createElement('li');
-
-            var nameBtn=document.createElement('button');
-            nameBtn.className='singerNameBtn';
-            nameBtn.textContent = s.name || '(Unknown)';
-            nameBtn.title = 'Announce now';
-            nameBtn.onclick = function(){ announceSinger(doc.id, s.name||'(Unknown)'); };
-
-            var tag=document.createElement('span');
-            tag.className='tag';
-            tag.textContent = removed ? 'removed' : 'ready';
-
-            var act=document.createElement('button');
-            if(removed){
-              act.className='restoreBtn'; act.textContent='Restore';
-              act.onclick=function(){ restoreSinger(doc.id); };
-            }else{
-              act.className='removeBtn'; act.textContent='× Remove';
-              act.onclick=function(){ removeSinger(doc.id); };
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Authenticate with a custom token or anonymously if not available
+            try {
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (error) {
+                console.error("Authentication Error:", error);
             }
 
-            li.appendChild(nameBtn);
-            li.appendChild(tag);
-            li.appendChild(act);
-            singerList.appendChild(li);
-          });
-          if(!any){ singerList.innerHTML='<li class="tag">— none yet —</li>'; }
+            onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    userId = user.uid;
+                    console.log(`User authenticated with ID: ${userId}`);
+                    startRealtimeListeners();
+                } else {
+                    console.log("User is not authenticated.");
+                }
+            });
         });
-    }
 
-    function watchPerfDoc(){
-      if(unsubPerf){ unsubPerf(); unsubPerf=null; }
-      clearAutoClose();
+        // --- Real-time Listeners ---
+        function startRealtimeListeners() {
+            // Listen for active events
+            const eventsRef = collection(db, `artifacts/${appId}/public/data/events`);
+            const qEvents = query(eventsRef, where('status', '==', 'active'));
+            onSnapshot(qEvents, (snapshot) => {
+                if (snapshot.empty) {
+                    eventStatusEl.textContent = "No active event. Start one to begin.";
+                    currentEventId = null;
+                    activeSinger = null;
+                    currentSingerNameEl.textContent = "No Singer Active";
+                    currentSongTitleEl.textContent = "";
+                    clearSingerBtn.disabled = true;
+                } else {
+                    snapshot.forEach(doc => {
+                        const event = doc.data();
+                        currentEventId = doc.id;
+                        eventStatusEl.textContent = `Active Event: ${event.name}`;
+                        activeSinger = event.currentSinger;
+                        if (activeSinger) {
+                            currentSingerNameEl.textContent = activeSinger.name;
+                            currentSongTitleEl.textContent = activeSinger.song;
+                            clearSingerBtn.disabled = false;
+                            listenForVotes(activeSinger.id);
+                        } else {
+                            currentSingerNameEl.textContent = "No Singer Active";
+                            currentSongTitleEl.textContent = "";
+                            clearSingerBtn.disabled = true;
+                            resetVoteTally();
+                        }
+                    });
+                }
+            });
+            
+            // Listen for singer queue
+            const singerQueueRef = collection(db, `artifacts/${appId}/public/data/singerQueue`);
+            onSnapshot(singerQueueRef, (snapshot) => {
+                singerListEl.innerHTML = '';
+                snapshot.forEach(doc => {
+                    const singer = doc.data();
+                    const li = document.createElement('li');
+                    li.textContent = `${singer.name} - "${singer.song}"`;
+                    li.className = 'singer-list-item p-2 rounded-lg bg-gray-700 hover:bg-gray-600';
+                    li.onclick = () => setCurrentSinger(doc.id, singer.name, singer.song);
+                    singerListEl.appendChild(li);
+                });
+            });
+        }
+        
+        function listenForVotes(singerId) {
+            const votesRef = collection(db, `artifacts/${appId}/public/data/eventVotes`);
+            const qVotes = query(votesRef, where('singerId', '==', singerId));
+            onSnapshot(qVotes, (snapshot) => {
+                let encoreCount = 0;
+                let anotherShotCount = 0;
+                let maybeNextTimeCount = 0;
+                
+                snapshot.forEach(doc => {
+                    const vote = doc.data().vote;
+                    if (vote === 'Encore!') encoreCount++;
+                    if (vote === 'Another Shot!') anotherShotCount++;
+                    if (vote === 'Maybe Next Time!') maybeNextTimeCount++;
+                });
 
-      if(!CURRENT.eventId || !CURRENT.performanceId){
-        CURRENT.status='pending'; CURRENT.openAt=null; CURRENT.durationSec=0; CURRENT.closeAt=null;
-        renderStatus();
-        return;
-      }
-      unsubPerf = db.collection('events').doc(CURRENT.eventId).collection('performances').doc(CURRENT.performanceId)
-        .onSnapshot(function(snap){
-          if(!snap.exists){
-            CURRENT.status='pending'; CURRENT.openAt=null; CURRENT.durationSec=0; CURRENT.closeAt=null;
-            renderStatus(); updateQr(); stopCountdown(); clearAutoClose();
-            return;
-          }
-          var d=snap.data()||{};
-          CURRENT.status = d.status || 'pending';
-          CURRENT.openAt = d.openAt || null;
-          CURRENT.durationSec = d.durationSec|0;
-          CURRENT.closeAt = computeCloseAtFrom(d);
-          renderStatus();
+                updateVoteDisplay(encoreCount, anotherShotCount, maybeNextTimeCount);
+            });
+        }
 
-          if(CURRENT.status==='open' && CURRENT.closeAt){
-            startCountdown();
-            scheduleAutoClose();
-          } else {
-            stopCountdown();
-            clearAutoClose();
-          }
+        // --- Event and Singer Management ---
+        startEventBtn.addEventListener('click', async () => {
+            if (!eventNameInput.value) return;
+            const eventDocRef = doc(db, `artifacts/${appId}/public/data/events`, eventNameInput.value.replace(/ /g, '-').toLowerCase());
+            await setDoc(eventDocRef, {
+                name: eventNameInput.value,
+                status: 'active',
+                currentSinger: null,
+                createdAt: serverTimestamp()
+            });
+            console.log("Event started!");
         });
-    }
 
-    /* --- Singer ops --- */
-    function addSinger(){
-      var name = (singerNameInput.value||'').trim();
-      if(!name){ alert('Enter a singer name.'); return; }
-      if(!CURRENT.eventId){ alert('Set the event first.'); return; }
-      var eid = CURRENT.eventId;
+        endEventBtn.addEventListener('click', async () => {
+            if (!currentEventId) return;
+            const eventDocRef = doc(db, `artifacts/${appId}/public/data/events`, currentEventId);
+            await setDoc(eventDocRef, { status: 'ended' }, { merge: true });
+            currentEventId = null;
+            activeSinger = null;
+            resetVoteTally();
+            console.log("Event ended!");
+        });
 
-      var singerRef = db.collection('events').doc(eid).collection('singers').doc();
-      singerRef.set({
-        singerId: singerRef.id,
-        name: name,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-        removed: false
-      }).then(function(){
-        singerNameInput.value='';
-        announceSinger(singerRef.id, name);
-      }).catch(function(e){
-        alert('Error adding singer: ' + (e && e.message ? e.message : e));
-      });
-    }
+        addSingerBtn.addEventListener('click', async () => {
+            if (!singerNameInput.value || !songTitleInput.value) return;
+            const singerQueueRef = collection(db, `artifacts/${appId}/public/data/singerQueue`);
+            await setDoc(doc(singerQueueRef), {
+                name: singerNameInput.value,
+                song: songTitleInput.value,
+                timestamp: serverTimestamp()
+            });
+            singerNameInput.value = '';
+            songTitleInput.value = '';
+            console.log("Singer added to queue.");
+        });
 
-    function announceSinger(singerId, name){
-      if(!CURRENT.eventId){ alert('Set the event first.'); return; }
-      var eid=CURRENT.eventId;
+        async function setCurrentSinger(singerId, singerName, songTitle) {
+            if (!currentEventId) {
+                alert("Please start an event first.");
+                return;
+            }
+            const eventDocRef = doc(db, `artifacts/${appId}/public/data/events`, currentEventId);
+            await setDoc(eventDocRef, {
+                currentSinger: { id: singerId, name: singerName, song: songTitle }
+            }, { merge: true });
+            console.log(`Current singer set to: ${singerName}`);
 
-      var perfRef = db.collection('events').doc(eid).collection('performances').doc();
-      perfRef.set({
-        performanceId: perfRef.id,
-        eventId: eid,
-        singerId: singerId || null,
-        singerName: name || '(Unknown)',
-        status: 'pending',
-        openAt: null,
-        durationSec: 0,
-        closeAt: null,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      }).then(function(){
-        return db.collection('events').doc(eid).collection('state').doc('current').set({
-          performanceId: perfRef.id,
-          currentSingerName: name || '(Unknown)',
-          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        }, { merge:true });
-      }).then(function(){
-        showToast('Announced: ' + (name||'(Unknown)'));
-      }).catch(function(e){
-        alert('Error announcing: ' + (e && e.message ? e.message : e));
-      });
-    }
+            // Remove singer from the queue
+            const singerDocRef = doc(db, `artifacts/${appId}/public/data/singerQueue`, singerId);
+            await setDoc(singerDocRef, { status: 'completed' }, { merge: true });
+        }
+        
+        clearSingerBtn.addEventListener('click', async () => {
+             if (!currentEventId) return;
+             const eventDocRef = doc(db, `artifacts/${appId}/public/data/events`, currentEventId);
+             await setDoc(eventDocRef, {
+                currentSinger: null
+            }, { merge: true });
+            console.log("Current singer cleared.");
+            resetVoteTally();
+        });
 
-    function removeSinger(singerId){
-      if(!CURRENT.eventId) return;
-      if(!confirm('Remove this singer from the list? (They will be hidden from the board as well.)')) return;
-      db.collection('events').doc(CURRENT.eventId).collection('singers').doc(singerId)
-        .set({ removed:true }, { merge:true })
-        .catch(function(e){ alert('Error removing: '+(e && e.message?e.message:e)); });
-    }
-    function restoreSinger(singerId){
-      if(!CURRENT.eventId) return;
-      db.collection('events').doc(CURRENT.eventId).collection('singers').doc(singerId)
-        .set({ removed:false }, { merge:true })
-        .catch(function(e){ alert('Error restoring: '+(e && e.message?e.message:e)); });
-    }
-
-    /* --- Voting controls --- */
-    function voteNow(){
-      if(!CURRENT.eventId || !CURRENT.performanceId){ alert('No performance selected.'); return; }
-      var ref = db.collection('events').doc(CURRENT.eventId).collection('performances').doc(CURRENT.performanceId);
-      ref.set({
-        status:'open',
-        openAt: firebase.firestore.FieldValue.serverTimestamp(),
-        durationSec: 30,
-        closeAt: null
-      }, { merge:true }).then(function(){
-        showToast('Voting opened (30s)');
-      }).catch(function(e){ alert('Error starting voting: ' + (e && e.message ? e.message : e)); });
-    }
-    function extendVote(){
-      if(!CURRENT.eventId || !CURRENT.performanceId){ alert('No performance selected.'); return; }
-      var ref = db.collection('events').doc(CURRENT.eventId).collection('performances').doc(CURRENT.performanceId);
-      ref.set({
-        durationSec: firebase.firestore.FieldValue.increment(15)
-      }, { merge:true }).then(function(){
-        showToast('Extended +15s');
-      }).catch(function(e){ alert('Error extending: ' + (e && e.message ? e.message : e)); });
-    }
-    function endNow(){
-      if(!CURRENT.eventId || !CURRENT.performanceId){ alert('No performance selected.'); return; }
-      var ref = db.collection('events').doc(CURRENT.eventId).collection('performances').doc(CURRENT.performanceId);
-      ref.set({
-        status:'closed',
-        closeAt: firebase.firestore.FieldValue.serverTimestamp()
-      }, { merge:true }).then(function(){
-        showToast('Voting closed');
-        clearAutoClose();
-      }).catch(function(e){ alert('Error closing: ' + (e && e.message ? e.message : e)); });
-    }
-
-    /* --- Host vote --- */
-    function castHostVote(category){
-      if(!CURRENT.eventId || !CURRENT.performanceId){ alert('No performance selected.'); return; }
-      if(CURRENT.status!=='open'){ alert('Voting is not open.'); return; }
-      var deviceId = getDeviceId();
-      var voteId = CURRENT.performanceId + '__' + deviceId;
-      var ref = db.collection('events').doc(CURRENT.eventId).collection('votes').doc(voteId);
-      ref.set({
-        voteId: voteId,
-        eventId: CURRENT.eventId,
-        performanceId: CURRENT.performanceId,
-        singerId: null,
-        category: category,  // 'encore' | 'another' | 'maybe'
-        deviceId: deviceId,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      }, { merge:false }).then(function(){
-        showToast('Host voted: ' + category);
-      }).catch(function(e){
-        alert('Could not cast vote (maybe already voted on this device?): ' + (e && e.message ? e.message : e));
-      });
-    }
-
-    /* --- Displays --- */
-    function getCurrentEventId(){
-      if (eventIdInput && eventIdInput.value.trim()) return eventIdInput.value.trim();
-      if (eventPill && eventPill.textContent && eventPill.textContent.trim() && eventPill.textContent.trim()!=='Set Event') return eventPill.textContent.trim();
-      try{ var ls = localStorage.getItem('eyek_event_id'); if(ls && ls.trim()) return ls.trim(); }catch(_){}
-      return '';
-    }
-    function openVote(){ var eid=getCurrentEventId(); if(!eid){ alert('Set event first.'); return; } window.open(urlRoot()+'vote/index.html?eventId='+encodeURIComponent(eid), '_blank'); }
-    function openScreen(){ var eid=getCurrentEventId(); if(!eid){ alert('Set event first.'); return; } window.open(urlRoot()+'screen/index.html?eventId='+encodeURIComponent(eid), '_blank'); }
-    function openBoard(){ var eid=getCurrentEventId(); if(!eid){ alert('Set event first.'); return; } window.open(urlRoot()+'board/index.html?eventId='+encodeURIComponent(eid), '_blank'); }
-
-    /* --- Wire up --- */
-    document.addEventListener('DOMContentLoaded', function(){
-      if(addSingerBtn) addSingerBtn.textContent='Enter';
-
-      var saved = loadEventId();
-      if(saved){ eventIdInput.value = saved; setEvent(saved); }
-
-      setEventBtn.addEventListener('click', setEventFromInput);
-      lockEventChk.addEventListener('change', function(){
-        var lock = !!lockEventChk.checked;
-        eventIdInput.disabled = lock; setEventBtn.disabled = lock;
-        try{ localStorage.setItem('eyek_event_locked', lock ? '1':'0'); }catch(_){}
-        if(lock) showToast('Event locked');
-      });
-
-      addSingerBtn.addEventListener('click', addSinger);
-      singerNameInput.addEventListener('keydown', function(e){ if(e.key==='Enter'){ addSinger(); } });
-
-      showRemovedChk.addEventListener('change', function(){ /* list re-renders via snapshot next tick */ });
-
-      voteNowBtn.addEventListener('click', voteNow);
-      extendBtn.addEventListener('click', extendVote);
-      endNowBtn.addEventListener('click', endNow);
-
-      hostVoteEnc.addEventListener('click', function(){ castHostVote('encore'); });
-      hostVoteAno.addEventListener('click', function(){ castHostVote('another'); });
-      hostVoteMay.addEventListener('click', function(){ castHostVote('maybe'); });
-
-      openVoteBtn.addEventListener('click', openVote);
-      openScreenBtn.addEventListener('click', openScreen);
-      openBoardBtn.addEventListener('click', openBoard);
-
-      try{ var L = localStorage.getItem('eyek_event_locked'); if(L==='1'){ eventIdInput.disabled=true; setEventBtn.disabled=true; lockEventChk.checked=true; } }catch(_){}
-
-      ensureAuth().then(function(){
-        if(saved){ wireEvent(saved); }
-      });
-    });
-
-  })();
-  </script>
+        function resetVoteTally() {
+            encoreCountEl.textContent = '0';
+            anotherShotCountEl.textContent = '0';
+            maybeNextTimeCountEl.textContent = '0';
+            encoreBarEl.style.width = '0%';
+            anotherShotBarEl.style.width = '0%';
+            maybeNextTimeBarEl.style.width = '0%';
+        }
+        
+        function updateVoteDisplay(encore, another, next) {
+            const total = encore + another + next;
+            encoreCountEl.textContent = encore;
+            anotherShotCountEl.textContent = another;
+            maybeNextTimeCountEl.textContent = next;
+            
+            encoreBarEl.style.width = `${total > 0 ? (encore / total) * 100 : 0}%`;
+            anotherShotBarEl.style.width = `${total > 0 ? (another / total) * 100 : 0}%`;
+            maybeNextTimeBarEl.style.width = `${total > 0 ? (next / total) * 100 : 0}%`;
+        }
+    </script>
 </body>
 </html>
