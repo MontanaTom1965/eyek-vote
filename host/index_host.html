@@ -11,7 +11,7 @@
     body { margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',Arial,sans-serif; background:#0f0a18; color:#fff; }
     header { padding:18px 16px; background:linear-gradient(90deg,var(--blue),var(--purple)); display:flex; align-items:center; justify-content:space-between; gap:12px; }
     h1 { margin:0; font-size:1.25rem; }
-    .container { display:grid; grid-template-columns:280px 1fr; gap:16px; padding:16px; }
+    .container { display:grid; grid-template-columns:300px 1fr; gap:16px; padding:16px; }
     .sidebar { background:#1b1430; border:1px solid rgba(255,255,255,.08); border-radius:16px; padding:14px; max-height:calc(100vh - 90px); overflow:auto; }
     .main { display:grid; gap:16px; }
     .card { background:#1b1430; border:1px solid rgba(255,255,255,.08); border-radius:16px; padding:16px; box-shadow:0 8px 24px rgba(0,0,0,.4); }
@@ -33,12 +33,14 @@
     .topline { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
     .topline .path { opacity:.8; }
 
-    /* Modal */
+    /* Modal (shared for pickers) */
     .modal-backdrop{ position:fixed; inset:0; background:rgba(0,0,0,.55); display:none; align-items:center; justify-content:center; z-index:50; }
     .modal-backdrop.show{ display:flex; }
-    .modal{ width:min(560px,calc(100% - 32px)); background:#1b1430; border:1px solid rgba(255,255,255,.12); border-radius:16px; padding:16px; }
-    .venue-item{ padding:10px; border-radius:10px; border:1px solid rgba(255,255,255,.08); margin-bottom:8px; cursor:pointer; background:#170f2a; }
-    .venue-item:hover{ background:#201637; }
+    .modal{ width:min(620px,calc(100% - 32px)); background:#1b1430; border:1px solid rgba(255,255,255,.12); border-radius:16px; padding:16px; }
+    .modal h3{ margin:0 0 8px }
+    .pick-list{ max-height:50vh; overflow:auto; margin-bottom:10px }
+    .pick-item{ padding:10px; border-radius:10px; border:1px solid rgba(255,255,255,.08); margin-bottom:8px; cursor:pointer; background:#170f2a; }
+    .pick-item:hover{ background:#201637; }
   </style>
 
   <!-- Firebase SDKs (compat) -->
@@ -72,7 +74,7 @@
     <!-- RIGHT: Controls -->
     <main class="main">
       <div class="card">
-        <div class="row">
+        <div class="row" style="align-items:end">
           <div>
             <label>Event (Venue)</label>
             <div style="display:flex;gap:8px">
@@ -92,19 +94,23 @@
 
         <div class="divider"></div>
 
-        <div class="row">
+        <div class="row" style="align-items:end">
           <div>
             <label>KJ Name</label>
-            <input id="kjName" placeholder="KJ first & last" />
+            <div style="display:flex;gap:8px">
+              <input id="kjName" placeholder="KJ first & last" />
+              <button class="btn btn-blue" id="pickKjBtn" title="Choose prior KJ">Pick</button>
+            </div>
           </div>
           <div>
             <label>KJ Company</label>
             <input id="kjCompany" placeholder="Company brand" />
           </div>
         </div>
+
         <div style="margin-top:10px">
           <button class="btn btn-blue" id="saveKJBtn">Save KJ / Venue Info</button>
-          <span class="muted small">Saves to the event and (if new) adds venue to your master list.</span>
+          <span class="muted small">Saves to the event and (if new) adds venue & KJ to your master lists.</span>
         </div>
       </div>
 
@@ -138,8 +144,8 @@
   <!-- Venue Picker Modal -->
   <div class="modal-backdrop" id="venueModal">
     <div class="modal">
-      <h3 style="margin-top:0">Select a Venue</h3>
-      <div id="venuesList" style="max-height:50vh; overflow:auto; margin-bottom:10px"></div>
+      <h3>Select a Venue</h3>
+      <div id="venuesList" class="pick-list"></div>
       <div class="divider"></div>
       <div class="row">
         <div>
@@ -152,6 +158,29 @@
       </div>
       <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:12px">
         <button class="btn btn-red" id="closeVenueBtn">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- KJ Picker Modal -->
+  <div class="modal-backdrop" id="kjModal">
+    <div class="modal">
+      <h3>Select a KJ</h3>
+      <div id="kjsList" class="pick-list"></div>
+      <div class="divider"></div>
+      <div class="row">
+        <div>
+          <label>Add New KJ (Name)</label>
+          <input id="newKjName" placeholder="e.g. Alex Smith" />
+        </div>
+        <div>
+          <label>Company (optional)</label>
+          <input id="newKjCompany" placeholder="e.g. Big Sky Karaoke" />
+        </div>
+      </div>
+      <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:12px">
+        <button class="btn btn-gold" id="addKjBtn">Add KJ</button>
+        <button class="btn btn-red" id="closeKjBtn">Close</button>
       </div>
     </div>
   </div>
@@ -191,8 +220,6 @@
       if (!id) { toast('⚠️ Enter Event (Venue) first.'); return null; }
       return db.collection('events').doc(id);
     }
-
-    // Update global app state so Screen/Board can auto-select the event
     async function setGlobalCurrentEvent(venueName){
       if (!venueName) return;
       try {
@@ -208,7 +235,6 @@
        ============== */
     const venueModal = $('venueModal');
     const venuesList = $('venuesList');
-
     $('pickVenueBtn').addEventListener('click', async ()=>{
       await loadVenues();
       venueModal.classList.add('show');
@@ -220,14 +246,11 @@
       try{
         const snap = await db.collection('venues').orderBy('lastUsedAt','desc').limit(200).get();
         venuesList.innerHTML = '';
-        if (snap.empty){
-          venuesList.innerHTML = '<div class="muted">No venues yet. Add one below.</div>';
-          return;
-        }
+        if (snap.empty){ venuesList.innerHTML = '<div class="muted">No venues yet. Add one below.</div>'; return; }
         snap.forEach(doc=>{
           const v = doc.data();
           const div = document.createElement('div');
-          div.className = 'venue-item';
+          div.className = 'pick-item';
           div.textContent = v.name;
           div.onclick = async ()=>{
             $('hostEventId').value = v.name;
@@ -268,6 +291,61 @@
       } catch(e){ console.error(e); toast('❌ Error adding venue.'); }
     });
 
+    /* ============
+       KJ Picker
+       ============ */
+    const kjModal = $('kjModal');
+    const kjsList = $('kjsList');
+    $('pickKjBtn').addEventListener('click', async ()=>{
+      await loadKjs();
+      kjModal.classList.add('show');
+    });
+    $('closeKjBtn').addEventListener('click', ()=>kjModal.classList.remove('show'));
+
+    async function loadKjs(){
+      kjsList.innerHTML = '<div class="muted">Loading…</div>';
+      try{
+        const snap = await db.collection('kjs').orderBy('lastUsedAt','desc').limit(200).get();
+        kjsList.innerHTML = '';
+        if (snap.empty){ kjsList.innerHTML = '<div class="muted">No KJs yet. Add one below.</div>'; return; }
+        snap.forEach(doc=>{
+          const k = doc.data();
+          const div = document.createElement('div');
+          div.className = 'pick-item';
+          div.textContent = k.company ? `${k.name} — ${k.company}` : k.name;
+          div.onclick = ()=>{
+            $('kjName').value = k.name || '';
+            $('kjCompany').value = k.company || '';
+            kjModal.classList.remove('show');
+          };
+          kjsList.appendChild(div);
+        });
+      }catch(e){
+        console.error(e);
+        kjsList.innerHTML = '<div class="muted">Error loading KJs.</div>';
+      }
+    }
+
+    $('addKjBtn').addEventListener('click', async ()=>{
+      const name = $('newKjName').value.trim();
+      const company = $('newKjCompany').value.trim();
+      if (!name) return;
+      try{
+        await db.collection('kjs').doc(name).set({
+          name, company: company || '',
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+          lastUsedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge:true });
+        $('kjName').value = name;
+        $('kjCompany').value = company;
+        toast('✅ KJ saved.');
+        $('newKjName').value = '';
+        $('newKjCompany').value = '';
+        await loadKjs();
+        kjModal.classList.remove('show');
+      }catch(e){ console.error(e); toast('❌ Error saving KJ.'); }
+    });
+
     /* ======================
        Save PIN / KJ / Venue
        ====================== */
@@ -292,12 +370,17 @@
           updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
 
-        // Touch venues list + global current event
         if (venueName){
           await db.collection('venues').doc(venueName).set({
             name: venueName, lastUsedAt: firebase.firestore.FieldValue.serverTimestamp()
           }, { merge: true });
           await setGlobalCurrentEvent(venueName);
+        }
+        if (kjName){
+          await db.collection('kjs').doc(kjName).set({
+            name: kjName, company: kjCompany || '',
+            lastUsedAt: firebase.firestore.FieldValue.serverTimestamp()
+          }, { merge:true });
         }
 
         eventBadge.textContent = 'Event: ' + venueName;
@@ -315,9 +398,9 @@
       if (!name){ toast('⚠️ Enter singer name.'); return; }
       try {
         const singerId = name.toLowerCase().replace(/[^\w]+/g,'-').replace(/(^-|-$)/g,'') || 'singer';
+        const now = firebase.firestore.FieldValue.serverTimestamp();
         await ref.collection('singers').doc(singerId).set({
-          name, lastSong: song || '', updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          name, lastSong: song || '', updatedAt: now, createdAt: now
         }, { merge: true });
         toast('✅ Singer added/updated.');
         loadSingers();
@@ -325,17 +408,30 @@
     });
 
     async function loadSingers(){
-      singersList.innerHTML = '<div class="muted">Loading…</div>';
       const ref = eventRef(); if (!ref) return;
+      singersList.innerHTML = '<div class="muted">Loading…</div>';
       try{
-        const qs = await ref.collection('singers').orderBy('updatedAt','desc').limit(200).get();
+        // Prefer updatedAt desc, but gracefully fall back if anything goes wrong
+        let qs;
+        try {
+          qs = await ref.collection('singers').orderBy('updatedAt','desc').limit(200).get();
+        } catch(inner){
+          console.warn('updatedAt order failed, falling back to name', inner);
+          try {
+            qs = await ref.collection('singers').orderBy('name').limit(200).get();
+          } catch(inner2){
+            console.warn('name order failed, falling back to raw get()', inner2);
+            qs = await ref.collection('singers').limit(200).get();
+          }
+        }
+
         singersList.innerHTML = '';
         if (qs.empty){
           singersList.innerHTML = '<div class="muted small">No singers yet.</div>';
           return;
         }
         qs.forEach(doc=>{
-          const s = doc.data();
+          const s = doc.data() || {};
           const row = document.createElement('div');
           row.className = 'singer';
           row.innerHTML = `
@@ -348,17 +444,15 @@
             </div>
           `;
           row.querySelector('button').onclick = async (e)=>{
-            const name = e.target.getAttribute('data-name');
-            const song = e.target.getAttribute('data-song');
-            $('singerName').value = name;
-            $('singerSong').value = song;
+            $('singerName').value = e.target.getAttribute('data-name') || '';
+            $('singerSong').value = e.target.getAttribute('data-song') || '';
             await setCurrentAndOpen();
           };
           singersList.appendChild(row);
         });
       }catch(e){
         console.error(e);
-        singersList.innerHTML = '<div class="muted">Error loading singers.</div>';
+        singersList.innerHTML = `<div class="muted">Error loading singers: ${e.message || e}</div>`;
       }
     }
     $('refreshSingersBtn').addEventListener('click', loadSingers);
