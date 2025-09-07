@@ -282,7 +282,8 @@
                         name: singerName,
                         song: singerSong,
                         result: null,
-                        timestamp: new Date()
+                        timestamp: new Date(),
+                        warmupComplete: false
                     });
                     singerNameInput.value = '';
                     singerSongInput.value = '';
@@ -295,29 +296,20 @@
         });
 
         document.addEventListener('click', async (e) => {
-            if (e.target.matches('.singing-now-btn')) {
-                const singerId = e.target.dataset.id;
-                const singerName = e.target.dataset.name;
-                const singerSong = e.target.dataset.song;
+            const target = e.target;
+            if (target.matches('.warmup-btn')) {
+                const singerId = target.dataset.id;
+                await updateDoc(doc(singerQueueCollectionRef, singerId), { warmupComplete: true });
+            } else if (target.matches('.start-singing-btn')) {
+                const singerId = target.dataset.id;
+                const singerName = target.dataset.name;
+                const singerSong = target.dataset.song;
                 
                 if(currentSingerElement){
                     currentSingerElement.classList.remove('singer-highlight');
-                    const singingButton = currentSingerElement.querySelector('.singing-now-btn');
-                    if (singingButton) {
-                        singingButton.disabled = false;
-                        singingButton.textContent = 'Start Singing';
-                        singingButton.classList.remove('bg-gray-400');
-                        singingButton.classList.add('bg-green-500');
-                    }
                 }
-
-                currentSingerElement = e.target.closest('li');
+                currentSingerElement = target.closest('li');
                 currentSingerElement.classList.add('singer-highlight');
-                e.target.disabled = true;
-                e.target.textContent = 'Now Singing';
-                e.target.classList.remove('bg-green-500');
-                e.target.classList.add('bg-gray-400');
-
 
                 currentSinger = { id: singerId, name: singerName, song: singerSong };
 
@@ -329,56 +321,53 @@
                         votingStatus: 'inactive'
                     }
                 });
-            }
-        });
 
-        startVotingBtn.addEventListener('click', async () => {
-            if (currentSinger && !isVoting) {
-                isVoting = true;
-                votingCountdown = timerDuration;
-                
-                await updateDoc(eventsDocRef, {
-                    votingStatus: 'active',
-                    'currentSinger.votingEndsAt': new Date(Date.now() + votingCountdown * 1000).toISOString()
-                });
-                
-                votingSound.play();
-                
-                votingTimer = setInterval(async () => {
-                    votingCountdown--;
-                    if (votingCountdown <= 0) {
-                        clearInterval(votingTimer);
-                        votingSound.pause();
-                        isVoting = false;
-                        await endVoting();
-                    }
-                }, 1000);
-            }
-        });
-        
-        endVotingBtn.addEventListener('click', async () => {
-            if (isVoting) {
-                clearInterval(votingTimer);
-                votingSound.pause();
-                isVoting = false;
-                await endVoting();
-            }
-        });
+                // Clear the voting controls
+                const votingControls = currentSingerElement.querySelector('.voting-controls');
+                if (votingControls) votingControls.remove();
 
-        extendVotingBtn.addEventListener('click', async () => {
-            if (isVoting) {
-                votingCountdown += 15;
-                await updateDoc(eventsDocRef, {
-                    'currentSinger.votingEndsAt': new Date(Date.now() + votingCountdown * 1000).toISOString()
-                });
+            } else if (target.matches('#start-voting-btn')) {
+                 if (currentSinger && !isVoting) {
+                    isVoting = true;
+                    votingCountdown = timerDuration;
+                    
+                    await updateDoc(eventsDocRef, {
+                        votingStatus: 'active',
+                        'currentSinger.votingEndsAt': new Date(Date.now() + votingCountdown * 1000).toISOString()
+                    });
+                    
+                    votingSound.play();
+                    
+                    votingTimer = setInterval(async () => {
+                        votingCountdown--;
+                        if (votingCountdown <= 0) {
+                            clearInterval(votingTimer);
+                            votingSound.pause();
+                            isVoting = false;
+                            await endVoting();
+                        }
+                    }, 1000);
+                }
+            } else if (target.matches('#end-voting-btn')) {
+                 if (isVoting) {
+                    clearInterval(votingTimer);
+                    votingSound.pause();
+                    isVoting = false;
+                    await endVoting();
+                }
+            } else if (target.matches('#extend-voting-btn')) {
+                if (isVoting) {
+                    votingCountdown += 15;
+                    await updateDoc(eventsDocRef, {
+                        'currentSinger.votingEndsAt': new Date(Date.now() + votingCountdown * 1000).toISOString()
+                    });
+                }
+            } else if (target.matches('#back-to-host-btn')) {
+                 await updateDoc(eventsDocRef, {
+                     currentSinger: null
+                 });
+                 document.getElementById('final-tally').classList.add('hidden');
             }
-        });
-
-        backToHostBtn.addEventListener('click', async () => {
-            await updateDoc(eventsDocRef, {
-                 currentSinger: null
-            });
-            document.getElementById('final-tally').classList.add('hidden');
         });
 
         async function endVoting() {
@@ -411,7 +400,6 @@
                         result: result,
                         timestamp: new Date()
                     });
-                    // Also update the result in the singer queue for the button background
                     await updateDoc(doc(singerQueueCollectionRef, currentSinger.id), { result: result });
                 }
                 
@@ -433,13 +421,7 @@
                 currentSinger = null;
                 if(currentSingerElement){
                     currentSingerElement.classList.remove('singer-highlight');
-                    const singingButton = currentSingerElement.querySelector('.singing-now-btn');
-                    if (singingButton) {
-                        singingButton.disabled = false;
-                        singingButton.textContent = 'Start Singing';
-                    }
                 }
-
 
             } catch (error) {
                 console.error("Error ending voting:", error);
@@ -474,10 +456,21 @@
                         if (currentSingerData) {
                             currentSingerStatus.textContent = `Current Singer: ${currentSingerData.name} - "${currentSingerData.song}"`;
                             currentSingerControls.classList.remove('hidden');
+                            
+                            const currentSingerListItem = document.querySelector(`[data-id="${currentSingerData.id}"]`).closest('li');
+                            if(currentSingerElement && currentSingerElement !== currentSingerListItem) {
+                                currentSingerElement.classList.remove('singer-highlight');
+                            }
+                            if(currentSingerListItem) {
+                                currentSingerListItem.classList.add('singer-highlight');
+                            }
+                            
                             if (docSnap.data().votingStatus === 'active') {
+                                // Add voting controls here
                                 startVotingBtn.classList.add('hidden');
                                 endVotingBtn.classList.remove('hidden');
                                 extendVotingBtn.classList.remove('hidden');
+
                             } else {
                                 startVotingBtn.classList.remove('hidden');
                                 endVotingBtn.classList.add('hidden');
@@ -486,6 +479,10 @@
                         } else {
                             currentSingerStatus.textContent = 'No Singer is currently active.';
                             currentSingerControls.classList.add('hidden');
+                            if(currentSingerElement){
+                                currentSingerElement.classList.remove('singer-highlight');
+                            }
+                            currentSingerElement = null;
                         }
                     } else {
                         eventStatusBadge.textContent = 'Inactive';
@@ -504,9 +501,16 @@
                         const li = document.createElement('li');
                         li.className = 'bg-gray-800 p-2 rounded-lg flex items-center space-x-2';
                         
+                        let buttonText = "Begin Warmup!";
+                        let buttonClass = 'warmup-btn';
+                        if (singer.warmupComplete) {
+                            buttonText = "Start Singing";
+                            buttonClass = 'start-singing-btn';
+                        }
+                        
                         const singerButton = document.createElement('button');
-                        singerButton.textContent = 'Start Singing';
-                        singerButton.className = `singing-now-btn btn text-sm ${singer.result === 'Another Shot!' ? 'bg-yellow-500 text-black' : 'bg-green-500'}`;
+                        singerButton.textContent = buttonText;
+                        singerButton.className = `singing-now-btn btn text-sm ${singer.result === 'Another Shot!' ? 'bg-yellow-500 text-black' : 'bg-green-500'} ${buttonClass}`;
                         singerButton.dataset.id = doc.id;
                         singerButton.dataset.name = singer.name;
                         singerButton.dataset.song = singer.song;
