@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Earn Your Encore Karaoke – Screen</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root{
+      --blue:#003e81; --gold:#eaba54; --purple:#2F0658; --light:#79aec1; --white:#fff; --black:#000;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:#0b0715;color:#fff;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',Arial,sans-serif;overflow:hidden}
+    header{padding:16px;background:linear-gradient(90deg,var(--blue),var(--purple));display:flex;justify-content:space-between;align-items:center}
+    h1{margin:0;font-size:1.2rem}
+    .pill{display:inline-block;padding:6px 10px;border-radius:999px;background:#271c44;font-size:.9rem;margin-left:8px}
+    .main{padding:18px}
+    .grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+    .card{background:#1b1430;border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:16px;box-shadow:0 10px 30px rgba(0,0,0,.45)}
+    .label{opacity:.85;font-size:.95rem}
+    .big{font-size:1.1rem;font-weight:800;margin-bottom:10px}
+    .tally{display:grid;grid-template-columns:1fr 80px 100px;gap:10px;align-items:center;margin:10px 0}
+    .bar{height:16px;border-radius:999px;background:#241a3f;overflow:hidden}
+    .fill{height:100%;width:0;transition:width .25s ease}
+    .enc{background:linear-gradient(180deg,#ffefc2,var(--gold))}
+    .one{background:linear-gradient(180deg,#9fd3ff,#4aa3ff)}
+    .neg{background:linear-gradient(180deg,#ffc2d1,#ff4971)}
+    .banner{position:fixed;left:0;right:0;bottom:0;background:rgba(0,0,0,.6);backdrop-filter:blur(6px);padding:14px 20px;display:flex;justify-content:space-between;align-items:center}
+    .banner .result{font-size:1.4rem;font-weight:900}
+    .status{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .status .on{color:#c7ffbf}.status .off{color:#ffc5c5}
+    /* Fullscreen Encore overlay */
+    .overlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:radial-gradient(ellipse at center, rgba(255,239,194,.2), rgba(0,0,0,.85) 60%), url('') center/cover no-repeat;z-index:9999}
+    .overlay.show{display:flex;animation:fadeIn .35s ease}
+    @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+    .overlayText{font-size:18vw;line-height:1;font-weight:1000;letter-spacing:.02em;background:linear-gradient(180deg,#fff7d0,var(--gold));-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:0 0 24px rgba(234,186,84,.35)}
+    .sub{font-size:2.6vw;opacity:.9;text-align:center;margin-top:1rem}
+  </style>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+</head>
+<body>
+  <header>
+    <h1>🎤 Earn Your Encore Karaoke • Live Screen</h1>
+    <div class="status">
+      <div>Event: <span id="eventBadge" class="pill">—</span></div>
+      <div>Round: <span id="roundBadge" class="pill">—</span></div>
+      <div>Status: <span id="status" class="pill">loading…</span></div>
+      <div>Total Voters: <span id="totalVoters" class="pill">0</span></div>
+    </div>
+  </header>
+
+  <div class="main">
+    <div class="card" style="margin-bottom:16px">
+      <div class="label">Enter Event ID</div>
+      <input id="eventId" placeholder="e.g. KALISPELL-0912" style="width:320px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:#120c22;color:#fff;padding:10px" />
+      <span class="pill" style="margin-left:8px">Audience: visit vote.earnyourencorekaraoke.com/vote/index.html</span>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <div class="big">🔥 Encore!</div>
+        <div class="tally">
+          <div>Votes</div>
+          <div id="encCount" style="text-align:right">0</div>
+          <div class="bar"><div class="fill enc" id="encFill"></div></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="big">🤔 One More Shot</div>
+        <div class="tally">
+          <div>Votes</div>
+          <div id="oneCount" style="text-align:right">0</div>
+          <div class="bar"><div class="fill one" id="oneFill"></div></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="big">❌ Maybe Next Time</div>
+        <div class="tally">
+          <div>Votes</div>
+          <div id="negCount" style="text-align:right">0</div>
+          <div class="bar"><div class="fill neg" id="negFill"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom banner -->
+  <div class="banner">
+    <div class="result" id="resultText">Waiting for votes…</div>
+    <div class="pill" id="percentages">—</div>
+  </div>
+
+  <!-- Fullscreen Encore Overlay -->
+  <div class="overlay" id="encoreOverlay">
+    <div style="text-align:center">
+      <div class="overlayText">ENCORE!</div>
+      <div class="sub">You earned it 🎉</div>
+    </div>
+  </div>
+
+  <!-- Optional sound (uncomment & provide source)
+  <audio id="encoreSound" preload="auto">
+    <source src="encore.mp3" type="audio/mpeg">
+  </audio>
+  -->
+
+<script>
+/* ====== Firebase config (add yours) ====== */
+const firebaseConfig = {
+  // Your Firebase config here
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+/* ====== DOM ====== */
+const $ = id => document.getElementById(id);
+const eventInput = $('eventId');
+const eventBadge = $('eventBadge');
+const roundBadge = $('roundBadge');
+const statusEl = $('status');
+const totalVotersEl = $('totalVoters');
+const encCountEl = $('encCount'), oneCountEl = $('oneCount'), negCountEl = $('negCount');
+const encFill = $('encFill'), oneFill = $('oneFill'), negFill = $('negFill');
+const percentagesEl = $('percentages'), resultText = $('resultText');
+const overlay = $('encoreOverlay');
+// const encoreSound = $('encoreSound');
+
+let eventUnsub = null, votesUnsub = null;
+let eventId = null, roundId = null, isVotingOpen = false;
+let lastClosedRoundShown = null; // to avoid replaying overlay
+
+eventInput.addEventListener('change', wireUp);
+eventInput.addEventListener('keyup', e=>{ if(e.key==='Enter') wireUp(); });
+
+function wireUp(){
+  const v = eventInput.value.trim();
+  if (!v) return;
+  eventId = v;
+  eventBadge.textContent = eventId;
+  if (eventUnsub) eventUnsub();
+  if (votesUnsub) votesUnsub();
+
+  eventUnsub = db.collection('events').doc(eventId).onSnapshot(snap=>{
+    const d = snap.data()||{};
+    const prevOpen = isVotingOpen;
+    const prevRound = roundId;
+
+    roundId = d.roundId || null;
+    isVotingOpen = !!d.isVotingOpen;
+
+    roundBadge.textContent = roundId || '—';
+    statusEl.textContent = isVotingOpen ? 'Voting Open' : 'Voting Closed';
+    statusEl.className = 'pill ' + (isVotingOpen ? 'on' : 'off');
+
+    if (roundId){
+      listenVotes(roundId);
+    } else {
+      clearTally();
+      if (votesUnsub) { votesUnsub(); votesUnsub=null; }
+    }
+
+    // Detect transition: voting just closed for the current round
+    if (prevOpen && !isVotingOpen && roundId && lastClosedRoundShown !== roundId) {
+      // We will evaluate after a short delay to ensure last votes are in
+      setTimeout(()=>showCloseOutcome(roundId), 500);
+    }
+
+    // Reset overlay if a new round starts (even while closed->open)
+    if (prevRound !== roundId) {
+      hideOverlay();
+    }
+  }, console.error);
+}
+
+function listenVotes(rid){
+  if (votesUnsub) votesUnsub();
+  votesUnsub = db.collection('events').doc(eventId)
+                 .collection('rounds').doc(rid)
+                 .collection('votes')
+                 .onSnapshot(updateTally, console.error);
+}
+
+let lastCounts = {enc:0,one:0,neg:0,total:0};
+
+function updateTally(qs){
+  let enc=0, one=0, neg=0;
+  qs.forEach(doc=>{
+    const v = doc.data().choice;
+    if (v==='encore') enc++;
+    else if (v==='one_more') one++;
+    else if (v==='next_time') neg++;
+  });
+  const total = enc+one+neg;
+  lastCounts = {enc,one,neg,total};
+
+  encCountEl.textContent = enc;
+  oneCountEl.textContent = one;
+  negCountEl.textContent = neg;
+  totalVotersEl.textContent = total;
+
+  const pct = (n)=> total? Math.round(n*100/total):0;
+  encFill.style.width = pct(enc)+'%';
+  oneFill.style.width = pct(one)+'%';
+  negFill.style.width = pct(neg)+'%';
+  percentagesEl.textContent = total ? `Encore ${pct(enc)}% • One More ${pct(one)}% • Maybe ${pct(neg)}%` : '—';
+
+  // Live banner text while open
+  if (isVotingOpen){
+    const live = liveLeaderText(enc, one, neg);
+    resultText.textContent = total ? `Live Leader: ${live}` : 'Waiting for votes…';
+  }
+}
+
+function liveLeaderText(enc,one,neg){
+  const max = Math.max(enc,one,neg);
+  const picks = [];
+  if (enc===max && max>0) picks.push('Encore!');
+  if (one===max && max>0) picks.push('One More Shot');
+  if (neg===max && max>0) picks.push('Maybe Next Time');
+  if (picks.length===0) return '—';
+  if (picks.length===1) return picks[0];
+  return 'Tied: ' + picks.join(' • ');
+}
+
+function showCloseOutcome(rid){
+  // Only proceed if we are still closed & still in same round
+  if (isVotingOpen || rid !== roundId) return;
+
+  const {enc,one,neg,total} = lastCounts;
+  if (!total){ resultText.textContent = 'No votes cast.'; return; }
+
+  const max = Math.max(enc,one,neg);
+  const winners = [];
+  if (enc===max) winners.push('Encore!');
+  if (one===max) winners.push('One More Shot');
+  if (neg===max) winners.push('Maybe Next Time');
+
+  // Display banner result
+  if (winners.length===1){
+    resultText.textContent = 'Result: ' + winners[0];
+  }else{
+    resultText.textContent = 'Result: Tie – ' + winners.join(' • ');
+  }
+
+  // Full-screen overlay only for Encore (no tie)
+  if (winners.length===1 && winners[0]==='Encore!'){
+    showOverlayFor15s();
+  }
+
+  lastClosedRoundShown = rid;
+}
+
+function showOverlayFor15s(){
+  overlay.classList.add('show');
+  // try { encoreSound && encoreSound.play().catch(()=>{}); } catch(e){}
+  setTimeout(hideOverlay, 15000);
+}
+function hideOverlay(){
+  overlay.classList.remove('show');
+}
+function clearTally(){
+  encCountEl.textContent=oneCountEl.textContent=negCountEl.textContent='0';
+  encFill.style.width=oneFill.style.width=negFill.style.width='0%';
+  percentagesEl.textContent='—';
+  resultText.textContent='Waiting for votes…';
+  totalVotersEl.textContent='0';
+}
+</script>
+</body>
+</html>
