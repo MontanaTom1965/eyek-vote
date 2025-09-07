@@ -100,7 +100,7 @@
             max-width: 90%;
         }
         .singer-highlight {
-            background-color: #3f0f62; /* A slightly lighter shade of purple */
+            background-color: #3f0f62;
             border: 2px solid var(--gold);
         }
     </style>
@@ -133,14 +133,6 @@
             <!-- Main Host Panel -->
             <div id="host-panel" class="hidden space-y-6">
                 
-                <!-- Public Links -->
-                <div id="public-links" class="bg-gray-700 p-6 rounded-lg space-y-2">
-                    <h2 class="text-2xl font-bold text-white">Public Links</h2>
-                    <a href="https://vote.earnyourencorekaraoke.com/vote/vote-app.html" target="_blank" class="block btn btn-yellow">Audience Voting Page</a>
-                    <a href="https://vote.earnyourencorekaraoke.com/screen/screen-app.html" target="_blank" class="block btn btn-yellow">Live Display Screen</a>
-                    <a href="https://vote.earnyourencorekaraoke.com/board/board-app.html" target="_blank" class="block btn btn-yellow">Encore Board</a>
-                </div>
-
                 <!-- Event Status & Controls -->
                 <div id="event-controls" class="bg-gray-700 p-6 rounded-lg space-y-4">
                     <h2 class="text-2xl font-bold text-white">Event Status: <span id="event-status" class="status-badge status-inactive">Inactive</span></h2>
@@ -180,8 +172,16 @@
                 <section id="final-tally" class="hidden bg-gray-700 p-6 rounded-lg space-y-4">
                     <h2 class="text-2xl font-bold text-[var(--light-blue)]">Final Tally</h2>
                     <div id="tally-display" class="space-y-2 text-left"></div>
-                    <button id="back-to-host-btn" class="btn w-full">Back to Host Panel</button>
+                    <button id="back-to-host-btn" class="btn btn-small">Back to Host Panel</button>
                 </section>
+
+                 <!-- Public Links -->
+                <div id="public-links" class="bg-gray-700 p-6 rounded-lg space-y-2 mt-8">
+                    <h2 class="text-2xl font-bold text-white">Public Links</h2>
+                    <a href="https://vote.earnyourencorekaraoke.com/vote/vote-app.html" target="_blank" class="block btn btn-yellow">Audience Voting Page</a>
+                    <a href="https://vote.earnyourencorekaraoke.com/screen/screen-app.html" target="_blank" class="block btn btn-yellow">Live Display Screen</a>
+                    <a href="https://vote.earnyourencorekaraoke.com/board/board-app.html" target="_blank" class="block btn btn-yellow">Encore Board</a>
+                </div>
             </div>
         </main>
     </div>
@@ -243,7 +243,7 @@
         const timerDuration = 30;
         let votingCountdown = timerDuration;
         let isVoting = false;
-        let currentSingerElement = null; // Store a reference to the highlighted element
+        let currentSingerElement = null; 
         
         const votingSound = new Audio('https://vote.earnyourencorekaraoke.com/vote/quiz-countdown.mp3');
 
@@ -315,7 +315,6 @@
                 const singerName = e.target.dataset.name;
                 const singerSong = e.target.dataset.song;
                 
-                // Remove existing highlight
                 if(currentSingerElement){
                     currentSingerElement.classList.remove('singer-highlight');
                     const singingButton = currentSingerElement.querySelector('.singing-now-btn');
@@ -325,7 +324,6 @@
                     }
                 }
 
-                // Add highlight to new singer
                 currentSingerElement = e.target.closest('li');
                 currentSingerElement.classList.add('singer-highlight');
                 e.target.disabled = true;
@@ -498,7 +496,6 @@
                             currentSingerControls.classList.add('hidden');
                         }
                     } else {
-                        document.querySelector('body > div > main > header').classList.remove('hidden');
                         eventStatusBadge.textContent = 'Inactive';
                         eventStatusBadge.classList.remove('status-active');
                         eventStatusBadge.classList.add('status-inactive');
@@ -532,7 +529,6 @@
                     });
                 });
             } else {
-                 document.querySelector('body > div > main > header').classList.remove('hidden');
                  loginSection.classList.remove('hidden');
                  hostPanel.classList.add('hidden');
             }
