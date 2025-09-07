@@ -422,7 +422,10 @@
                     });
                 }
                 
-                await deleteDoc(doc(singerQueueCollectionRef, currentSinger.id));
+                // Remove the singer from the queue if they get "Maybe Next Time!"
+                if (result === 'Maybe Next Time!') {
+                    await deleteDoc(doc(singerQueueCollectionRef, currentSinger.id));
+                }
 
                 // Show the final tally pop-up
                 document.getElementById('final-tally').classList.remove('hidden');
