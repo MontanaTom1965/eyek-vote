@@ -381,12 +381,12 @@
             }
         });
 
-        popupCloseBtn.addEventListener('click', () => {
-            tallyPopup.classList.add('hidden');
-            // Reset to host panel
-            currentSingerStatus.textContent = 'No Singer is currently active.';
-            currentSingerControls.classList.add('hidden');
-            document.getElementById('singer-controls').classList.remove('hidden');
+        backToHostBtn.addEventListener('click', async () => {
+             // Clear the current singer section after the popup is closed
+            await updateDoc(eventsDocRef, {
+                 currentSinger: null
+            });
+            document.getElementById('final-tally').classList.add('hidden');
         });
 
         // --- Utility Functions ---
@@ -425,7 +425,6 @@
                 await deleteDoc(doc(singerQueueCollectionRef, currentSinger.id));
 
                 // Show the final tally pop-up
-                tallyPopup.classList.add('hidden');
                 document.getElementById('final-tally').classList.remove('hidden');
                 document.getElementById('tally-display').innerHTML = `
                     <h4 class="text-xl font-bold">${currentSinger.name} - "${currentSinger.song}"</h4>
