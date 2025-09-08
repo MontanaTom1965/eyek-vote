@@ -136,8 +136,9 @@
             <input id="singerName" placeholder="e.g. Jane Doe" />
           </div>
           <div>
-            <label>Default Artist (optional)</label>
-            <input id="defaultArtist" placeholder="e.g. Journey" />
+            <!-- Renamed here -->
+            <label>Song/Artist (optional)</label>
+            <input id="defaultArtist" placeholder="e.g. ‘Don’t Stop Believin’ – Journey’" />
           </div>
         </div>
         <div style="display:flex; gap:8px; margin-top:10px; flex-wrap:wrap">
@@ -207,16 +208,16 @@
   <div class="backdrop" id="perfModal">
     <div class="modal">
       <h3 id="perfTitle">Set Current</h3>
-      <div class="row">
-        <div>
-          <label>Song Title</label>
-          <input id="perfTitleInput" placeholder="e.g. Bohemian Rhapsody" />
-        </div>
-        <div>
-          <label>Artist</label>
-          <input id="perfArtist" placeholder="e.g. Queen" />
-        </div>
+    <div class="row">
+      <div>
+        <label>Song Title</label>
+        <input id="perfTitleInput" placeholder="e.g. Bohemian Rhapsody" />
       </div>
+      <div>
+        <label>Artist</label>
+        <input id="perfArtist" placeholder="e.g. Queen" />
+      </div>
+    </div>
       <div class="divider"></div>
       <div style="display:flex; gap:8px; justify-content:flex-end">
         <button class="btn btn-blue" id="perfSaveBtn">Save & Set Current</button>
@@ -253,7 +254,7 @@
       try { await db.collection('app').doc('state').set({ currentEventId: venueName, updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true }); } catch(e){}
     }
 
-    /* NEW: wipe singers on venue change */
+    /* Wipe singers on venue change */
     async function wipeSingersForEvent(evtName){
       if(!evtName) return;
       try{
@@ -329,7 +330,7 @@
             eventBadge.textContent = 'Event: ' + v.name;
             await db.collection('venues').doc(v.name).set({ name: v.name, lastUsedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true });
             await setGlobalCurrentEvent(v.name);
-            await wipeSingersForEvent(v.name);     /* NEW */
+            await wipeSingersForEvent(v.name);
             wireEventListener(); loadSingers();
           };
           venuesList.appendChild(div);
@@ -344,7 +345,7 @@
         $('hostEventId').value = name;
         await db.collection('events').doc(name).set({ venueName: name }, { merge:true });
         eventBadge.textContent='Event: '+name; await setGlobalCurrentEvent(name);
-        await wipeSingersForEvent(name);          /* NEW */
+        await wipeSingersForEvent(name);
         toast('✅ Venue added & selected.');
         $('newVenue').value=''; await loadVenues(); venueModal.style.display='none';
         wireEventListener(); loadSingers();
@@ -412,6 +413,7 @@
       try{
         const id=canonicalKey(name)||'singer';
         const now=firebase.firestore.FieldValue.serverTimestamp();
+        // Note: we keep storing this string to prefill Artist; Song is always typed in the Set Current modal
         await ref.collection('singers').doc(id).set({ name, defaultArtist:defArtist||'', updatedAt: now, createdAt: now }, { merge:true });
         toast('✅ Singer added/updated.');
         $('singerName').value='';
@@ -453,6 +455,7 @@
       perfSingerName = singerName;
       perfTitleEl.textContent = `Set Current – ${singerName}`;
       perfTitleInput.value = '';
+      // Prefill Artist from the right-side input if present
       perfArtist.value = suggestedArtist || '';
       perfModal.style.display='flex';
       setTimeout(()=>perfTitleInput.focus(), 50); // focus Song first
@@ -535,7 +538,6 @@
     async function endVoting(){
       const ref = eventRef(); if(!ref) return;
       try{
-        // close now
         await ref.set({ isVotingOpen:false }, { merge:true });
         statusBadge.textContent = 'Status: Voting Closed';
         toast('🛑 Voting closed.');
@@ -592,7 +594,7 @@
         await db.collection('venues').doc(name).set({ name, lastUsedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true });
         await setGlobalCurrentEvent(name);
         eventBadge.textContent='Event: '+name;
-        await wipeSingersForEvent(name); /* NEW */
+        await wipeSingersForEvent(name);
         wireEventListener(); loadSingers();
       }catch(e){}
     }
