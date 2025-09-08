@@ -5,33 +5,62 @@
   <title>Earn Your Encore Karaoke – Screen</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    :root{ --blue:#003e81; --gold:#eaba54; --purple:#2F0658; --white:#fff; }
+    :root{
+      --blue:#003e81; --gold:#eaba54; --purple:#2F0658;
+      --green:#19d36b; --green-dark:#0b7a44;
+      --red:#ff5a6b; --red-dark:#8c2230;
+      --bg:#0b0715; --card:#1b1430; --ink:#fff;
+    }
     *{box-sizing:border-box}
-    body{margin:0;background:#0b0715;color:#fff;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',Arial,sans-serif;overflow:hidden}
+    body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',Arial,sans-serif;overflow:hidden}
     header{padding:16px;background:linear-gradient(90deg,var(--blue),var(--purple));display:flex;justify-content:space-between;align-items:center}
-    h1{margin:0;font-size:1.2rem}
+    h1{margin:0;font-size:1.1rem}
     .pill{display:inline-block;padding:6px 10px;border-radius:999px;background:#271c44;font-size:.9rem;margin-left:8px}
+
+    /* Floating sound enable */
+    .soundBar{position:fixed;top:0;left:0;right:0;z-index:1000;display:flex;gap:10px;align-items:center;justify-content:center;padding:10px 14px;background:#201637;border-bottom:1px solid rgba(255,255,255,.18)}
+    .soundBar button{background:var(--gold);color:#000;padding:8px 14px;border-radius:999px;border:0;font-weight:800;cursor:pointer}
+
     .main{padding:18px}
-    .venueHero{font-size:3.2vw;font-weight:1000;letter-spacing:.02em;margin:0 0 12px}
-    .sub{opacity:.85;margin-bottom:16px}
-    .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px} /* 2 columns only */
-    .card{background:#1b1430;border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:16px;box-shadow:0 10px 30px rgba(0,0,0,.45)}
+    .venueHero{font-size:3.2vw;font-weight:1000;letter-spacing:.02em;margin:8px 0 2px}
+    .now{opacity:.9;margin-bottom:18px;font-size:1.2rem}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+    .card{background:var(--card);border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:16px;box-shadow:0 10px 30px rgba(0,0,0,.45)}
     .big{font-size:1.1rem;font-weight:800;margin-bottom:10px}
-    .tally{display:grid;grid-template-columns:1fr 80px 100px;gap:10px;align-items:center;margin:10px 0}
+    .tally{display:grid;grid-template-columns:1fr 90px 1fr;gap:10px;align-items:center;margin:10px 0}
     .bar{height:16px;border-radius:999px;background:#241a3f;overflow:hidden}
     .fill{height:100%;width:0;transition:width .25s ease}
-    .enc{background:linear-gradient(180deg,#ffefc2,var(--gold))}
-    .one{background:linear-gradient(180deg,#9fd3ff,#4aa3ff)}
+    .enc{background:linear-gradient(180deg,#bbffd8,var(--green))}
+    .one{background:linear-gradient(180deg,#ffefc2,var(--gold))}
+
     .banner{position:fixed;left:0;right:0;bottom:0;background:rgba(0,0,0,.6);backdrop-filter:blur(6px);padding:14px 20px;display:flex;justify-content:space-between;align-items:center}
     .banner .result{font-size:1.4rem;font-weight:900}
-    .overlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:radial-gradient(ellipse at center, rgba(255,239,194,.2), rgba(0,0,0,.85) 60%);z-index:9999}
-    .overlay.show{display:flex;animation:fadeIn .3s ease}
+    .ready{position:fixed;left:0;right:0;top:50%;transform:translateY(-50%);text-align:center;font-size:3vw;opacity:.9;display:none}
+    .ready.show{display:block}
+
+    /* Countdown overlay */
+    .overlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:radial-gradient(ellipse at center, rgba(255,239,194,.18), rgba(0,0,0,.88) 60%);z-index:9998}
+    .overlay.show{display:flex;animation:fadeIn .2s ease}
     @keyframes fadeIn{from{opacity:0}to{opacity:1}}
     .countNum{font-size:22vw;line-height:1;font-weight:1000;letter-spacing:.02em;background:linear-gradient(180deg,#fff7d0,var(--gold));-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:0 0 24px rgba(234,186,84,.35)}
     .countSub{font-size:3vw;opacity:.9;text-align:center;margin-top:1rem}
-    .ready{position:fixed;left:0;right:0;top:50%;transform:translateY(-50%);text-align:center;font-size:3vw;opacity:.9;display:none}
-    .ready.show{display:block}
-    @media (max-width:960px){ .grid{grid-template-columns:1fr} .venueHero{font-size:7vw} }
+
+    /* Result flash */
+    .resultFlash{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:9999;color:#000}
+    .resultFlash.show{display:flex}
+    .rf-inner{ text-align:center; padding:4vw 5vw; border-radius:24px; background:rgba(255,255,255,.15); backdrop-filter:blur(6px) }
+    .rf-title{font-size:12vw;line-height:.9;font-weight:1000;margin:0 0 .5vw}
+    .rf-sub{font-size:3vw;font-weight:800}
+    .rf-green{ background: radial-gradient(circle at center, rgba(25,211,107,.4), rgba(11,122,68,.95) 60%); color:#fff; }
+    .rf-gold{  background: radial-gradient(circle at center, rgba(234,186,84,.35), rgba(154,120,41,.95) 60%); color:#fff; }
+    .rf-red{   background: radial-gradient(circle at center, rgba(255,90,107,.35), rgba(140,34,48,.95) 60%); color:#fff; }
+    .pop{ animation: pop .8s ease both }
+    @keyframes pop{ 0%{transform:scale(.9);opacity:0} 60%{transform:scale(1.02);opacity:1} 100%{transform:scale(1)} }
+
+    /* Confetti canvas */
+    #confettiCanvas{ position:fixed; inset:0; z-index:10000; pointer-events:none; display:none; }
+
+    @media (max-width:960px){ .grid{grid-template-columns:1fr} .venueHero{font-size:7vw} .now{font-size:1rem} }
   </style>
 
   <!-- Firebase (compat) -->
@@ -39,6 +68,12 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 </head>
 <body>
+  <!-- Floating sound enable -->
+  <div class="soundBar" id="screenSoundBar">
+    <div>🔈 Enable sound for voting</div>
+    <button id="screenEnableSoundBtn">Enable</button>
+  </div>
+
   <header>
     <h1>🎤 Earn Your Encore Karaoke • Live Screen</h1>
     <div>
@@ -49,7 +84,7 @@
 
   <div class="main">
     <div class="venueHero" id="venueHero">Welcome to …</div>
-    <div class="sub">Vote at: vote.earnyourencorekaraoke.com/vote</div>
+    <div class="now" id="nowLine">Now: —</div>
 
     <div class="grid">
       <div class="card">
@@ -76,7 +111,7 @@
     <div class="pill" id="percentages">—</div>
   </div>
 
-  <!-- Ready banner (pre-start) -->
+  <!-- Pre-start hint -->
   <div class="ready" id="readyMsg">Get ready… voting will open soon!</div>
 
   <!-- Countdown overlay + audio -->
@@ -87,6 +122,19 @@
     </div>
   </div>
   <audio id="countAudio" preload="auto" src="https://vote.earnyourencorekaraoke.com/vote/quiz-countdown.mp3" loop></audio>
+  <audio id="sadHorn" preload="auto" src="https://vote.earnyourencorekaraoke.com/vote/sad_horn.mp3"></audio>
+  <audio id="winAudio" preload="auto" src="https://vote.earnyourencorekaraoke.com/vote/you_win_001.mp3"></audio>
+
+  <!-- Full-screen result flash -->
+  <div class="resultFlash" id="resultFlash">
+    <div class="rf-inner pop">
+      <div class="rf-title" id="rfTitle">Encore!</div>
+      <div class="rf-sub" id="rfSub">Give it up for —</div>
+    </div>
+  </div>
+
+  <!-- Confetti canvas -->
+  <canvas id="confettiCanvas"></canvas>
 
 <script>
 /* Firebase init */
@@ -103,128 +151,217 @@ const db = firebase.firestore();
 
 /* DOM */
 const $ = id => document.getElementById(id);
-const roundBadge = $('roundBadge');
-const statusEl = $('status');
-const encCountEl = $('encCount'), oneCountEl = $('oneCount');
-const encFill = $('encFill'), oneFill = $('oneFill');
-const percentagesEl = $('percentages'), resultText = $('resultText');
-const overlay = $('countOverlay'); const countNum = $('countNum'); const countAudio = $('countAudio');
-const readyMsg = $('readyMsg'); const venueHero = $('venueHero');
+const roundBadge=$('roundBadge'), statusEl=$('status');
+const encCountEl=$('encCount'), oneCountEl=$('oneCount');
+const encFill=$('encFill'), oneFill=$('oneFill');
+const percentagesEl=$('percentages'), resultText=$('resultText');
+const overlay=$('countOverlay'), countNum=$('countNum');
+const countAudio=$('countAudio'), sadHorn=$('sadHorn'), winAudio=$('winAudio');
+const readyMsg=$('readyMsg'), venueHero=$('venueHero'), nowLine=$('nowLine');
+const rf=$('resultFlash'), rfTitle=$('rfTitle'), rfSub=$('rfSub');
+const soundBar=$('screenSoundBar'), soundBtn=$('screenEnableSoundBtn');
+const confettiCanvas = $('confettiCanvas');
+const ctx = confettiCanvas.getContext('2d');
 
-let eventUnsub = null, votesUnsub = null, autoEventUnsub = null, countdownTimer = null;
-let eventId = null, roundId = null, isVotingOpen = false;
+/* Resize canvas */
+function sizeCanvas(){
+  confettiCanvas.width = window.innerWidth;
+  confettiCanvas.height = window.innerHeight;
+}
+sizeCanvas(); window.addEventListener('resize', sizeCanvas);
 
-/* user gesture for audio */
-document.body.addEventListener('click', ()=>{ countAudio.play().then(()=>countAudio.pause()).catch(()=>{}); }, { once:true });
+function hideSoundBar(){ soundBar.style.display='none'; }
+soundBtn.addEventListener('click', async ()=>{
+  try{
+    await countAudio.play(); countAudio.pause();
+    await winAudio.play(); winAudio.pause();
+    await sadHorn.play(); sadHorn.pause();
+    localStorage.setItem('screen-sound-ok','1');
+    hideSoundBar();
+  }catch(e){ alert('Please tap Enable again to allow audio.'); }
+});
+if(localStorage.getItem('screen-sound-ok')==='1'){ hideSoundBar(); }
 
-/* Auto-pick current event from host */
+/* State */
+let eventUnsub=null, votesUnsub=null, autoEventUnsub=null, countdownTimer=null;
+let eventId=null, roundId=null, isVotingOpen=false;
+let lastCounts={enc:0,one:0,neg:0,total:0};
+let lastSinger='', lastSong='';
+
+/* Follow host's current event */
 autoEventUnsub = db.collection('app').doc('state').onSnapshot(s=>{
-  const d = s.data() || {};
-  if (d.currentEventId && eventId !== d.currentEventId){
-    eventId = d.currentEventId;
-    wireUpForEvent(eventId);
+  const d=s.data()||{};
+  if(d.currentEventId && eventId!==d.currentEventId){
+    eventId=d.currentEventId;
+    wireEvent(eventId);
   }
 });
 
-function wireUpForEvent(evtId){
-  if (eventUnsub) eventUnsub();
-  if (votesUnsub) { votesUnsub(); votesUnsub=null; }
+function wireEvent(evtId){
+  if(eventUnsub) eventUnsub();
+  if(votesUnsub){ votesUnsub(); votesUnsub=null; }
 
-  // Show venue name
+  // Show venue at top
   db.collection('events').doc(evtId).get().then(doc=>{
-    const v = (doc.data()||{}).venueName || evtId || '…';
-    venueHero.textContent = `Welcome to ${v}`;
+    const v=(doc.data()||{}).venueName||evtId||'…';
+    venueHero.textContent=`Welcome to ${v}`;
   });
 
   eventUnsub = db.collection('events').doc(evtId).onSnapshot(snap=>{
-    const d = snap.data()||{};
-    const prevOpen = isVotingOpen;
+    const d=snap.data()||{};
+    const wasOpen = isVotingOpen;
 
     roundId = d.roundId || null;
     isVotingOpen = !!d.isVotingOpen;
+    lastSinger = d.currentSingerName || '';
+    lastSong   = d.currentSong || '';
+    nowLine.textContent = lastSinger ? `Now: ${lastSinger}${lastSong? ' — ' + lastSong : ''}` : 'Now: —';
+
     roundBadge.textContent = roundId || '—';
     statusEl.textContent = isVotingOpen ? 'Voting Open' : 'Voting Closed';
 
-    // Pre-start
+    // Pre-start banner
     if (roundId && !isVotingOpen){
       readyMsg.classList.add('show');
       stopCountdown();
       clearTally();
-      resultText.textContent = 'Waiting for votes…';
+      resultText.textContent='Waiting for votes…';
+      hideResultFlash();
+      confettiStop();
     } else {
       readyMsg.classList.remove('show');
     }
 
-    // Timer + audio
-    const vw = d.voteWindow || null;
-    if (isVotingOpen && vw){
-      const openedAtMs = (vw.openedAt && vw.openedAt.toDate) ? vw.openedAt.toDate().getTime() : Date.now();
-      const duration = Number(vw.durationSec||30);
-      startCountdown(openedAtMs, duration);
-    } else if (!isVotingOpen){
+    // Countdown & music
+    const vw=d.voteWindow||null;
+    if(isVotingOpen && vw){
+      const openedAt = (vw.openedAt && vw.openedAt.toDate) ? vw.openedAt.toDate().getTime() : Date.now();
+      const dur = Number(vw.durationSec||30);
+      startCountdown(openedAt, dur);
+    } else if(!isVotingOpen){
       stopCountdown();
     }
 
-    if (roundId){
+    // Votes
+    if(roundId){
       listenVotes(evtId, roundId);
     } else {
       clearTally();
-      if (votesUnsub) { votesUnsub(); votesUnsub=null; }
+      if(votesUnsub){ votesUnsub(); votesUnsub=null; }
     }
 
-    if (prevOpen && !isVotingOpen && roundId) {
-      setTimeout(()=>showCloseOutcome(), 300);
-      stopCountdown();
-      readyMsg.classList.remove('show');
+    // Show full-screen result when host closes
+    if (wasOpen && !isVotingOpen && roundId){
+      setTimeout(()=>showFinalResult(), 250);
     }
   }, console.error);
 }
 
 function listenVotes(evtId, rid){
-  if (votesUnsub) votesUnsub();
+  if(votesUnsub) votesUnsub();
   votesUnsub = db.collection('events').doc(evtId)
                  .collection('rounds').doc(rid)
                  .collection('votes')
                  .onSnapshot(updateTally, console.error);
 }
 
-let lastCounts = {enc:0,one:0,neg:0,totalShown:0};
-
 function updateTally(qs){
   let enc=0, one=0, neg=0;
   qs.forEach(doc=>{
-    const v = (doc.data()||{}).choice;
-    if (v==='encore') enc++;
-    else if (v==='one_more') one++;
-    else if (v==='next_time') neg++; // counted but not shown
+    const v=(doc.data()||{}).choice;
+    if(v==='encore') enc++;
+    else if(v==='one_more') one++;
+    else if(v==='next_time') neg++;
   });
+  const shownTotal = enc + one; // live UI hides "Maybe" from bars/percentages
+  lastCounts={enc,one,neg,total:enc+one+neg};
 
-  const shownTotal = enc + one; // hide "Maybe" from UI math
-  lastCounts = {enc, one, neg, totalShown: shownTotal};
+  encCountEl.textContent=enc;
+  oneCountEl.textContent=one;
 
-  encCountEl.textContent = enc;
-  oneCountEl.textContent = one;
-
-  const pct = (n)=> shownTotal ? Math.round(n*100/shownTotal) : 0;
+  const pct = n => shownTotal ? Math.round(n*100/shownTotal) : 0;
   encFill.style.width = pct(enc)+'%';
   oneFill.style.width = pct(one)+'%';
   percentagesEl.textContent = shownTotal ? `Encore ${pct(enc)}% • One More ${pct(one)}%` : '—';
 
-  if (isVotingOpen){
-    resultText.textContent = shownTotal ? `Live Leader: ${enc>=one ? 'Encore!' : 'One More Shot'}` : 'Waiting for votes…';
+  if(isVotingOpen){
+    if (shownTotal===0) resultText.textContent='Waiting for votes…';
+    else resultText.textContent = (enc>=one) ? 'Live Leader: Encore!' : 'Live Leader: One More Shot';
   }
 }
 
-function showCloseOutcome(){
-  const {enc, one, totalShown} = lastCounts;
-  if (!totalShown){ resultText.textContent = 'No votes cast.'; return; }
-  if (enc === one){
-    resultText.textContent = 'Result: Tie – Encore! • One More Shot';
+/* Countdown & audio */
+function startCountdown(openedMs, duration){
+  stopCountdown();
+  overlay.classList.add('show');
+  // Start quiz music if unlocked
+  if(localStorage.getItem('screen-sound-ok')==='1'){
+    try{ countAudio.currentTime=0; countAudio.play().catch(()=>{});}catch(e){}
+  }
+  countdownTimer = setInterval(()=>{
+    const remain = Math.max(0, Math.round((openedMs + duration*1000 - Date.now())/1000));
+    countNum.textContent = remain;
+    if (remain <= 0){ stopCountdown(); }
+  }, 200);
+}
+
+function stopCountdown(){
+  overlay.classList.remove('show');
+  if(countdownTimer){ clearInterval(countdownTimer); countdownTimer=null; }
+  try{ countAudio.pause(); }catch(e){}
+}
+
+/* Final result flash + sounds + confetti */
+function showResultFlash(mode, singer){
+  rf.classList.remove('rf-green','rf-gold','rf-red','show');
+  let title='', sub='';
+  if(mode==='encore'){
+    rf.classList.add('rf-green'); title='Encore!'; sub = singer ? `Give it up for ${singer}!` : 'Encore!';
+    if(localStorage.getItem('screen-sound-ok')==='1'){ try{ winAudio.currentTime=0; winAudio.play().catch(()=>{});}catch(e){} }
+    confettiStart(); // 🎉
+  } else if(mode==='one'){
+    rf.classList.add('rf-gold'); title='Another Shot!'; sub = singer ? `${singer} gets another shot!` : 'Another Shot!';
+    confettiStop(); // no confetti
   } else {
-    resultText.textContent = 'Result: ' + (enc > one ? 'Encore!' : 'One More Shot');
+    rf.classList.add('rf-red'); title='Maybe Next Time!'; sub = singer ? `Let’s hear it for ${singer}! Thanks for playing along!` : `Thanks for playing along!`;
+    if(localStorage.getItem('screen-sound-ok')==='1'){ try{ sadHorn.currentTime=0; sadHorn.play().catch(()=>{});}catch(e){} }
+    confettiStop();
+  }
+
+  rfTitle.textContent=title;
+  rfSub.textContent=sub;
+  rf.classList.add('show');
+
+  // Auto hide after a few seconds (tweak if you want manual dismiss)
+  setTimeout(()=>hideResultFlash(), 5000);
+}
+function hideResultFlash(){ rf.classList.remove('show'); }
+
+/* Decide winner and flash */
+function showFinalResult(){
+  const {enc,one,neg,total} = lastCounts;
+  if(!total){ resultText.textContent='No votes cast.'; return; }
+
+  const max = Math.max(enc,one,neg);
+  const encWin = enc===max, oneWin = one===max, negWin = neg===max;
+
+  if (encWin && !oneWin && !negWin){
+    showResultFlash('encore', lastSinger);
+    resultText.textContent='Result: Encore!';
+  } else if (!encWin && oneWin && !negWin){
+    showResultFlash('one', lastSinger);
+    resultText.textContent='Result: One More Shot';
+  } else if (!encWin && !oneWin && negWin){
+    showResultFlash('neg', lastSinger);
+    resultText.textContent='Result: Maybe Next Time';
+  } else {
+    hideResultFlash();
+    confettiStop();
+    resultText.textContent='Result: Tie';
   }
 }
 
+/* Helpers */
 function clearTally(){
   encCountEl.textContent=oneCountEl.textContent='0';
   encFill.style.width=oneFill.style.width='0%';
@@ -232,22 +369,74 @@ function clearTally(){
   resultText.textContent='Waiting for votes…';
 }
 
-/* Countdown & Audio */
-let countdownTimer=null;
-function startCountdown(openedMs, duration){
-  stopCountdown();
-  overlay.classList.add('show');
-  try{ countAudio.currentTime = 0; countAudio.play().catch(()=>{}); }catch(e){}
-  countdownTimer = setInterval(()=>{
-    const remain = Math.max(0, Math.round((openedMs + duration*1000 - Date.now())/1000));
-    countNum.textContent = remain;
-    if (remain <= 0){ stopCountdown(); }
-  }, 250);
+/* Simple confetti system */
+let confettiParticles = [];
+let confettiRAF = null;
+let confettiRunning = false;
+
+function confettiStart(){
+  if(confettiRunning) return;
+  confettiRunning = true;
+  confettiCanvas.style.display = 'block';
+  confettiParticles = [];
+  const W = confettiCanvas.width, H = confettiCanvas.height;
+
+  const colors = ['#ffffff','#ffec99','#63e6be','#74c0fc','#b197fc','#ffa8a8','#ffd43b','#69db7c'];
+  const count = Math.min(300, Math.floor((W*H)/9000)); // scale by screen
+
+  for(let i=0;i<count;i++){
+    confettiParticles.push({
+      x: Math.random()*W,
+      y: -20 - Math.random()*H*0.5,
+      r: 4 + Math.random()*5,
+      vx: -2 + Math.random()*4,
+      vy: 2 + Math.random()*3,
+      rot: Math.random()*Math.PI*2,
+      vr: (-0.2 + Math.random()*0.4),
+      color: colors[Math.floor(Math.random()*colors.length)],
+      alpha: 0.8 + Math.random()*0.2
+    });
+  }
+  confettiLoop();
+
+  // stop after 6s
+  setTimeout(confettiStop, 6000);
 }
-function stopCountdown(){
-  overlay.classList.remove('show');
-  if (countdownTimer){ clearInterval(countdownTimer); countdownTimer=null; }
-  try{ countAudio.pause(); }catch(e){}
+
+function confettiStop(){
+  confettiRunning = false;
+  if(confettiRAF){ cancelAnimationFrame(confettiRAF); confettiRAF=null; }
+  confettiCanvas.style.display = 'none';
+}
+
+function confettiLoop(){
+  if(!confettiRunning) return;
+  const W = confettiCanvas.width, H = confettiCanvas.height;
+  ctx.clearRect(0,0,W,H);
+
+  for(const p of confettiParticles){
+    p.x += p.vx;
+    p.y += p.vy;
+    p.rot += p.vr;
+    p.vy += 0.02; // gravity
+
+    // wrap around sides
+    if(p.x < -20) p.x = W+20;
+    if(p.x > W+20) p.x = -20;
+
+    // draw rectangle like fluttering paper
+    ctx.save();
+    ctx.globalAlpha = p.alpha;
+    ctx.translate(p.x, p.y);
+    ctx.rotate(p.rot);
+    ctx.fillStyle = p.color;
+    ctx.fillRect(-p.r, -p.r*0.6, p.r*2, p.r*1.2);
+    ctx.restore();
+  }
+
+  // drop offscreen cleanup
+  confettiParticles = confettiParticles.filter(p=>p.y < H+40);
+  confettiRAF = requestAnimationFrame(confettiLoop);
 }
 </script>
 </body>
