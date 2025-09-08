@@ -1,54 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Earn Your Encore Karaoke – Vote</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { margin:0; font-family:system-ui, sans-serif; background:#0f0a18; color:#fff; }
+    .container { max-width:600px; margin:30px auto; background:#1b1430; padding:20px; border-radius:16px; }
+    h1 { text-align:center; margin-bottom:20px; }
+    label { display:block; margin-top:12px; }
+    input, select { width:100%; padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,.15); background:#120c22; color:#fff; }
+    button { margin-top:16px; padding:12px; width:100%; border:0; border-radius:8px; font-weight:700; cursor:pointer; }
+    .btn-blue { background:#003e81; color:#fff; }
+    .btn-gold { background:#eaba54; color:#000; }
+    .vote-options { display:grid; gap:12px; margin-top:20px; }
+    .vote-options button { font-size:1.1rem; }
+    .hidden { display:none; }
+    .msg { margin-top:10px; text-align:center; opacity:.85; }
+    .soundGate{margin:20px 0; text-align:center}
+    .soundGate button{background:#eaba54;color:#000;padding:10px 20px;border-radius:999px;border:0;font-weight:700;cursor:pointer}
+  </style>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+</head>
+<body>
+  <div class="container">
+    <h1>🎤 Earn Your Encore Karaoke</h1>
+
+    <!-- Sound gate -->
+    <div class="soundGate" id="soundGate">
+      <p>🔈 Click below once to enable sounds during voting</p>
+      <button id="enableSoundBtn">Enable Sound</button>
+    </div>
+
+    <!-- Registration / login -->
+    <div id="authSection">
+      <h2>Sign Up / Log In</h2>
+      <label>Email</label><input id="email">
+      <label>Password</label><input id="password" type="password">
+      <label>First Name</label><input id="firstName">
+      <label>Last Name</label><input id="lastName">
+      <label>ZIP Code</label><input id="zip">
+      <label>Age</label><input id="age" type="number">
+      <label>Gender</label>
+      <select id="gender">
+        <option value="">-- Select --</option>
+        <option value="female">Female</option>
+        <option value="male">Male</option>
+        <option value="other">Other</option>
+      </select>
+      <button class="btn-blue" id="signUpBtn">Sign Up</button>
+      <button class="btn-gold" id="loginBtn">Log In</button>
+      <div class="msg" id="authMsg"></div>
+    </div>
+
+    <!-- Voting UI -->
+    <div id="voteSection" class="hidden">
+      <h2 id="currentSinger">Waiting for singer…</h2>
+      <div class="vote-options">
+        <button class="btn-gold" onclick="castVote('encore')">🔥 Encore!</button>
+        <button class="btn-blue" onclick="castVote('one_more')">🤔 One More Shot</button>
+        <button style="background:#ff4971;color:#fff" onclick="castVote('next_time')">❌ Maybe Next Time</button>
+      </div>
+      <div class="msg" id="voteMsg"></div>
+    </div>
+  </div>
+
+  <!-- Countdown sound -->
+  <audio id="countAudio" preload="auto" src="https://vote.earnyourencorekaraoke.com/vote/quiz-countdown.mp3" loop></audio>
+
 <script>
-// ... keep everything else above as-is
+/* Firebase init */
+const firebaseConfig = {
+  apiKey: "AIzaSyDGbC08WxruYIDPhZSlDlU-7Kzq-7mHENk",
+  authDomain: "eyek-vote.firebaseapp.com",
+  projectId: "eyek-vote",
+  storageBucket: "eyek-vote.firebasestorage.app",
+  messagingSenderId: "954696683994",
+  appId: "1:954696683994:web:21a84298a94648ff0230e3"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const auth = firebase.auth();
 
-async function cast(choice) {
-  voteMsg.textContent = '';
-  if (!eventId || !roundId) {
-    voteMsg.innerHTML = '<span class="err">Voting isn’t open yet.</span>';
-    return;
+/* DOM */
+const $ = id=>document.getElementById(id);
+const authSection=$('authSection'), voteSection=$('voteSection');
+const authMsg=$('authMsg'), voteMsg=$('voteMsg'), currentSingerEl=$('currentSinger');
+const countAudio=$('countAudio'), soundGate=$('soundGate'), enableSoundBtn=$('enableSoundBtn');
+
+/* Enable sound */
+enableSoundBtn.addEventListener('click', async ()=>{
+  try{ await countAudio.play(); countAudio.pause(); localStorage.setItem('sound-ok','1'); soundGate.style.display='none'; }catch(e){ alert('Please click again'); }
+});
+if(localStorage.getItem('sound-ok')==='1'){ soundGate.style.display='none'; }
+
+/* Sign Up */
+$('signUpBtn').onclick=async()=>{
+  try{
+    const cred=await auth.createUserWithEmailAndPassword($('email').value, $('password').value);
+    await db.collection('users').doc(cred.user.uid).set({
+      email:$('email').value, firstName:$('firstName').value, lastName:$('lastName').value,
+      zip:$('zip').value, age:$('age').value, gender:$('gender').value,
+      createdAt:firebase.firestore.FieldValue.serverTimestamp()
+    });
+  }catch(e){ authMsg.textContent=e.message; }
+};
+/* Log In */
+$('loginBtn').onclick=async()=>{
+  try{ await auth.signInWithEmailAndPassword($('email').value, $('password').value); }
+  catch(e){ authMsg.textContent=e.message; }
+};
+
+/* After login */
+auth.onAuthStateChanged(user=>{
+  if(user){
+    authSection.classList.add('hidden');
+    voteSection.classList.remove('hidden');
+    wireEvent();
+  }else{
+    authSection.classList.remove('hidden');
+    voteSection.classList.add('hidden');
   }
-  if (!isVotingOpen) {
-    voteMsg.innerHTML = '<span class="err">Voting is currently closed.</span>';
-    return;
-  }
+});
 
-  // 1) Require attendee check-in first
-  const attRef = db.collection('events').doc(eventId).collection('attendees').doc(currentUser.uid);
-  const attSnap = await attRef.get();
-  if (!attSnap.exists || !(attSnap.data()||{}).verified) {
-    voteMsg.innerHTML = '<span class="err">Please check in with tonight’s PIN before voting.</span>';
-    hide(voteCard); show(pinCard);
-    return;
-  }
+let eventId=null, roundId=null, isVotingOpen=false;
 
-  // 2) Enforce checked-in-before-round-opened
-  const evtSnap = await db.collection('events').doc(eventId).get();
-  const evt = evtSnap.data() || {};
-  const openedAt = evt.roundOpenedAt && evt.roundOpenedAt.toDate ? evt.roundOpenedAt.toDate() : null;
-  const verifiedAt = attSnap.data().verifiedAt && attSnap.data().verifiedAt.toDate ? attSnap.data().verifiedAt.toDate() : null;
-
-  if (openedAt && verifiedAt && verifiedAt > openedAt) {
-    voteMsg.innerHTML = '<span class="err">You must check in before the round starts. Please wait for the next round.</span>';
-    return;
-  }
-
-  // 3) Write the vote (one per round per user; rules prevent overwrite)
-  const voteRef = db.collection('events').doc(eventId)
-                   .collection('rounds').doc(roundId)
-                   .collection('votes').doc(currentUser.uid);
-
-  try {
-    await voteRef.set({
-      choice,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-      displayName: currentUser.displayName || ''
-    }, { merge: false });
-
-    voteMsg.innerHTML = '✅ Vote received! Thanks for participating.';
-  } catch (e) {
-    console.error(e);
-    voteMsg.innerHTML = '<span class="err">You’ve already voted this round.</span>';
-  }
+function wireEvent(){
+  db.collection('app').doc('state').onSnapshot(s=>{
+    const d=s.data()||{};
+    if(!d.currentEventId) return;
+    if(eventId!==d.currentEventId){
+      eventId=d.currentEventId;
+      listenEvent();
+    }
+  });
 }
-// ... keep everything else below as-is
+
+function listenEvent(){
+  db.collection('events').doc(eventId).onSnapshot(snap=>{
+    const d=snap.data()||{};
+    roundId=d.roundId||null;
+    isVotingOpen=!!d.isVotingOpen;
+    currentSingerEl.textContent=d.currentSingerName||'Waiting for singer…';
+
+    if(isVotingOpen){
+      // play sound if unlocked
+      if(localStorage.getItem('sound-ok')==='1'){ try{countAudio.currentTime=0; countAudio.play().catch(()=>{});}catch(e){} }
+    }else{
+      try{countAudio.pause();}catch(e){}
+    }
+  });
+}
+
+async function castVote(choice){
+  if(!eventId||!roundId){ voteMsg.textContent='No active round.'; return; }
+  const uid=auth.currentUser.uid;
+  try{
+    await db.collection('events').doc(eventId).collection('rounds').doc(roundId).collection('votes').doc(uid).set({
+      choice, createdAt:firebase.firestore.FieldValue.serverTimestamp()
+    });
+    voteMsg.textContent='✅ Vote cast!';
+  }catch(e){ voteMsg.textContent='❌ '+e.message; }
+}
 </script>
+</body>
+</html>
