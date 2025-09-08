@@ -28,7 +28,6 @@
     .pill { display:inline-block; padding:6px 10px; border-radius:999px; background:#271c44; }
     .singer { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:10px; border-radius:10px; border:1px solid rgba(255,255,255,.08); margin-bottom:8px; background:#170f2a; }
     .singer .name { font-weight:800; }
-    .singer .song { font-size:.9rem; opacity:.9 }
     .singer .mini { display:flex; gap:6px }
     .topline { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
     .setupHeader{display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:pointer}
@@ -38,6 +37,10 @@
     .inline{display:flex;gap:8px;align-items:end}
     .lockRow{display:flex;gap:12px;align-items:center;margin-top:8px}
     .disabledish{opacity:.7}
+
+    /* Modal */
+    .backdrop{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;z-index:60}
+    .modal{width:min(620px,calc(100% - 32px)); background:#1b1430; border:1px solid rgba(255,255,255,.12); border-radius:16px; padding:16px;}
   </style>
 
   <!-- Firebase (compat) -->
@@ -49,7 +52,6 @@
     <h1>🎤 Earn Your Encore Karaoke • Host</h1>
     <div class="topline">
       <span class="pill" id="eventBadge">Event: —</span>
-      <span class="pill" id="roundBadge">Round: —</span>
       <span class="pill" id="statusBadge">Status: —</span>
     </div>
     <div class="links">
@@ -60,7 +62,7 @@
   </header>
 
   <div class="container">
-    <!-- LEFT: Singers list -->
+    <!-- LEFT: Singers list (names only) -->
     <aside class="sidebar">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px">
         <div style="font-weight:800">Singers (this event)</div>
@@ -68,7 +70,7 @@
       </div>
       <div id="singersList"></div>
       <div class="divider"></div>
-      <div class="muted small">Click <b>Set Current</b> to load the singer. Then press <b>Start Voting!</b></div>
+      <div class="muted small">Click <b>Set Current</b> to choose who sings now. You’ll be prompted for <b>Artist & Song</b> (stored for data only).</div>
     </aside>
 
     <!-- RIGHT: Controls -->
@@ -127,15 +129,15 @@
       </div>
 
       <div class="card">
-        <h3 style="margin:0 0 10px">Current Singer</h3>
+        <h3 style="margin:0 0 10px">Singer Management</h3>
         <div class="row">
           <div>
             <label>Singer Name</label>
             <input id="singerName" placeholder="e.g. Jane Doe" />
           </div>
           <div>
-            <label>Song (optional)</label>
-            <input id="singerSong" placeholder="(not shown on TV)" />
+            <label>Default Artist (optional)</label>
+            <input id="defaultArtist" placeholder="e.g. Journey" />
           </div>
         </div>
         <div style="display:flex; gap:8px; margin-top:10px; flex-wrap:wrap">
@@ -158,11 +160,11 @@
   </div>
 
   <!-- Venue Picker Modal -->
-  <div class="modal-backdrop" id="venueModal" style="display:none;align-items:center;justify-content:center;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:50;">
-    <div class="modal" style="width:min(620px,calc(100% - 32px)); background:#1b1430; border:1px solid rgba(255,255,255,.12); border-radius:16px; padding:16px;">
+  <div class="backdrop" id="venueModal">
+    <div class="modal">
       <h3>Select a Venue</h3>
       <div id="venuesList" style="max-height:50vh;overflow:auto;margin-bottom:10px"></div>
-      <div class="divider" style="height:1px;background:rgba(255,255,255,.12);margin:14px 0"></div>
+      <div class="divider"></div>
       <div class="row">
         <div>
           <label>Add New Venue</label>
@@ -179,11 +181,11 @@
   </div>
 
   <!-- KJ Picker Modal -->
-  <div class="modal-backdrop" id="kjModal" style="display:none;align-items:center;justify-content:center;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:50;">
-    <div class="modal" style="width:min(620px,calc(100% - 32px)); background:#1b1430; border:1px solid rgba(255,255,255,.12); border-radius:16px; padding:16px;">
+  <div class="backdrop" id="kjModal">
+    <div class="modal">
       <h3>Select a KJ</h3>
       <div id="kjsList" style="max-height:50vh;overflow:auto;margin-bottom:10px"></div>
-      <div class="divider" style="height:1px;background:rgba(255,255,255,.12);margin:14px 0"></div>
+      <div class="divider"></div>
       <div class="row">
         <div>
           <label>Add New KJ (Name)</label>
@@ -197,6 +199,28 @@
       <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:12px">
         <button class="btn btn-gold" id="addKjBtn">Add KJ</button>
         <button class="btn btn-red" id="closeKjBtn">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Performance (Set Current) Modal -->
+  <div class="backdrop" id="perfModal">
+    <div class="modal">
+      <h3 id="perfTitle">Set Current</h3>
+      <div class="row">
+        <div>
+          <label>Artist</label>
+          <input id="perfArtist" placeholder="e.g. Queen" />
+        </div>
+        <div>
+          <label>Song Title</label>
+          <input id="perfTitleInput" placeholder="e.g. Bohemian Rhapsody" />
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div style="display:flex; gap:8px; justify-content:flex-end">
+        <button class="btn btn-blue" id="perfSaveBtn">Save & Set Current</button>
+        <button class="btn btn-red" id="perfCancelBtn">Cancel</button>
       </div>
     </div>
   </div>
@@ -217,7 +241,7 @@
     /* Helpers */
     const $ = id => document.getElementById(id);
     const hostMsg = $('hostMsg'), timerHint = $('timerHint');
-    const eventBadge = $('eventBadge'), roundBadge = $('roundBadge'), statusBadge = $('statusBadge');
+    const eventBadge = $('eventBadge'), statusBadge = $('statusBadge');
     const singersList = $('singersList');
 
     function toast(msg){ hostMsg.textContent = msg; }
@@ -278,7 +302,7 @@
         snap.forEach(doc=>{
           const v = doc.data();
           const div = document.createElement('div');
-          div.className='pick-item'; div.textContent=v.name;
+          div.textContent=v.name;
           div.style.cssText='padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,.08);margin-bottom:8px;background:#170f2a;cursor:pointer';
           div.onclick = async ()=>{
             $('hostEventId').value = v.name;
@@ -322,7 +346,7 @@
         snap.forEach(doc=>{
           const k = doc.data();
           const div = document.createElement('div');
-          div.className='pick-item'; div.textContent = k.company ? `${k.name} — ${k.company}` : k.name;
+          div.textContent = k.company ? `${k.name} — ${k.company}` : k.name;
           div.style.cssText='padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,.08);margin-bottom:8px;background:#170f2a;cursor:pointer';
           div.onclick = ()=>{ $('kjName').value=k.name||''; $('kjCompany').value=k.company||''; kjModal.style.display='none'; };
           kjsList.appendChild(div);
@@ -362,13 +386,15 @@
     /* Singer management */
     $('addSingerBtn').addEventListener('click', async ()=>{
       const ref = eventRef(); if(!ref) return;
-      const name=$('singerName').value.trim(); const song=$('singerSong').value.trim();
+      const name=$('singerName').value.trim();
+      const defArtist=$('defaultArtist').value.trim();
       if(!name){ toast('⚠️ Enter singer name.'); return; }
       try{
         const id=canonicalKey(name)||'singer';
         const now=firebase.firestore.FieldValue.serverTimestamp();
-        await ref.collection('singers').doc(id).set({ name, lastSong: song||'', updatedAt: now, createdAt: now }, { merge:true });
+        await ref.collection('singers').doc(id).set({ name, defaultArtist:defArtist||'', updatedAt: now, createdAt: now }, { merge:true });
         toast('✅ Singer added/updated.');
+        $('singerName').value='';
         await loadSingers();
       }catch(e){ toast('❌ Error adding singer.'); }
     });
@@ -383,44 +409,81 @@
         singersList.innerHTML = qs.empty ? '<div class="muted small">No singers yet.</div>' : '';
         qs.forEach(doc=>{
           const s=doc.data()||{};
-          const row=document.createElement('div'); row.className='singer';
           const nameText = s.name || '(no name)';
-          const songText = s.lastSong ? s.lastSong : '';
+          const row=document.createElement('div'); row.className='singer';
           row.innerHTML = `
             <div style="min-width:0">
               <div class="name">${nameText}</div>
-              <div class="song">${songText}</div>
             </div>
             <div class="mini">
-              <button class="btn btn-blue small" data-id="${doc.id}" data-name="${nameText}" data-song="${songText}">Set Current</button>
+              <button class="btn btn-blue small" data-id="${doc.id}" data-name="${nameText}" data-artist="${s.defaultArtist||''}">Set Current</button>
             </div>`;
-          row.querySelector('button').onclick = async (e)=>{ await setCurrentOnly(e.target.getAttribute('data-name')||'', e.target.getAttribute('data-song')||''); };
+          row.querySelector('button').onclick = (e)=> openPerfModal(e.target.getAttribute('data-name')||'', e.target.getAttribute('data-artist')||'');
           singersList.appendChild(row);
         });
       }catch(e){ singersList.innerHTML = `<div class="muted">Error loading singers.</div>`; }
     }
     $('refreshSingersBtn').addEventListener('click', loadSingers);
 
-    /* Current + Voting window */
-    async function setCurrentOnly(name, song){
+    /* Performance modal (ask for Artist & Title on Set Current) */
+    const perfModal=$('perfModal'), perfArtist=$('perfArtist'), perfTitleInput=$('perfTitleInput'), perfSaveBtn=$('perfSaveBtn'), perfCancelBtn=$('perfCancelBtn'), perfTitleEl=$('perfTitle');
+    let perfSingerName='';
+
+    function openPerfModal(singerName, suggestedArtist){
+      perfSingerName = singerName;
+      perfTitleEl.textContent = `Set Current – ${singerName}`;
+      perfArtist.value = suggestedArtist || '';
+      perfTitleInput.value = '';
+      perfModal.style.display='flex';
+      setTimeout(()=>perfArtist.focus(), 50);
+    }
+    function closePerfModal(){ perfModal.style.display='none'; }
+
+    perfCancelBtn.addEventListener('click', closePerfModal);
+    perfSaveBtn.addEventListener('click', async ()=>{
+      const artist = perfArtist.value.trim();
+      const title  = perfTitleInput.value.trim();
+      await setCurrentPerformance(perfSingerName, artist, title);
+      closePerfModal();
+    });
+
+    /* Set current performance (internal performanceId; no artist shown in sidebar) */
+    async function setCurrentPerformance(name, artist, title){
       const ref = eventRef(); if(!ref) return;
-      if(!name){ toast('⚠️ Pick a singer from the left.'); return; }
-      const newRound = new Date().toISOString();
+      if(!name){ toast('⚠️ Pick a singer.'); return; }
+      const performanceId = new Date().toISOString();
       try{
+        // write performance document for analytics/history
+        await ref.collection('performances').doc(performanceId).set({
+          performanceId, singerName:name, artist:artist||'', title:title||'',
+          startedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge:true });
+
+        // update singer record (remember their last artist silently)
+        const sid=canonicalKey(name)||'singer';
+        await ref.collection('singers').doc(sid).set({
+          name, defaultArtist: artist||'', updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge:true });
+
+        // set current on the event (compat: keep roundId for other pages)
         await ref.set({
-          currentSingerName:name, currentSong:song||'', roundId:newRound,
-          isVotingOpen:false, roundOpenedAt: firebase.firestore.FieldValue.delete(),
+          currentSingerName:name,
+          currentArtist: artist||'',
+          currentTitle: title||'',
+          performanceId,
+          roundId: performanceId,
+          isVotingOpen:false,
+          roundOpenedAt: firebase.firestore.FieldValue.delete(),
           voteWindow: firebase.firestore.FieldValue.delete(),
           updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         }, { merge:true });
-        const id=canonicalKey(name)||'singer';
-        await ref.collection('singers').doc(id).set({ name, lastSong:song||'', updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true });
-        roundBadge.textContent = 'Round: ' + newRound;
+
         statusBadge.textContent = 'Status: Voting Closed';
         toast(`🎶 Current: ${name}. Ready to start voting.`);
       }catch{ toast('❌ Error setting current singer.'); }
     }
 
+    /* Voting controls */
     document.getElementById('startVoteBtn').addEventListener('click', startVoting);
     document.getElementById('extend15Btn').addEventListener('click', extend15);
     document.getElementById('endVoteBtn').addEventListener('click', endVoting);
@@ -455,18 +518,18 @@
     async function endVoting(){
       const ref = eventRef(); if(!ref) return;
       try{
+        // 1) Close voting immediately
         await ref.set({ isVotingOpen:false }, { merge:true });
         statusBadge.textContent = 'Status: Voting Closed';
         toast('🛑 Voting closed.');
         clearInterval(autoCloseTimer); autoCloseTimer=null; timerHint.textContent='';
-        await evaluateOutcomeAndCleanup();
 
-        // 🧹 Clear current singer between rounds so TV doesn’t show the last one
-        await ref.set({
-          currentSingerName: '',
-          currentSong: ''
-        }, { merge:true });
-
+        // 2) Delay clearing current singer so Screen can show the splash & name
+        setTimeout(async ()=>{
+          try{
+            await ref.set({ currentSingerName:'', currentArtist:'', currentTitle:'' }, { merge:true });
+          }catch(e){}
+        }, 6500); // ~6.5s gives Screen time to flash + play audio
       }catch{ toast('❌ Error ending voting.'); }
     }
 
@@ -483,15 +546,16 @@
         if (remain <= 0 && vw.autoClose){
           try{ await ref.set({ isVotingOpen:false }, { merge:true }); }catch(e){}
           clearInterval(autoCloseTimer); autoCloseTimer=null; timerHint.textContent='';
-          await evaluateOutcomeAndCleanup();
 
-          // 🧹 also clear here if auto-closed
-          await ref.set({ currentSingerName:'', currentSong:'' }, { merge:true });
+          // Delay the clear here as well so the Screen can show the splash
+          setTimeout(async ()=>{
+            try{ await ref.set({ currentSingerName:'', currentArtist:'', currentTitle:'' }, { merge:true }); }catch(e){}
+          }, 6500);
         }
       }, 500);
     }
 
-    /* Live badges */
+    /* Live status badge */
     let eventUnsub=null;
     function wireEventListener(){
       if(eventUnsub) eventUnsub();
@@ -499,7 +563,6 @@
       eventUnsub = ref.onSnapshot(snap=>{
         const d=snap.data()||{};
         eventBadge.textContent = 'Event: ' + (d.venueName || currentEventName() || '—');
-        roundBadge.textContent = 'Round: ' + (d.roundId || '—');
         statusBadge.textContent = 'Status: ' + (d.isVotingOpen ? 'Voting Open' : 'Voting Closed');
       }, console.error);
     }
@@ -515,23 +578,6 @@
         await setGlobalCurrentEvent(name);
         eventBadge.textContent='Event: '+name;
         wireEventListener(); loadSingers();
-      }catch(e){}
-    }
-
-    /* Outcome cleanup (Maybe Next Time removes singer from list) */
-    async function evaluateOutcomeAndCleanup(){
-      const ref = eventRef(); if(!ref) return;
-      try{
-        const evt=(await ref.get()).data()||{}; const rid=evt.roundId||null; const singerName=evt.currentSingerName||'';
-        if(!rid || !singerName) return;
-        const votesSnap = await ref.collection('rounds').doc(rid).collection('votes').get();
-        let enc=0,one=0,neg=0; votesSnap.forEach(doc=>{ const c=(doc.data()||{}).choice; if(c==='encore') enc++; else if(c==='one_more') one++; else if(c==='next_time') neg++; });
-        const max=Math.max(enc,one,neg); const maybeWins=(neg===max)&&(neg>enc)&&(neg>one);
-        if(maybeWins){
-          const sid=canonicalKey(singerName)||'singer';
-          try{ await ref.collection('singers').doc(sid).delete(); toast(`🧹 Removed "${singerName}" from the list (Maybe Next Time!).`);}catch(e){}
-          await loadSingers();
-        }
       }catch(e){}
     }
 
