@@ -1,75 +1,101 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Earn Your Encore Karaoke – Vote</title>
+  <meta charset="UTF-8" />
+  <title>Earn Your Encore Karaoke – Screen</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    body { margin:0; font-family:system-ui, sans-serif; background:#0f0a18; color:#fff; }
-    .soundBar{ position:fixed; top:0; left:0; right:0; z-index:1000; display:flex; gap:10px; align-items:center; justify-content:center; padding:10px 14px; background:#201637; border-bottom:1px solid rgba(255,255,255,.18);}
-    .soundBar button{background:#eaba54;color:#000;padding:8px 14px;border-radius:999px;border:0;font-weight:800;cursor:pointer}
-    .container { max-width:600px; margin:90px auto 30px; background:#1b1430; padding:20px; border-radius:16px; }
-    h1 { text-align:center; margin-bottom:20px; }
-    label { display:block; margin-top:12px; }
-    input, select { width:100%; padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,.15); background:#120c22; color:#fff; }
-    button { margin-top:16px; padding:12px; width:100%; border:0; border-radius:8px; font-weight:700; cursor:pointer; }
-    .btn-blue { background:#003e81; color:#fff; }
-    .btn-gold { background:#eaba54; color:#000; }
-    .vote-options { display:grid; gap:12px; margin-top:20px; }
-    .vote-options button { font-size:1.1rem; }
-    .hidden { display:none; }
-    .msg { margin-top:10px; text-align:center; opacity:.85; }
+    :root{ --blue:#003e81; --gold:#eaba54; --purple:#2F0658; --white:#fff; }
+    *{box-sizing:border-box}
+    body{margin:0;background:#0b0715;color:#fff;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',Arial,sans-serif;overflow:hidden}
+    header{padding:16px;background:linear-gradient(90deg,var(--blue),var(--purple));display:flex;justify-content:space-between;align-items:center}
+    h1{margin:0;font-size:1.2rem}
+    .pill{display:inline-block;padding:6px 10px;border-radius:999px;background:#271c44;font-size:.9rem;margin-left:8px}
+    .main{padding:18px}
+    .venueHero{font-size:3.2vw;font-weight:1000;letter-spacing:.02em;margin:0 0 12px}
+    .sub{opacity:.85;margin-bottom:16px}
+    .grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+    .card{background:#1b1430;border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:16px;box-shadow:0 10px 30px rgba(0,0,0,.45)}
+    .big{font-size:1.1rem;font-weight:800;margin-bottom:10px}
+    .tally{display:grid;grid-template-columns:1fr 80px 100px;gap:10px;align-items:center;margin:10px 0}
+    .bar{height:16px;border-radius:999px;background:#241a3f;overflow:hidden}
+    .fill{height:100%;width:0;transition:width .25s ease}
+    .enc{background:linear-gradient(180deg,#ffefc2,var(--gold))}
+    .one{background:linear-gradient(180deg,#9fd3ff,#4aa3ff)}
+    .neg{background:linear-gradient(180deg,#ffc2d1,#ff4971)}
+    .banner{position:fixed;left:0;right:0;bottom:0;background:rgba(0,0,0,.6);backdrop-filter:blur(6px);padding:14px 20px;display:flex;justify-content:space-between;align-items:center}
+    .banner .result{font-size:1.4rem;font-weight:900}
+    .overlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:radial-gradient(ellipse at center, rgba(255,239,194,.2), rgba(0,0,0,.85) 60%);z-index:9999}
+    .overlay.show{display:flex;animation:fadeIn .3s ease}
+    @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+    .countNum{font-size:22vw;line-height:1;font-weight:1000;letter-spacing:.02em;background:linear-gradient(180deg,#fff7d0,var(--gold));-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:0 0 24px rgba(234,186,84,.35)}
+    .countSub{font-size:3vw;opacity:.9;text-align:center;margin-top:1rem}
+    .ready{position:fixed;left:0;right:0;top:50%;transform:translateY(-50%);text-align:center;font-size:3vw;opacity:.9;display:none}
+    .ready.show{display:block}
+    @media (max-width:960px){ .grid{grid-template-columns:1fr} .venueHero{font-size:7vw} }
   </style>
 
-  <!-- Firebase SDKs -->
+  <!-- Firebase SDKs (compat) -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 </head>
 <body>
-  <!-- Floating “Enable sound” bar -->
-  <div class="soundBar" id="soundBar">
-    <div>🔈 Enable sound for voting</div>
-    <button id="enableSoundBtn">Enable</button>
-  </div>
-
-  <div class="container">
-    <h1>🎤 Earn Your Encore Karaoke</h1>
-
-    <!-- Registration / login -->
-    <div id="authSection">
-      <h2>Sign Up / Log In</h2>
-      <label>Email</label><input id="email">
-      <label>Password</label><input id="password" type="password">
-      <label>First Name</label><input id="firstName">
-      <label>Last Name</label><input id="lastName">
-      <label>ZIP Code</label><input id="zip">
-      <label>Age</label><input id="age" type="number">
-      <label>Gender</label>
-      <select id="gender">
-        <option value="">-- Select --</option>
-        <option value="female">Female</option>
-        <option value="male">Male</option>
-        <option value="other">Other</option>
-      </select>
-      <button class="btn-blue" id="signUpBtn">Sign Up</button>
-      <button class="btn-gold" id="loginBtn">Log In</button>
-      <div class="msg" id="authMsg"></div>
+  <header>
+    <h1>🎤 Earn Your Encore Karaoke • Live Screen</h1>
+    <div>
+      <span class="pill" id="roundBadge">—</span>
+      <span class="pill" id="status">loading…</span>
     </div>
+  </header>
 
-    <!-- Voting UI -->
-    <div id="voteSection" class="hidden">
-      <h2 id="currentSinger">Waiting for singer…</h2>
-      <div class="vote-options">
-        <button class="btn-gold" onclick="castVote('encore')">🔥 Encore!</button>
-        <button class="btn-blue" onclick="castVote('one_more')">🤔 One More Shot</button>
-        <button style="background:#ff4971;color:#fff" onclick="castVote('next_time')">❌ Maybe Next Time</button>
+  <div class="main">
+    <div class="venueHero" id="venueHero">Welcome to …</div>
+    <div class="sub" id="audienceHint">Vote at: vote.earnyourencorekaraoke.com/vote</div>
+
+    <div class="grid">
+      <div class="card">
+        <div class="big">🔥 Encore!</div>
+        <div class="tally">
+          <div>Votes</div>
+          <div id="encCount" style="text-align:right">0</div>
+          <div class="bar"><div class="fill enc" id="encFill"></div></div>
+        </div>
       </div>
-      <div class="msg" id="voteMsg"></div>
+      <div class="card">
+        <div class="big">🤔 One More Shot</div>
+        <div class="tally">
+          <div>Votes</div>
+          <div id="oneCount" style="text-align:right">0</div>
+          <div class="bar"><div class="fill one" id="oneFill"></div></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="big">❌ Maybe Next Time</div>
+        <div class="tally">
+          <div>Votes</div>
+          <div id="negCount" style="text-align:right">0</div>
+          <div class="bar"><div class="fill neg" id="negFill"></div></div>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- Countdown sound (played when voting is open) -->
+  <div class="banner">
+    <div class="result" id="resultText">Waiting for votes…</div>
+    <div class="pill" id="percentages">—</div>
+  </div>
+
+  <!-- Ready banner (pre-start) -->
+  <div class="ready" id="readyMsg">Get ready… voting will open soon!</div>
+
+  <!-- Countdown overlay + audio -->
+  <div class="overlay" id="countOverlay">
+    <div style="text-align:center">
+      <div class="countNum" id="countNum">30</div>
+      <div class="countSub">Cast your vote now at vote.earnyourencorekaraoke.com/vote</div>
+    </div>
+  </div>
   <audio id="countAudio" preload="auto" src="https://vote.earnyourencorekaraoke.com/vote/quiz-countdown.mp3" loop></audio>
 
 <script>
@@ -84,93 +110,165 @@ const firebaseConfig = {
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
-const auth = firebase.auth();
 
 /* DOM */
-const $ = id=>document.getElementById(id);
-const authSection=$('authSection'), voteSection=$('voteSection');
-const authMsg=$('authMsg'), voteMsg=$('voteMsg'), currentSingerEl=$('currentSinger');
-const countAudio=$('countAudio'), soundBar=$('soundBar'), enableSoundBtn=$('enableSoundBtn');
+const $ = id => document.getElementById(id);
+const roundBadge = $('roundBadge');
+const statusEl = $('status');
+const encCountEl = $('encCount'), oneCountEl = $('oneCount'), negCountEl = $('negCount');
+const encFill = $('encFill'), oneFill = $('oneFill'), negFill = $('negFill');
+const percentagesEl = $('percentages'), resultText = $('resultText');
+const overlay = $('countOverlay'); const countNum = $('countNum'); const countAudio = $('countAudio');
+const readyMsg = $('readyMsg'); const venueHero = $('venueHero');
 
-/* Sound unlock (floating top bar) */
-function hideSoundBar(){ soundBar.style.display='none'; }
-enableSoundBtn.addEventListener('click', async ()=>{
-  try{ await countAudio.play(); countAudio.pause(); localStorage.setItem('sound-ok','1'); hideSoundBar(); }
-  catch(e){ alert('Please tap Enable again to allow audio.'); }
-});
-if(localStorage.getItem('sound-ok')==='1'){ hideSoundBar(); }
+let eventUnsub = null, votesUnsub = null, autoEventUnsub = null, countdownTimer = null;
+let eventId = null, roundId = null, isVotingOpen = false;
 
-/* Sign Up */
-$('signUpBtn').onclick=async()=>{
-  try{
-    const email=$('email').value, pwd=$('password').value;
-    const cred=await auth.createUserWithEmailAndPassword(email, pwd);
-    await db.collection('users').doc(cred.user.uid).set({
-      email, firstName:$('firstName').value, lastName:$('lastName').value,
-      zip:$('zip').value, age:$('age').value, gender:$('gender').value,
-      createdAt:firebase.firestore.FieldValue.serverTimestamp()
-    }, { merge:true });
-  }catch(e){ authMsg.textContent=e.message; }
-};
-/* Log In */
-$('loginBtn').onclick=async()=>{
-  try{ await auth.signInWithEmailAndPassword($('email').value, $('password').value); }
-  catch(e){ authMsg.textContent=e.message; }
-};
+/* user gesture for audio */
+document.body.addEventListener('click', ()=>{ countAudio.play().then(()=>countAudio.pause()).catch(()=>{}); }, { once:true });
 
-/* After login */
-auth.onAuthStateChanged(user=>{
-  if(user){
-    authSection.classList.add('hidden');
-    voteSection.classList.remove('hidden');
-    wireEvent();
-  }else{
-    authSection.classList.remove('hidden');
-    voteSection.classList.add('hidden');
+/* Auto-pick current event from host */
+autoEventUnsub = db.collection('app').doc('state').onSnapshot(s=>{
+  const d = s.data() || {};
+  if (d.currentEventId && eventId !== d.currentEventId){
+    eventId = d.currentEventId;
+    wireUpForEvent(eventId);
   }
 });
 
-let eventId=null, roundId=null, isVotingOpen=false;
+function wireUpForEvent(evtId){
+  if (eventUnsub) eventUnsub();
+  if (votesUnsub) { votesUnsub(); votesUnsub=null; }
 
-function wireEvent(){
-  db.collection('app').doc('state').onSnapshot(s=>{
-    const d=s.data()||{};
-    if(!d.currentEventId) return;
-    if(eventId!==d.currentEventId){
-      eventId=d.currentEventId;
-      listenEvent();
-    }
+  // Also read the venue name to show hero text
+  db.collection('events').doc(evtId).get().then(doc=>{
+    const v = (doc.data()||{}).venueName || evtId || '…';
+    venueHero.textContent = `Welcome to ${v}`;
   });
+
+  eventUnsub = db.collection('events').doc(evtId).onSnapshot(snap=>{
+    const d = snap.data()||{};
+    const prevOpen = isVotingOpen;
+
+    roundId = d.roundId || null;
+    isVotingOpen = !!d.isVotingOpen;
+    roundBadge.textContent = roundId || '—';
+    statusEl.textContent = isVotingOpen ? 'Voting Open' : 'Voting Closed';
+
+    // Pre-start banner
+    if (roundId && !isVotingOpen){
+      readyMsg.classList.add('show');
+      stopCountdown();
+      clearTally();
+      resultText.textContent = 'Waiting for votes…';
+    } else {
+      readyMsg.classList.remove('show');
+    }
+
+    // Timer + audio
+    const vw = d.voteWindow || null;
+    if (isVotingOpen && vw){
+      const openedAtMs = (vw.openedAt && vw.openedAt.toDate) ? vw.openedAt.toDate().getTime() : Date.now();
+      const duration = Number(vw.durationSec||30);
+      startCountdown(openedAtMs, duration);
+    } else if (!isVotingOpen){
+      stopCountdown();
+    }
+
+    if (roundId){
+      listenVotes(evtId, roundId);
+    } else {
+      clearTally();
+      if (votesUnsub) { votesUnsub(); votesUnsub=null; }
+    }
+
+    if (prevOpen && !isVotingOpen && roundId) {
+      setTimeout(()=>showCloseOutcome(), 300);
+      stopCountdown();
+      readyMsg.classList.remove('show');
+    }
+  }, console.error);
 }
 
-function listenEvent(){
-  db.collection('events').doc(eventId).onSnapshot(snap=>{
-    const d=snap.data()||{};
-    roundId=d.roundId||null;
-    isVotingOpen=!!d.isVotingOpen;
-    currentSingerEl.textContent=d.currentSingerName||'Waiting for singer…';
-
-    if(isVotingOpen){
-      // play sound if unlocked
-      if(localStorage.getItem('sound-ok')==='1'){
-        try{countAudio.currentTime=0; countAudio.play().catch(()=>{});}catch(e){}
-      }
-    }else{
-      try{countAudio.pause();}catch(e){}
-    }
-  });
+function listenVotes(evtId, rid){
+  if (votesUnsub) votesUnsub();
+  votesUnsub = db.collection('events').doc(evtId)
+                 .collection('rounds').doc(rid)
+                 .collection('votes')
+                 .onSnapshot(updateTally, console.error);
 }
 
-async function castVote(choice){
-  if(!eventId||!roundId){ voteMsg.textContent='No active round.'; return; }
-  const uid=(auth.currentUser||{}).uid;
-  if(!uid){ voteMsg.textContent='Please log in.'; return; }
-  try{
-    await db.collection('events').doc(eventId).collection('rounds').doc(roundId).collection('votes').doc(uid).set({
-      choice, createdAt:firebase.firestore.FieldValue.serverTimestamp()
-    }, { merge:true });
-    voteMsg.textContent='✅ Vote cast!';
-  }catch(e){ voteMsg.textContent='❌ '+e.message; }
+let lastCounts = {enc:0,one:0,neg:0,total:0};
+
+function updateTally(qs){
+  let enc=0, one=0, neg=0;
+  qs.forEach(doc=>{
+    const v = (doc.data()||{}).choice;
+    if (v==='encore') enc++;
+    else if (v==='one_more') one++;
+    else if (v==='next_time') neg++;
+  });
+  const total = enc+one+neg;
+  lastCounts = {enc,one,neg,total};
+
+  encCountEl.textContent = enc; oneCountEl.textContent = one; negCountEl.textContent = neg;
+  const pct = (n)=> total? Math.round(n*100/total):0;
+  encFill.style.width = pct(enc)+'%';
+  oneFill.style.width = pct(one)+'%';
+  negFill.style.width = pct(neg)+'%';
+  percentagesEl.textContent = total ? `Encore ${pct(enc)}% • One More ${pct(one)}% • Maybe ${pct(neg)}%` : '—';
+
+  if (isVotingOpen){
+    resultText.textContent = total ? `Live Leader: ${liveLeaderText(enc, one, neg)}` : 'Waiting for votes…';
+  }
+}
+
+function liveLeaderText(enc,one,neg){
+  const max = Math.max(enc,one,neg);
+  const picks = [];
+  if (enc===max && max>0) picks.push('Encore!');
+  if (one===max && max>0) picks.push('One More Shot');
+  if (neg===max && max>0) picks.push('Maybe Next Time');
+  if (picks.length===0) return '—';
+  if (picks.length===1) return picks[0];
+  return 'Tied: ' + picks.join(' • ');
+}
+
+function showCloseOutcome(){
+  const {enc,one,neg,total} = lastCounts;
+  if (!total){ resultText.textContent = 'No votes cast.'; return; }
+  const max = Math.max(enc,one,neg);
+  const winners = [];
+  if (enc===max) winners.push('Encore!');
+  if (one===max) winners.push('One More Shot');
+  if (neg===max) winners.push('Maybe Next Time');
+  resultText.textContent = winners.length===1 ? 'Result: ' + winners[0] : 'Result: Tie – ' + winners.join(' • ');
+}
+
+function clearTally(){
+  encCountEl.textContent=oneCountEl.textContent=negCountEl.textContent='0';
+  encFill.style.width=oneFill.style.width=negFill.style.width='0%';
+  percentagesEl.textContent='—';
+  resultText.textContent='Waiting for votes…';
+}
+
+/* Countdown & Audio */
+let countdownTimer=null;
+function startCountdown(openedMs, duration){
+  stopCountdown();
+  document.body.click(); // nudge autoplay unlock if they tap the screen
+  overlay.classList.add('show');
+  try{ countAudio.currentTime = 0; countAudio.play().catch(()=>{}); }catch(e){}
+  countdownTimer = setInterval(()=>{
+    const remain = Math.max(0, Math.round((openedMs + duration*1000 - Date.now())/1000));
+    countNum.textContent = remain;
+    if (remain <= 0){ stopCountdown(); }
+  }, 250);
+}
+function stopCountdown(){
+  overlay.classList.remove('show');
+  if (countdownTimer){ clearInterval(countdownTimer); countdownTimer=null; }
+  try{ countAudio.pause(); }catch(e){}
 }
 </script>
 </body>
