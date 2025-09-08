@@ -33,7 +33,7 @@
     .topline { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
     .topline .path { opacity:.8; }
 
-    /* Modal (shared for pickers) */
+    /* Modal (shared pickers) */
     .modal-backdrop{ position:fixed; inset:0; background:rgba(0,0,0,.55); display:none; align-items:center; justify-content:center; z-index:50; }
     .modal-backdrop.show{ display:flex; }
     .modal{ width:min(620px,calc(100% - 32px)); background:#1b1430; border:1px solid rgba(255,255,255,.12); border-radius:16px; padding:16px; }
@@ -68,7 +68,7 @@
       </div>
       <div id="singersList"></div>
       <div class="divider"></div>
-      <div class="muted small">Tip: Click “Set Current” to push the singer & song to the event and open a new round.</div>
+      <div class="muted small">Tip: Click “Set Current” next to a singer to start a new round and open voting.</div>
     </aside>
 
     <!-- RIGHT: Controls -->
@@ -81,7 +81,7 @@
               <input id="hostEventId" placeholder="e.g. The Raven – Bigfork" />
               <button class="btn btn-blue" id="pickVenueBtn" title="Choose prior venue">Pick</button>
             </div>
-            <div class="muted small" style="margin-top:6px">Use the <b>venue name</b> here. We’ll also save it to your venues list.</div>
+            <div class="muted small" style="margin-top:6px">Use the <b>venue name</b>. We’ll save it to your venue list.</div>
           </div>
           <div>
             <label>Tonight’s PIN</label>
@@ -110,12 +110,12 @@
 
         <div style="margin-top:10px">
           <button class="btn btn-blue" id="saveKJBtn">Save KJ / Venue Info</button>
-          <span class="muted small">Saves to the event and (if new) adds venue & KJ to your master lists.</span>
+          <span class="muted small">Saves to event and (if new) adds venue & KJ to your lists.</span>
         </div>
       </div>
 
       <div class="card">
-        <h3 style="margin-top:0">Current Singer & Song</h3>
+        <h3 style="margin:0 0 10px">Current Singer & Song</h3>
         <div class="row">
           <div>
             <label>Singer Name</label>
@@ -126,17 +126,22 @@
             <input id="singerSong" placeholder="e.g. Journey – Don’t Stop Believin’" />
           </div>
         </div>
-        <div style="display:flex; gap:8px; margin-top:10px">
+        <div style="display:flex; gap:8px; margin-top:10px; flex-wrap:wrap">
           <button class="btn btn-blue" id="addSingerBtn">Add/Update Singer in List</button>
-          <button class="btn btn-gold" id="setCurrentBtn">Set Current + Open Voting</button>
+          <!-- Removed: Set Current + Open Voting (you’ll click from the sidebar instead) -->
         </div>
+
         <div class="divider"></div>
-        <div style="display:flex; gap:8px">
-          <button class="btn btn-blue" id="openVotingBtn">Open Voting</button>
-          <button class="btn btn-red" id="closeVotingBtn">Close Voting</button>
-          <button class="btn btn-blue" id="nextRoundBtn">Next Round</button>
+
+        <!-- Timed voting controls -->
+        <div style="display:flex; gap:8px; flex-wrap:wrap">
+          <button class="btn btn-blue" id="start30Btn">Start 30s Voting + Sound</button>
+          <button class="btn btn-blue" id="extend15Btn">Extend +15s</button>
+          <button class="btn btn-red"  id="endNowBtn">End Voting Now</button>
         </div>
+
         <div id="hostMsg" class="muted" style="margin-top:10px"></div>
+        <div class="muted small" id="timerHint"></div>
       </div>
     </main>
   </div>
@@ -205,6 +210,7 @@
        ======================= */
     const $ = id => document.getElementById(id);
     const hostMsg = $('hostMsg');
+    const timerHint = $('timerHint');
     const eventBadge = $('eventBadge');
     const roundBadge = $('roundBadge');
     const statusBadge = $('statusBadge');
@@ -212,9 +218,10 @@
 
     function toast(msg){ hostMsg.textContent = msg; }
 
-    function currentEventName(){
-      return $('hostEventId').value.trim();
+    function canonicalKey(name){
+      return String(name||'').toLowerCase().trim().replace(/[^\w]+/g,'-').replace(/(^-|-$)/g,'');
     }
+    function currentEventName(){ return $('hostEventId').value.trim(); }
     function eventRef(){
       const id = currentEventName();
       if (!id) { toast('⚠️ Enter Event (Venue) first.'); return null; }
@@ -397,7 +404,7 @@
       const song = $('singerSong').value.trim();
       if (!name){ toast('⚠️ Enter singer name.'); return; }
       try {
-        const singerId = name.toLowerCase().replace(/[^\w]+/g,'-').replace(/(^-|-$)/g,'') || 'singer';
+        const singerId = canonicalKey(name) || 'singer';
         const now = firebase.firestore.FieldValue.serverTimestamp();
         await ref.collection('singers').doc(singerId).set({
           name, lastSong: song || '', updatedAt: now, createdAt: now
@@ -411,25 +418,11 @@
       const ref = eventRef(); if (!ref) return;
       singersList.innerHTML = '<div class="muted">Loading…</div>';
       try{
-        // Prefer updatedAt desc, but gracefully fall back if anything goes wrong
         let qs;
-        try {
-          qs = await ref.collection('singers').orderBy('updatedAt','desc').limit(200).get();
-        } catch(inner){
-          console.warn('updatedAt order failed, falling back to name', inner);
-          try {
-            qs = await ref.collection('singers').orderBy('name').limit(200).get();
-          } catch(inner2){
-            console.warn('name order failed, falling back to raw get()', inner2);
-            qs = await ref.collection('singers').limit(200).get();
-          }
-        }
-
+        try { qs = await ref.collection('singers').orderBy('updatedAt','desc').limit(200).get(); }
+        catch { qs = await ref.collection('singers').orderBy('name').limit(200).get(); }
         singersList.innerHTML = '';
-        if (qs.empty){
-          singersList.innerHTML = '<div class="muted small">No singers yet.</div>';
-          return;
-        }
+        if (qs.empty){ singersList.innerHTML = '<div class="muted small">No singers yet.</div>'; return; }
         qs.forEach(doc=>{
           const s = doc.data() || {};
           const row = document.createElement('div');
@@ -444,9 +437,8 @@
             </div>
           `;
           row.querySelector('button').onclick = async (e)=>{
-            $('singerName').value = e.target.getAttribute('data-name') || '';
-            $('singerSong').value = e.target.getAttribute('data-song') || '';
-            await setCurrentAndOpen();
+            // Clicking "Set Current" from the sidebar is the ONLY way to start a round
+            await setCurrentAndOpen(e.target.getAttribute('data-name')||'', e.target.getAttribute('data-song')||'');
           };
           singersList.appendChild(row);
         });
@@ -458,36 +450,12 @@
     $('refreshSingersBtn').addEventListener('click', loadSingers);
 
     /* =========================
-       Voting + Current singer
+       Current + Voting window
        ========================= */
-    $('openVotingBtn').addEventListener('click', async ()=>{
+    // Note: No top-form Set Current button. Only sidebar action calls this.
+    async function setCurrentAndOpen(name, song){
       const ref = eventRef(); if (!ref) return;
-      try { await ref.set({ isVotingOpen:true }, { merge:true }); toast('✅ Voting opened.'); }
-      catch(e){ console.error(e); toast('❌ Error opening voting.'); }
-    });
-
-    $('closeVotingBtn').addEventListener('click', async ()=>{
-      const ref = eventRef(); if (!ref) return;
-      try { await ref.set({ isVotingOpen:false }, { merge:true }); toast('✅ Voting closed.'); }
-      catch(e){ console.error(e); toast('❌ Error closing voting.'); }
-    });
-
-    $('nextRoundBtn').addEventListener('click', async ()=>{
-      const ref = eventRef(); if (!ref) return;
-      const newRound = new Date().toISOString();
-      try {
-        await ref.set({ roundId:newRound, isVotingOpen:true }, { merge:true });
-        toast('✅ Advanced to next round & opened voting.');
-      } catch(e){ console.error(e); toast('❌ Error advancing round.'); }
-    });
-
-    $('setCurrentBtn').addEventListener('click', setCurrentAndOpen);
-
-    async function setCurrentAndOpen(){
-      const ref = eventRef(); if (!ref) return;
-      const name = $('singerName').value.trim();
-      const song = $('singerSong').value.trim();
-      if (!name){ toast('⚠️ Enter singer name.'); return; }
+      if (!name){ toast('⚠️ Pick a singer from the left.'); return; }
       const newRound = new Date().toISOString();
       try {
         await ref.set({
@@ -495,22 +463,100 @@
           currentSong: song || '',
           roundId: newRound,
           isVotingOpen: true,
+          roundOpenedAt: firebase.firestore.FieldValue.serverTimestamp(),
+          voteWindow: firebase.firestore.FieldValue.delete(),
           updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
 
-        // ensure singer exists/updates in list
-        const singerId = name.toLowerCase().replace(/[^\w]+/g,'-').replace(/(^-|-$)/g,'') || 'singer';
+        // Touch singer doc so it stays fresh in the list
+        const singerId = canonicalKey(name) || 'singer';
         await ref.collection('singers').doc(singerId).set({
           name, lastSong: song || '', updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
 
-        toast('✅ Current singer set & voting opened.');
-        loadSingers();
+        toast(`✅ Now singing: ${name}. Voting opened.`);
       } catch(e){ console.error(e); toast('❌ Error setting current singer.'); }
     }
 
+    document.getElementById('start30Btn').addEventListener('click', start30s);
+    document.getElementById('extend15Btn').addEventListener('click', extend15);
+    document.getElementById('endNowBtn').addEventListener('click', endNow);
+
+    let autoCloseTimer = null;
+
+    async function start30s(){
+      const ref = eventRef(); if (!ref) return;
+      try{
+        await ref.set({
+          isVotingOpen: true,
+          voteWindow: {
+            openedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            durationSec: 30,
+            autoClose: true
+          }
+        }, { merge: true });
+        toast('⏱️ 30-second voting window started.');
+        startAutoCloseWatch();
+      }catch(e){ console.error(e); toast('❌ Error starting 30s window.'); }
+    }
+
+    async function extend15(){
+      const ref = eventRef(); if (!ref) return;
+      try{
+        const snap = await ref.get();
+        const vw = (snap.data()||{}).voteWindow || {};
+        const duration = Number(vw.durationSec||30) + 15;
+        await ref.set({
+          voteWindow: {
+            openedAt: vw.openedAt || firebase.firestore.FieldValue.serverTimestamp(),
+            durationSec: duration,
+            autoClose: !!vw.autoClose
+          }
+        }, { merge:true });
+        toast('➕ Extended by 15 seconds.');
+        startAutoCloseWatch();
+      }catch(e){ console.error(e); toast('❌ Error extending.'); }
+    }
+
+    async function endNow(){
+      const ref = eventRef(); if (!ref) return;
+      try{
+        // Close voting first
+        await ref.set({ isVotingOpen:false }, { merge:true });
+        toast('🛑 Voting closed.');
+        clearInterval(autoCloseTimer); autoCloseTimer=null; timerHint.textContent='';
+
+        // Evaluate outcome and cleanup if "Maybe Next Time!"
+        await evaluateOutcomeAndCleanup();
+      }catch(e){ console.error(e); toast('❌ Error ending voting.'); }
+    }
+
+    function startAutoCloseWatch(){
+      clearInterval(autoCloseTimer); autoCloseTimer=null;
+      autoCloseTimer = setInterval(async ()=>{
+        const ref = eventRef(); if (!ref) return;
+        const snap = await ref.get();
+        const d = snap.data()||{};
+        const vw = d.voteWindow || null;
+        if (!vw || !d.isVotingOpen) {
+          clearInterval(autoCloseTimer); autoCloseTimer=null; timerHint.textContent='';
+          return;
+        }
+        const openedAt = (vw.openedAt && vw.openedAt.toDate) ? vw.openedAt.toDate().getTime() : Date.now();
+        const endMs = openedAt + (Number(vw.durationSec||30)*1000);
+        const remain = Math.max(0, Math.round((endMs - Date.now())/1000));
+        timerHint.textContent = `Voting ends in ${remain}s`;
+        if (remain <= 0 && vw.autoClose){
+          try{ await ref.set({ isVotingOpen:false }, { merge:true }); }catch(e){}
+          clearInterval(autoCloseTimer); autoCloseTimer=null; timerHint.textContent='';
+          // Auto-close → evaluate & cleanup
+          await evaluateOutcomeAndCleanup();
+        }
+      }, 500);
+    }
+
     /* ==================
-       Live event badges
+       Live badges
        ================== */
     let eventUnsub = null;
     function wireEventListener(){
@@ -524,10 +570,7 @@
       }, err=>console.error(err));
     }
 
-    // When host types/changes the event name
-    $('hostEventId').addEventListener('keyup', e=>{
-      if (e.key==='Enter'){ handleEventChanged(); }
-    });
+    $('hostEventId').addEventListener('keyup', e=>{ if (e.key==='Enter'){ handleEventChanged(); }});
     $('hostEventId').addEventListener('change', handleEventChanged);
 
     async function handleEventChanged(){
@@ -543,6 +586,52 @@
         wireEventListener();
         loadSingers();
       }catch(e){ console.error(e); }
+    }
+
+    /* ==========================
+       Outcome tally + cleanup
+       ========================== */
+    async function evaluateOutcomeAndCleanup(){
+      const ref = eventRef(); if (!ref) return;
+      try{
+        const evt = (await ref.get()).data() || {};
+        const rid = evt.roundId || null;
+        const singerName = evt.currentSingerName || '';
+        if (!rid || !singerName) return;
+
+        const votesSnap = await ref.collection('rounds').doc(rid).collection('votes').get();
+        let enc=0, one=0, neg=0;
+        votesSnap.forEach(doc=>{
+          const c = (doc.data()||{}).choice;
+          if (c==='encore') enc++;
+          else if (c==='one_more') one++;
+          else if (c==='next_time') neg++;
+        });
+
+        // Decide: if "Maybe" wins strictly → remove singer from list
+        const max = Math.max(enc,one,neg);
+        const maybeWins = (neg === max) && (neg > enc) && (neg > one);
+
+        if (maybeWins){
+          const sid = canonicalKey(singerName) || 'singer';
+          try{
+            await ref.collection('singers').doc(sid).delete();
+            toast(`🧹 Removed "${singerName}" from the list (Maybe Next Time!).`);
+          }catch(e){
+            console.warn('could not delete singer doc', e);
+          }
+          // Reflect immediately in UI
+          await loadSingers();
+        }
+      }catch(e){
+        console.error('evaluateOutcomeAndCleanup error', e);
+      }
+    }
+
+    // Init: try to wire listener and preload singers if an event is already typed
+    if (currentEventName()){
+      wireEventListener();
+      loadSingers();
     }
   </script>
 </body>
