@@ -6,13 +6,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <style>
-    :root { --blue:#003e81; --gold:#eaba54; --purple:#2F0658; --light:#79aec1; --white:#fff; --black:#000; }
+    :root { --blue:#003e81; --gold:#eaba54; --purple:#2F0658; --white:#fff; }
     *{box-sizing:border-box}
     body { margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',Arial,sans-serif; background:#0f0a18; color:#fff; }
-    header { padding:18px 16px; background:linear-gradient(90deg,var(--blue),var(--purple)); display:flex; align-items:center; justify-content:space-between; gap:12px; }
+    header { padding:18px 16px; background:linear-gradient(90deg,var(--blue),var(--purple)); display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
     h1 { margin:0; font-size:1.25rem; }
+    .links a{ color:#000; background:#eaba54; padding:8px 12px; border-radius:999px; text-decoration:none; font-weight:900; margin-right:8px; display:inline-block }
     .container { display:grid; grid-template-columns:300px 1fr; gap:16px; padding:16px; }
-    .sidebar { background:#1b1430; border:1px solid rgba(255,255,255,.08); border-radius:16px; padding:14px; max-height:calc(100vh - 90px); overflow:auto; }
+    .sidebar { background:#1b1430; border:1px solid rgba(255,255,255,.08); border-radius:16px; padding:14px; max-height:calc(100vh - 110px); overflow:auto; }
     .main { display:grid; gap:16px; }
     .card { background:#1b1430; border:1px solid rgba(255,255,255,.08); border-radius:16px; padding:16px; box-shadow:0 8px 24px rgba(0,0,0,.4); }
     label { display:block; margin:8px 0 6px; }
@@ -31,37 +32,32 @@
     .singer .song { font-size:.9rem; opacity:.9 }
     .singer .mini { display:flex; gap:6px }
     .topline { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
-    .topline .path { opacity:.8; }
-
-    /* Collapsible Setup */
     .setupHeader{display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:pointer}
     .chev{transition:transform .2s ease}
     .setupBody{display:block}
     .setupBody.hidden{display:none}
     .inline{display:flex;gap:8px;align-items:end}
-    /* Modals reused */
-    .modal-backdrop{ position:fixed; inset:0; background:rgba(0,0,0,.55); display:none; align-items:center; justify-content:center; z-index:50; }
-    .modal-backdrop.show{ display:flex; }
-    .modal{ width:min(620px,calc(100% - 32px)); background:#1b1430; border:1px solid rgba(255,255,255,.12); border-radius:16px; padding:16px; }
-    .modal h3{ margin:0 0 8px }
-    .pick-list{ max-height:50vh; overflow:auto; margin-bottom:10px }
-    .pick-item{ padding:10px; border-radius:10px; border:1px solid rgba(255,255,255,.08); margin-bottom:8px; cursor:pointer; background:#170f2a; }
-    .pick-item:hover{ background:#201637; }
+    .lockRow{display:flex;gap:12px;align-items:center;margin-top:8px}
+    .disabled input, .disabled button{ opacity:.6; pointer-events:none }
+    .disabled input{ filter:grayscale(.3) }
   </style>
 
-  <!-- Firebase SDKs (compat) -->
+  <!-- Firebase (compat) -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 </head>
 <body>
   <header>
     <h1>🎤 Earn Your Encore Karaoke • Host</h1>
     <div class="topline">
-      <span class="path">Audience: vote.earnyourencorekaraoke.com/<b>vote/index.html</b></span>
       <span class="pill" id="eventBadge">Event: —</span>
       <span class="pill" id="roundBadge">Round: —</span>
       <span class="pill" id="statusBadge">Status: —</span>
+    </div>
+    <div class="links">
+      <a href="https://vote.earnyourencorekaraoke.com/vote/index.html" target="_blank" rel="noopener">Open Vote</a>
+      <a href="index_screen.html" target="_blank" rel="noopener">Open Screen</a>
+      <a href="index_board.html" target="_blank" rel="noopener">Open Board</a>
     </div>
   </header>
 
@@ -86,43 +82,48 @@
           <div class="chev" id="setupChev">▾</div>
         </div>
         <div class="setupBody" id="setupBody">
-          <div class="row" style="align-items:end;margin-top:10px">
-            <div>
-              <label>Event (Venue)</label>
-              <div class="inline">
-                <input id="hostEventId" placeholder="e.g. The Raven – Bigfork" />
-                <button class="btn btn-blue" id="pickVenueBtn" title="Choose prior venue">Pick</button>
+          <div id="setupFields">
+            <div class="row" style="align-items:end;margin-top:10px">
+              <div>
+                <label>Event (Venue)</label>
+                <div class="inline">
+                  <input id="hostEventId" placeholder="e.g. The Raven – Bigfork" />
+                  <button class="btn btn-blue" id="pickVenueBtn" title="Choose prior venue">Pick</button>
+                </div>
               </div>
-              <div class="muted small" style="margin-top:6px">Use the <b>venue name</b>. Saved to your venue list.</div>
-            </div>
-            <div>
-              <label>Tonight’s PIN</label>
-              <div class="inline">
-                <input id="hostPin" placeholder="1234" />
-                <button class="btn btn-gold" id="savePinBtn">Save PIN</button>
-              </div>
-            </div>
-          </div>
-
-          <div class="divider"></div>
-
-          <div class="row" style="align-items:end">
-            <div>
-              <label>KJ Name</label>
-              <div class="inline">
-                <input id="kjName" placeholder="KJ first & last" />
-                <button class="btn btn-blue" id="pickKjBtn" title="Choose prior KJ">Pick</button>
+              <div>
+                <label>Tonight’s PIN</label>
+                <div class="inline">
+                  <input id="hostPin" placeholder="1234" />
+                  <button class="btn btn-gold" id="savePinBtn">Save PIN</button>
+                </div>
               </div>
             </div>
-            <div>
-              <label>KJ Company</label>
-              <input id="kjCompany" placeholder="Company brand" />
-            </div>
-          </div>
 
-          <div style="margin-top:10px">
-            <button class="btn btn-blue" id="saveKJBtn">Save & Collapse</button>
-            <span class="muted small">Saves to the event and adds to your lists.</span>
+            <div class="divider"></div>
+
+            <div class="row" style="align-items:end">
+              <div>
+                <label>KJ Name</label>
+                <div class="inline">
+                  <input id="kjName" placeholder="KJ first & last" />
+                  <button class="btn btn-blue" id="pickKjBtn" title="Choose prior KJ">Pick</button>
+                </div>
+              </div>
+              <div>
+                <label>KJ Company</label>
+                <input id="kjCompany" placeholder="Company brand" />
+              </div>
+            </div>
+
+            <div class="lockRow">
+              <label><input type="checkbox" id="lockSetup"> Lock setup (prevent accidental changes)</label>
+            </div>
+
+            <div style="margin-top:10px">
+              <button class="btn btn-blue" id="saveKJBtn">Save & Collapse</button>
+              <span class="muted small">Saved to event; adds Venue/KJ to your lists.</span>
+            </div>
           </div>
         </div>
       </div>
@@ -159,11 +160,11 @@
   </div>
 
   <!-- Venue Picker Modal -->
-  <div class="modal-backdrop" id="venueModal">
-    <div class="modal">
+  <div class="modal-backdrop" id="venueModal" style="display:none;align-items:center;justify-content:center;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:50;">
+    <div class="modal" style="width:min(620px,calc(100% - 32px)); background:#1b1430; border:1px solid rgba(255,255,255,.12); border-radius:16px; padding:16px;">
       <h3>Select a Venue</h3>
-      <div id="venuesList" class="pick-list"></div>
-      <div class="divider"></div>
+      <div id="venuesList" style="max-height:50vh;overflow:auto;margin-bottom:10px"></div>
+      <div class="divider" style="height:1px;background:rgba(255,255,255,.12);margin:14px 0"></div>
       <div class="row">
         <div>
           <label>Add New Venue</label>
@@ -180,11 +181,11 @@
   </div>
 
   <!-- KJ Picker Modal -->
-  <div class="modal-backdrop" id="kjModal">
-    <div class="modal">
+  <div class="modal-backdrop" id="kjModal" style="display:none;align-items:center;justify-content:center;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:50;">
+    <div class="modal" style="width:min(620px,calc(100% - 32px)); background:#1b1430; border:1px solid rgba(255,255,255,.12); border-radius:16px; padding:16px;">
       <h3>Select a KJ</h3>
-      <div id="kjsList" class="pick-list"></div>
-      <div class="divider"></div>
+      <div id="kjsList" style="max-height:50vh;overflow:auto;margin-bottom:10px"></div>
+      <div class="divider" style="height:1px;background:rgba(255,255,255,.12);margin:14px 0"></div>
       <div class="row">
         <div>
           <label>Add New KJ (Name)</label>
@@ -215,11 +216,12 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    /* DOM helpers */
+    /* Helpers */
     const $ = id => document.getElementById(id);
     const hostMsg = $('hostMsg'), timerHint = $('timerHint');
     const eventBadge = $('eventBadge'), roundBadge = $('roundBadge'), statusBadge = $('statusBadge');
     const singersList = $('singersList');
+
     function toast(msg){ hostMsg.textContent = msg; }
     function canonicalKey(name){ return String(name||'').toLowerCase().trim().replace(/[^\w]+/g,'-').replace(/(^-|-$)/g,''); }
     function currentEventName(){ return $('hostEventId').value.trim(); }
@@ -229,7 +231,7 @@
       try { await db.collection('app').doc('state').set({ currentEventId: venueName, updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true }); } catch(e){}
     }
 
-    /* Setup collapse */
+    /* Collapsible Setup */
     const setupHeader=$('setupHeader'), setupBody=$('setupBody'), setupChev=$('setupChev');
     setupHeader.addEventListener('click', ()=>{
       const hidden = setupBody.classList.toggle('hidden');
@@ -237,10 +239,27 @@
     });
     function collapseSetup(){ setupBody.classList.add('hidden'); setupChev.textContent='▸'; }
 
+    /* Lock Setup */
+    const lockSetup = $('lockSetup');
+    const setupFields = $('setupFields');
+    function applyLockUI(){
+      const locked = lockSetup.checked;
+      setupFields.classList.toggle('disabled', locked);
+    }
+    lockSetup.addEventListener('change', ()=>{
+      localStorage.setItem('setup-locked', lockSetup.checked ? '1' : '0');
+      applyLockUI();
+    });
+    // restore last lock
+    if(localStorage.getItem('setup-locked')==='1'){ lockSetup.checked = true; applyLockUI(); }
+
     /* Venue Picker */
     const venueModal = $('venueModal'), venuesList = $('venuesList');
-    $('pickVenueBtn').addEventListener('click', async ()=>{ await loadVenues(); venueModal.classList.add('show'); });
-    $('closeVenueBtn').addEventListener('click', ()=>venueModal.classList.remove('show'));
+    $('pickVenueBtn').addEventListener('click', async ()=>{
+      if(lockSetup.checked) return; // locked
+      await loadVenues(); venueModal.style.display='flex';
+    });
+    $('closeVenueBtn').addEventListener('click', ()=>venueModal.style.display='none');
     async function loadVenues(){
       venuesList.innerHTML = '<div class="muted">Loading…</div>';
       try{
@@ -250,9 +269,10 @@
           const v = doc.data();
           const div = document.createElement('div');
           div.className='pick-item'; div.textContent=v.name;
+          div.style.cssText='padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,.08);margin-bottom:8px;background:#170f2a;cursor:pointer';
           div.onclick = async ()=>{
             $('hostEventId').value = v.name;
-            venueModal.classList.remove('show');
+            venueModal.style.display='none';
             await db.collection('events').doc(v.name).set({ venueName: v.name }, { merge:true });
             eventBadge.textContent = 'Event: ' + v.name;
             await setGlobalCurrentEvent(v.name);
@@ -263,20 +283,24 @@
       }catch{ venuesList.innerHTML = '<div class="muted">Error loading venues.</div>'; }
     }
     $('addVenueBtn').addEventListener('click', async ()=>{
+      if(lockSetup.checked) return;
       const name = $('newVenue').value.trim(); if(!name) return;
       try{
         await db.collection('venues').doc(name).set({ name, createdAt: firebase.firestore.FieldValue.serverTimestamp(), lastUsedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true });
         $('hostEventId').value = name;
         await db.collection('events').doc(name).set({ venueName: name }, { merge:true });
         eventBadge.textContent='Event: '+name; await setGlobalCurrentEvent(name);
-        toast('✅ Venue added & selected.'); $('newVenue').value=''; await loadVenues(); venueModal.classList.remove('show'); wireEventListener(); loadSingers();
+        toast('✅ Venue added & selected.'); $('newVenue').value=''; await loadVenues(); venueModal.style.display='none'; wireEventListener(); loadSingers();
       }catch(e){ toast('❌ Error adding venue.'); }
     });
 
     /* KJ Picker */
     const kjModal = $('kjModal'), kjsList = $('kjsList');
-    $('pickKjBtn').addEventListener('click', async ()=>{ await loadKjs(); kjModal.classList.add('show'); });
-    $('closeKjBtn').addEventListener('click', ()=>kjModal.classList.remove('show'));
+    $('pickKjBtn').addEventListener('click', async ()=>{
+      if(lockSetup.checked) return;
+      await loadKjs(); kjModal.style.display='flex';
+    });
+    $('closeKjBtn').addEventListener('click', ()=>kjModal.style.display='none');
     async function loadKjs(){
       kjsList.innerHTML = '<div class="muted">Loading…</div>';
       try{
@@ -286,32 +310,36 @@
           const k = doc.data();
           const div = document.createElement('div');
           div.className='pick-item'; div.textContent = k.company ? `${k.name} — ${k.company}` : k.name;
-          div.onclick = ()=>{ $('kjName').value=k.name||''; $('kjCompany').value=k.company||''; kjModal.classList.remove('show'); };
+          div.style.cssText='padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,.08);margin-bottom:8px;background:#170f2a;cursor:pointer';
+          div.onclick = ()=>{ $('kjName').value=k.name||''; $('kjCompany').value=k.company||''; kjModal.style.display='none'; };
           kjsList.appendChild(div);
         });
       }catch{ kjsList.innerHTML = '<div class="muted">Error loading KJs.</div>'; }
     }
     $('addKjBtn').addEventListener('click', async ()=>{
+      if(lockSetup.checked) return;
       const name = $('newKjName').value.trim(); const company = $('newKjCompany').value.trim(); if(!name) return;
       try{
         await db.collection('kjs').doc(name).set({ name, company: company||'', createdAt: firebase.firestore.FieldValue.serverTimestamp(), lastUsedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true });
-        $('kjName').value=name; $('kjCompany').value=company; toast('✅ KJ saved.'); $('newKjName').value=''; $('newKjCompany').value=''; await loadKjs(); kjModal.classList.remove('show');
+        $('kjName').value=name; $('kjCompany').value=company; toast('✅ KJ saved.'); $('newKjName').value=''; $('newKjCompany').value=''; await loadKjs(); kjModal.style.display='none';
       }catch(e){ toast('❌ Error saving KJ.'); }
     });
 
     /* Save PIN / KJ / Venue */
     $('savePinBtn').addEventListener('click', async ()=>{
+      if(lockSetup.checked) return;
       const ref = eventRef(); if(!ref) return;
       const p = $('hostPin').value.trim(); if(!p){ toast('⚠️ Enter a PIN value.'); return; }
       try{ await ref.set({ activePin: p }, { merge:true }); toast('✅ PIN saved.'); }catch{ toast('❌ Error saving PIN.'); }
     });
 
     $('saveKJBtn').addEventListener('click', async ()=>{
+      if(lockSetup.checked) return;
       const ref = eventRef(); if(!ref) return;
       const venueName=currentEventName(); const kjName=$('kjName').value.trim(); const kjCompany=$('kjCompany').value.trim();
       try{
         await ref.set({ venueName, kjName, kjCompany, updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true });
-        if (venueName){ await db.collection('venues').doc(venueName).set({ name: venueName, lastUsedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true }); await setGlobalCurrentEvent(venueName); }
+        if (venueName){ await db.collection('venues').doc(venueName).set({ name, lastUsedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true }).catch(()=>{}); await setGlobalCurrentEvent(venueName); }
         if (kjName){ await db.collection('kjs').doc(kjName).set({ name: kjName, company: kjCompany||'', lastUsedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true }); }
         eventBadge.textContent='Event: '+venueName; toast('✅ Event/KJ info saved.'); collapseSetup();
       }catch{ toast('❌ Error saving event info.'); }
@@ -442,6 +470,7 @@
     $('hostEventId').addEventListener('keyup', e=>{ if (e.key==='Enter'){ handleEventChanged(); }});
     $('hostEventId').addEventListener('change', handleEventChanged);
     async function handleEventChanged(){
+      if(lockSetup.checked) return;
       const name=currentEventName(); if(!name) return;
       try{
         await db.collection('events').doc(name).set({ venueName: name }, { merge:true });
@@ -450,7 +479,7 @@
       }catch(e){}
     }
 
-    /* Outcome tally + Maybe cleanup */
+    /* Outcome cleanup (Maybe Next Time removes singer from list) */
     async function evaluateOutcomeAndCleanup(){
       const ref = eventRef(); if(!ref) return;
       try{
