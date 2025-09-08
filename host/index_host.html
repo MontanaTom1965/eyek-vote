@@ -68,7 +68,9 @@
       </div>
       <div id="singersList"></div>
       <div class="divider"></div>
-      <div class="muted small">Tip: Click “Set Current” to push the singer & song to the event. Voting starts only when you press <b>Start Voting!</b></div>
+      <div class="muted small">
+        Tip: Click <b>Set Current</b> to load the singer & song. Voting starts only when you press <b>Start Voting!</b>
+      </div>
     </aside>
 
     <!-- RIGHT: Controls -->
@@ -461,8 +463,9 @@
           currentSingerName: name,
           currentSong: song || '',
           roundId: newRound,
-          isVotingOpen: false,                    // <- stays closed
-          voteWindow: firebase.firestore.FieldValue.delete(), // clear any old window
+          isVotingOpen: false,                         // <- stays closed
+          roundOpenedAt: firebase.firestore.FieldValue.delete(), // clear any prior open time
+          voteWindow: firebase.firestore.FieldValue.delete(),     // clear any prior window
           updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
 
@@ -621,7 +624,7 @@
       }
     }
 
-    // Init: if an event is already entered, wire listeners and list
+    // Init
     if (currentEventName()){
       wireEventListener();
       loadSingers();
