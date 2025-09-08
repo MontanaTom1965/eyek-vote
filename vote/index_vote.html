@@ -6,7 +6,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     body { margin:0; font-family:system-ui, sans-serif; background:#0f0a18; color:#fff; }
-    .container { max-width:600px; margin:30px auto; background:#1b1430; padding:20px; border-radius:16px; }
+    .soundBar{ position:fixed; top:0; left:0; right:0; z-index:1000; display:flex; gap:10px; align-items:center; justify-content:center; padding:10px 14px; background:#201637; border-bottom:1px solid rgba(255,255,255,.18);}
+    .soundBar button{background:#eaba54;color:#000;padding:8px 14px;border-radius:999px;border:0;font-weight:800;cursor:pointer}
+    .container { max-width:600px; margin:90px auto 30px; background:#1b1430; padding:20px; border-radius:16px; }
     h1 { text-align:center; margin-bottom:20px; }
     label { display:block; margin-top:12px; }
     input, select { width:100%; padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,.15); background:#120c22; color:#fff; }
@@ -17,8 +19,6 @@
     .vote-options button { font-size:1.1rem; }
     .hidden { display:none; }
     .msg { margin-top:10px; text-align:center; opacity:.85; }
-    .soundGate{margin:20px 0; text-align:center}
-    .soundGate button{background:#eaba54;color:#000;padding:10px 20px;border-radius:999px;border:0;font-weight:700;cursor:pointer}
   </style>
 
   <!-- Firebase SDKs -->
@@ -27,14 +27,14 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 </head>
 <body>
+  <!-- Floating “Enable sound” bar -->
+  <div class="soundBar" id="soundBar">
+    <div>🔈 Enable sound for voting</div>
+    <button id="enableSoundBtn">Enable</button>
+  </div>
+
   <div class="container">
     <h1>🎤 Earn Your Encore Karaoke</h1>
-
-    <!-- Sound gate -->
-    <div class="soundGate" id="soundGate">
-      <p>🔈 Click below once to enable sounds during voting</p>
-      <button id="enableSoundBtn">Enable Sound</button>
-    </div>
 
     <!-- Registration / login -->
     <div id="authSection">
@@ -69,7 +69,7 @@
     </div>
   </div>
 
-  <!-- Countdown sound -->
+  <!-- Countdown sound (played when voting is open) -->
   <audio id="countAudio" preload="auto" src="https://vote.earnyourencorekaraoke.com/vote/quiz-countdown.mp3" loop></audio>
 
 <script>
@@ -90,23 +90,26 @@ const auth = firebase.auth();
 const $ = id=>document.getElementById(id);
 const authSection=$('authSection'), voteSection=$('voteSection');
 const authMsg=$('authMsg'), voteMsg=$('voteMsg'), currentSingerEl=$('currentSinger');
-const countAudio=$('countAudio'), soundGate=$('soundGate'), enableSoundBtn=$('enableSoundBtn');
+const countAudio=$('countAudio'), soundBar=$('soundBar'), enableSoundBtn=$('enableSoundBtn');
 
-/* Enable sound */
+/* Sound unlock (floating top bar) */
+function hideSoundBar(){ soundBar.style.display='none'; }
 enableSoundBtn.addEventListener('click', async ()=>{
-  try{ await countAudio.play(); countAudio.pause(); localStorage.setItem('sound-ok','1'); soundGate.style.display='none'; }catch(e){ alert('Please click again'); }
+  try{ await countAudio.play(); countAudio.pause(); localStorage.setItem('sound-ok','1'); hideSoundBar(); }
+  catch(e){ alert('Please tap Enable again to allow audio.'); }
 });
-if(localStorage.getItem('sound-ok')==='1'){ soundGate.style.display='none'; }
+if(localStorage.getItem('sound-ok')==='1'){ hideSoundBar(); }
 
 /* Sign Up */
 $('signUpBtn').onclick=async()=>{
   try{
-    const cred=await auth.createUserWithEmailAndPassword($('email').value, $('password').value);
+    const email=$('email').value, pwd=$('password').value;
+    const cred=await auth.createUserWithEmailAndPassword(email, pwd);
     await db.collection('users').doc(cred.user.uid).set({
-      email:$('email').value, firstName:$('firstName').value, lastName:$('lastName').value,
+      email, firstName:$('firstName').value, lastName:$('lastName').value,
       zip:$('zip').value, age:$('age').value, gender:$('gender').value,
       createdAt:firebase.firestore.FieldValue.serverTimestamp()
-    });
+    }, { merge:true });
   }catch(e){ authMsg.textContent=e.message; }
 };
 /* Log In */
@@ -149,7 +152,9 @@ function listenEvent(){
 
     if(isVotingOpen){
       // play sound if unlocked
-      if(localStorage.getItem('sound-ok')==='1'){ try{countAudio.currentTime=0; countAudio.play().catch(()=>{});}catch(e){} }
+      if(localStorage.getItem('sound-ok')==='1'){
+        try{countAudio.currentTime=0; countAudio.play().catch(()=>{});}catch(e){}
+      }
     }else{
       try{countAudio.pause();}catch(e){}
     }
@@ -158,11 +163,12 @@ function listenEvent(){
 
 async function castVote(choice){
   if(!eventId||!roundId){ voteMsg.textContent='No active round.'; return; }
-  const uid=auth.currentUser.uid;
+  const uid=(auth.currentUser||{}).uid;
+  if(!uid){ voteMsg.textContent='Please log in.'; return; }
   try{
     await db.collection('events').doc(eventId).collection('rounds').doc(roundId).collection('votes').doc(uid).set({
       choice, createdAt:firebase.firestore.FieldValue.serverTimestamp()
-    });
+    }, { merge:true });
     voteMsg.textContent='✅ Vote cast!';
   }catch(e){ voteMsg.textContent='❌ '+e.message; }
 }
