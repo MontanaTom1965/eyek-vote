@@ -1,305 +1,6 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>Earn Your Encore Karaoke – Vote</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-
-  <style>
-    :root{ --blue:#003e81; --gold:#eaba54; --purple:#2F0658; --light:#79aec1; --white:#fff; --black:#000; }
-    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',Arial,sans-serif;background:#0f0a18;color:#fff;}
-    header{padding:18px 16px;background:linear-gradient(90deg,var(--blue),var(--purple));text-align:center;}
-    h1{font-size:1.25rem;margin:0;font-weight:700;letter-spacing:.3px}
-    .card{max-width:720px;margin:24px auto;background:#1b1430;border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:20px;box-shadow:0 8px 28px rgba(0,0,0,.35)}
-    .btn{display:block;width:100%;padding:14px 16px;margin:10px 0;border:0;border-radius:12px;font-size:1.05rem;font-weight:700;cursor:pointer;transition:transform .05s ease,opacity .15s ease}
-    .btn:hover{opacity:.95} .btn:active{transform:scale(.99)}
-    .btn-encore{background:linear-gradient(180deg,#ffefc2,var(--gold));color:#2b1a00}
-    .btn-one{background:linear-gradient(180deg,#9fd3ff,#4aa3ff);color:#00172e}
-    .btn-next{background:linear-gradient(180deg,#ffc2d1,#ff4971);color:#2b0013}
-    .muted{opacity:.8;font-size:.92rem}
-    .row{display:grid;gap:10px}
-    .two{grid-template-columns:1fr 1fr}
-    .hidden{display:none!important}
-    label{display:block;margin:8px 0 6px}
-    input,select{width:100%;padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,.15);background:#120c22;color:#fff}
-    .pill{display:inline-block;padding:4px 10px;border-radius:999px;background:#271c44;font-size:.85rem}
-    .divider{height:1px;background:rgba(255,255,255,.08);margin:16px 0}
-    .ok{color:#c3ffbd}
-    .err{color:#ffc5c5}
-  </style>
-
-  <!-- Firebase SDKs (compat) -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-
-  <!-- FirebaseUI for Auth -->
-  <link type="text/css" rel="stylesheet" href="https://www.gstatic.com/firebasejs/ui/6.0.2/firebase-ui-auth.css" />
-  <script src="https://www.gstatic.com/firebasejs/ui/6.0.2/firebase-ui-auth.js"></script>
-</head>
-<body>
-  <header>
-    <h1>Earn Your Encore Karaoke • Vote</h1>
-  </header>
-
-  <!-- Auth -->
-  <div class="card" id="authCard">
-    <h2>Sign in</h2>
-    <p class="muted">Use Google or Email to create your account.</p>
-    <div id="firebaseui-auth-container"></div>
-    <div id="loader">Loading…</div>
-  </div>
-
-  <!-- Profile -->
-  <div class="card hidden" id="profileCard">
-    <h2>Your Profile</h2>
-    <p class="muted">We ask a few details so we can understand our audience. Your email is taken from your login.</p>
-    <div class="row two">
-      <div>
-        <label>Email</label>
-        <input id="pEmail" disabled />
-      </div>
-      <div>
-        <label>ZIP Code</label>
-        <input id="pZip" placeholder="e.g. 59901" inputmode="numeric" />
-      </div>
-    </div>
-    <div class="row two">
-      <div>
-        <label>First Name</label>
-        <input id="pFirst" placeholder="First name" />
-      </div>
-      <div>
-        <label>Last Name</label>
-        <input id="pLast" placeholder="Last name" />
-      </div>
-    </div>
-    <div class="row two">
-      <div>
-        <label>Age</label>
-        <input id="pAge" placeholder="e.g. 29" inputmode="numeric" />
-      </div>
-      <div>
-        <label>Gender</label>
-        <select id="pGender">
-          <option value="">Prefer not to say</option>
-          <option>Female</option>
-          <option>Male</option>
-          <option>Non-binary</option>
-          <option>Other</option>
-        </select>
-      </div>
-    </div>
-    <button class="btn btn-one" id="saveProfileBtn">Save Profile</button>
-    <div id="profileMsg" class="muted"></div>
-  </div>
-
-  <!-- PIN -->
-  <div class="card hidden" id="pinCard">
-    <h2>Verify Attendance</h2>
-    <p class="muted">Enter the <span class="pill">Event (Venue)</span> and tonight’s <span class="pill">PIN</span> from the screen.</p>
-    <div class="row">
-      <label for="eventId">Event (Venue)</label>
-      <input id="eventId" placeholder="e.g. The Raven – Bigfork" autocomplete="off" />
-      <label for="nightPin">Tonight’s PIN</label>
-      <input id="nightPin" placeholder="4–8 digits" inputmode="numeric" autocomplete="one-time-code" />
-      <button class="btn btn-one" id="verifyPinBtn">Verify & Continue</button>
-      <div id="pinMsg" class="muted"></div>
-    </div>
-  </div>
-
-  <!-- Vote -->
-  <div class="card hidden" id="voteCard">
-    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
-      <div>
-        <div class="muted">Signed in as</div>
-        <div id="who" class="ok"></div>
-      </div>
-      <div>
-        <span class="pill" id="eventBadge"></span>
-        <span class="pill" id="roundBadge"></span>
-      </div>
-    </div>
-
-    <div class="divider"></div>
-
-    <h2>Cast your vote</h2>
-    <button class="btn btn-encore" id="voteEncore">🔥 Encore!</button>
-    <button class="btn btn-one" id="voteOneMore">🤔 One More Shot</button>
-    <button class="btn btn-next" id="voteNext">❌ Maybe Next Time</button>
-
-    <div class="divider"></div>
-    <div id="voteMsg" class="muted"></div>
-  </div>
-
 <script>
-/*** Firebase init (your config) ***/
-const firebaseConfig = {
-  apiKey: "AIzaSyDGbC08WxruYIDPhZSlDlU-7Kzq-7mHENk",
-  authDomain: "eyek-vote.firebaseapp.com",
-  projectId: "eyek-vote",
-  storageBucket: "eyek-vote.firebasestorage.app",
-  messagingSenderId: "954696683994",
-  appId: "1:954696683994:web:21a84298a94648ff0230e3"
-};
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.firestore();
+// ... keep everything else above as-is
 
-/*** FirebaseUI ***/
-const ui = new firebaseui.auth.AuthUI(auth);
-const uiConfig = {
-  signInOptions: [
-    firebase.auth.GoogleAuthProvider.PROVIDER_ID,
-    { provider: firebase.auth.EmailAuthProvider.PROVIDER_ID, requireDisplayName: true }
-  ],
-  callbacks: { signInSuccessWithAuthResult: () => false },
-  signInFlow: 'popup' // you can change to 'redirect' if popups are blocked
-};
-ui.start('#firebaseui-auth-container', uiConfig);
-
-/*** UI helpers ***/
-const $ = (id)=>document.getElementById(id);
-const show = (el)=>el.classList.remove('hidden');
-const hide = (el)=>el.classList.add('hidden');
-
-const authCard = $('authCard');
-const profileCard = $('profileCard');
-const pinCard  = $('pinCard');
-const voteCard = $('voteCard');
-const who      = $('who');
-const pinMsg   = $('pinMsg');
-const voteMsg  = $('voteMsg');
-const eventBadge = $('eventBadge');
-const roundBadge = $('roundBadge');
-const profileMsg = $('profileMsg');
-
-let currentUser = null;
-let eventId = null;
-let activePin = null;
-let roundId = null;
-let isVotingOpen = false;
-
-/*** Sign-in flow ***/
-auth.onAuthStateChanged(async (user)=>{
-  currentUser = user;
-  if (!user) {
-    show(authCard); hide(profileCard); hide(pinCard); hide(voteCard);
-    return;
-  }
-  hide(authCard);
-  $('pEmail').value = user.email || '';
-  const up = await db.collection('users').doc(user.uid).get().catch(()=>null);
-  if (up && up.exists){
-    const d = up.data();
-    $('pFirst').value = d.firstName || '';
-    $('pLast').value  = d.lastName || '';
-    $('pZip').value   = d.zip || '';
-    $('pAge').value   = d.age || '';
-    $('pGender').value= d.gender || '';
-  }
-  show(profileCard);
-  who.textContent = user.displayName || user.email || user.uid;
-});
-
-/*** Save profile ***/
-$('saveProfileBtn').addEventListener('click', async ()=>{
-  profileMsg.textContent = '';
-  if (!currentUser){ return; }
-  const data = {
-    email: currentUser.email || '',
-    firstName: $('pFirst').value.trim(),
-    lastName: $('pLast').value.trim(),
-    zip: $('pZip').value.trim(),
-    age: $('pAge').value.trim(),
-    gender: $('pGender').value,
-    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-  };
-  try{
-    await db.collection('users').doc(currentUser.uid).set(data, { merge: true });
-    profileMsg.textContent = '✅ Profile saved.';
-    hide(profileCard);
-    show(pinCard);
-  }catch(e){
-    console.error(e);
-    profileMsg.innerHTML = '<span class="err">Could not save profile. Try again.</span>';
-  }
-});
-
-/*** Verify attendance against tonight’s PIN ***/
-$('verifyPinBtn').addEventListener('click', async ()=>{
-  pinMsg.textContent = '';
-  eventId = $('eventId').value.trim();
-  const pinInput = $('nightPin').value.trim();
-
-  if (!eventId || !pinInput) {
-    pinMsg.innerHTML = '<span class="err">Please enter both Event and PIN.</span>';
-    return;
-  }
-
-  try {
-    const eventRef = db.collection('events').doc(eventId);
-    const snap = await eventRef.get();
-    if (!snap.exists) {
-      pinMsg.innerHTML = '<span class="err">Event not found. Check the Event on the screen.</span>';
-      return;
-    }
-    const data = snap.data();
-    activePin = data.activePin || null;
-    roundId = data.roundId || null;
-    isVotingOpen = !!data.isVotingOpen;
-
-    if (!activePin) {
-      pinMsg.innerHTML = '<span class="err">Host hasn’t set tonight’s PIN yet.</span>';
-      return;
-    }
-    if (pinInput !== String(activePin)) {
-      pinMsg.innerHTML = '<span class="err">Incorrect PIN. Try again.</span>';
-      return;
-    }
-
-    // Mark this user as an attendee (and mirror profile basics)
-    const profileSnap = await db.collection('users').doc(currentUser.uid).get();
-    const prof = profileSnap.exists ? profileSnap.data() : {};
-    const att = {
-      verified: true,
-      verifiedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      email: currentUser.email || '',
-      firstName: prof.firstName || '',
-      lastName: prof.lastName || '',
-      zip: prof.zip || '',
-      age: prof.age || '',
-      gender: prof.gender || ''
-    };
-    const attRef = eventRef.collection('attendees').doc(currentUser.uid);
-    await attRef.set(att, { merge: true });
-
-    // Move to voting
-    eventBadge.textContent = `Event: ${eventId}`;
-    roundBadge.textContent = roundId ? `Round: ${roundId}` : 'Round: pending';
-    hide(pinCard);
-    show(voteCard);
-    refreshRoundBadge(); // live listener
-  } catch (e) {
-    console.error(e);
-    pinMsg.innerHTML = '<span class="err">Error verifying PIN. Please try again.</span>';
-  }
-});
-
-/*** Live round listener ***/
-let eventUnsub = null;
-function refreshRoundBadge() {
-  if (eventUnsub) eventUnsub();
-  eventUnsub = db.collection('events').doc(eventId).onSnapshot(snap=>{
-    const d = snap.data() || {};
-    roundId = d.roundId || roundId;
-    isVotingOpen = !!d.isVotingOpen;
-    roundBadge.textContent = roundId ? `Round: ${roundId}` : 'Round: pending';
-  });
-}
-
-/*** Submit a vote (one per user per round, enforced by rules) ***/
 async function cast(choice) {
   voteMsg.textContent = '';
   if (!eventId || !roundId) {
@@ -310,6 +11,28 @@ async function cast(choice) {
     voteMsg.innerHTML = '<span class="err">Voting is currently closed.</span>';
     return;
   }
+
+  // 1) Require attendee check-in first
+  const attRef = db.collection('events').doc(eventId).collection('attendees').doc(currentUser.uid);
+  const attSnap = await attRef.get();
+  if (!attSnap.exists || !(attSnap.data()||{}).verified) {
+    voteMsg.innerHTML = '<span class="err">Please check in with tonight’s PIN before voting.</span>';
+    hide(voteCard); show(pinCard);
+    return;
+  }
+
+  // 2) Enforce checked-in-before-round-opened
+  const evtSnap = await db.collection('events').doc(eventId).get();
+  const evt = evtSnap.data() || {};
+  const openedAt = evt.roundOpenedAt && evt.roundOpenedAt.toDate ? evt.roundOpenedAt.toDate() : null;
+  const verifiedAt = attSnap.data().verifiedAt && attSnap.data().verifiedAt.toDate ? attSnap.data().verifiedAt.toDate() : null;
+
+  if (openedAt && verifiedAt && verifiedAt > openedAt) {
+    voteMsg.innerHTML = '<span class="err">You must check in before the round starts. Please wait for the next round.</span>';
+    return;
+  }
+
+  // 3) Write the vote (one per round per user; rules prevent overwrite)
   const voteRef = db.collection('events').doc(eventId)
                    .collection('rounds').doc(roundId)
                    .collection('votes').doc(currentUser.uid);
@@ -327,10 +50,5 @@ async function cast(choice) {
     voteMsg.innerHTML = '<span class="err">You’ve already voted this round.</span>';
   }
 }
-
-$('voteEncore').addEventListener('click', ()=>cast('encore'));
-$('voteOneMore').addEventListener('click', ()=>cast('one_more'));
-$('voteNext').addEventListener('click', ()=>cast('next_time'));
+// ... keep everything else below as-is
 </script>
-</body>
-</html>
