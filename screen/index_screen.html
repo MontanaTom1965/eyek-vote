@@ -207,7 +207,7 @@ function wireEvent(evtId){
     roundId = d.roundId || null;
     isVotingOpen = !!d.isVotingOpen;
 
-    // Big singer name (no song), but clear when host clears
+    // Big singer name ONLY (no artist/song), cleared when host clears
     lastSinger = (d.currentSingerName||'').trim();
     singerBig.textContent = lastSinger ? lastSinger : 'Next up soon…';
 
@@ -236,14 +236,12 @@ function wireEvent(evtId){
     }
 
     // Votes
-    if(roundId){
-      listenVotes(evtId, roundId);
-    } else {
+    if(roundId){ listenVotes(evtId, roundId); } else {
       clearTally();
       if(votesUnsub){ votesUnsub(); votesUnsub=null; }
     }
 
-    // Show full-screen result when host closes
+    // Full-screen result when host closes
     if (wasOpen && !isVotingOpen && roundId){
       setTimeout(()=>showFinalResult(), 250);
     }
