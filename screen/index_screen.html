@@ -7,8 +7,7 @@
   <style>
     :root{
       --blue:#003e81; --gold:#eaba54; --purple:#2F0658;
-      --green:#19d36b; --green-dark:#0b7a44;
-      --red:#ff5a6b; --red-dark:#8c2230;
+      --green:#19d36b; --red:#ff5a6b;
       --bg:#0b0715; --card:#1b1430; --ink:#fff;
     }
     *{box-sizing:border-box}
@@ -17,13 +16,13 @@
     h1{margin:0;font-size:1.1rem}
     .pill{display:inline-block;padding:6px 10px;border-radius:999px;background:#271c44;font-size:.9rem;margin-left:8px}
 
-    /* Floating sound enable */
+    /* Sound enable */
     .soundBar{position:fixed;top:0;left:0;right:0;z-index:1000;display:flex;gap:10px;align-items:center;justify-content:center;padding:10px 14px;background:#201637;border-bottom:1px solid rgba(255,255,255,.18)}
     .soundBar button{background:var(--gold);color:#000;padding:8px 14px;border-radius:999px;border:0;font-weight:800;cursor:pointer}
 
     .main{padding:18px}
     .venueHero{font-size:3.2vw;font-weight:1000;letter-spacing:.02em;margin:8px 0 2px}
-    .now{opacity:.9;margin-bottom:18px;font-size:1.2rem}
+    .singerBig{font-size:8vw;font-weight:1000;letter-spacing:.01em;margin:4px 0 18px}
     .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
     .card{background:var(--card);border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:16px;box-shadow:0 10px 30px rgba(0,0,0,.45)}
     .big{font-size:1.1rem;font-weight:800;margin-bottom:10px}
@@ -32,14 +31,10 @@
     .fill{height:100%;width:0;transition:width .25s ease}
     .enc{background:linear-gradient(180deg,#bbffd8,var(--green))}
     .one{background:linear-gradient(180deg,#ffefc2,var(--gold))}
-
     .banner{position:fixed;left:0;right:0;bottom:0;background:rgba(0,0,0,.6);backdrop-filter:blur(6px);padding:14px 20px;display:flex;justify-content:space-between;align-items:center}
     .banner .result{font-size:1.4rem;font-weight:900}
-
-    /* Next up view */
-    .ready{position:fixed;left:0;right:0;top:50%;transform:translateY(-50%);text-align:center;font-size:3.5vw;opacity:.95;display:none}
+    .ready{position:fixed;left:0;right:0;top:50%;transform:translateY(-50%);text-align:center;font-size:3vw;opacity:.9;display:none}
     .ready.show{display:block}
-    .nextSinger{font-weight:1000;font-size:5vw;margin-top:.4em}
 
     /* Countdown overlay */
     .overlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:radial-gradient(ellipse at center, rgba(255,239,194,.18), rgba(0,0,0,.88) 60%);z-index:9998}
@@ -49,21 +44,21 @@
     .countSub{font-size:3vw;opacity:.9;text-align:center;margin-top:1rem}
 
     /* Result flash */
-    .resultFlash{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:9999;color:#000}
+    .resultFlash{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:9999}
     .resultFlash.show{display:flex}
-    .rf-inner{ text-align:center; padding:4vw 5vw; border-radius:24px; background:rgba(255,255,255,.15); backdrop-filter:blur(6px) }
+    .rf-inner{ text-align:center; padding:4vw 5vw; border-radius:24px; background:rgba(0,0,0,.25); backdrop-filter:blur(6px); color:#fff }
     .rf-title{font-size:12vw;line-height:.9;font-weight:1000;margin:0 0 .5vw}
     .rf-sub{font-size:3vw;font-weight:800}
-    .rf-green{ background: radial-gradient(circle at center, rgba(25,211,107,.4), rgba(11,122,68,.95) 60%); color:#fff; }
-    .rf-gold{  background: radial-gradient(circle at center, rgba(234,186,84,.35), rgba(154,120,41,.95) 60%); color:#fff; }
-    .rf-red{   background: radial-gradient(circle at center, rgba(255,90,107,.35), rgba(140,34,48,.95) 60%); color:#fff; }
-    .pop{ animation: pop .8s ease both }
-    @keyframes pop{ 0%{transform:scale(.9);opacity:0} 60%{transform:scale(1.02);opacity:1} 100%{transform:scale(1)} }
+
+    /* Themes */
+    .rf-green{ background: radial-gradient(circle at center, rgba(25,211,107,.35), rgba(11,122,68,.95) 60%); }
+    .rf-gold{  background: radial-gradient(circle at center, rgba(234,186,84,.35), rgba(154,120,41,.95) 60%); }
+    .rf-red{   background: radial-gradient(circle at center, rgba(255,90,107,.35), rgba(140,34,48,.95) 60%); }
 
     /* Confetti canvas */
     #confettiCanvas{ position:fixed; inset:0; z-index:10000; pointer-events:none; display:none; }
 
-    @media (max-width:960px){ .grid{grid-template-columns:1fr} .venueHero{font-size:7vw} .now{font-size:1rem} }
+    @media (max-width:960px){ .grid{grid-template-columns:1fr} .venueHero{font-size:7vw} .singerBig{font-size:12vw} }
   </style>
 
   <!-- Firebase (compat) -->
@@ -71,7 +66,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 </head>
 <body>
-  <!-- Floating sound enable -->
+  <!-- Sound enable -->
   <div class="soundBar" id="screenSoundBar">
     <div>🔈 Enable sound for voting</div>
     <button id="screenEnableSoundBtn">Enable</button>
@@ -87,26 +82,23 @@
 
   <div class="main">
     <div class="venueHero" id="venueHero">Welcome to …</div>
-    <div class="now" id="nowLine">Now: —</div>
+    <div class="singerBig" id="singerBig">Next up soon…</div>
 
-    <!-- Wrap tallies so we can hide them in “Next up” mode -->
-    <div id="tallies">
-      <div class="grid">
-        <div class="card">
-          <div class="big">🔥 Encore!</div>
-          <div class="tally">
-            <div>Votes</div>
-            <div id="encCount" style="text-align:right">0</div>
-            <div class="bar"><div class="fill enc" id="encFill"></div></div>
-          </div>
+    <div class="grid">
+      <div class="card">
+        <div class="big">🔥 Encore!</div>
+        <div class="tally">
+          <div>Votes</div>
+          <div id="encCount" style="text-align:right">0</div>
+          <div class="bar"><div class="fill enc" id="encFill"></div></div>
         </div>
-        <div class="card">
-          <div class="big">🤔 One More Shot</div>
-          <div class="tally">
-            <div>Votes</div>
-            <div id="oneCount" style="text-align:right">0</div>
-            <div class="bar"><div class="fill one" id="oneFill"></div></div>
-          </div>
+      </div>
+      <div class="card">
+        <div class="big">🤔 One More Shot</div>
+        <div class="tally">
+          <div>Votes</div>
+          <div id="oneCount" style="text-align:right">0</div>
+          <div class="bar"><div class="fill one" id="oneFill"></div></div>
         </div>
       </div>
     </div>
@@ -117,11 +109,8 @@
     <div class="pill" id="percentages">—</div>
   </div>
 
-  <!-- Next up / pre-start -->
-  <div class="ready" id="readyMsg">
-    Next up…
-    <div class="nextSinger" id="nextSingerName">—</div>
-  </div>
+  <!-- Pre-start hint -->
+  <div class="ready" id="readyMsg">Get ready… voting will open soon!</div>
 
   <!-- Countdown overlay + audio -->
   <div class="overlay" id="countOverlay">
@@ -135,10 +124,10 @@
   <audio id="winAudio" preload="auto" src="https://vote.earnyourencorekaraoke.com/vote/you_win_001.mp3"></audio>
 
   <!-- Full-screen result flash -->
-  <div class="resultFlash" id="resultFlash">
-    <div class="rf-inner pop">
+  <div class="resultFlash rf-green" id="resultFlash">
+    <div class="rf-inner">
       <div class="rf-title" id="rfTitle">Encore!</div>
-      <div class="rf-sub" id="rfSub">Give it up for —</div>
+      <div class="rf-sub" id="rfSub">Give it up!</div>
     </div>
   </div>
 
@@ -166,25 +155,22 @@ const encFill=$('encFill'), oneFill=$('oneFill');
 const percentagesEl=$('percentages'), resultText=$('resultText');
 const overlay=$('countOverlay'), countNum=$('countNum');
 const countAudio=$('countAudio'), sadHorn=$('sadHorn'), winAudio=$('winAudio');
-const readyMsg=$('readyMsg'), nextSingerName=$('nextSingerName'), venueHero=$('venueHero'), nowLine=$('nowLine');
+const readyMsg=$('readyMsg'), venueHero=$('venueHero'), singerBig=$('singerBig');
 const rf=$('resultFlash'), rfTitle=$('rfTitle'), rfSub=$('rfSub');
 const soundBar=$('screenSoundBar'), soundBtn=$('screenEnableSoundBtn');
 const confettiCanvas = $('confettiCanvas');
 const ctx = confettiCanvas.getContext('2d');
-const talliesWrap = document.getElementById('tallies');
 
 /* Resize canvas */
-function sizeCanvas(){ confettiCanvas.width = window.innerWidth; confettiCanvas.height = window.innerHeight; }
-sizeCanvas(); window.addEventListener('resize', sizeCanvas);
+function sizeCanvas(){ confettiCanvas.width=innerWidth; confettiCanvas.height=innerHeight; }
+sizeCanvas(); addEventListener('resize', sizeCanvas);
 
+/* Sound gate */
 function hideSoundBar(){ soundBar.style.display='none'; }
 soundBtn.addEventListener('click', async ()=>{
   try{
-    await countAudio.play(); countAudio.pause();
-    await winAudio.play(); winAudio.pause();
-    await sadHorn.play(); sadHorn.pause();
-    localStorage.setItem('screen-sound-ok','1');
-    hideSoundBar();
+    for (const a of [countAudio, winAudio, sadHorn]) { await a.play(); a.pause(); }
+    localStorage.setItem('screen-sound-ok','1'); hideSoundBar();
   }catch(e){ alert('Please tap Enable again to allow audio.'); }
 });
 if(localStorage.getItem('screen-sound-ok')==='1'){ hideSoundBar(); }
@@ -193,8 +179,7 @@ if(localStorage.getItem('screen-sound-ok')==='1'){ hideSoundBar(); }
 let eventUnsub=null, votesUnsub=null, autoEventUnsub=null, countdownTimer=null;
 let eventId=null, roundId=null, isVotingOpen=false;
 let lastCounts={enc:0,one:0,neg:0,total:0};
-let lastSinger='', lastSong='';
-let postCloseTimer=null;
+let lastSinger='';
 
 /* Follow host's current event */
 autoEventUnsub = db.collection('app').doc('state').onSnapshot(s=>{
@@ -209,7 +194,7 @@ function wireEvent(evtId){
   if(eventUnsub) eventUnsub();
   if(votesUnsub){ votesUnsub(); votesUnsub=null; }
 
-  // Show venue at top
+  // Venue banner
   db.collection('events').doc(evtId).get().then(doc=>{
     const v=(doc.data()||{}).venueName||evtId||'…';
     venueHero.textContent=`Welcome to ${v}`;
@@ -221,28 +206,31 @@ function wireEvent(evtId){
 
     roundId = d.roundId || null;
     isVotingOpen = !!d.isVotingOpen;
-    lastSinger = d.currentSingerName || '';
-    lastSong   = d.currentSong || '';
-    nowLine.textContent = lastSinger ? `Now: ${lastSinger}${lastSong? ' — ' + lastSong : ''}` : 'Now: —';
+
+    // Big singer name (no song), but clear when host clears
+    lastSinger = (d.currentSingerName||'').trim();
+    singerBig.textContent = lastSinger ? lastSinger : 'Next up soon…';
 
     roundBadge.textContent = roundId || '—';
     statusEl.textContent = isVotingOpen ? 'Voting Open' : 'Voting Closed';
 
-    // Pre-start (Next up…) when round exists but not open
+    // Pre-start banner
     if (roundId && !isVotingOpen){
-      enterNextUpMode(lastSinger);
+      readyMsg.classList.add('show');
       stopCountdown();
-      // don't clear tallies here if we're still inside the 45s display window (handled by timer)
+      clearTally();
+      resultText.textContent='Waiting for votes…';
+      hideResultFlash(); confettiStop();
+    } else {
+      readyMsg.classList.remove('show');
     }
 
     // Countdown & music
     const vw=d.voteWindow||null;
     if(isVotingOpen && vw){
-      if (postCloseTimer){ clearTimeout(postCloseTimer); postCloseTimer=null; } // abort pending next-up switch if voting re-opens
       const openedAt = (vw.openedAt && vw.openedAt.toDate) ? vw.openedAt.toDate().getTime() : Date.now();
       const dur = Number(vw.durationSec||30);
       startCountdown(openedAt, dur);
-      exitNextUpMode(); // while actively voting, show tallies
     } else if(!isVotingOpen){
       stopCountdown();
     }
@@ -255,17 +243,9 @@ function wireEvent(evtId){
       if(votesUnsub){ votesUnsub(); votesUnsub=null; }
     }
 
-    // When host closes voting: show result flash, keep results visible ~45s, then switch to Next up…
+    // Show full-screen result when host closes
     if (wasOpen && !isVotingOpen && roundId){
-      setTimeout(()=>showFinalResult(), 200);
-      if (postCloseTimer){ clearTimeout(postCloseTimer); }
-      postCloseTimer = setTimeout(()=>{
-        // After ~45s, clear results UI and show Next up…
-        hideResultFlash();
-        confettiStop();
-        clearTally();
-        enterNextUpMode(''); // text will update when host sets next singer
-      }, 45000);
+      setTimeout(()=>showFinalResult(), 250);
     }
   }, console.error);
 }
@@ -286,7 +266,7 @@ function updateTally(qs){
     else if(v==='one_more') one++;
     else if(v==='next_time') neg++;
   });
-  const shownTotal = enc + one; // live UI hides "Maybe" from bars/percentages
+  const shownTotal = enc + one; // “Maybe” hidden in live bars
   lastCounts={enc,one,neg,total:enc+one+neg};
 
   encCountEl.textContent=enc;
@@ -303,90 +283,59 @@ function updateTally(qs){
   }
 }
 
-/* Countdown & audio (starts at true 30) */
+/* Countdown & audio */
 function startCountdown(openedMs, duration){
   stopCountdown();
   overlay.classList.add('show');
-  countNum.textContent = duration; // force initial 30
-  // Start quiz music if unlocked
   if(localStorage.getItem('screen-sound-ok')==='1'){
     try{ countAudio.currentTime=0; countAudio.play().catch(()=>{});}catch(e){}
   }
   countdownTimer = setInterval(()=>{
-    const elapsed = Math.floor((Date.now() - openedMs)/1000);
-    const remain = Math.max(0, duration - elapsed);
+    const remain = Math.max(0, Math.round((openedMs + duration*1000 - Date.now())/1000));
     countNum.textContent = remain;
     if (remain <= 0){ stopCountdown(); }
   }, 200);
 }
-
 function stopCountdown(){
   overlay.classList.remove('show');
   if(countdownTimer){ clearInterval(countdownTimer); countdownTimer=null; }
   try{ countAudio.pause(); }catch(e){}
 }
 
-/* Final result flash + sounds + confetti */
+/* Result flash + sounds + confetti */
 function showResultFlash(mode, singer){
-  rf.classList.remove('rf-green','rf-gold','rf-red','show');
-  let title='', sub='';
+  rf.className = 'resultFlash'; // reset
   if(mode==='encore'){
-    rf.classList.add('rf-green'); title='Encore!'; sub = singer ? `Give it up for ${singer}!` : 'Encore!';
+    rf.classList.add('rf-green');
+    rfTitle.textContent='Encore!';
+    rfSub.textContent= singer ? `Give it up for ${singer}!` : 'Encore!';
     if(localStorage.getItem('screen-sound-ok')==='1'){ try{ winAudio.currentTime=0; winAudio.play().catch(()=>{});}catch(e){} }
-    confettiStart(); // 🎉
-  } else if(mode==='one'){
-    rf.classList.add('rf-gold'); title='Another Shot!'; sub = singer ? `${singer} gets another shot!` : 'Another Shot!';
-    confettiStop(); // no confetti
-  } else {
-    rf.classList.add('rf-red'); title='Maybe Next Time!'; sub = singer ? `Let’s hear it for ${singer}! Thanks for playing along!` : `Thanks for playing along!`;
+    confettiStart();
+  }else if(mode==='one'){
+    rf.classList.add('rf-gold');
+    rfTitle.textContent='Another Shot!';
+    rfSub.textContent= singer ? `${singer} gets another shot!` : 'Another Shot!';
+    confettiStop();
+  }else{
+    rf.classList.add('rf-red');
+    rfTitle.textContent='Maybe Next Time!';
+    rfSub.textContent= singer ? `Let’s hear it for ${singer}! Thanks for playing along!` : `Thanks for playing along!`;
     if(localStorage.getItem('screen-sound-ok')==='1'){ try{ sadHorn.currentTime=0; sadHorn.play().catch(()=>{});}catch(e){} }
     confettiStop();
   }
-
-  rfTitle.textContent=title;
-  rfSub.textContent=sub;
   rf.classList.add('show');
-
-  // Auto hide flash after 5s (results remain visible below for ~45s)
   setTimeout(()=>hideResultFlash(), 5000);
 }
 function hideResultFlash(){ rf.classList.remove('show'); }
 
-/* Decide winner and flash */
 function showFinalResult(){
   const {enc,one,neg,total} = lastCounts;
   if(!total){ resultText.textContent='No votes cast.'; return; }
-
   const max = Math.max(enc,one,neg);
-  const encWin = enc===max, oneWin = one===max, negWin = neg===max;
-
-  if (encWin && !oneWin && !negWin){
-    showResultFlash('encore', lastSinger);
-    resultText.textContent='Result: Encore!';
-  } else if (!encWin && oneWin && !negWin){
-    showResultFlash('one', lastSinger);
-    resultText.textContent='Result: One More Shot';
-  } else if (!encWin && !oneWin && negWin){
-    showResultFlash('neg', lastSinger);
-    resultText.textContent='Result: Maybe Next Time';
-  } else {
-    hideResultFlash();
-    confettiStop();
-    resultText.textContent='Result: Tie';
-  }
-}
-
-/* Next Up mode helpers */
-function enterNextUpMode(name){
-  talliesWrap.style.display = 'none';
-  readyMsg.classList.add('show');
-  nextSingerName.textContent = name ? name : '—';
-  resultText.textContent = 'Waiting for votes…';
-  percentagesEl.textContent = '—';
-}
-function exitNextUpMode(){
-  readyMsg.classList.remove('show');
-  talliesWrap.style.display = 'block';
+  if (enc===max && enc>one && enc>neg){ showResultFlash('encore', lastSinger); resultText.textContent='Result: Encore!'; }
+  else if (one===max && one>enc && one>neg){ showResultFlash('one', lastSinger); resultText.textContent='Result: One More Shot'; }
+  else if (neg===max && neg>enc && neg>one){ showResultFlash('neg', lastSinger); resultText.textContent='Result: Maybe Next Time'; }
+  else { hideResultFlash(); confettiStop(); resultText.textContent='Result: Tie'; }
 }
 
 /* Helpers */
@@ -394,6 +343,40 @@ function clearTally(){
   encCountEl.textContent=oneCountEl.textContent='0';
   encFill.style.width=oneFill.style.width='0%';
   percentagesEl.textContent='—';
+  resultText.textContent='Waiting for votes…';
+}
+
+/* Confetti */
+let confettiParticles = [], confettiRAF=null, confettiRunning=false;
+function confettiStart(){
+  if(confettiRunning) return; confettiRunning=true;
+  confettiCanvas.style.display='block';
+  confettiParticles=[]; const W=confettiCanvas.width, H=confettiCanvas.height;
+  const colors=['#ffffff','#ffec99','#63e6be','#74c0fc','#b197fc','#ffa8a8','#ffd43b','#69db7c'];
+  const count = Math.min(300, Math.floor((W*H)/9000));
+  for(let i=0;i<count;i++){
+    confettiParticles.push({
+      x: Math.random()*W, y: -20 - Math.random()*H*0.5,
+      r: 4 + Math.random()*5, vx: -2 + Math.random()*4, vy: 2 + Math.random()*3,
+      rot: Math.random()*Math.PI*2, vr: (-0.2 + Math.random()*0.4),
+      color: colors[Math.floor(Math.random()*colors.length)], alpha: 0.8 + Math.random()*0.2
+    });
+  }
+  confettiLoop(); setTimeout(confettiStop, 6000);
+}
+function confettiStop(){ confettiRunning=false; if(confettiRAF){ cancelAnimationFrame(confettiRAF); confettiRAF=null; } confettiCanvas.style.display='none'; }
+function confettiLoop(){
+  if(!confettiRunning) return;
+  const W=confettiCanvas.width, H=confettiCanvas.height;
+  ctx.clearRect(0,0,W,H);
+  for(const p of confettiParticles){
+    p.x+=p.vx; p.y+=p.vy; p.rot+=p.vr; p.vy+=0.02;
+    if(p.x<-20) p.x=W+20; if(p.x>W+20) p.x=-20;
+    ctx.save(); ctx.globalAlpha=p.alpha; ctx.translate(p.x,p.y); ctx.rotate(p.rot);
+    ctx.fillStyle=p.color; ctx.fillRect(-p.r,-p.r*0.6,p.r*2,p.r*1.2); ctx.restore();
+  }
+  confettiParticles = confettiParticles.filter(p=>p.y < H+40);
+  confettiRAF = requestAnimationFrame(confettiLoop);
 }
 </script>
 </body>
