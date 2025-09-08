@@ -28,6 +28,8 @@
     @keyframes fadeIn{from{opacity:0}to{opacity:1}}
     .countNum{font-size:22vw;line-height:1;font-weight:1000;letter-spacing:.02em;background:linear-gradient(180deg,#fff7d0,var(--gold));-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:0 0 24px rgba(234,186,84,.35)}
     .countSub{font-size:3vw;opacity:.9;text-align:center;margin-top:1rem}
+    .ready{position:fixed;left:0;right:0;top:50%;transform:translateY(-50%);text-align:center;font-size:3vw;opacity:.9;display:none}
+    .ready.show{display:block}
     @media (max-width:960px){ .grid{grid-template-columns:1fr} }
   </style>
 
@@ -87,6 +89,9 @@
     <div class="pill" id="percentages">—</div>
   </div>
 
+  <!-- Ready banner (pre-start) -->
+  <div class="ready" id="readyMsg">Get ready… voting will open soon!</div>
+
   <!-- Countdown overlay + audio -->
   <div class="overlay" id="countOverlay">
     <div style="text-align:center">
@@ -119,6 +124,7 @@ const encCountEl = $('encCount'), oneCountEl = $('oneCount'), negCountEl = $('ne
 const encFill = $('encFill'), oneFill = $('oneFill'), negFill = $('negFill');
 const percentagesEl = $('percentages'), resultText = $('resultText');
 const overlay = $('countOverlay'); const countNum = $('countNum'); const countAudio = $('countAudio');
+const readyMsg = $('readyMsg');
 
 let eventUnsub = null, votesUnsub = null, autoEventUnsub = null, countdownTimer = null;
 let eventId = null, roundId = null, isVotingOpen = false;
@@ -155,11 +161,21 @@ function wireUp(){
     roundBadge.textContent = roundId || '—';
     statusEl.textContent = isVotingOpen ? 'Voting Open' : 'Voting Closed';
 
-    // handle timed window
+    // PRE-START UI: show “Get ready” if round set but voting closed
+    if (roundId && !isVotingOpen){
+      readyMsg.classList.add('show');
+      stopCountdown();
+      clearTally();
+      resultText.textContent = 'Waiting for votes…';
+    } else {
+      readyMsg.classList.remove('show');
+    }
+
+    // handle timed window when voting is open
     const vw = d.voteWindow || null;
     if (isVotingOpen && vw && vw.openedAt && typeof vw.durationSec !== 'undefined'){
       startCountdown(vw.openedAt.toDate().getTime(), Number(vw.durationSec||30));
-    } else {
+    } else if (!isVotingOpen){
       stopCountdown();
     }
 
@@ -174,6 +190,7 @@ function wireUp(){
     if (prevOpen && !isVotingOpen && roundId) {
       setTimeout(()=>showCloseOutcome(roundId), 300);
       stopCountdown();
+      readyMsg.classList.remove('show'); // once closed, hide pre-start banner
     }
   }, console.error);
 }
@@ -191,7 +208,7 @@ let lastCounts = {enc:0,one:0,neg:0,total:0};
 function updateTally(qs){
   let enc=0, one=0, neg=0;
   qs.forEach(doc=>{
-    const v = doc.data().choice;
+    const v = (doc.data()||{}).choice;
     if (v==='encore') enc++;
     else if (v==='one_more') one++;
     else if (v==='next_time') neg++;
