@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <title>Earn Your Encore Karaoke – Host</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-
   <style>
     :root { --blue:#003e81; --gold:#eaba54; --purple:#2F0658; --white:#fff; }
     *{box-sizing:border-box}
@@ -54,9 +53,9 @@
       <span class="pill" id="statusBadge">Status: —</span>
     </div>
     <div class="links">
-      <a href="https://vote.earnyourencorekaraoke.com/vote/index_vote.html" target="_blank" rel="noopener">Open Vote</a>
-      <a href="https://vote.earnyourencorekaraoke.com/screen/index_screen.html" target="_blank" rel="noopener">Open Screen</a>
-      <a href="https://vote.earnyourencorekaraoke.com/board/index_board.html" target="_blank" rel="noopener">Open Board</a>
+      <a href="https://vote.earnyourencorekaraoke.com/vote/index_vote.html" target="_blank" rel="noopener">Vote</a>
+      <a href="https://vote.earnyourencorekaraoke.com/screen/index_screen.html" target="_blank" rel="noopener">Screen</a>
+      <a href="https://vote.earnyourencorekaraoke.com/board/index_board.html" target="_blank" rel="noopener">Board</a>
     </div>
   </header>
 
@@ -69,7 +68,7 @@
       </div>
       <div id="singersList"></div>
       <div class="divider"></div>
-      <div class="muted small">Click <b>Set Current</b> to load the singer & song. Then press <b>Start Voting!</b></div>
+      <div class="muted small">Click <b>Set Current</b> to load the singer. Then press <b>Start Voting!</b></div>
     </aside>
 
     <!-- RIGHT: Controls -->
@@ -128,15 +127,15 @@
       </div>
 
       <div class="card">
-        <h3 style="margin:0 0 10px">Current Singer & Song</h3>
+        <h3 style="margin:0 0 10px">Current Singer</h3>
         <div class="row">
           <div>
             <label>Singer Name</label>
             <input id="singerName" placeholder="e.g. Jane Doe" />
           </div>
           <div>
-            <label>Song (Artist – Title)</label>
-            <input id="singerSong" placeholder="e.g. Journey – Don’t Stop Believin’" />
+            <label>Song (optional)</label>
+            <input id="singerSong" placeholder="(not shown on TV)" />
           </div>
         </div>
         <div style="display:flex; gap:8px; margin-top:10px; flex-wrap:wrap">
@@ -461,6 +460,13 @@
         toast('🛑 Voting closed.');
         clearInterval(autoCloseTimer); autoCloseTimer=null; timerHint.textContent='';
         await evaluateOutcomeAndCleanup();
+
+        // 🧹 Clear current singer between rounds so TV doesn’t show the last one
+        await ref.set({
+          currentSingerName: '',
+          currentSong: ''
+        }, { merge:true });
+
       }catch{ toast('❌ Error ending voting.'); }
     }
 
@@ -478,6 +484,9 @@
           try{ await ref.set({ isVotingOpen:false }, { merge:true }); }catch(e){}
           clearInterval(autoCloseTimer); autoCloseTimer=null; timerHint.textContent='';
           await evaluateOutcomeAndCleanup();
+
+          // 🧹 also clear here if auto-closed
+          await ref.set({ currentSingerName:'', currentSong:'' }, { merge:true });
         }
       }, 500);
     }
@@ -526,7 +535,7 @@
       }catch(e){}
     }
 
-    // Init (if an event name is already typed, wire immediately)
+    // Init
     if (currentEventName()){ wireEventListener(); loadSingers(); }
   </script>
 </body>
