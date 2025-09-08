@@ -5,51 +5,80 @@
   <title>Earn Your Encore Karaoke – Board</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    :root{ --blue:#003e81; --gold:#eaba54; --purple:#2F0658; --bg:#0f0a18; --card:#1b1430; }
+    :root{
+      --blue:#003e81; --gold:#eaba54; --purple:#2F0658;
+      --green:#19d36b; --gold-deep:#a8892c;
+      --bg:#0b0715; --card:#1b1430; --ink:#fff;
+    }
     *{box-sizing:border-box}
-    body{margin:0;background:var(--bg);color:#fff;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',Arial,sans-serif}
-    header{padding:22px 16px;background:linear-gradient(90deg,var(--blue),var(--purple));text-align:center}
-    .now{font-size:clamp(28px,5.2vw,72px);font-weight:1000;letter-spacing:.02em;margin:0}
-    .sub{opacity:.9;margin:6px 0 0;font-size:clamp(14px,2.3vw,24px)}
-    .wrap{max-width:1200px;margin:18px auto;padding:0 16px}
-    .cols{display:grid;grid-template-columns:1fr 1fr;gap:18px}
-    .card{background:var(--card);border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:18px;box-shadow:0 12px 32px rgba(0,0,0,.4)}
-    .title{font-size:1.3rem;font-weight:900;margin-bottom:8px}
-    ul{list-style:none;margin:0;padding:0;min-height:200px}
-    li{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px;border:1px solid rgba(255,255,255,.08);border-radius:12px;background:#140f25;margin-bottom:10px}
-    .who{font-weight:800}
-    .song{opacity:.9;font-size:.95rem}
-    .muted{opacity:.8}
-    @media (max-width:900px){ .cols{grid-template-columns:1fr} }
+    body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',Arial,sans-serif}
+    header{padding:16px;background:linear-gradient(90deg,var(--blue),var(--purple));display:flex;justify-content:space-between;align-items:center}
+    h1{margin:0;font-size:1.1rem}
+    .pill{display:inline-block;padding:6px 10px;border-radius:999px;background:#271c44;font-size:.9rem;margin-left:8px}
+
+    .main{padding:18px}
+    .nowHero{font-size:7vw;font-weight:1000;letter-spacing:.01em;text-align:center;margin:4px 0 18px}
+    .nowHint{opacity:.9;text-align:center;margin-top:-8px;margin-bottom:18px}
+
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+    .col{background:var(--card);border:1px solid rgba(255,255,255,.08);border-radius:18px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.45);min-height:50vh}
+    .colHead{padding:14px 18px;font-weight:1000;letter-spacing:.02em}
+    .encHead{background:linear-gradient(180deg,rgba(187,255,216,.2),rgba(25,211,107,.25));border-bottom:1px solid rgba(25,211,107,.35)}
+    .oneHead{background:linear-gradient(180deg,rgba(255,239,194,.2),rgba(234,186,84,.25));border-bottom:1px solid rgba(234,186,84,.35)}
+    .list{padding:12px 14px}
+    .chip{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 14px;margin:10px 0;border-radius:12px;background:#170f2a;border:1px solid rgba(255,255,255,.08);font-weight:800}
+    .chip small{opacity:.8;font-weight:600}
+    .empty{opacity:.6;text-align:center;padding:18px}
+
+    .footer{margin-top:18px;display:flex;gap:10px;justify-content:flex-end;opacity:.8}
+    .btn{padding:10px 14px;border:0;border-radius:10px;font-weight:800;cursor:pointer}
+    .btn-blue{background:var(--blue);color:#fff}
+    .btn-gold{background:var(--gold);color:#000}
+    .btn-red{background:#ff4c61;color:#fff}
+    @media (max-width:960px){ .grid{grid-template-columns:1fr} .nowHero{font-size:12vw} }
   </style>
 
-  <!-- Firebase SDKs (compat) -->
+  <!-- Firebase (compat) -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 </head>
 <body>
   <header>
-    <h1 class="now" id="nowSinger">Waiting for singer…</h1>
-    <p class="sub" id="nowSong"></p>
+    <h1>🎤 Earn Your Encore Karaoke • Board</h1>
+    <div>
+      <span class="pill" id="roundBadge">—</span>
+      <span class="pill" id="status">loading…</span>
+    </div>
   </header>
 
-  <div class="wrap">
-    <div class="cols">
-      <div class="card">
-        <div class="title">🔥 Encore!</div>
-        <ul id="encoreList"></ul>
-      </div>
-      <div class="card">
-        <div class="title">🤔 Another Shot!</div>
-        <ul id="anotherList"></ul>
-      </div>
+  <div class="main">
+    <div class="nowHero" id="nowHero">Next up soon…</div>
+    <div class="nowHint" id="nowHint">This page updates automatically when results are in.</div>
+
+    <div class="grid">
+      <section class="col" id="encCol">
+        <div class="colHead encHead">✅ Encore!</div>
+        <div class="list" id="encList">
+          <div class="empty">No Encores yet.</div>
+        </div>
+      </section>
+
+      <section class="col" id="oneCol">
+        <div class="colHead oneHead">🤔 Another Shot!</div>
+        <div class="list" id="oneList">
+          <div class="empty">No “Another Shot!” yet.</div>
+        </div>
+      </section>
     </div>
-    <p class="muted" style="margin-top:14px">Lists update automatically whenever the host closes voting.</p>
+
+    <div class="footer">
+      <button class="btn btn-blue" id="refreshBtn">Refresh</button>
+      <button class="btn btn-red" id="clearBtn" title="Clears tonight’s local display (does not delete anything in Firestore)">Clear Tonight (Local)</button>
+    </div>
   </div>
 
 <script>
-/* Firebase init (your config) */
+/* Firebase init */
 const firebaseConfig = {
   apiKey: "AIzaSyDGbC08WxruYIDPhZSlDlU-7Kzq-7mHENk",
   authDomain: "eyek-vote.firebaseapp.com",
@@ -61,146 +90,117 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-/* DOM */
+/* DOM helpers */
 const $ = id => document.getElementById(id);
-const nowSingerEl = $('nowSinger');
-const nowSongEl   = $('nowSong');
-const encoreList  = $('encoreList');
-const anotherList = $('anotherList');
+const roundBadge=$('roundBadge'), statusEl=$('status');
+const nowHero=$('nowHero');
+const encList=$('encList'), oneList=$('oneList');
 
-/* State */
-let eventId=null, roundId=null, isVotingOpen=false;
-let appUnsub=null, eventUnsub=null, votesUnsub=null;
-const encoreMap = new Map(); // key = canonical singer -> <li>
-const anotherMap = new Map();
-const processedRounds = new Set();
+/* Local session state (kept only while this page is open) */
+let eventId=null, eventUnsub=null, autoEventUnsub=null;
+let encoreSet = new Set();     // names that achieved Encore
+let oneMoreSet = new Set();    // names that achieved Another Shot
+let lastIsVotingOpen=false, lastRoundId=null;
 
-/* Auto-select current event from Host (app/state) */
-appUnsub = db.collection('app').doc('state').onSnapshot(s=>{
-  const d = s.data()||{};
-  if (d.currentEventId && d.currentEventId !== eventId){
-    eventId = d.currentEventId;
-    connectEvent();
+/* Render helpers */
+function renderLists(){
+  const renderSet = (container, set, emptyText) => {
+    container.innerHTML = '';
+    if(set.size===0){
+      const d=document.createElement('div'); d.className='empty'; d.textContent=emptyText; container.appendChild(d); return;
+    }
+    [...set].sort((a,b)=>a.localeCompare(b)).forEach(name=>{
+      const row=document.createElement('div'); row.className='chip';
+      row.innerHTML = `<div>${name}</div><small></small>`;
+      container.appendChild(row);
+    });
+  };
+  renderSet(encList, encoreSet, 'No Encores yet.');
+  renderSet(oneList, oneMoreSet, 'No “Another Shot!” yet.');
+}
+
+/* Follow host's current event */
+autoEventUnsub = db.collection('app').doc('state').onSnapshot(s=>{
+  const d=s.data()||{};
+  if(d.currentEventId && eventId!==d.currentEventId){
+    eventId=d.currentEventId;
+    startEventWire();
   }
 });
 
-/* Wire event listeners */
-function connectEvent(){
-  if (eventUnsub) eventUnsub();
-  if (votesUnsub) votesUnsub();
+/* Wire-up live event doc */
+function startEventWire(){
+  if(eventUnsub) eventUnsub();
+  encoreSet.clear(); oneMoreSet.clear(); renderLists();
 
-  eventUnsub = db.collection('events').doc(eventId).onSnapshot(snap=>{
-    const d = snap.data()||{};
-    const prevOpen = isVotingOpen;
-    const prevRound = roundId;
+  eventUnsub = db.collection('events').doc(eventId).onSnapshot(async snap=>{
+    const d=snap.data()||{};
+    const curSinger = (d.currentSingerName||'').trim();
+    nowHero.textContent = curSinger ? curSinger : 'Next up soon…';
 
-    roundId = d.roundId || null;
-    isVotingOpen = !!d.isVotingOpen;
+    const isOpen = !!d.isVotingOpen;
+    const roundId = d.roundId || null;
 
-    // Show current singer while voting is open
-    nowSingerEl.textContent = d.currentSingerName || 'Waiting for singer…';
-    nowSongEl.textContent   = d.currentSong ? String(d.currentSong) : '';
+    roundBadge.textContent = roundId || '—';
+    statusEl.textContent = isOpen ? 'Voting Open' : 'Voting Closed';
 
-    // When a round transitions from open -> closed, decide and update columns
-    if (prevOpen && !isVotingOpen && roundId){
-      onRoundClosed(eventId, roundId, d.currentSingerName || '', d.currentSong || '');
+    // When voting flips from open -> closed, compute that round’s result and update columns
+    if (lastIsVotingOpen && !isOpen && roundId) {
+      await tallyRoundAndApply(roundId, curSinger);
     }
 
-    // Live voter count not shown here; no need to listen if you don’t want it.
-    if (roundId){
-      // optional: keep a votes listener if you later want live stats
-      if (votesUnsub) { votesUnsub(); votesUnsub=null; }
-    } else {
-      if (votesUnsub) { votesUnsub(); votesUnsub=null; }
-    }
+    lastIsVotingOpen = isOpen;
+    lastRoundId = roundId;
   }, console.error);
 }
 
-/* When a round closes → compute outcome and place/move/remove entry */
-async function onRoundClosed(eventId, rid, singerName, song){
-  if (processedRounds.has(rid)) return; // avoid double-processing
-  processedRounds.add(rid);
-
+/* Tally one round from votes and update columns */
+async function tallyRoundAndApply(roundId, singerNameFromEvent){
   try{
     const votesSnap = await db.collection('events').doc(eventId)
-                              .collection('rounds').doc(rid)
-                              .collection('votes').get();
+      .collection('rounds').doc(roundId).collection('votes').get();
+
     let enc=0, one=0, neg=0;
     votesSnap.forEach(doc=>{
-      const c = (doc.data()||{}).choice;
-      if (c==='encore') enc++;
-      else if (c==='one_more') one++;
-      else if (c==='next_time') neg++;
+      const v=(doc.data()||{}).choice;
+      if(v==='encore') enc++;
+      else if(v==='one_more') one++;
+      else if(v==='next_time') neg++;
     });
 
-    const canonical = canonicalKey(singerName);
-    const outcome = decide(enc, one, neg); // 'encore' | 'another' | 'maybe'
+    // winner (strict max; ties do nothing)
+    const max = Math.max(enc,one,neg);
+    const encWin = (enc===max && enc>one && enc>neg);
+    const oneWin = (one===max && one>enc && one>neg);
+    const negWin = (neg===max && neg>enc && neg>one);
 
-    if (outcome === 'encore'){
-      moveTo(encoreList, encoreMap, canonical, singerName, song);
-      removeFrom(anotherMap);
-    } else if (outcome === 'another'){
-      moveTo(anotherList, anotherMap, canonical, singerName, song);
-      removeFrom(encoreMap);
-    } else {
-      // maybe another time → remove from both
-      removeFrom(encoreMap);
-      removeFrom(anotherMap);
+    // Prefer name from event doc (host sets the current singer there)
+    const name = (singerNameFromEvent||'').trim();
+    if(!name) { renderLists(); return; }
+
+    if (encWin){
+      // Move into Encore set
+      oneMoreSet.delete(name);
+      encoreSet.add(name);
+    } else if (oneWin){
+      // Add to Another Shot only if not already Encore
+      if (!encoreSet.has(name)) oneMoreSet.add(name);
+    } else if (negWin){
+      // Remove from both columns
+      encoreSet.delete(name); oneMoreSet.delete(name);
     }
-
-  } catch(e){
-    console.error('onRoundClosed error:', e);
-  }
-
-  // Clear the header when voting has closed and result is placed.
-  nowSingerEl.textContent = 'Waiting for singer…';
-  nowSongEl.textContent = '';
-}
-
-/* Helpers */
-function canonicalKey(name){
-  return String(name||'').toLowerCase().trim().replace(/[^\w]+/g,'-').replace(/(^-|-$)/g,'');
-}
-function decide(enc, one, neg){
-  // If Encore ties (or beats) One More and Maybe → Encore wins
-  // If One More beats (strictly) Encore and >= Maybe → Another Shot
-  // If Maybe is strictly top → treat as "maybe" (remove)
-  const max = Math.max(enc,one,neg);
-  if (enc === max && enc >= one) return 'encore';
-  if (one === max && one > enc) return 'another';
-  if (neg === max) return 'maybe';
-  // default fallbacks
-  if (enc >= one) return 'encore';
-  if (one > enc) return 'another';
-  return 'maybe';
-}
-function moveTo(listEl, map, key, name, song){
-  // If already exists in the target, just update its text
-  let li = map.get(key);
-  if (!li){
-    li = document.createElement('li');
-    li.innerHTML = `
-      <div style="min-width:0">
-        <div class="who"></div>
-        <div class="song"></div>
-      </div>
-    `;
-    map.set(key, li);
-    listEl.appendChild(li);
-  } else {
-    // Ensure it sits at the end (latest results at bottom)
-    listEl.appendChild(li);
-  }
-  li.querySelector('.who').textContent  = name || '(unknown singer)';
-  li.querySelector('.song').textContent = song || '';
-}
-function removeFrom(map){
-  return (key)=>{
-    const li = map.get(key);
-    if (li && li.parentNode) li.parentNode.removeChild(li);
-    map.delete(key);
+    renderLists();
+  }catch(e){
+    // best-effort; keep page alive
+    console.error('Board tally error', e);
   }
 }
+
+/* Buttons */
+$('refreshBtn').addEventListener('click', renderLists);
+$('clearBtn').addEventListener('click', ()=>{
+  encoreSet.clear(); oneMoreSet.clear(); renderLists();
+});
 </script>
 </body>
 </html>
