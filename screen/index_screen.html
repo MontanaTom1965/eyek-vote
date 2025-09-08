@@ -14,7 +14,6 @@
     .main{padding:18px}
     .grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
     .card{background:#1b1430;border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:16px;box-shadow:0 10px 30px rgba(0,0,0,.45)}
-    .label{opacity:.85;font-size:.95rem}
     .big{font-size:1.1rem;font-weight:800;margin-bottom:10px}
     .tally{display:grid;grid-template-columns:1fr 80px 100px;gap:10px;align-items:center;margin:10px 0}
     .bar{height:16px;border-radius:999px;background:#241a3f;overflow:hidden}
@@ -24,13 +23,11 @@
     .neg{background:linear-gradient(180deg,#ffc2d1,#ff4971)}
     .banner{position:fixed;left:0;right:0;bottom:0;background:rgba(0,0,0,.6);backdrop-filter:blur(6px);padding:14px 20px;display:flex;justify-content:space-between;align-items:center}
     .banner .result{font-size:1.4rem;font-weight:900}
-    .status{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-    .status .on{color:#c7ffbf}.status .off{color:#ffc5c5}
     .overlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:radial-gradient(ellipse at center, rgba(255,239,194,.2), rgba(0,0,0,.85) 60%);z-index:9999}
-    .overlay.show{display:flex;animation:fadeIn .35s ease}
+    .overlay.show{display:flex;animation:fadeIn .3s ease}
     @keyframes fadeIn{from{opacity:0}to{opacity:1}}
-    .overlayText{font-size:18vw;line-height:1;font-weight:1000;letter-spacing:.02em;background:linear-gradient(180deg,#fff7d0,var(--gold));-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:0 0 24px rgba(234,186,84,.35)}
-    .sub{font-size:2.6vw;opacity:.9;text-align:center;margin-top:1rem}
+    .countNum{font-size:22vw;line-height:1;font-weight:1000;letter-spacing:.02em;background:linear-gradient(180deg,#fff7d0,var(--gold));-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:0 0 24px rgba(234,186,84,.35)}
+    .countSub{font-size:3vw;opacity:.9;text-align:center;margin-top:1rem}
     @media (max-width:960px){ .grid{grid-template-columns:1fr} }
   </style>
 
@@ -42,11 +39,10 @@
 <body>
   <header>
     <h1>🎤 Earn Your Encore Karaoke • Live Screen</h1>
-    <div class="status">
-      <div>Event: <span id="eventBadge" class="pill">—</span></div>
-      <div>Round: <span id="roundBadge" class="pill">—</span></div>
-      <div>Status: <span id="status" class="pill">loading…</span></div>
-      <div>Total Voters: <span id="totalVoters" class="pill">0</span></div>
+    <div>
+      <span class="pill" id="eventBadge">—</span>
+      <span class="pill" id="roundBadge">—</span>
+      <span class="pill" id="status">loading…</span>
     </div>
   </header>
 
@@ -55,6 +51,7 @@
       <div class="label">Event Override (optional)</div>
       <input id="eventId" placeholder="Auto-selected from Host · override if needed" style="width:420px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:#120c22;color:#fff;padding:10px" />
       <span class="pill" style="margin-left:8px">Audience: vote.earnyourencorekaraoke.com/vote/index.html</span>
+      <span class="pill" style="margin-left:8px">Click screen once to enable sound ▶️</span>
     </div>
 
     <div class="grid">
@@ -90,15 +87,17 @@
     <div class="pill" id="percentages">—</div>
   </div>
 
-  <div class="overlay" id="encoreOverlay">
+  <!-- Countdown overlay + audio -->
+  <div class="overlay" id="countOverlay">
     <div style="text-align:center">
-      <div class="overlayText">ENCORE!</div>
-      <div class="sub">You earned it 🎉</div>
+      <div class="countNum" id="countNum">30</div>
+      <div class="countSub">Cast your vote now at vote.earnyourencorekaraoke.com/vote</div>
     </div>
   </div>
+  <audio id="countAudio" preload="auto" src="https://vote.earnyourencorekaraoke.com/vote/quiz-countdown.mp3"></audio>
 
 <script>
-/* Firebase init (your config) */
+/* Firebase init */
 const firebaseConfig = {
   apiKey: "AIzaSyDGbC08WxruYIDPhZSlDlU-7Kzq-7mHENk",
   authDomain: "eyek-vote.firebaseapp.com",
@@ -116,15 +115,16 @@ const eventInput = $('eventId');
 const eventBadge = $('eventBadge');
 const roundBadge = $('roundBadge');
 const statusEl = $('status');
-const totalVotersEl = $('totalVoters');
 const encCountEl = $('encCount'), oneCountEl = $('oneCount'), negCountEl = $('negCount');
 const encFill = $('encFill'), oneFill = $('oneFill'), negFill = $('negFill');
 const percentagesEl = $('percentages'), resultText = $('resultText');
-const overlay = $('encoreOverlay');
+const overlay = $('countOverlay'); const countNum = $('countNum'); const countAudio = $('countAudio');
 
-let eventUnsub = null, votesUnsub = null, autoEventUnsub = null;
+let eventUnsub = null, votesUnsub = null, autoEventUnsub = null, countdownTimer = null;
 let eventId = null, roundId = null, isVotingOpen = false;
-let lastClosedRoundShown = null;
+
+/* enable audio on first click (browser autoplay policy) */
+document.body.addEventListener('click', ()=>{ countAudio.play().then(()=>countAudio.pause()).catch(()=>{}); }, { once:true });
 
 eventInput.addEventListener('change', wireUp);
 eventInput.addEventListener('keyup', e=>{ if(e.key==='Enter') wireUp(); });
@@ -149,14 +149,19 @@ function wireUp(){
   eventUnsub = db.collection('events').doc(eventId).onSnapshot(snap=>{
     const d = snap.data()||{};
     const prevOpen = isVotingOpen;
-    const prevRound = roundId;
 
     roundId = d.roundId || null;
     isVotingOpen = !!d.isVotingOpen;
-
     roundBadge.textContent = roundId || '—';
     statusEl.textContent = isVotingOpen ? 'Voting Open' : 'Voting Closed';
-    statusEl.className = 'pill ' + (isVotingOpen ? 'on' : 'off');
+
+    // handle timed window
+    const vw = d.voteWindow || null;
+    if (isVotingOpen && vw && vw.openedAt && typeof vw.durationSec !== 'undefined'){
+      startCountdown(vw.openedAt.toDate().getTime(), Number(vw.durationSec||30));
+    } else {
+      stopCountdown();
+    }
 
     if (roundId){
       listenVotes(roundId);
@@ -165,11 +170,10 @@ function wireUp(){
       if (votesUnsub) { votesUnsub(); votesUnsub=null; }
     }
 
-    if (prevOpen && !isVotingOpen && roundId && lastClosedRoundShown !== roundId) {
-      setTimeout(()=>showCloseOutcome(roundId), 500);
-    }
-    if (prevRound !== roundId) {
-      hideOverlay();
+    // Show end result when host closes voting
+    if (prevOpen && !isVotingOpen && roundId) {
+      setTimeout(()=>showCloseOutcome(roundId), 300);
+      stopCountdown();
     }
   }, console.error);
 }
@@ -195,11 +199,7 @@ function updateTally(qs){
   const total = enc+one+neg;
   lastCounts = {enc,one,neg,total};
 
-  encCountEl.textContent = enc;
-  oneCountEl.textContent = one;
-  negCountEl.textContent = neg;
-  totalVotersEl.textContent = total;
-
+  encCountEl.textContent = enc; oneCountEl.textContent = one; negCountEl.textContent = neg;
   const pct = (n)=> total? Math.round(n*100/total):0;
   encFill.style.width = pct(enc)+'%';
   oneFill.style.width = pct(one)+'%';
@@ -207,8 +207,7 @@ function updateTally(qs){
   percentagesEl.textContent = total ? `Encore ${pct(enc)}% • One More ${pct(one)}% • Maybe ${pct(neg)}%` : '—';
 
   if (isVotingOpen){
-    const live = liveLeaderText(enc, one, neg);
-    resultText.textContent = total ? `Live Leader: ${live}` : 'Waiting for votes…';
+    resultText.textContent = total ? `Live Leader: ${liveLeaderText(enc, one, neg)}` : 'Waiting for votes…';
   }
 }
 
@@ -224,43 +223,40 @@ function liveLeaderText(enc,one,neg){
 }
 
 function showCloseOutcome(rid){
-  if (isVotingOpen || rid !== roundId) return;
-
   const {enc,one,neg,total} = lastCounts;
   if (!total){ resultText.textContent = 'No votes cast.'; return; }
-
   const max = Math.max(enc,one,neg);
   const winners = [];
   if (enc===max) winners.push('Encore!');
   if (one===max) winners.push('One More Shot');
   if (neg===max) winners.push('Maybe Next Time');
-
-  if (winners.length===1){
-    resultText.textContent = 'Result: ' + winners[0];
-  }else{
-    resultText.textContent = 'Result: Tie – ' + winners.join(' • ');
-  }
-
-  if (winners.length===1 && winners[0]==='Encore!'){
-    showOverlayFor15s();
-  }
-
-  lastClosedRoundShown = rid;
+  resultText.textContent = winners.length===1 ? 'Result: ' + winners[0] : 'Result: Tie – ' + winners.join(' • ');
 }
 
-function showOverlayFor15s(){
-  overlay.classList.add('show');
-  setTimeout(hideOverlay, 15000);
-}
-function hideOverlay(){
-  overlay.classList.remove('show');
-}
 function clearTally(){
   encCountEl.textContent=oneCountEl.textContent=negCountEl.textContent='0';
   encFill.style.width=oneFill.style.width=negFill.style.width='0%';
   percentagesEl.textContent='—';
   resultText.textContent='Waiting for votes…';
-  totalVotersEl.textContent='0';
+}
+
+/* ===== Countdown & Audio ===== */
+function startCountdown(openedMs, durationSec){
+  stopCountdown();
+  overlay.classList.add('show');
+  try{ countAudio.currentTime = 0; countAudio.play().catch(()=>{}); }catch(e){}
+  countdownTimer = setInterval(()=>{
+    const remain = Math.max(0, Math.round((openedMs + durationSec*1000 - Date.now())/1000));
+    countNum.textContent = remain;
+    if (remain <= 0){
+      stopCountdown();
+    }
+  }, 250);
+}
+function stopCountdown(){
+  overlay.classList.remove('show');
+  if (countdownTimer){ clearInterval(countdownTimer); countdownTimer=null; }
+  try{ countAudio.pause(); }catch(e){}
 }
 </script>
 </body>
