@@ -30,6 +30,8 @@
     .countSub{font-size:3vw;opacity:.9;text-align:center;margin-top:1rem}
     .ready{position:fixed;left:0;right:0;top:50%;transform:translateY(-50%);text-align:center;font-size:3vw;opacity:.9;display:none}
     .ready.show{display:block}
+    .soundGate{position:fixed;top:10px;left:50%;transform:translateX(-50%);background:#201637;border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:10px 14px;display:flex;gap:10px;align-items:center;z-index:10000}
+    .soundGate button{border:0;border-radius:999px;padding:8px 12px;font-weight:800;cursor:pointer;background:var(--gold);color:#000}
     @media (max-width:960px){ .grid{grid-template-columns:1fr} }
   </style>
 
@@ -48,12 +50,17 @@
     </div>
   </header>
 
+  <!-- Sound gate -->
+  <div class="soundGate" id="soundGate" style="display:none">
+    <div>🔈 Enable sound for voting</div>
+    <button id="enableSoundBtn">Enable</button>
+  </div>
+
   <div class="main">
     <div class="card" style="margin-bottom:16px">
       <div class="label">Event Override (optional)</div>
       <input id="eventId" placeholder="Auto-selected from Host · override if needed" style="width:420px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:#120c22;color:#fff;padding:10px" />
       <span class="pill" style="margin-left:8px">Audience: vote.earnyourencorekaraoke.com/vote/index.html</span>
-      <span class="pill" style="margin-left:8px">Click screen once to enable sound ▶️</span>
     </div>
 
     <div class="grid">
@@ -99,7 +106,7 @@
       <div class="countSub">Cast your vote now at vote.earnyourencorekaraoke.com/vote</div>
     </div>
   </div>
-  <audio id="countAudio" preload="auto" src="https://vote.earnyourencorekaraoke.com/vote/quiz-countdown.mp3"></audio>
+  <audio id="countAudio" preload="auto" src="https://vote.earnyourencorekaraoke.com/vote/quiz-countdown.mp3" loop></audio>
 
 <script>
 /* Firebase init */
@@ -125,12 +132,28 @@ const encFill = $('encFill'), oneFill = $('oneFill'), negFill = $('negFill');
 const percentagesEl = $('percentages'), resultText = $('resultText');
 const overlay = $('countOverlay'); const countNum = $('countNum'); const countAudio = $('countAudio');
 const readyMsg = $('readyMsg');
+const soundGate = $('soundGate'); const enableSoundBtn = $('enableSoundBtn');
 
 let eventUnsub = null, votesUnsub = null, autoEventUnsub = null, countdownTimer = null;
 let eventId = null, roundId = null, isVotingOpen = false;
+let openedAtMs = null, durationSec = 30;
 
-/* enable audio on first click (browser autoplay policy) */
-document.body.addEventListener('click', ()=>{ countAudio.play().then(()=>countAudio.pause()).catch(()=>{}); }, { once:true });
+/* Audio gate */
+function showGateIfNeeded(){
+  const ok = localStorage.getItem('sound-ok') === '1';
+  soundGate.style.display = ok ? 'none' : 'flex';
+}
+enableSoundBtn.addEventListener('click', async ()=>{
+  try{
+    await countAudio.play();
+    countAudio.pause();
+    localStorage.setItem('sound-ok','1');
+    showGateIfNeeded();
+  }catch(e){
+    alert('Please click again to enable sound.');
+  }
+});
+showGateIfNeeded();
 
 eventInput.addEventListener('change', wireUp);
 eventInput.addEventListener('keyup', e=>{ if(e.key==='Enter') wireUp(); });
@@ -161,7 +184,7 @@ function wireUp(){
     roundBadge.textContent = roundId || '—';
     statusEl.textContent = isVotingOpen ? 'Voting Open' : 'Voting Closed';
 
-    // PRE-START UI: show “Get ready” if round set but voting closed
+    // PRE-START UI
     if (roundId && !isVotingOpen){
       readyMsg.classList.add('show');
       stopCountdown();
@@ -171,11 +194,16 @@ function wireUp(){
       readyMsg.classList.remove('show');
     }
 
-    // handle timed window when voting is open
+    // Timed window (robust to pending serverTimestamp)
     const vw = d.voteWindow || null;
-    if (isVotingOpen && vw && vw.openedAt && typeof vw.durationSec !== 'undefined'){
-      startCountdown(vw.openedAt.toDate().getTime(), Number(vw.durationSec||30));
-    } else if (!isVotingOpen){
+    if (isVotingOpen){
+      // derive openedAtMs and duration even if openedAt not yet materialized
+      durationSec = Number((vw && vw.durationSec) || 30);
+      openedAtMs = (vw && vw.openedAt && vw.openedAt.toDate)
+        ? vw.openedAt.toDate().getTime()
+        : (Date.now()); // fallback to “now” so UI starts instantly
+      startCountdown(openedAtMs, durationSec);
+    } else {
       stopCountdown();
     }
 
@@ -190,7 +218,7 @@ function wireUp(){
     if (prevOpen && !isVotingOpen && roundId) {
       setTimeout(()=>showCloseOutcome(roundId), 300);
       stopCountdown();
-      readyMsg.classList.remove('show'); // once closed, hide pre-start banner
+      readyMsg.classList.remove('show');
     }
   }, console.error);
 }
@@ -258,12 +286,17 @@ function clearTally(){
 }
 
 /* ===== Countdown & Audio ===== */
-function startCountdown(openedMs, durationSec){
+function startCountdown(openedMs, duration){
   stopCountdown();
   overlay.classList.add('show');
-  try{ countAudio.currentTime = 0; countAudio.play().catch(()=>{}); }catch(e){}
+  const ok = localStorage.getItem('sound-ok') === '1';
+  if (ok){
+    try{ countAudio.currentTime = 0; countAudio.play().catch(()=>{}); }catch(e){}
+  } else {
+    showGateIfNeeded();
+  }
   countdownTimer = setInterval(()=>{
-    const remain = Math.max(0, Math.round((openedMs + durationSec*1000 - Date.now())/1000));
+    const remain = Math.max(0, Math.round((openedMs + duration*1000 - Date.now())/1000));
     countNum.textContent = remain;
     if (remain <= 0){
       stopCountdown();
