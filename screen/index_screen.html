@@ -14,7 +14,7 @@
     .main{padding:18px}
     .venueHero{font-size:3.2vw;font-weight:1000;letter-spacing:.02em;margin:0 0 12px}
     .sub{opacity:.85;margin-bottom:16px}
-    .grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px} /* 2 columns only */
     .card{background:#1b1430;border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:16px;box-shadow:0 10px 30px rgba(0,0,0,.45)}
     .big{font-size:1.1rem;font-weight:800;margin-bottom:10px}
     .tally{display:grid;grid-template-columns:1fr 80px 100px;gap:10px;align-items:center;margin:10px 0}
@@ -22,7 +22,6 @@
     .fill{height:100%;width:0;transition:width .25s ease}
     .enc{background:linear-gradient(180deg,#ffefc2,var(--gold))}
     .one{background:linear-gradient(180deg,#9fd3ff,#4aa3ff)}
-    .neg{background:linear-gradient(180deg,#ffc2d1,#ff4971)}
     .banner{position:fixed;left:0;right:0;bottom:0;background:rgba(0,0,0,.6);backdrop-filter:blur(6px);padding:14px 20px;display:flex;justify-content:space-between;align-items:center}
     .banner .result{font-size:1.4rem;font-weight:900}
     .overlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:radial-gradient(ellipse at center, rgba(255,239,194,.2), rgba(0,0,0,.85) 60%);z-index:9999}
@@ -35,9 +34,8 @@
     @media (max-width:960px){ .grid{grid-template-columns:1fr} .venueHero{font-size:7vw} }
   </style>
 
-  <!-- Firebase SDKs (compat) -->
+  <!-- Firebase (compat) -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 </head>
 <body>
@@ -51,7 +49,7 @@
 
   <div class="main">
     <div class="venueHero" id="venueHero">Welcome to …</div>
-    <div class="sub" id="audienceHint">Vote at: vote.earnyourencorekaraoke.com/vote</div>
+    <div class="sub">Vote at: vote.earnyourencorekaraoke.com/vote</div>
 
     <div class="grid">
       <div class="card">
@@ -68,14 +66,6 @@
           <div>Votes</div>
           <div id="oneCount" style="text-align:right">0</div>
           <div class="bar"><div class="fill one" id="oneFill"></div></div>
-        </div>
-      </div>
-      <div class="card">
-        <div class="big">❌ Maybe Next Time</div>
-        <div class="tally">
-          <div>Votes</div>
-          <div id="negCount" style="text-align:right">0</div>
-          <div class="bar"><div class="fill neg" id="negFill"></div></div>
         </div>
       </div>
     </div>
@@ -115,8 +105,8 @@ const db = firebase.firestore();
 const $ = id => document.getElementById(id);
 const roundBadge = $('roundBadge');
 const statusEl = $('status');
-const encCountEl = $('encCount'), oneCountEl = $('oneCount'), negCountEl = $('negCount');
-const encFill = $('encFill'), oneFill = $('oneFill'), negFill = $('negFill');
+const encCountEl = $('encCount'), oneCountEl = $('oneCount');
+const encFill = $('encFill'), oneFill = $('oneFill');
 const percentagesEl = $('percentages'), resultText = $('resultText');
 const overlay = $('countOverlay'); const countNum = $('countNum'); const countAudio = $('countAudio');
 const readyMsg = $('readyMsg'); const venueHero = $('venueHero');
@@ -140,7 +130,7 @@ function wireUpForEvent(evtId){
   if (eventUnsub) eventUnsub();
   if (votesUnsub) { votesUnsub(); votesUnsub=null; }
 
-  // Also read the venue name to show hero text
+  // Show venue name
   db.collection('events').doc(evtId).get().then(doc=>{
     const v = (doc.data()||{}).venueName || evtId || '…';
     venueHero.textContent = `Welcome to ${v}`;
@@ -155,7 +145,7 @@ function wireUpForEvent(evtId){
     roundBadge.textContent = roundId || '—';
     statusEl.textContent = isVotingOpen ? 'Voting Open' : 'Voting Closed';
 
-    // Pre-start banner
+    // Pre-start
     if (roundId && !isVotingOpen){
       readyMsg.classList.add('show');
       stopCountdown();
@@ -198,7 +188,7 @@ function listenVotes(evtId, rid){
                  .onSnapshot(updateTally, console.error);
 }
 
-let lastCounts = {enc:0,one:0,neg:0,total:0};
+let lastCounts = {enc:0,one:0,neg:0,totalShown:0};
 
 function updateTally(qs){
   let enc=0, one=0, neg=0;
@@ -206,48 +196,38 @@ function updateTally(qs){
     const v = (doc.data()||{}).choice;
     if (v==='encore') enc++;
     else if (v==='one_more') one++;
-    else if (v==='next_time') neg++;
+    else if (v==='next_time') neg++; // counted but not shown
   });
-  const total = enc+one+neg;
-  lastCounts = {enc,one,neg,total};
 
-  encCountEl.textContent = enc; oneCountEl.textContent = one; negCountEl.textContent = neg;
-  const pct = (n)=> total? Math.round(n*100/total):0;
+  const shownTotal = enc + one; // hide "Maybe" from UI math
+  lastCounts = {enc, one, neg, totalShown: shownTotal};
+
+  encCountEl.textContent = enc;
+  oneCountEl.textContent = one;
+
+  const pct = (n)=> shownTotal ? Math.round(n*100/shownTotal) : 0;
   encFill.style.width = pct(enc)+'%';
   oneFill.style.width = pct(one)+'%';
-  negFill.style.width = pct(neg)+'%';
-  percentagesEl.textContent = total ? `Encore ${pct(enc)}% • One More ${pct(one)}% • Maybe ${pct(neg)}%` : '—';
+  percentagesEl.textContent = shownTotal ? `Encore ${pct(enc)}% • One More ${pct(one)}%` : '—';
 
   if (isVotingOpen){
-    resultText.textContent = total ? `Live Leader: ${liveLeaderText(enc, one, neg)}` : 'Waiting for votes…';
+    resultText.textContent = shownTotal ? `Live Leader: ${enc>=one ? 'Encore!' : 'One More Shot'}` : 'Waiting for votes…';
   }
 }
 
-function liveLeaderText(enc,one,neg){
-  const max = Math.max(enc,one,neg);
-  const picks = [];
-  if (enc===max && max>0) picks.push('Encore!');
-  if (one===max && max>0) picks.push('One More Shot');
-  if (neg===max && max>0) picks.push('Maybe Next Time');
-  if (picks.length===0) return '—';
-  if (picks.length===1) return picks[0];
-  return 'Tied: ' + picks.join(' • ');
-}
-
 function showCloseOutcome(){
-  const {enc,one,neg,total} = lastCounts;
-  if (!total){ resultText.textContent = 'No votes cast.'; return; }
-  const max = Math.max(enc,one,neg);
-  const winners = [];
-  if (enc===max) winners.push('Encore!');
-  if (one===max) winners.push('One More Shot');
-  if (neg===max) winners.push('Maybe Next Time');
-  resultText.textContent = winners.length===1 ? 'Result: ' + winners[0] : 'Result: Tie – ' + winners.join(' • ');
+  const {enc, one, totalShown} = lastCounts;
+  if (!totalShown){ resultText.textContent = 'No votes cast.'; return; }
+  if (enc === one){
+    resultText.textContent = 'Result: Tie – Encore! • One More Shot';
+  } else {
+    resultText.textContent = 'Result: ' + (enc > one ? 'Encore!' : 'One More Shot');
+  }
 }
 
 function clearTally(){
-  encCountEl.textContent=oneCountEl.textContent=negCountEl.textContent='0';
-  encFill.style.width=oneFill.style.width=negFill.style.width='0%';
+  encCountEl.textContent=oneCountEl.textContent='0';
+  encFill.style.width=oneFill.style.width='0%';
   percentagesEl.textContent='—';
   resultText.textContent='Waiting for votes…';
 }
@@ -256,7 +236,6 @@ function clearTally(){
 let countdownTimer=null;
 function startCountdown(openedMs, duration){
   stopCountdown();
-  document.body.click(); // nudge autoplay unlock if they tap the screen
   overlay.classList.add('show');
   try{ countAudio.currentTime = 0; countAudio.play().catch(()=>{}); }catch(e){}
   countdownTimer = setInterval(()=>{
