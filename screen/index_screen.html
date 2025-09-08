@@ -35,8 +35,11 @@
 
     .banner{position:fixed;left:0;right:0;bottom:0;background:rgba(0,0,0,.6);backdrop-filter:blur(6px);padding:14px 20px;display:flex;justify-content:space-between;align-items:center}
     .banner .result{font-size:1.4rem;font-weight:900}
-    .ready{position:fixed;left:0;right:0;top:50%;transform:translateY(-50%);text-align:center;font-size:3vw;opacity:.9;display:none}
+
+    /* Next up view */
+    .ready{position:fixed;left:0;right:0;top:50%;transform:translateY(-50%);text-align:center;font-size:3.5vw;opacity:.95;display:none}
     .ready.show{display:block}
+    .nextSinger{font-weight:1000;font-size:5vw;margin-top:.4em}
 
     /* Countdown overlay */
     .overlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:radial-gradient(ellipse at center, rgba(255,239,194,.18), rgba(0,0,0,.88) 60%);z-index:9998}
@@ -86,21 +89,24 @@
     <div class="venueHero" id="venueHero">Welcome to …</div>
     <div class="now" id="nowLine">Now: —</div>
 
-    <div class="grid">
-      <div class="card">
-        <div class="big">🔥 Encore!</div>
-        <div class="tally">
-          <div>Votes</div>
-          <div id="encCount" style="text-align:right">0</div>
-          <div class="bar"><div class="fill enc" id="encFill"></div></div>
+    <!-- Wrap tallies so we can hide them in “Next up” mode -->
+    <div id="tallies">
+      <div class="grid">
+        <div class="card">
+          <div class="big">🔥 Encore!</div>
+          <div class="tally">
+            <div>Votes</div>
+            <div id="encCount" style="text-align:right">0</div>
+            <div class="bar"><div class="fill enc" id="encFill"></div></div>
+          </div>
         </div>
-      </div>
-      <div class="card">
-        <div class="big">🤔 One More Shot</div>
-        <div class="tally">
-          <div>Votes</div>
-          <div id="oneCount" style="text-align:right">0</div>
-          <div class="bar"><div class="fill one" id="oneFill"></div></div>
+        <div class="card">
+          <div class="big">🤔 One More Shot</div>
+          <div class="tally">
+            <div>Votes</div>
+            <div id="oneCount" style="text-align:right">0</div>
+            <div class="bar"><div class="fill one" id="oneFill"></div></div>
+          </div>
         </div>
       </div>
     </div>
@@ -111,8 +117,11 @@
     <div class="pill" id="percentages">—</div>
   </div>
 
-  <!-- Pre-start hint -->
-  <div class="ready" id="readyMsg">Get ready… voting will open soon!</div>
+  <!-- Next up / pre-start -->
+  <div class="ready" id="readyMsg">
+    Next up…
+    <div class="nextSinger" id="nextSingerName">—</div>
+  </div>
 
   <!-- Countdown overlay + audio -->
   <div class="overlay" id="countOverlay">
@@ -157,17 +166,15 @@ const encFill=$('encFill'), oneFill=$('oneFill');
 const percentagesEl=$('percentages'), resultText=$('resultText');
 const overlay=$('countOverlay'), countNum=$('countNum');
 const countAudio=$('countAudio'), sadHorn=$('sadHorn'), winAudio=$('winAudio');
-const readyMsg=$('readyMsg'), venueHero=$('venueHero'), nowLine=$('nowLine');
+const readyMsg=$('readyMsg'), nextSingerName=$('nextSingerName'), venueHero=$('venueHero'), nowLine=$('nowLine');
 const rf=$('resultFlash'), rfTitle=$('rfTitle'), rfSub=$('rfSub');
 const soundBar=$('screenSoundBar'), soundBtn=$('screenEnableSoundBtn');
 const confettiCanvas = $('confettiCanvas');
 const ctx = confettiCanvas.getContext('2d');
+const talliesWrap = document.getElementById('tallies');
 
 /* Resize canvas */
-function sizeCanvas(){
-  confettiCanvas.width = window.innerWidth;
-  confettiCanvas.height = window.innerHeight;
-}
+function sizeCanvas(){ confettiCanvas.width = window.innerWidth; confettiCanvas.height = window.innerHeight; }
 sizeCanvas(); window.addEventListener('resize', sizeCanvas);
 
 function hideSoundBar(){ soundBar.style.display='none'; }
@@ -187,6 +194,7 @@ let eventUnsub=null, votesUnsub=null, autoEventUnsub=null, countdownTimer=null;
 let eventId=null, roundId=null, isVotingOpen=false;
 let lastCounts={enc:0,one:0,neg:0,total:0};
 let lastSinger='', lastSong='';
+let postCloseTimer=null;
 
 /* Follow host's current event */
 autoEventUnsub = db.collection('app').doc('state').onSnapshot(s=>{
@@ -220,24 +228,21 @@ function wireEvent(evtId){
     roundBadge.textContent = roundId || '—';
     statusEl.textContent = isVotingOpen ? 'Voting Open' : 'Voting Closed';
 
-    // Pre-start banner
+    // Pre-start (Next up…) when round exists but not open
     if (roundId && !isVotingOpen){
-      readyMsg.classList.add('show');
+      enterNextUpMode(lastSinger);
       stopCountdown();
-      clearTally();
-      resultText.textContent='Waiting for votes…';
-      hideResultFlash();
-      confettiStop();
-    } else {
-      readyMsg.classList.remove('show');
+      // don't clear tallies here if we're still inside the 45s display window (handled by timer)
     }
 
     // Countdown & music
     const vw=d.voteWindow||null;
     if(isVotingOpen && vw){
+      if (postCloseTimer){ clearTimeout(postCloseTimer); postCloseTimer=null; } // abort pending next-up switch if voting re-opens
       const openedAt = (vw.openedAt && vw.openedAt.toDate) ? vw.openedAt.toDate().getTime() : Date.now();
       const dur = Number(vw.durationSec||30);
       startCountdown(openedAt, dur);
+      exitNextUpMode(); // while actively voting, show tallies
     } else if(!isVotingOpen){
       stopCountdown();
     }
@@ -250,9 +255,17 @@ function wireEvent(evtId){
       if(votesUnsub){ votesUnsub(); votesUnsub=null; }
     }
 
-    // Show full-screen result when host closes
+    // When host closes voting: show result flash, keep results visible ~45s, then switch to Next up…
     if (wasOpen && !isVotingOpen && roundId){
-      setTimeout(()=>showFinalResult(), 250);
+      setTimeout(()=>showFinalResult(), 200);
+      if (postCloseTimer){ clearTimeout(postCloseTimer); }
+      postCloseTimer = setTimeout(()=>{
+        // After ~45s, clear results UI and show Next up…
+        hideResultFlash();
+        confettiStop();
+        clearTally();
+        enterNextUpMode(''); // text will update when host sets next singer
+      }, 45000);
     }
   }, console.error);
 }
@@ -290,16 +303,18 @@ function updateTally(qs){
   }
 }
 
-/* Countdown & audio */
+/* Countdown & audio (starts at true 30) */
 function startCountdown(openedMs, duration){
   stopCountdown();
   overlay.classList.add('show');
+  countNum.textContent = duration; // force initial 30
   // Start quiz music if unlocked
   if(localStorage.getItem('screen-sound-ok')==='1'){
     try{ countAudio.currentTime=0; countAudio.play().catch(()=>{});}catch(e){}
   }
   countdownTimer = setInterval(()=>{
-    const remain = Math.max(0, Math.round((openedMs + duration*1000 - Date.now())/1000));
+    const elapsed = Math.floor((Date.now() - openedMs)/1000);
+    const remain = Math.max(0, duration - elapsed);
     countNum.textContent = remain;
     if (remain <= 0){ stopCountdown(); }
   }, 200);
@@ -332,7 +347,7 @@ function showResultFlash(mode, singer){
   rfSub.textContent=sub;
   rf.classList.add('show');
 
-  // Auto hide after a few seconds (tweak if you want manual dismiss)
+  // Auto hide flash after 5s (results remain visible below for ~45s)
   setTimeout(()=>hideResultFlash(), 5000);
 }
 function hideResultFlash(){ rf.classList.remove('show'); }
@@ -361,82 +376,24 @@ function showFinalResult(){
   }
 }
 
+/* Next Up mode helpers */
+function enterNextUpMode(name){
+  talliesWrap.style.display = 'none';
+  readyMsg.classList.add('show');
+  nextSingerName.textContent = name ? name : '—';
+  resultText.textContent = 'Waiting for votes…';
+  percentagesEl.textContent = '—';
+}
+function exitNextUpMode(){
+  readyMsg.classList.remove('show');
+  talliesWrap.style.display = 'block';
+}
+
 /* Helpers */
 function clearTally(){
   encCountEl.textContent=oneCountEl.textContent='0';
   encFill.style.width=oneFill.style.width='0%';
   percentagesEl.textContent='—';
-  resultText.textContent='Waiting for votes…';
-}
-
-/* Simple confetti system */
-let confettiParticles = [];
-let confettiRAF = null;
-let confettiRunning = false;
-
-function confettiStart(){
-  if(confettiRunning) return;
-  confettiRunning = true;
-  confettiCanvas.style.display = 'block';
-  confettiParticles = [];
-  const W = confettiCanvas.width, H = confettiCanvas.height;
-
-  const colors = ['#ffffff','#ffec99','#63e6be','#74c0fc','#b197fc','#ffa8a8','#ffd43b','#69db7c'];
-  const count = Math.min(300, Math.floor((W*H)/9000)); // scale by screen
-
-  for(let i=0;i<count;i++){
-    confettiParticles.push({
-      x: Math.random()*W,
-      y: -20 - Math.random()*H*0.5,
-      r: 4 + Math.random()*5,
-      vx: -2 + Math.random()*4,
-      vy: 2 + Math.random()*3,
-      rot: Math.random()*Math.PI*2,
-      vr: (-0.2 + Math.random()*0.4),
-      color: colors[Math.floor(Math.random()*colors.length)],
-      alpha: 0.8 + Math.random()*0.2
-    });
-  }
-  confettiLoop();
-
-  // stop after 6s
-  setTimeout(confettiStop, 6000);
-}
-
-function confettiStop(){
-  confettiRunning = false;
-  if(confettiRAF){ cancelAnimationFrame(confettiRAF); confettiRAF=null; }
-  confettiCanvas.style.display = 'none';
-}
-
-function confettiLoop(){
-  if(!confettiRunning) return;
-  const W = confettiCanvas.width, H = confettiCanvas.height;
-  ctx.clearRect(0,0,W,H);
-
-  for(const p of confettiParticles){
-    p.x += p.vx;
-    p.y += p.vy;
-    p.rot += p.vr;
-    p.vy += 0.02; // gravity
-
-    // wrap around sides
-    if(p.x < -20) p.x = W+20;
-    if(p.x > W+20) p.x = -20;
-
-    // draw rectangle like fluttering paper
-    ctx.save();
-    ctx.globalAlpha = p.alpha;
-    ctx.translate(p.x, p.y);
-    ctx.rotate(p.rot);
-    ctx.fillStyle = p.color;
-    ctx.fillRect(-p.r, -p.r*0.6, p.r*2, p.r*1.2);
-    ctx.restore();
-  }
-
-  // drop offscreen cleanup
-  confettiParticles = confettiParticles.filter(p=>p.y < H+40);
-  confettiRAF = requestAnimationFrame(confettiLoop);
 }
 </script>
 </body>
