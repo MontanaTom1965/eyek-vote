@@ -22,6 +22,7 @@
     .btn-blue { background:var(--blue); color:#fff; }
     .btn-gold { background:var(--gold); color:#000; }
     .btn-red  { background:#ff4c61; color:#fff; }
+    .small { font-size:.9rem }
     .muted { opacity:.85; font-size:.92rem; }
     .divider { height:1px; background:rgba(255,255,255,.12); margin:14px 0; }
     .pill { display:inline-block; padding:6px 10px; border-radius:999px; background:#271c44; }
@@ -29,7 +30,6 @@
     .singer .name { font-weight:800; }
     .singer .song { font-size:.9rem; opacity:.9 }
     .singer .mini { display:flex; gap:6px }
-    .small { font-size:.9rem }
     .topline { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
     .topline .path { opacity:.8; }
 
@@ -68,7 +68,7 @@
       </div>
       <div id="singersList"></div>
       <div class="divider"></div>
-      <div class="muted small">Tip: Click “Set Current” next to a singer to start a new round and open voting.</div>
+      <div class="muted small">Tip: Click “Set Current” to push the singer & song to the event. Voting starts only when you press <b>Start Voting!</b></div>
     </aside>
 
     <!-- RIGHT: Controls -->
@@ -81,7 +81,7 @@
               <input id="hostEventId" placeholder="e.g. The Raven – Bigfork" />
               <button class="btn btn-blue" id="pickVenueBtn" title="Choose prior venue">Pick</button>
             </div>
-            <div class="muted small" style="margin-top:6px">Use the <b>venue name</b>. We’ll save it to your venue list.</div>
+            <div class="muted small" style="margin-top:6px">Use the <b>venue name</b>. We’ll also save it to your venue list.</div>
           </div>
           <div>
             <label>Tonight’s PIN</label>
@@ -110,7 +110,7 @@
 
         <div style="margin-top:10px">
           <button class="btn btn-blue" id="saveKJBtn">Save KJ / Venue Info</button>
-          <span class="muted small">Saves to event and (if new) adds venue & KJ to your lists.</span>
+          <span class="muted small">Saves to the event and (if new) adds venue & KJ to your lists.</span>
         </div>
       </div>
 
@@ -128,16 +128,16 @@
         </div>
         <div style="display:flex; gap:8px; margin-top:10px; flex-wrap:wrap">
           <button class="btn btn-blue" id="addSingerBtn">Add/Update Singer in List</button>
-          <!-- Removed: Set Current + Open Voting (you’ll click from the sidebar instead) -->
+          <!-- No Set Current button here; you use the sidebar buttons -->
         </div>
 
         <div class="divider"></div>
 
-        <!-- Timed voting controls -->
+        <!-- Voting controls -->
         <div style="display:flex; gap:8px; flex-wrap:wrap">
-          <button class="btn btn-blue" id="start30Btn">Start 30s Voting + Sound</button>
+          <button class="btn btn-blue" id="startVoteBtn">Start Voting!</button>
           <button class="btn btn-blue" id="extend15Btn">Extend +15s</button>
-          <button class="btn btn-red"  id="endNowBtn">End Voting Now</button>
+          <button class="btn btn-red"  id="endVoteBtn">End Voting!</button>
         </div>
 
         <div id="hostMsg" class="muted" style="margin-top:10px"></div>
@@ -217,7 +217,6 @@
     const singersList = $('singersList');
 
     function toast(msg){ hostMsg.textContent = msg; }
-
     function canonicalKey(name){
       return String(name||'').toLowerCase().trim().replace(/[^\w]+/g,'-').replace(/(^-|-$)/g,'');
     }
@@ -437,8 +436,8 @@
             </div>
           `;
           row.querySelector('button').onclick = async (e)=>{
-            // Clicking "Set Current" from the sidebar is the ONLY way to start a round
-            await setCurrentAndOpen(e.target.getAttribute('data-name')||'', e.target.getAttribute('data-song')||'');
+            // ONLY set current; DO NOT open voting here
+            await setCurrentOnly(e.target.getAttribute('data-name')||'', e.target.getAttribute('data-song')||'');
           };
           singersList.appendChild(row);
         });
@@ -452,52 +451,52 @@
     /* =========================
        Current + Voting window
        ========================= */
-    // Note: No top-form Set Current button. Only sidebar action calls this.
-    async function setCurrentAndOpen(name, song){
+    async function setCurrentOnly(name, song){
       const ref = eventRef(); if (!ref) return;
       if (!name){ toast('⚠️ Pick a singer from the left.'); return; }
       const newRound = new Date().toISOString();
       try {
+        // Set round & current singer; keep voting CLOSED until Start Voting!
         await ref.set({
           currentSingerName: name,
           currentSong: song || '',
           roundId: newRound,
-          isVotingOpen: true,
-          roundOpenedAt: firebase.firestore.FieldValue.serverTimestamp(),
-          voteWindow: firebase.firestore.FieldValue.delete(),
+          isVotingOpen: false,                    // <- stays closed
+          voteWindow: firebase.firestore.FieldValue.delete(), // clear any old window
           updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
 
-        // Touch singer doc so it stays fresh in the list
+        // touch singer doc to keep it fresh in list
         const singerId = canonicalKey(name) || 'singer';
         await ref.collection('singers').doc(singerId).set({
           name, lastSong: song || '', updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
 
-        toast(`✅ Now singing: ${name}. Voting opened.`);
+        toast(`🎶 Current: ${name}. Ready to start voting.`);
       } catch(e){ console.error(e); toast('❌ Error setting current singer.'); }
     }
 
-    document.getElementById('start30Btn').addEventListener('click', start30s);
+    document.getElementById('startVoteBtn').addEventListener('click', startVoting);
     document.getElementById('extend15Btn').addEventListener('click', extend15);
-    document.getElementById('endNowBtn').addEventListener('click', endNow);
+    document.getElementById('endVoteBtn').addEventListener('click', endVoting);
 
     let autoCloseTimer = null;
 
-    async function start30s(){
+    async function startVoting(){
       const ref = eventRef(); if (!ref) return;
       try{
         await ref.set({
           isVotingOpen: true,
+          roundOpenedAt: firebase.firestore.FieldValue.serverTimestamp(), // guests must have verified before this
           voteWindow: {
             openedAt: firebase.firestore.FieldValue.serverTimestamp(),
             durationSec: 30,
             autoClose: true
           }
         }, { merge: true });
-        toast('⏱️ 30-second voting window started.');
+        toast('⏱️ Voting started (30s).');
         startAutoCloseWatch();
-      }catch(e){ console.error(e); toast('❌ Error starting 30s window.'); }
+      }catch(e){ console.error(e); toast('❌ Error starting voting.'); }
     }
 
     async function extend15(){
@@ -518,15 +517,12 @@
       }catch(e){ console.error(e); toast('❌ Error extending.'); }
     }
 
-    async function endNow(){
+    async function endVoting(){
       const ref = eventRef(); if (!ref) return;
       try{
-        // Close voting first
         await ref.set({ isVotingOpen:false }, { merge:true });
         toast('🛑 Voting closed.');
         clearInterval(autoCloseTimer); autoCloseTimer=null; timerHint.textContent='';
-
-        // Evaluate outcome and cleanup if "Maybe Next Time!"
         await evaluateOutcomeAndCleanup();
       }catch(e){ console.error(e); toast('❌ Error ending voting.'); }
     }
@@ -549,7 +545,6 @@
         if (remain <= 0 && vw.autoClose){
           try{ await ref.set({ isVotingOpen:false }, { merge:true }); }catch(e){}
           clearInterval(autoCloseTimer); autoCloseTimer=null; timerHint.textContent='';
-          // Auto-close → evaluate & cleanup
           await evaluateOutcomeAndCleanup();
         }
       }, 500);
@@ -608,7 +603,6 @@
           else if (c==='next_time') neg++;
         });
 
-        // Decide: if "Maybe" wins strictly → remove singer from list
         const max = Math.max(enc,one,neg);
         const maybeWins = (neg === max) && (neg > enc) && (neg > one);
 
@@ -620,7 +614,6 @@
           }catch(e){
             console.warn('could not delete singer doc', e);
           }
-          // Reflect immediately in UI
           await loadSingers();
         }
       }catch(e){
@@ -628,7 +621,7 @@
       }
     }
 
-    // Init: try to wire listener and preload singers if an event is already typed
+    // Init: if an event is already entered, wire listeners and list
     if (currentEventName()){
       wireEventListener();
       loadSingers();
