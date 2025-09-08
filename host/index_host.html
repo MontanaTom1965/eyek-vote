@@ -70,7 +70,7 @@
       </div>
       <div id="singersList"></div>
       <div class="divider"></div>
-      <div class="muted small">Click <b>Set Current</b> to choose who sings now. You’ll be prompted for <b>Artist & Song</b> (stored for data only).</div>
+      <div class="muted small">Click <b>Set Current</b> to choose who sings now. You’ll be prompted for <b>Song & Artist</b> (stored for data only).</div>
     </aside>
 
     <!-- RIGHT: Controls -->
@@ -209,12 +209,12 @@
       <h3 id="perfTitle">Set Current</h3>
       <div class="row">
         <div>
-          <label>Artist</label>
-          <input id="perfArtist" placeholder="e.g. Queen" />
-        </div>
-        <div>
           <label>Song Title</label>
           <input id="perfTitleInput" placeholder="e.g. Bohemian Rhapsody" />
+        </div>
+        <div>
+          <label>Artist</label>
+          <input id="perfArtist" placeholder="e.g. Queen" />
         </div>
       </div>
       <div class="divider"></div>
@@ -251,6 +251,24 @@
     async function setGlobalCurrentEvent(venueName){
       if (!venueName) return;
       try { await db.collection('app').doc('state').set({ currentEventId: venueName, updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true }); } catch(e){}
+    }
+
+    /* NEW: wipe singers on venue change */
+    async function wipeSingersForEvent(evtName){
+      if(!evtName) return;
+      try{
+        const ref = db.collection('events').doc(evtName);
+        const snap = await ref.collection('singers').get();
+        if (snap.empty) { singersList.innerHTML = '<div class="muted small">No singers yet.</div>'; return; }
+        const batch = db.batch();
+        snap.forEach(doc => batch.delete(doc.ref));
+        await batch.commit();
+        singersList.innerHTML = '<div class="muted small">No singers yet.</div>';
+        toast('🧹 Singer list cleared for this venue.');
+      }catch(e){
+        console.error('wipeSingersForEvent error', e);
+        toast('⚠️ Could not clear singers for this venue.');
+      }
     }
 
     /* Collapsible Setup */
@@ -311,6 +329,7 @@
             eventBadge.textContent = 'Event: ' + v.name;
             await db.collection('venues').doc(v.name).set({ name: v.name, lastUsedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true });
             await setGlobalCurrentEvent(v.name);
+            await wipeSingersForEvent(v.name);     /* NEW */
             wireEventListener(); loadSingers();
           };
           venuesList.appendChild(div);
@@ -325,6 +344,7 @@
         $('hostEventId').value = name;
         await db.collection('events').doc(name).set({ venueName: name }, { merge:true });
         eventBadge.textContent='Event: '+name; await setGlobalCurrentEvent(name);
+        await wipeSingersForEvent(name);          /* NEW */
         toast('✅ Venue added & selected.');
         $('newVenue').value=''; await loadVenues(); venueModal.style.display='none';
         wireEventListener(); loadSingers();
@@ -425,17 +445,17 @@
     }
     $('refreshSingersBtn').addEventListener('click', loadSingers);
 
-    /* Performance modal (ask for Artist & Title on Set Current) */
+    /* Performance modal (Song first, then Artist) */
     const perfModal=$('perfModal'), perfArtist=$('perfArtist'), perfTitleInput=$('perfTitleInput'), perfSaveBtn=$('perfSaveBtn'), perfCancelBtn=$('perfCancelBtn'), perfTitleEl=$('perfTitle');
     let perfSingerName='';
 
     function openPerfModal(singerName, suggestedArtist){
       perfSingerName = singerName;
       perfTitleEl.textContent = `Set Current – ${singerName}`;
-      perfArtist.value = suggestedArtist || '';
       perfTitleInput.value = '';
+      perfArtist.value = suggestedArtist || '';
       perfModal.style.display='flex';
-      setTimeout(()=>perfArtist.focus(), 50);
+      setTimeout(()=>perfTitleInput.focus(), 50); // focus Song first
     }
     function closePerfModal(){ perfModal.style.display='none'; }
 
@@ -447,25 +467,22 @@
       closePerfModal();
     });
 
-    /* Set current performance (internal performanceId; no artist shown in sidebar) */
+    /* Set current performance */
     async function setCurrentPerformance(name, artist, title){
       const ref = eventRef(); if(!ref) return;
       if(!name){ toast('⚠️ Pick a singer.'); return; }
       const performanceId = new Date().toISOString();
       try{
-        // write performance document for analytics/history
         await ref.collection('performances').doc(performanceId).set({
           performanceId, singerName:name, artist:artist||'', title:title||'',
           startedAt: firebase.firestore.FieldValue.serverTimestamp()
         }, { merge:true });
 
-        // update singer record (remember their last artist silently)
         const sid=canonicalKey(name)||'singer';
         await ref.collection('singers').doc(sid).set({
           name, defaultArtist: artist||'', updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         }, { merge:true });
 
-        // set current on the event (compat: keep roundId for other pages)
         await ref.set({
           currentSingerName:name,
           currentArtist: artist||'',
@@ -518,18 +535,18 @@
     async function endVoting(){
       const ref = eventRef(); if(!ref) return;
       try{
-        // 1) Close voting immediately
+        // close now
         await ref.set({ isVotingOpen:false }, { merge:true });
         statusBadge.textContent = 'Status: Voting Closed';
         toast('🛑 Voting closed.');
         clearInterval(autoCloseTimer); autoCloseTimer=null; timerHint.textContent='';
 
-        // 2) Delay clearing current singer so Screen can show the splash & name
+        // delay clearing singer so Screen can show splash/sounds
         setTimeout(async ()=>{
           try{
             await ref.set({ currentSingerName:'', currentArtist:'', currentTitle:'' }, { merge:true });
           }catch(e){}
-        }, 6500); // ~6.5s gives Screen time to flash + play audio
+        }, 6500);
       }catch{ toast('❌ Error ending voting.'); }
     }
 
@@ -546,8 +563,6 @@
         if (remain <= 0 && vw.autoClose){
           try{ await ref.set({ isVotingOpen:false }, { merge:true }); }catch(e){}
           clearInterval(autoCloseTimer); autoCloseTimer=null; timerHint.textContent='';
-
-          // Delay the clear here as well so the Screen can show the splash
           setTimeout(async ()=>{
             try{ await ref.set({ currentSingerName:'', currentArtist:'', currentTitle:'' }, { merge:true }); }catch(e){}
           }, 6500);
@@ -577,6 +592,7 @@
         await db.collection('venues').doc(name).set({ name, lastUsedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true });
         await setGlobalCurrentEvent(name);
         eventBadge.textContent='Event: '+name;
+        await wipeSingersForEvent(name); /* NEW */
         wireEventListener(); loadSingers();
       }catch(e){}
     }
