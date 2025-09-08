@@ -16,7 +16,7 @@
     .main { display:grid; gap:16px; }
     .card { background:#1b1430; border:1px solid rgba(255,255,255,.08); border-radius:16px; padding:16px; box-shadow:0 8px 24px rgba(0,0,0,.4); }
     label { display:block; margin:8px 0 6px; }
-    input, select { width:100%; padding:12px; border-radius:10px; border:1px solid rgba(255,255,255,.15); background:#120c22; color:#fff; }
+    input { width:100%; padding:12px; border-radius:10px; border:1px solid rgba(255,255,255,.15); background:#120c22; color:#fff; }
     .row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
     .btn { padding:10px 14px; border:0; border-radius:10px; font-weight:700; cursor:pointer; }
     .btn-blue { background:var(--blue); color:#fff; }
@@ -33,7 +33,13 @@
     .topline { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
     .topline .path { opacity:.8; }
 
-    /* Modal (shared pickers) */
+    /* Collapsible Setup */
+    .setupHeader{display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:pointer}
+    .chev{transition:transform .2s ease}
+    .setupBody{display:block}
+    .setupBody.hidden{display:none}
+    .inline{display:flex;gap:8px;align-items:end}
+    /* Modals reused */
     .modal-backdrop{ position:fixed; inset:0; background:rgba(0,0,0,.55); display:none; align-items:center; justify-content:center; z-index:50; }
     .modal-backdrop.show{ display:flex; }
     .modal{ width:min(620px,calc(100% - 32px)); background:#1b1430; border:1px solid rgba(255,255,255,.12); border-radius:16px; padding:16px; }
@@ -68,51 +74,56 @@
       </div>
       <div id="singersList"></div>
       <div class="divider"></div>
-      <div class="muted small">
-        Tip: Click <b>Set Current</b> to load the singer & song. Voting starts only when you press <b>Start Voting!</b>
-      </div>
+      <div class="muted small">Click <b>Set Current</b> to load the singer & song. Then press <b>Start Voting!</b></div>
     </aside>
 
     <!-- RIGHT: Controls -->
     <main class="main">
-      <div class="card">
-        <div class="row" style="align-items:end">
-          <div>
-            <label>Event (Venue)</label>
-            <div style="display:flex;gap:8px">
-              <input id="hostEventId" placeholder="e.g. The Raven – Bigfork" />
-              <button class="btn btn-blue" id="pickVenueBtn" title="Choose prior venue">Pick</button>
-            </div>
-            <div class="muted small" style="margin-top:6px">Use the <b>venue name</b>. We’ll also save it to your venue list.</div>
-          </div>
-          <div>
-            <label>Tonight’s PIN</label>
-            <div style="display:flex;gap:8px">
-              <input id="hostPin" placeholder="1234" />
-              <button class="btn btn-gold" id="savePinBtn">Save PIN</button>
-            </div>
-          </div>
+      <!-- Collapsible Setup -->
+      <div class="card" id="setupCard">
+        <div class="setupHeader" id="setupHeader">
+          <div style="font-weight:900">Setup (Venue, KJ, PIN)</div>
+          <div class="chev" id="setupChev">▾</div>
         </div>
-
-        <div class="divider"></div>
-
-        <div class="row" style="align-items:end">
-          <div>
-            <label>KJ Name</label>
-            <div style="display:flex;gap:8px">
-              <input id="kjName" placeholder="KJ first & last" />
-              <button class="btn btn-blue" id="pickKjBtn" title="Choose prior KJ">Pick</button>
+        <div class="setupBody" id="setupBody">
+          <div class="row" style="align-items:end;margin-top:10px">
+            <div>
+              <label>Event (Venue)</label>
+              <div class="inline">
+                <input id="hostEventId" placeholder="e.g. The Raven – Bigfork" />
+                <button class="btn btn-blue" id="pickVenueBtn" title="Choose prior venue">Pick</button>
+              </div>
+              <div class="muted small" style="margin-top:6px">Use the <b>venue name</b>. Saved to your venue list.</div>
+            </div>
+            <div>
+              <label>Tonight’s PIN</label>
+              <div class="inline">
+                <input id="hostPin" placeholder="1234" />
+                <button class="btn btn-gold" id="savePinBtn">Save PIN</button>
+              </div>
             </div>
           </div>
-          <div>
-            <label>KJ Company</label>
-            <input id="kjCompany" placeholder="Company brand" />
-          </div>
-        </div>
 
-        <div style="margin-top:10px">
-          <button class="btn btn-blue" id="saveKJBtn">Save KJ / Venue Info</button>
-          <span class="muted small">Saves to the event and (if new) adds venue & KJ to your lists.</span>
+          <div class="divider"></div>
+
+          <div class="row" style="align-items:end">
+            <div>
+              <label>KJ Name</label>
+              <div class="inline">
+                <input id="kjName" placeholder="KJ first & last" />
+                <button class="btn btn-blue" id="pickKjBtn" title="Choose prior KJ">Pick</button>
+              </div>
+            </div>
+            <div>
+              <label>KJ Company</label>
+              <input id="kjCompany" placeholder="Company brand" />
+            </div>
+          </div>
+
+          <div style="margin-top:10px">
+            <button class="btn btn-blue" id="saveKJBtn">Save & Collapse</button>
+            <span class="muted small">Saves to the event and adds to your lists.</span>
+          </div>
         </div>
       </div>
 
@@ -130,7 +141,6 @@
         </div>
         <div style="display:flex; gap:8px; margin-top:10px; flex-wrap:wrap">
           <button class="btn btn-blue" id="addSingerBtn">Add/Update Singer in List</button>
-          <!-- No Set Current button here; you use the sidebar buttons -->
         </div>
 
         <div class="divider"></div>
@@ -193,9 +203,7 @@
   </div>
 
   <script>
-    /* =======================
-       Firebase initialization
-       ======================= */
+    /* Firebase init */
     const firebaseConfig = {
       apiKey: "AIzaSyDGbC08WxruYIDPhZSlDlU-7Kzq-7mHENk",
       authDomain: "eyek-vote.firebaseapp.com",
@@ -207,340 +215,205 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    /* =======================
-       Helpers & DOM bindings
-       ======================= */
+    /* DOM helpers */
     const $ = id => document.getElementById(id);
-    const hostMsg = $('hostMsg');
-    const timerHint = $('timerHint');
-    const eventBadge = $('eventBadge');
-    const roundBadge = $('roundBadge');
-    const statusBadge = $('statusBadge');
+    const hostMsg = $('hostMsg'), timerHint = $('timerHint');
+    const eventBadge = $('eventBadge'), roundBadge = $('roundBadge'), statusBadge = $('statusBadge');
     const singersList = $('singersList');
-
     function toast(msg){ hostMsg.textContent = msg; }
-    function canonicalKey(name){
-      return String(name||'').toLowerCase().trim().replace(/[^\w]+/g,'-').replace(/(^-|-$)/g,'');
-    }
+    function canonicalKey(name){ return String(name||'').toLowerCase().trim().replace(/[^\w]+/g,'-').replace(/(^-|-$)/g,''); }
     function currentEventName(){ return $('hostEventId').value.trim(); }
-    function eventRef(){
-      const id = currentEventName();
-      if (!id) { toast('⚠️ Enter Event (Venue) first.'); return null; }
-      return db.collection('events').doc(id);
-    }
+    function eventRef(){ const id=currentEventName(); if(!id){ toast('⚠️ Enter Event (Venue) first.'); return null; } return db.collection('events').doc(id); }
     async function setGlobalCurrentEvent(venueName){
       if (!venueName) return;
-      try {
-        await db.collection('app').doc('state').set({
-          currentEventId: venueName,
-          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        }, { merge:true });
-      } catch(e){ console.error('Failed to set app/state:', e); }
+      try { await db.collection('app').doc('state').set({ currentEventId: venueName, updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true }); } catch(e){}
     }
 
-    /* ==============
-       Venue Picker
-       ============== */
-    const venueModal = $('venueModal');
-    const venuesList = $('venuesList');
-    $('pickVenueBtn').addEventListener('click', async ()=>{
-      await loadVenues();
-      venueModal.classList.add('show');
+    /* Setup collapse */
+    const setupHeader=$('setupHeader'), setupBody=$('setupBody'), setupChev=$('setupChev');
+    setupHeader.addEventListener('click', ()=>{
+      const hidden = setupBody.classList.toggle('hidden');
+      setupChev.textContent = hidden ? '▸' : '▾';
     });
-    $('closeVenueBtn').addEventListener('click', ()=>venueModal.classList.remove('show'));
+    function collapseSetup(){ setupBody.classList.add('hidden'); setupChev.textContent='▸'; }
 
+    /* Venue Picker */
+    const venueModal = $('venueModal'), venuesList = $('venuesList');
+    $('pickVenueBtn').addEventListener('click', async ()=>{ await loadVenues(); venueModal.classList.add('show'); });
+    $('closeVenueBtn').addEventListener('click', ()=>venueModal.classList.remove('show'));
     async function loadVenues(){
       venuesList.innerHTML = '<div class="muted">Loading…</div>';
       try{
         const snap = await db.collection('venues').orderBy('lastUsedAt','desc').limit(200).get();
-        venuesList.innerHTML = '';
-        if (snap.empty){ venuesList.innerHTML = '<div class="muted">No venues yet. Add one below.</div>'; return; }
+        venuesList.innerHTML = snap.empty ? '<div class="muted">No venues yet. Add one below.</div>' : '';
         snap.forEach(doc=>{
           const v = doc.data();
           const div = document.createElement('div');
-          div.className = 'pick-item';
-          div.textContent = v.name;
+          div.className='pick-item'; div.textContent=v.name;
           div.onclick = async ()=>{
             $('hostEventId').value = v.name;
             venueModal.classList.remove('show');
-            await db.collection('events').doc(v.name).set({ venueName: v.name }, { merge: true });
+            await db.collection('events').doc(v.name).set({ venueName: v.name }, { merge:true });
             eventBadge.textContent = 'Event: ' + v.name;
             await setGlobalCurrentEvent(v.name);
-            wireEventListener();
-            loadSingers();
+            wireEventListener(); loadSingers();
           };
           venuesList.appendChild(div);
         });
-      }catch(e){
-        console.error(e);
-        venuesList.innerHTML = '<div class="muted">Error loading venues.</div>';
-      }
+      }catch{ venuesList.innerHTML = '<div class="muted">Error loading venues.</div>'; }
     }
-
     $('addVenueBtn').addEventListener('click', async ()=>{
-      const name = $('newVenue').value.trim();
-      if (!name) return;
-      try {
-        await db.collection('venues').doc(name).set({
-          name,
-          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-          lastUsedAt: firebase.firestore.FieldValue.serverTimestamp()
-        }, { merge: true });
+      const name = $('newVenue').value.trim(); if(!name) return;
+      try{
+        await db.collection('venues').doc(name).set({ name, createdAt: firebase.firestore.FieldValue.serverTimestamp(), lastUsedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true });
         $('hostEventId').value = name;
-        await db.collection('events').doc(name).set({ venueName: name }, { merge: true });
-        eventBadge.textContent = 'Event: ' + name;
-        await setGlobalCurrentEvent(name);
-        toast('✅ Venue added & selected.');
-        $('newVenue').value = '';
-        await loadVenues();
-        venueModal.classList.remove('show');
-        wireEventListener();
-        loadSingers();
-      } catch(e){ console.error(e); toast('❌ Error adding venue.'); }
+        await db.collection('events').doc(name).set({ venueName: name }, { merge:true });
+        eventBadge.textContent='Event: '+name; await setGlobalCurrentEvent(name);
+        toast('✅ Venue added & selected.'); $('newVenue').value=''; await loadVenues(); venueModal.classList.remove('show'); wireEventListener(); loadSingers();
+      }catch(e){ toast('❌ Error adding venue.'); }
     });
 
-    /* ============
-       KJ Picker
-       ============ */
-    const kjModal = $('kjModal');
-    const kjsList = $('kjsList');
-    $('pickKjBtn').addEventListener('click', async ()=>{
-      await loadKjs();
-      kjModal.classList.add('show');
-    });
+    /* KJ Picker */
+    const kjModal = $('kjModal'), kjsList = $('kjsList');
+    $('pickKjBtn').addEventListener('click', async ()=>{ await loadKjs(); kjModal.classList.add('show'); });
     $('closeKjBtn').addEventListener('click', ()=>kjModal.classList.remove('show'));
-
     async function loadKjs(){
       kjsList.innerHTML = '<div class="muted">Loading…</div>';
       try{
         const snap = await db.collection('kjs').orderBy('lastUsedAt','desc').limit(200).get();
-        kjsList.innerHTML = '';
-        if (snap.empty){ kjsList.innerHTML = '<div class="muted">No KJs yet. Add one below.</div>'; return; }
+        kjsList.innerHTML = snap.empty ? '<div class="muted">No KJs yet. Add one below.</div>' : '';
         snap.forEach(doc=>{
           const k = doc.data();
           const div = document.createElement('div');
-          div.className = 'pick-item';
-          div.textContent = k.company ? `${k.name} — ${k.company}` : k.name;
-          div.onclick = ()=>{
-            $('kjName').value = k.name || '';
-            $('kjCompany').value = k.company || '';
-            kjModal.classList.remove('show');
-          };
+          div.className='pick-item'; div.textContent = k.company ? `${k.name} — ${k.company}` : k.name;
+          div.onclick = ()=>{ $('kjName').value=k.name||''; $('kjCompany').value=k.company||''; kjModal.classList.remove('show'); };
           kjsList.appendChild(div);
         });
-      }catch(e){
-        console.error(e);
-        kjsList.innerHTML = '<div class="muted">Error loading KJs.</div>';
-      }
+      }catch{ kjsList.innerHTML = '<div class="muted">Error loading KJs.</div>'; }
     }
-
     $('addKjBtn').addEventListener('click', async ()=>{
-      const name = $('newKjName').value.trim();
-      const company = $('newKjCompany').value.trim();
-      if (!name) return;
+      const name = $('newKjName').value.trim(); const company = $('newKjCompany').value.trim(); if(!name) return;
       try{
-        await db.collection('kjs').doc(name).set({
-          name, company: company || '',
-          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-          lastUsedAt: firebase.firestore.FieldValue.serverTimestamp()
-        }, { merge:true });
-        $('kjName').value = name;
-        $('kjCompany').value = company;
-        toast('✅ KJ saved.');
-        $('newKjName').value = '';
-        $('newKjCompany').value = '';
-        await loadKjs();
-        kjModal.classList.remove('show');
-      }catch(e){ console.error(e); toast('❌ Error saving KJ.'); }
+        await db.collection('kjs').doc(name).set({ name, company: company||'', createdAt: firebase.firestore.FieldValue.serverTimestamp(), lastUsedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true });
+        $('kjName').value=name; $('kjCompany').value=company; toast('✅ KJ saved.'); $('newKjName').value=''; $('newKjCompany').value=''; await loadKjs(); kjModal.classList.remove('show');
+      }catch(e){ toast('❌ Error saving KJ.'); }
     });
 
-    /* ======================
-       Save PIN / KJ / Venue
-       ====================== */
+    /* Save PIN / KJ / Venue */
     $('savePinBtn').addEventListener('click', async ()=>{
-      const ref = eventRef(); if (!ref) return;
-      const p = $('hostPin').value.trim();
-      if (!p) { toast('⚠️ Enter a PIN value.'); return; }
-      try {
-        await ref.set({ activePin: p }, { merge:true });
-        toast('✅ PIN saved.');
-      } catch(e){ console.error(e); toast('❌ Error saving PIN.'); }
+      const ref = eventRef(); if(!ref) return;
+      const p = $('hostPin').value.trim(); if(!p){ toast('⚠️ Enter a PIN value.'); return; }
+      try{ await ref.set({ activePin: p }, { merge:true }); toast('✅ PIN saved.'); }catch{ toast('❌ Error saving PIN.'); }
     });
 
     $('saveKJBtn').addEventListener('click', async ()=>{
-      const ref = eventRef(); if (!ref) return;
-      const venueName = currentEventName();
-      const kjName = $('kjName').value.trim();
-      const kjCompany = $('kjCompany').value.trim();
-      try {
-        await ref.set({
-          venueName, kjName, kjCompany,
-          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        }, { merge: true });
-
-        if (venueName){
-          await db.collection('venues').doc(venueName).set({
-            name: venueName, lastUsedAt: firebase.firestore.FieldValue.serverTimestamp()
-          }, { merge: true });
-          await setGlobalCurrentEvent(venueName);
-        }
-        if (kjName){
-          await db.collection('kjs').doc(kjName).set({
-            name: kjName, company: kjCompany || '',
-            lastUsedAt: firebase.firestore.FieldValue.serverTimestamp()
-          }, { merge:true });
-        }
-
-        eventBadge.textContent = 'Event: ' + venueName;
-        toast('✅ Event/KJ info saved.');
-      } catch(e){ console.error(e); toast('❌ Error saving event info.'); }
+      const ref = eventRef(); if(!ref) return;
+      const venueName=currentEventName(); const kjName=$('kjName').value.trim(); const kjCompany=$('kjCompany').value.trim();
+      try{
+        await ref.set({ venueName, kjName, kjCompany, updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true });
+        if (venueName){ await db.collection('venues').doc(venueName).set({ name: venueName, lastUsedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true }); await setGlobalCurrentEvent(venueName); }
+        if (kjName){ await db.collection('kjs').doc(kjName).set({ name: kjName, company: kjCompany||'', lastUsedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true }); }
+        eventBadge.textContent='Event: '+venueName; toast('✅ Event/KJ info saved.'); collapseSetup();
+      }catch{ toast('❌ Error saving event info.'); }
     });
 
-    /* =================
-       Singer management
-       ================= */
+    /* Singer management */
     $('addSingerBtn').addEventListener('click', async ()=>{
-      const ref = eventRef(); if (!ref) return;
-      const name = $('singerName').value.trim();
-      const song = $('singerSong').value.trim();
-      if (!name){ toast('⚠️ Enter singer name.'); return; }
-      try {
-        const singerId = canonicalKey(name) || 'singer';
-        const now = firebase.firestore.FieldValue.serverTimestamp();
-        await ref.collection('singers').doc(singerId).set({
-          name, lastSong: song || '', updatedAt: now, createdAt: now
-        }, { merge: true });
-        toast('✅ Singer added/updated.');
-        loadSingers();
-      } catch(e){ console.error(e); toast('❌ Error adding singer.'); }
+      const ref = eventRef(); if(!ref) return;
+      const name=$('singerName').value.trim(); const song=$('singerSong').value.trim();
+      if(!name){ toast('⚠️ Enter singer name.'); return; }
+      try{
+        const id=canonicalKey(name)||'singer'; const now=firebase.firestore.FieldValue.serverTimestamp();
+        await ref.collection('singers').doc(id).set({ name, lastSong: song||'', updatedAt: now, createdAt: now }, { merge:true });
+        toast('✅ Singer added/updated.'); loadSingers();
+      }catch{ toast('❌ Error adding singer.'); }
     });
 
     async function loadSingers(){
-      const ref = eventRef(); if (!ref) return;
+      const ref = eventRef(); if(!ref) return;
       singersList.innerHTML = '<div class="muted">Loading…</div>';
       try{
-        let qs;
-        try { qs = await ref.collection('singers').orderBy('updatedAt','desc').limit(200).get(); }
-        catch { qs = await ref.collection('singers').orderBy('name').limit(200).get(); }
-        singersList.innerHTML = '';
-        if (qs.empty){ singersList.innerHTML = '<div class="muted small">No singers yet.</div>'; return; }
+        let qs; try{ qs = await ref.collection('singers').orderBy('updatedAt','desc').limit(200).get(); }catch{ qs = await ref.collection('singers').orderBy('name').limit(200).get(); }
+        singersList.innerHTML = qs.empty ? '<div class="muted small">No singers yet.</div>' : '';
         qs.forEach(doc=>{
-          const s = doc.data() || {};
-          const row = document.createElement('div');
-          row.className = 'singer';
+          const s=doc.data()||{};
+          const row=document.createElement('div'); row.className='singer';
           row.innerHTML = `
             <div style="min-width:0">
-              <div class="name">${s.name || '(no name)'}</div>
-              <div class="song">${s.lastSong ? s.lastSong : ''}</div>
+              <div class="name">${s.name||'(no name)'}</div>
+              <div class="song">${s.lastSong?s.lastSong:''}</div>
             </div>
             <div class="mini">
               <button class="btn btn-blue small" data-id="${doc.id}" data-name="${s.name||''}" data-song="${s.lastSong||''}">Set Current</button>
-            </div>
-          `;
-          row.querySelector('button').onclick = async (e)=>{
-            // ONLY set current; DO NOT open voting here
-            await setCurrentOnly(e.target.getAttribute('data-name')||'', e.target.getAttribute('data-song')||'');
-          };
+            </div>`;
+          row.querySelector('button').onclick = async (e)=>{ await setCurrentOnly(e.target.getAttribute('data-name')||'', e.target.getAttribute('data-song')||''); };
           singersList.appendChild(row);
         });
-      }catch(e){
-        console.error(e);
-        singersList.innerHTML = `<div class="muted">Error loading singers: ${e.message || e}</div>`;
-      }
+      }catch(e){ singersList.innerHTML = `<div class="muted">Error loading singers.</div>`; }
     }
     $('refreshSingersBtn').addEventListener('click', loadSingers);
 
-    /* =========================
-       Current + Voting window
-       ========================= */
+    /* Current + Voting window */
     async function setCurrentOnly(name, song){
-      const ref = eventRef(); if (!ref) return;
-      if (!name){ toast('⚠️ Pick a singer from the left.'); return; }
+      const ref = eventRef(); if(!ref) return;
+      if(!name){ toast('⚠️ Pick a singer from the left.'); return; }
       const newRound = new Date().toISOString();
-      try {
-        // Set round & current singer; keep voting CLOSED until Start Voting!
+      try{
         await ref.set({
-          currentSingerName: name,
-          currentSong: song || '',
-          roundId: newRound,
-          isVotingOpen: false,                         // <- stays closed
-          roundOpenedAt: firebase.firestore.FieldValue.delete(), // clear any prior open time
-          voteWindow: firebase.firestore.FieldValue.delete(),     // clear any prior window
+          currentSingerName:name, currentSong:song||'', roundId:newRound,
+          isVotingOpen:false, roundOpenedAt: firebase.firestore.FieldValue.delete(),
+          voteWindow: firebase.firestore.FieldValue.delete(),
           updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        }, { merge: true });
-
-        // touch singer doc to keep it fresh in list
-        const singerId = canonicalKey(name) || 'singer';
-        await ref.collection('singers').doc(singerId).set({
-          name, lastSong: song || '', updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        }, { merge: true });
-
+        }, { merge:true });
+        const id=canonicalKey(name)||'singer';
+        await ref.collection('singers').doc(id).set({ name, lastSong:song||'', updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true });
         toast(`🎶 Current: ${name}. Ready to start voting.`);
-      } catch(e){ console.error(e); toast('❌ Error setting current singer.'); }
+      }catch{ toast('❌ Error setting current singer.'); }
     }
 
     document.getElementById('startVoteBtn').addEventListener('click', startVoting);
     document.getElementById('extend15Btn').addEventListener('click', extend15);
     document.getElementById('endVoteBtn').addEventListener('click', endVoting);
 
-    let autoCloseTimer = null;
+    let autoCloseTimer=null;
 
     async function startVoting(){
-      const ref = eventRef(); if (!ref) return;
+      const ref = eventRef(); if(!ref) return;
       try{
         await ref.set({
-          isVotingOpen: true,
-          roundOpenedAt: firebase.firestore.FieldValue.serverTimestamp(), // guests must have verified before this
-          voteWindow: {
-            openedAt: firebase.firestore.FieldValue.serverTimestamp(),
-            durationSec: 30,
-            autoClose: true
-          }
-        }, { merge: true });
-        toast('⏱️ Voting started (30s).');
-        startAutoCloseWatch();
-      }catch(e){ console.error(e); toast('❌ Error starting voting.'); }
+          isVotingOpen:true,
+          roundOpenedAt: firebase.firestore.FieldValue.serverTimestamp(),
+          voteWindow:{ openedAt: firebase.firestore.FieldValue.serverTimestamp(), durationSec:30, autoClose:true }
+        }, { merge:true });
+        toast('⏱️ Voting started (30s).'); startAutoCloseWatch();
+      }catch{ toast('❌ Error starting voting.'); }
     }
 
     async function extend15(){
-      const ref = eventRef(); if (!ref) return;
+      const ref = eventRef(); if(!ref) return;
       try{
-        const snap = await ref.get();
-        const vw = (snap.data()||{}).voteWindow || {};
-        const duration = Number(vw.durationSec||30) + 15;
-        await ref.set({
-          voteWindow: {
-            openedAt: vw.openedAt || firebase.firestore.FieldValue.serverTimestamp(),
-            durationSec: duration,
-            autoClose: !!vw.autoClose
-          }
-        }, { merge:true });
-        toast('➕ Extended by 15 seconds.');
-        startAutoCloseWatch();
-      }catch(e){ console.error(e); toast('❌ Error extending.'); }
+        const snap = await ref.get(); const vw=(snap.data()||{}).voteWindow||{};
+        const duration = Number(vw.durationSec||30)+15;
+        await ref.set({ voteWindow:{ openedAt: vw.openedAt||firebase.firestore.FieldValue.serverTimestamp(), durationSec:duration, autoClose: !!vw.autoClose } }, { merge:true });
+        toast('➕ Extended by 15 seconds.'); startAutoCloseWatch();
+      }catch{ toast('❌ Error extending.'); }
     }
 
     async function endVoting(){
-      const ref = eventRef(); if (!ref) return;
+      const ref = eventRef(); if(!ref) return;
       try{
         await ref.set({ isVotingOpen:false }, { merge:true });
-        toast('🛑 Voting closed.');
-        clearInterval(autoCloseTimer); autoCloseTimer=null; timerHint.textContent='';
+        toast('🛑 Voting closed.'); clearInterval(autoCloseTimer); autoCloseTimer=null; timerHint.textContent='';
         await evaluateOutcomeAndCleanup();
-      }catch(e){ console.error(e); toast('❌ Error ending voting.'); }
+      }catch{ toast('❌ Error ending voting.'); }
     }
 
     function startAutoCloseWatch(){
       clearInterval(autoCloseTimer); autoCloseTimer=null;
       autoCloseTimer = setInterval(async ()=>{
-        const ref = eventRef(); if (!ref) return;
-        const snap = await ref.get();
-        const d = snap.data()||{};
-        const vw = d.voteWindow || null;
-        if (!vw || !d.isVotingOpen) {
-          clearInterval(autoCloseTimer); autoCloseTimer=null; timerHint.textContent='';
-          return;
-        }
+        const ref = eventRef(); if(!ref) return;
+        const snap = await ref.get(); const d=snap.data()||{}; const vw=d.voteWindow||null;
+        if(!vw || !d.isVotingOpen){ clearInterval(autoCloseTimer); autoCloseTimer=null; timerHint.textContent=''; return; }
         const openedAt = (vw.openedAt && vw.openedAt.toDate) ? vw.openedAt.toDate().getTime() : Date.now();
         const endMs = openedAt + (Number(vw.durationSec||30)*1000);
         const remain = Math.max(0, Math.round((endMs - Date.now())/1000));
@@ -553,82 +426,45 @@
       }, 500);
     }
 
-    /* ==================
-       Live badges
-       ================== */
-    let eventUnsub = null;
+    /* Live badges */
+    let eventUnsub=null;
     function wireEventListener(){
-      if (eventUnsub) eventUnsub();
-      const ref = eventRef(); if (!ref) return;
+      if(eventUnsub) eventUnsub();
+      const ref = eventRef(); if(!ref) return;
       eventUnsub = ref.onSnapshot(snap=>{
-        const d = snap.data()||{};
+        const d=snap.data()||{};
         eventBadge.textContent = 'Event: ' + (d.venueName || currentEventName() || '—');
         roundBadge.textContent = 'Round: ' + (d.roundId || '—');
         statusBadge.textContent = 'Status: ' + (d.isVotingOpen ? 'Voting Open' : 'Voting Closed');
-      }, err=>console.error(err));
+      }, console.error);
     }
 
     $('hostEventId').addEventListener('keyup', e=>{ if (e.key==='Enter'){ handleEventChanged(); }});
     $('hostEventId').addEventListener('change', handleEventChanged);
-
     async function handleEventChanged(){
-      const name = currentEventName();
-      if (!name) return;
-      try {
+      const name=currentEventName(); if(!name) return;
+      try{
         await db.collection('events').doc(name).set({ venueName: name }, { merge:true });
-        await db.collection('venues').doc(name).set({
-          name, lastUsedAt: firebase.firestore.FieldValue.serverTimestamp()
-        }, { merge:true });
-        await setGlobalCurrentEvent(name);
-        eventBadge.textContent = 'Event: ' + name;
-        wireEventListener();
-        loadSingers();
-      }catch(e){ console.error(e); }
+        await db.collection('venues').doc(name).set({ name, lastUsedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true });
+        await setGlobalCurrentEvent(name); eventBadge.textContent='Event: '+name; wireEventListener(); loadSingers();
+      }catch(e){}
     }
 
-    /* ==========================
-       Outcome tally + cleanup
-       ========================== */
+    /* Outcome tally + Maybe cleanup */
     async function evaluateOutcomeAndCleanup(){
-      const ref = eventRef(); if (!ref) return;
+      const ref = eventRef(); if(!ref) return;
       try{
-        const evt = (await ref.get()).data() || {};
-        const rid = evt.roundId || null;
-        const singerName = evt.currentSingerName || '';
-        if (!rid || !singerName) return;
-
+        const evt=(await ref.get()).data()||{}; const rid=evt.roundId||null; const singerName=evt.currentSingerName||'';
+        if(!rid || !singerName) return;
         const votesSnap = await ref.collection('rounds').doc(rid).collection('votes').get();
-        let enc=0, one=0, neg=0;
-        votesSnap.forEach(doc=>{
-          const c = (doc.data()||{}).choice;
-          if (c==='encore') enc++;
-          else if (c==='one_more') one++;
-          else if (c==='next_time') neg++;
-        });
-
-        const max = Math.max(enc,one,neg);
-        const maybeWins = (neg === max) && (neg > enc) && (neg > one);
-
-        if (maybeWins){
-          const sid = canonicalKey(singerName) || 'singer';
-          try{
-            await ref.collection('singers').doc(sid).delete();
-            toast(`🧹 Removed "${singerName}" from the list (Maybe Next Time!).`);
-          }catch(e){
-            console.warn('could not delete singer doc', e);
-          }
-          await loadSingers();
-        }
-      }catch(e){
-        console.error('evaluateOutcomeAndCleanup error', e);
-      }
+        let enc=0,one=0,neg=0; votesSnap.forEach(doc=>{ const c=(doc.data()||{}).choice; if(c==='encore') enc++; else if(c==='one_more') one++; else if(c==='next_time') neg++; });
+        const max=Math.max(enc,one,neg); const maybeWins=(neg===max)&&(neg>enc)&&(neg>one);
+        if(maybeWins){ const sid=canonicalKey(singerName)||'singer'; try{ await ref.collection('singers').doc(sid).delete(); toast(`🧹 Removed "${singerName}" from the list (Maybe Next Time!).`);}catch(e){} await loadSingers(); }
+      }catch(e){}
     }
 
     // Init
-    if (currentEventName()){
-      wireEventListener();
-      loadSingers();
-    }
+    if (currentEventName()){ wireEventListener(); loadSingers(); }
   </script>
 </body>
 </html>
