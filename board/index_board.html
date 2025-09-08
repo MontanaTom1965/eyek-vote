@@ -7,7 +7,7 @@
   <style>
     :root{
       --blue:#003e81; --gold:#eaba54; --purple:#2F0658;
-      --green:#19d36b; --gold-deep:#a8892c;
+      --green:#19d36b;
       --bg:#0b0715; --card:#1b1430; --ink:#fff;
     }
     *{box-sizing:border-box}
@@ -27,13 +27,11 @@
     .oneHead{background:linear-gradient(180deg,rgba(255,239,194,.2),rgba(234,186,84,.25));border-bottom:1px solid rgba(234,186,84,.35)}
     .list{padding:12px 14px}
     .chip{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 14px;margin:10px 0;border-radius:12px;background:#170f2a;border:1px solid rgba(255,255,255,.08);font-weight:800}
-    .chip small{opacity:.8;font-weight:600}
     .empty{opacity:.6;text-align:center;padding:18px}
 
     .footer{margin-top:18px;display:flex;gap:10px;justify-content:flex-end;opacity:.8}
     .btn{padding:10px 14px;border:0;border-radius:10px;font-weight:800;cursor:pointer}
     .btn-blue{background:var(--blue);color:#fff}
-    .btn-gold{background:var(--gold);color:#000}
     .btn-red{background:#ff4c61;color:#fff}
     @media (max-width:960px){ .grid{grid-template-columns:1fr} .nowHero{font-size:12vw} }
   </style>
@@ -96,13 +94,13 @@ const roundBadge=$('roundBadge'), statusEl=$('status');
 const nowHero=$('nowHero');
 const encList=$('encList'), oneList=$('oneList');
 
-/* Local session state (kept only while this page is open) */
+/* Local session state */
 let eventId=null, eventUnsub=null, autoEventUnsub=null;
-let encoreSet = new Set();     // names that achieved Encore
-let oneMoreSet = new Set();    // names that achieved Another Shot
+let encoreSet = new Set();
+let oneMoreSet = new Set();
 let lastIsVotingOpen=false, lastRoundId=null;
 
-/* Render helpers */
+/* Render lists (names only) */
 function renderLists(){
   const renderSet = (container, set, emptyText) => {
     container.innerHTML = '';
@@ -111,7 +109,7 @@ function renderLists(){
     }
     [...set].sort((a,b)=>a.localeCompare(b)).forEach(name=>{
       const row=document.createElement('div'); row.className='chip';
-      row.innerHTML = `<div>${name}</div><small></small>`;
+      row.textContent = name;
       container.appendChild(row);
     });
   };
@@ -144,7 +142,7 @@ function startEventWire(){
     roundBadge.textContent = roundId || '—';
     statusEl.textContent = isOpen ? 'Voting Open' : 'Voting Closed';
 
-    // When voting flips from open -> closed, compute that round’s result and update columns
+    // When voting flips from open -> closed, compute that session’s result and update columns
     if (lastIsVotingOpen && !isOpen && roundId) {
       await tallyRoundAndApply(roundId, curSinger);
     }
@@ -154,7 +152,7 @@ function startEventWire(){
   }, console.error);
 }
 
-/* Tally one round from votes and update columns */
+/* Tally and apply (names only, no artist shown) */
 async function tallyRoundAndApply(roundId, singerNameFromEvent){
   try{
     const votesSnap = await db.collection('events').doc(eventId)
@@ -168,30 +166,24 @@ async function tallyRoundAndApply(roundId, singerNameFromEvent){
       else if(v==='next_time') neg++;
     });
 
-    // winner (strict max; ties do nothing)
     const max = Math.max(enc,one,neg);
     const encWin = (enc===max && enc>one && enc>neg);
     const oneWin = (one===max && one>enc && one>neg);
     const negWin = (neg===max && neg>enc && neg>one);
 
-    // Prefer name from event doc (host sets the current singer there)
     const name = (singerNameFromEvent||'').trim();
     if(!name) { renderLists(); return; }
 
     if (encWin){
-      // Move into Encore set
       oneMoreSet.delete(name);
       encoreSet.add(name);
     } else if (oneWin){
-      // Add to Another Shot only if not already Encore
       if (!encoreSet.has(name)) oneMoreSet.add(name);
     } else if (negWin){
-      // Remove from both columns
       encoreSet.delete(name); oneMoreSet.delete(name);
     }
     renderLists();
   }catch(e){
-    // best-effort; keep page alive
     console.error('Board tally error', e);
   }
 }
