@@ -207,8 +207,8 @@ function wireEvent(evtId){
     roundId = d.roundId || null;
     isVotingOpen = !!d.isVotingOpen;
 
-    // Big singer name ONLY (no artist/song), cleared when host clears
-    lastSinger = (d.currentSingerName||'').trim();
+    // Keep last non-empty singer so result splash shows a name even if host clears it
+    if ((d.currentSingerName||'').trim()) { lastSinger = d.currentSingerName.trim(); }
     singerBig.textContent = lastSinger ? lastSinger : 'Next up soon…';
 
     roundBadge.textContent = roundId || '—';
