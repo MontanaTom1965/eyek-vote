@@ -79,7 +79,7 @@
       </div>
       <div id="singersList"></div>
       <div class="divider"></div>
-      <div class="muted small">Click <b>Set Current</b> to choose who sings now. You’ll be prompted for <b>Song & Artist</b> (stored for data only).</div>
+      <div class="muted small">Click <b>Set Current</b> to choose who sings now. You’ll be prompted for <b>Song & Artist</b> (stored for data only, not displayed to audience).</div>
     </aside>
 
     <!-- RIGHT: Controls -->
@@ -574,7 +574,7 @@
         statusBadge.textContent = 'Status: Voting Open';
         toast('⏱️ Voting started (30s).');
         scheduleHostAutoClose(closeAt);
-        startAutoCloseWatch(); // for on-screen countdown on Host
+        startAutoCloseWatch();
       }catch{ toast('❌ Error starting voting.'); }
     }
 
@@ -676,7 +676,6 @@
     }
 
     // --- Singer Directory (Owner/KJ) ---
-
     const dirModal = $('dirModal');
     const dirList = $('dirList');
     const dirSearch = $('dirSearch');
@@ -804,11 +803,6 @@
       }catch(e){ toast('❌ Error adding to event.'); }
     });
 
-    /* Voting UI wire-up */
-    $('startVoteBtn').addEventListener('click', startVoting);
-    $('extend15Btn').addEventListener('click', extend15);
-    $('endVoteBtn').addEventListener('click', endVoting);
-
     /* Live status */
     let eventUnsub=null;
     function wireEventListener(){
@@ -821,22 +815,14 @@
       }, console.error);
     }
 
+    // Init
+    $('startVoteBtn').addEventListener('click', startVoting);
+    $('extend15Btn').addEventListener('click', extend15);
+    $('endVoteBtn').addEventListener('click', endVoting);
+
     $('hostEventId').addEventListener('keyup', e=>{ if (e.key==='Enter'){ handleEventChanged(); }});
     $('hostEventId').addEventListener('change', handleEventChanged);
-    async function handleEventChanged(){
-      if(lockSetup.checked) return;
-      const name=currentEventName(); if(!name) return;
-      try{
-        await db.collection('events').doc(name).set({ venueName: name }, { merge:true });
-        await db.collection('venues').doc(name).set({ name, lastUsedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true });
-        await setGlobalCurrentEvent(name);
-        eventBadge.textContent='Event: '+name;
-        await wipeSingersForEvent(name);
-        wireEventListener(); loadSingers();
-      }catch(e){}
-    }
 
-    // Init
     if (currentEventName()){ wireEventListener(); loadSingers(); }
   </script>
 
