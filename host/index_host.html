@@ -19,6 +19,7 @@
     input,select { width:100%; padding:12px; border-radius:10px; border:1px solid rgba(255,255,255,.15); background:#120c22; color:#fff; }
     .row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
     .btn { padding:10px 14px; border:0; border-radius:10px; font-weight:700; cursor:pointer; }
+    .btn[disabled]{opacity:.5; cursor:not-allowed}
     .btn-blue { background:var(--blue); color:#fff; }
     .btn-gold { background:var(--gold); color:#000; }
     .btn-red  { background:#ff4c61; color:#fff; }
@@ -127,6 +128,7 @@
 
             <div class="lockRow">
               <label><input type="checkbox" id="lockSetup"> Lock setup (prevent accidental changes)</label>
+              <span class="muted small" id="lockHint" style="display:none">🔒 Unlock to edit or use Pick.</span>
             </div>
 
             <div style="margin-top:10px">
@@ -322,6 +324,7 @@
 
     /* Lock Setup */
     const lockSetup = $('lockSetup');
+    const lockHint = $('lockHint');
     const lockTargets = [
       'hostEventId','pickVenueBtn',
       'hostPin','savePinBtn',
@@ -337,7 +340,11 @@
       el.style.pointerEvents = disabled ? 'none' : '';
       if (disabled) el.classList.add('disabledish'); else el.classList.remove('disabledish');
     }
-    function applyLockUI(){ lockTargets.forEach(id => setDisabled(id, lockSetup.checked)); }
+    function applyLockUI(){
+      const locked = lockSetup.checked;
+      lockTargets.forEach(id => setDisabled(id, locked));
+      lockHint.style.display = locked ? 'inline' : 'none';
+    }
     lockSetup.addEventListener('change', ()=>{
       localStorage.setItem('setup-locked', lockSetup.checked ? '1' : '0');
       applyLockUI();
@@ -349,7 +356,7 @@
     /* Venue Picker */
     const venueModal = $('venueModal'), venuesList = $('venuesList');
     $('pickVenueBtn').addEventListener('click', async ()=>{
-      if(lockSetup.checked) return;
+      if(lockSetup.checked){ toast('🔒 Setup is locked. Uncheck “Lock setup” to pick a venue.'); return; }
       await loadVenues(); venueModal.style.display='flex';
     });
     $('closeVenueBtn').addEventListener('click', ()=>venueModal.style.display='none');
@@ -378,7 +385,7 @@
       }catch{ venuesList.innerHTML = '<div class="muted">Error loading venues.</div>'; }
     }
     $('addVenueBtn').addEventListener('click', async ()=>{
-      if(lockSetup.checked) return;
+      if(lockSetup.checked){ toast('🔒 Unlock Setup to add a venue.'); return; }
       const name = $('newVenue').value.trim(); if(!name) return;
       try{
         await db.collection('venues').doc(name).set({ name, createdAt: firebase.firestore.FieldValue.serverTimestamp(), lastUsedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true });
@@ -395,7 +402,7 @@
     /* KJ Picker */
     const kjModal = $('kjModal'), kjsList = $('kjsList');
     $('pickKjBtn').addEventListener('click', async ()=>{
-      if(lockSetup.checked) return;
+      if(lockSetup.checked){ toast('🔒 Setup is locked. Uncheck “Lock setup” to pick a KJ.'); return; }
       await loadKjs(); kjModal.style.display='flex';
     });
     $('closeKjBtn').addEventListener('click', ()=>kjModal.style.display='none');
@@ -415,7 +422,7 @@
       }catch{ kjsList.innerHTML = '<div class="muted">Error loading KJs.</div>'; }
     }
     $('addKjBtn').addEventListener('click', async ()=>{
-      if(lockSetup.checked) return;
+      if(lockSetup.checked){ toast('🔒 Unlock Setup to add a KJ.'); return; }
       const name = $('newKjName').value.trim(); const company = $('newKjCompany').value.trim(); if(!name) return;
       try{
         await db.collection('kjs').doc(name).set({ name, company: company||'', createdAt: firebase.firestore.FieldValue.serverTimestamp(), lastUsedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true });
@@ -426,14 +433,14 @@
 
     /* Save PIN / KJ / Venue */
     $('savePinBtn').addEventListener('click', async ()=>{
-      if(lockSetup.checked) return;
+      if(lockSetup.checked){ toast('🔒 Unlock Setup to save PIN.'); return; }
       const ref = eventRef(); if(!ref) return;
       const p = $('hostPin').value.trim(); if(!p){ toast('⚠️ Enter a PIN value.'); return; }
       try{ await ref.set({ activePin: p }, { merge:true }); toast('✅ PIN saved.'); }catch{ toast('❌ Error saving PIN.'); }
     });
 
     $('saveKJBtn').addEventListener('click', async ()=>{
-      if(lockSetup.checked) return;
+      if(lockSetup.checked){ toast('🔒 Unlock Setup to save.'); return; }
       const ref = eventRef(); if(!ref) return;
       const venueName=currentEventName(); const kjName=$('kjName').value.trim(); const kjCompany=$('kjCompany').value.trim();
       try{
@@ -549,15 +556,8 @@
 
     let autoCloseTimer=null;
     let hostCloseTimerId=null;
-
-    function clearHostCloseTimer() {
-      if (hostCloseTimerId) { clearTimeout(hostCloseTimerId); hostCloseTimerId = null; }
-    }
-    function scheduleHostAutoClose(closeAtMs) {
-      clearHostCloseTimer();
-      const delay = Math.max(0, closeAtMs - Date.now());
-      hostCloseTimerId = setTimeout(()=> { endVoting(); }, delay);
-    }
+    function clearHostCloseTimer() { if (hostCloseTimerId) { clearTimeout(hostCloseTimerId); hostCloseTimerId = null; } }
+    function scheduleHostAutoClose(closeAtMs) { clearHostCloseTimer(); const delay = Math.max(0, closeAtMs - Date.now()); hostCloseTimerId = setTimeout(()=> { endVoting(); }, delay); }
 
     async function startVoting(){
       const ref = eventRef(); if(!ref) return;
@@ -586,7 +586,6 @@
         const vw = d.voteWindow || {};
         const oldDuration = Number(vw.durationSec || 30);
         const newDuration = oldDuration + 15;
-
         const closeAt = (typeof d.voteClosesAt === 'number' ? d.voteClosesAt : Date.now()) + 15_000;
 
         await ref.set({
@@ -648,7 +647,7 @@
       }, 500);
     }
 
-    /* Live status badge */
+    /* Live status badge + event listener */
     let eventUnsub=null;
     function wireEventListener(){
       if(eventUnsub) eventUnsub();
@@ -663,7 +662,7 @@
     $('hostEventId').addEventListener('keyup', e=>{ if (e.key==='Enter'){ handleEventChanged(); }});
     $('hostEventId').addEventListener('change', handleEventChanged);
     async function handleEventChanged(){
-      if(lockSetup.checked) return;
+      if(lockSetup.checked){ toast('🔒 Unlock Setup to change venue.'); return; }
       const name=currentEventName(); if(!name) return;
       try{
         await db.collection('events').doc(name).set({ venueName: name }, { merge:true });
@@ -803,7 +802,7 @@
       }catch(e){ toast('❌ Error adding to event.'); }
     });
 
-    /* Live status */
+    /* Live status + event listener */
     let eventUnsub=null;
     function wireEventListener(){
       if(eventUnsub) eventUnsub();
