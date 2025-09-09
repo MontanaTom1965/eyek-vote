@@ -8,16 +8,17 @@
     :root {
       --blue:#003e81; --gold:#eaba54; --purple:#2F0658;
       --green:#27d07d; --yellow:#f4d35e; --red:#ff5964;
+      --ink:#0f0a18; --card:#1b1430; --line:rgba(255,255,255,.12);
     }
     *{box-sizing:border-box}
-    body{margin:0;background:#0f0a18;color:#fff;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',Arial,sans-serif;overflow:hidden}
+    body{margin:0;background:var(--ink);color:#fff;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',Arial,sans-serif;overflow:hidden}
     header{padding:10px 16px; text-align:center; background:linear-gradient(90deg,var(--blue),var(--purple));}
     .welcome{font-size:1.2rem; opacity:.9}
     .venue{font-weight:900}
-    .current{display:flex;align-items:center;justify-content:center;text-align:center; height:22vh}
-    .current .name{font-size:7.5vw; line-height:1.05; font-weight:1000; letter-spacing:.5px}
-    .grid{display:grid; grid-template-columns:1fr 1fr; gap:16px; padding:16px; height:62vh}
-    .col{border:1px solid rgba(255,255,255,.1); border-radius:16px; padding:12px; background:#1b1430; overflow:auto}
+    .current{display:flex;align-items:center;justify-content:center;text-align:center; height:18vh}
+    .current .name{font-size:7.2vw; line-height:1.05; font-weight:1000; letter-spacing:.5px}
+    .grid{display:grid; grid-template-columns:1fr 1fr; gap:16px; padding:16px; height:60vh}
+    .col{border:1px solid rgba(255,255,255,.1); border-radius:16px; padding:12px; background:var(--card); overflow:auto}
     h2{margin:0 0 8px}
     h2.encLabel{color:var(--green)}
     h2.oneLabel{color:var(--yellow)}
@@ -26,7 +27,9 @@
     .badge{display:inline-block; padding:4px 8px; border-radius:999px; font-weight:900}
     .enc{color:#000; background:var(--green)}
     .one{color:#000; background:var(--yellow)}
-    .footer{height:8vh;display:flex;align-items:center;justify-content:center;opacity:.8}
+    .footer{height:6vh;display:flex;align-items:center;justify-content:center;opacity:.85}
+    .muted{opacity:.85}
+    /* Splash */
     .splash{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.9);z-index:50}
     .splash.show{display:flex}
     .splashCard{border-radius:24px; padding:24px 28px; text-align:center; max-width:90vw}
@@ -36,7 +39,14 @@
     .yellow{background:#aa7c00; box-shadow:0 0 60px rgba(255,234,100,.4) inset;}
     .red{background:#7a0010; box-shadow:0 0 60px rgba(255,90,100,.4) inset;}
     #confetti{position:fixed;inset:0;pointer-events:none;z-index:60}
-    .muted{opacity:.8}
+    /* Live tally bars */
+    .tally{border:1px solid var(--line); border-radius:16px; padding:12px; background:#120c22}
+    .bar{height:48px; border-radius:12px; position:relative; overflow:hidden; margin:8px 0; border:1px solid var(--line);}
+    .fill{height:100%; width:0%}
+    .label{position:absolute; inset:0; display:flex; align-items:center; justify-content:space-between; padding:0 12px; font-weight:900; text-shadow:0 2px 4px rgba(0,0,0,.6)}
+    .b-green .fill{background:var(--green)}
+    .b-yellow .fill{background:var(--yellow); color:#000}
+    .b-red .fill{background:var(--red)}
   </style>
 
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -53,11 +63,25 @@
 
   <div class="grid">
     <div class="col">
-      <h2 class="encLabel">Encore!</h2>
-      <ul id="encoreList"></ul>
+      <h2 class="encLabel">Live Votes</h2>
+      <div class="tally">
+        <div class="bar b-green">
+          <div id="barEncore" class="fill"></div>
+          <div class="label">Encore! <span id="countEncore">0</span></div>
+        </div>
+        <div class="bar b-yellow">
+          <div id="barAnother" class="fill"></div>
+          <div class="label">Another Shot! <span id="countAnother">0</span></div>
+        </div>
+        <div class="bar b-red">
+          <div id="barMaybe" class="fill"></div>
+          <div class="label">Maybe Next Time! <span id="countMaybe">0</span></div>
+        </div>
+      </div>
     </div>
     <div class="col">
-      <h2 class="oneLabel">Another Shot!</h2>
+      <h2 class="oneLabel">Winners Tonight</h2>
+      <ul id="encoreList"></ul>
       <ul id="anotherList"></ul>
     </div>
   </div>
@@ -69,19 +93,19 @@
   <canvas id="confetti"></canvas>
 
   <!-- Splashes -->
-  <div id="splashEncore" class="splash">
+  <div id="splashEncore" class="splash" aria-hidden="true">
     <div class="splashCard green">
       <h1 class="splashTitle">Encore!</h1>
       <div class="splashSub" id="splashEncoreName">Great job!</div>
     </div>
   </div>
-  <div id="splashAnother" class="splash">
+  <div id="splashAnother" class="splash" aria-hidden="true">
     <div class="splashCard yellow">
       <h1 class="splashTitle">Another Shot!</h1>
       <div class="splashSub" id="splashAnotherName">So close!</div>
     </div>
   </div>
-  <div id="splashMaybe" class="splash">
+  <div id="splashMaybe" class="splash" aria-hidden="true">
     <div class="splashCard red">
       <h1 class="splashTitle">Maybe Next Time!</h1>
       <div class="splashSub" id="splashMaybeName">Let’s hear it for …</div>
@@ -107,7 +131,11 @@
     const encList=$('encoreList'), anotherList=$('anotherList');
     const currentSinger=$('currentSinger'), venueTitle=$('venueTitle'), statusNote=$('statusNote');
 
-    let eventId=null, unsub=null;
+    // tally elements
+    const barEncore=$('barEncore'), barAnother=$('barAnother'), barMaybe=$('barMaybe');
+    const countEncore=$('countEncore'), countAnother=$('countAnother'), countMaybe=$('countMaybe');
+
+    let eventId=null, unsubEvent=null, unsubVotes=null, currentRoundId=null;
 
     async function loadCurrentEvent(){
       try{
@@ -119,16 +147,23 @@
     }
 
     function wire(){
-      if(unsub) unsub();
+      if(unsubEvent) unsubEvent();
       const ref = db.collection('events').doc(eventId);
-      unsub = ref.onSnapshot(snap=>{
+      unsubEvent = ref.onSnapshot(snap=>{
         const d=snap.data()||{};
         venueTitle.textContent = d.venueName || eventId || '—';
         currentSinger.textContent = d.currentSingerName || 'Get ready…';
         statusNote.textContent = d.isVotingOpen ? 'Voting Open' : 'Voting Closed';
+
+        // wire votes live by roundId (or performanceId)
+        const newRoundId = d.roundId || d.performanceId || null;
+        if(newRoundId !== currentRoundId){
+          currentRoundId = newRoundId;
+          wireVotes();
+        }
       });
 
-      // winners live
+      // winners live (Encore! and Another Shot! only — we don't show Maybe Next Time in the list)
       db.collection('events').doc(eventId).collection('winners')
         .orderBy('decidedAt','asc').onSnapshot(qs=>{
           encList.innerHTML=''; anotherList.innerHTML='';
@@ -144,7 +179,7 @@
           });
         });
 
-      // splash triggers
+      // splash triggers from host result signal
       db.collection('events').doc(eventId).collection('signals').doc('result').onSnapshot(s=>{
         const d=s.data()||{};
         if(!d.type||!d.singerName) return;
@@ -152,6 +187,36 @@
         else if(d.type==='Another Shot!') showSplash('another', d.singerName);
         else if(d.type==='Maybe Next Time!') showSplash('maybe', d.singerName);
       });
+    }
+
+    function wireVotes(){
+      // reset bars
+      setBars(0,0,0);
+      if(unsubVotes) unsubVotes();
+      if(!currentRoundId){ return; }
+
+      const vref = db.collection('events').doc(eventId).collection('votes').where('roundId','==',currentRoundId);
+      unsubVotes = vref.onSnapshot(qs=>{
+        let e=0,a=0,m=0;
+        qs.forEach(doc=>{
+          const c=(doc.data()||{}).choice;
+          if(c==='Encore!') e++;
+          else if(c==='Another Shot!') a++;
+          else if(c==='Maybe Next Time!') m++;
+        });
+        setBars(e,a,m);
+      });
+    }
+
+    function setBars(e,a,m){
+      const total=Math.max(1, e+a+m);
+      const pe=Math.round(100*e/total), pa=Math.round(100*a/total), pm=Math.round(100*m/total);
+      barEncore.style.width = pe+'%';
+      barAnother.style.width = pa+'%';
+      barMaybe.style.width = pm+'%';
+      countEncore.textContent = e;
+      countAnother.textContent = a;
+      countMaybe.textContent = m;
     }
 
     function showSplash(kind, name){
@@ -173,7 +238,7 @@
       }
     }
 
-    // Confetti effect
+    // Lightweight confetti
     const cvs=$('confetti'), ctx=cvs.getContext('2d'); let parts=[];
     function resize(){ cvs.width=innerWidth; cvs.height=innerHeight; }
     addEventListener('resize', resize); resize();
@@ -191,4 +256,10 @@
         ctx.fillStyle=p.color; ctx.beginPath(); ctx.arc(p.x,p.y,p.size,0,Math.PI*2); ctx.fill();
       });
       parts=parts.filter(p=>p.y<cvs.height);
-      if(parts.length>0) reque
+      if(parts.length>0) requestAnimationFrame(updateConfetti);
+    }
+
+    loadCurrentEvent();
+  </script>
+</body>
+</html>
