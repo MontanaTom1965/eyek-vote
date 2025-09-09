@@ -35,7 +35,6 @@
     .green{background:#0b2; box-shadow:0 0 60px rgba(0,255,140,.4) inset;}
     .yellow{background:#aa7c00; box-shadow:0 0 60px rgba(255,234,100,.4) inset;}
     .red{background:#7a0010; box-shadow:0 0 60px rgba(255,90,100,.4) inset;}
-    /* Confetti canvas */
     #confetti{position:fixed;inset:0;pointer-events:none;z-index:60}
     .muted{opacity:.8}
   </style>
@@ -129,12 +128,12 @@
         statusNote.textContent = d.isVotingOpen ? 'Voting Open' : 'Voting Closed';
       });
 
-      // winners live
+      // winners live (Encore! and Another Shot! only)
       db.collection('events').doc(eventId).collection('winners')
         .orderBy('decidedAt','asc').onSnapshot(qs=>{
           encList.innerHTML=''; anotherList.innerHTML='';
           qs.forEach(doc=>{
-            const w=doc.data(); // {singerName, result}
+            const w=doc.data();
             if(w.result==='Encore!'){
               const li=document.createElement('li'); li.innerHTML=`<span class="badge enc">Encore!</span> — ${w.singerName}`;
               encList.appendChild(li);
@@ -142,7 +141,6 @@
               const li=document.createElement('li'); li.innerHTML=`<span class="badge one">Another Shot!</span> — ${w.singerName}`;
               anotherList.appendChild(li);
             }
-            // We intentionally do NOT list "Maybe Next Time!" here
           });
         });
 
