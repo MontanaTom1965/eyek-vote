@@ -15,9 +15,9 @@
     header{padding:10px 16px; text-align:center; background:linear-gradient(90deg,var(--blue),var(--purple));}
     .welcome{font-size:1.2rem; opacity:.9}
     .venue{font-weight:900}
-    .toprow{display:flex;gap:16px;align-items:center;justify-content:center;padding:10px 16px}
-    .badge{display:inline-block;padding:8px 14px;border-radius:999px;background:#271c44;border:1px solid var(--line);font-weight:900}
-    .timer{font-size:1.6rem}
+    .toprow{display:flex;gap:24px;align-items:center;justify-content:center;padding:10px 16px}
+    .badge{display:inline-block;padding:10px 18px;border-radius:999px;background:#271c44;border:1px solid var(--line);font-weight:900}
+    .timer{font-size:2.4rem; letter-spacing:.5px}
     .status{opacity:.9}
     .current{display:flex;align-items:center;justify-content:center;text-align:center; height:16vh}
     .current .name{font-size:7.2vw; line-height:1.05; font-weight:1000; letter-spacing:.5px}
@@ -46,7 +46,6 @@
     .red{background:#7a0010; box-shadow:0 0 60px rgba(255,90,100,.4) inset;}
     #confetti{position:fixed;inset:0;pointer-events:none;z-index:60}
   </style>
-
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 </head>
@@ -57,7 +56,7 @@
 
   <div class="toprow">
     <span id="statusBadge" class="badge status">Status: —</span>
-    <span id="timerBadge" class="badge timer">—</span>
+    <span id="timerBadge" class="badge timer" aria-live="polite">—</span>
   </div>
 
   <div class="current">
@@ -124,23 +123,15 @@
     };
     firebase.initializeApp(firebaseConfig);
     const db=firebase.firestore();
-
     const $=id=>document.getElementById(id);
+
     const statusBadge=$('statusBadge'), timerBadge=$('timerBadge');
     const currentSinger=$('currentSinger'), venueTitle=$('venueTitle'), statusNote=$('statusNote');
-
-    // tally elements
     const barEncore=$('barEncore'), barAnother=$('barAnother'), barMaybe=$('barMaybe');
     const countEncore=$('countEncore'), countAnother=$('countAnother'), countMaybe=$('countMaybe');
 
-    // config
-    const FAILSAFE_AUTO_CLOSE = true; // will set isVotingOpen=false when timer hits 0s
-
     let eventId=null, unsubEvent=null, unsubVotes=null, unsubWinners=null, unsubSignal=null;
     let currentRoundId=null, voteEndsAtMs=null, tickHandle=null;
-    let lastWinnerDocId=null; // to avoid duplicate splash
-    let lastIsVotingOpen=false;
-    let didFailSafeClose=false;
 
     function setBars(e,a,m){
       const total=Math.max(1, e+a+m);
@@ -153,46 +144,23 @@
       countMaybe.textContent = m;
     }
 
-    async function failsafeCloseIfNeeded(){
-      if(!FAILSAFE_AUTO_CLOSE || didFailSafeClose || !eventId) return;
-      try{
-        await db.collection('events').doc(eventId).set({
-          isVotingOpen: false,
-          voteClosedBy: 'screen-failsafe',
-          voteClosedAt: firebase.firestore.FieldValue.serverTimestamp()
-        }, { merge: true });
-        didFailSafeClose = true;
-      }catch(e){
-        // swallow; display-only page, but we tried
-      }
-    }
-
     function startTimer() {
       stopTimer();
-      tickHandle = setInterval(async ()=>{
+      tickHandle = setInterval(()=>{
         if(!voteEndsAtMs){ timerBadge.textContent='—'; return; }
         const ms = voteEndsAtMs - Date.now();
         const s = Math.max(0, Math.ceil(ms/1000));
         timerBadge.textContent = s + 's';
-        if(ms <= 0){
-          timerBadge.textContent = '0s';
-          stopTimer();
-          if(lastIsVotingOpen){
-            // host didn't extend/close; attempt failsafe close
-            await failsafeCloseIfNeeded();
-          }
-        }
+        if(ms <= 0){ timerBadge.textContent = '0s'; stopTimer(); }
       }, 250);
     }
     function stopTimer(){ if(tickHandle){ clearInterval(tickHandle); tickHandle=null; } }
 
     async function loadCurrentEvent(){
-      try{
-        const s = await db.collection('app').doc('state').get();
-        eventId = (s.data()||{}).currentEventId || null;
-        if(!eventId){ statusNote.textContent='No event selected by Host.'; return; }
-        wire();
-      }catch(e){ statusNote.textContent='Error loading event.'; }
+      const s = await db.collection('app').doc('state').get();
+      eventId = (s.data()||{}).currentEventId || null;
+      if(!eventId){ statusNote.textContent='No event selected by Host.'; return; }
+      wire();
     }
 
     function wire(){
@@ -200,7 +168,6 @@
       if(unsubVotes) unsubVotes();
       if(unsubWinners) unsubWinners();
       if(unsubSignal) unsubSignal();
-      didFailSafeClose = false;
 
       const ref = db.collection('events').doc(eventId);
       unsubEvent = ref.onSnapshot(snap=>{
@@ -208,73 +175,66 @@
         venueTitle.textContent = d.venueName || eventId || '—';
         currentSinger.textContent = d.currentSingerName || 'Get ready…';
         const open = !!d.isVotingOpen;
-        lastIsVotingOpen = open;
         statusBadge.textContent = 'Status: ' + (open ? 'Voting Open' : 'Voting Closed');
         statusNote.textContent = open ? 'Voting Open' : 'Voting Closed';
 
-        // expected timer fields: voteClosesAt (Timestamp), OR voteEndsAt, OR voteStartedAt + 30s
+        // screen shows timer; host controls end
         voteEndsAtMs = null;
         const vc = d.voteClosesAt?.toMillis?.() || (d.voteClosesAt?.seconds? d.voteClosesAt.seconds*1000 : null);
         const ve = d.voteEndsAt?.toMillis?.()   || (d.voteEndsAt?.seconds?   d.voteEndsAt.seconds*1000   : null);
         const vs = d.voteStartedAt?.toMillis?.()|| (d.voteStartedAt?.seconds?d.voteStartedAt.seconds*1000: null);
-
         if (vc) voteEndsAtMs = vc;
         else if (ve) voteEndsAtMs = ve;
-        else if (vs) voteEndsAtMs = vs + 30*1000; // fallback to 30s window
+        else if (vs) voteEndsAtMs = vs + 30*1000;
 
         if (open && voteEndsAtMs) startTimer(); else { timerBadge.textContent='—'; stopTimer(); }
 
-        // wire votes live by roundId (or performanceId)
         const newRoundId = d.roundId || d.performanceId || null;
-        if(newRoundId !== currentRoundId){
-          currentRoundId = newRoundId;
-          wireVotes();
-        }
+        if(newRoundId !== currentRoundId){ currentRoundId = newRoundId; wireVotes(); }
       });
 
-      // winners list watcher just to trigger splashes when a NEW winner doc appears
+      // splashes on new winner doc
       unsubWinners = db.collection('events').doc(eventId).collection('winners')
         .orderBy('decidedAt','asc').onSnapshot(qs=>{
           qs.docChanges().forEach(ch=>{
             if(ch.type==='added'){
-              const id=ch.doc.id;
-              if(id!==lastWinnerDocId){
-                lastWinnerDocId=id;
-                const w=ch.doc.data()||{};
-                if(w.result==='Encore!') showSplash('encore', w.singerName||'');
-                else if(w.result==='Another Shot!') showSplash('another', w.singerName||'');
-                else if(w.result==='Maybe Next Time!') showSplash('maybe', w.singerName||'');
-              }
+              const w=ch.doc.data()||{};
+              splashFromResult(w.result, w.singerName||'');
             }
           });
         });
 
-      // signals doc (host may write here to force a splash)
+      // or explicit signal
       unsubSignal = db.collection('events').doc(eventId).collection('signals').doc('result')
         .onSnapshot(s=>{
           const d=s.data()||{};
           if(!d.type||!d.singerName) return;
-          showSplash(d.type==='Encore!' ? 'encore' : d.type==='Another Shot!' ? 'another' : 'maybe', d.singerName);
+          splashFromResult(d.type, d.singerName);
         });
     }
 
     function wireVotes(){
-      // reset bars
       setBars(0,0,0);
       if(unsubVotes) unsubVotes();
       if(!currentRoundId){ return; }
-
-      const vref = db.collection('events').doc(eventId).collection('votes').where('roundId','==',currentRoundId);
-      unsubVotes = vref.onSnapshot(qs=>{
-        let e=0,a=0,m=0;
-        qs.forEach(doc=>{
-          const c=(doc.data()||{}).choice;
-          if(c==='Encore!') e++;
-          else if(c==='Another Shot!') a++;
-          else if(c==='Maybe Next Time!') m++;
+      unsubVotes = db.collection('events').doc(eventId).collection('votes')
+        .where('roundId','==',currentRoundId)
+        .onSnapshot(qs=>{
+          let e=0,a=0,m=0;
+          qs.forEach(doc=>{
+            const c=(doc.data()||{}).choice;
+            if(c==='Encore!') e++;
+            else if(c==='Another Shot!') a++;
+            else if(c==='Maybe Next Time!') m++;
+          });
+          setBars(e,a,m);
         });
-        setBars(e,a,m);
-      });
+    }
+
+    function splashFromResult(result, name){
+      if(result==='Encore!') showSplash('encore', name);
+      else if(result==='Another Shot!') showSplash('another', name);
+      else if(result==='Maybe Next Time!') showSplash('maybe', name);
     }
 
     function showSplash(kind, name){
@@ -296,7 +256,7 @@
       }
     }
 
-    // Lightweight confetti
+    // Confetti
     const cvs=$('confetti'), ctx=cvs.getContext('2d'); let parts=[];
     function resize(){ cvs.width=innerWidth; cvs.height=innerHeight; }
     addEventListener('resize', resize); resize();
@@ -309,10 +269,7 @@
     }
     function updateConfetti(){
       ctx.clearRect(0,0,cvs.width,cvs.height);
-      parts.forEach(p=>{
-        p.x+=p.vx; p.y+=p.vy; p.vy+=0.05;
-        ctx.fillStyle=p.color; ctx.beginPath(); ctx.arc(p.x,p.y,p.size,0,Math.PI*2); ctx.fill();
-      });
+      parts.forEach(p=>{ p.x+=p.vx; p.y+=p.vy; p.vy+=0.05; ctx.fillStyle=p.color; ctx.beginPath(); ctx.arc(p.x,p.y,p.size,0,Math.PI*2); ctx.fill(); });
       parts=parts.filter(p=>p.y<cvs.height);
       if(parts.length>0) requestAnimationFrame(updateConfetti);
     }
@@ -320,6 +277,6 @@
     loadCurrentEvent();
   </script>
 
-  <!-- File: index_screen.html | Earn Your Encore Karaoke | includes FAILSAFE auto-close when timer hits 0s -->
+  <!-- File: index_screen.html | Earn Your Encore Karaoke (Display-only; timer reads host fields) -->
 </body>
 </html>
