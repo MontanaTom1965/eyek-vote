@@ -24,18 +24,11 @@
     .venueHero{font-size:3.2vw;font-weight:1000;letter-spacing:.02em;margin:8px 0 2px}
     .singerBig{font-size:8vw;font-weight:1000;letter-spacing:.01em;margin:4px 0 12px}
 
-    /* Pre-start hint — small inline banner */
+    /* Pre-start hint — inline banner */
     .ready{
-      display:none;
-      position:static;
-      text-align:center;
-      font-size:2vw;
-      opacity:.9;
-      padding:8px 12px;
-      margin:8px 0 10px;
-      background:rgba(32,22,55,.6);
-      border:1px solid rgba(255,255,255,.12);
-      border-radius:12px;
+      display:none; position:static; text-align:center;
+      font-size:2vw; opacity:.9; padding:8px 12px; margin:8px 0 10px;
+      background:rgba(32,22,55,.6); border:1px solid rgba(255,255,255,.12); border-radius:12px;
     }
     .ready.show{ display:block; }
 
@@ -98,7 +91,6 @@
     <div class="venueHero" id="venueHero">Welcome to …</div>
     <div class="singerBig" id="singerBig">Next up soon…</div>
 
-    <!-- Moved inline banner (no overlay) -->
     <div class="ready" id="readyMsg">Get ready… voting will open soon!</div>
 
     <div class="grid">
@@ -228,7 +220,7 @@ function wireEvent(evtId){
     roundBadge.textContent = roundId || '—';
     statusEl.textContent = isVotingOpen ? 'Voting Open' : 'Voting Closed';
 
-    // Pre-start banner (inline, not covering)
+    // Pre-start banner
     const readyMsgEl = document.getElementById('readyMsg');
     if (roundId && !isVotingOpen){
       readyMsgEl.classList.add('show');
@@ -381,7 +373,6 @@ function confettiStop(){ confettiRunning=false; if(confettiRAF){ cancelAnimation
 function confettiLoop(){
   if(!confettiRunning) return;
   const W=confettiCanvas.width, H=confettiCanvas.height;
-  const ctx = confettiCanvas.getContext('2d');
   ctx.clearRect(0,0,W,H);
   for(const p of confettiParticles){
     p.x+=p.vx; p.y+=p.vy; p.rot+=p.vr; p.vy+=0.02;
@@ -393,5 +384,7 @@ function confettiLoop(){
   confettiRAF = requestAnimationFrame(confettiLoop);
 }
 </script>
+
+  <!-- FILE: index_screen.html | Earn Your Encore Karaoke -->
 </body>
 </html>
