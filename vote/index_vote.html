@@ -5,101 +5,157 @@
   <title>Earn Your Encore Karaoke – Vote</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    :root{
-      --blue:#003e81; --gold:#eaba54; --purple:#2F0658;
-      --green:#27d07d; --yellow:#f4d35e; --red:#ff5964;
-    }
+    :root{--blue:#003e81;--gold:#eaba54;--purple:#2F0658;--ink:#0f0a18;--card:#1b1430}
     *{box-sizing:border-box}
-    body{margin:0;background:#0f0a18;color:#fff;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',Arial,sans-serif;min-height:100dvh;display:flex;flex-direction:column}
-    header{background:linear-gradient(90deg,var(--blue),var(--purple));padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
-    .brand{font-weight:900}
-    .right{display:flex;align-items:center;gap:8px}
-    .pill{display:inline-block;padding:6px 10px;border-radius:999px;background:#271c44}
-    .btn{border:0;border-radius:10px;padding:10px 14px;font-weight:800;cursor:pointer}
+    body{margin:0;background:var(--ink);color:#fff;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',Arial,sans-serif}
+    header{padding:18px 16px;background:linear-gradient(90deg,var(--blue),var(--purple));display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+    h1{margin:0;font-size:1.1rem}
+    .container{max-width:980px;margin:16px auto;padding:0 12px;display:grid;gap:16px}
+    .card{background:var(--card);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:16px}
+    label{display:block;margin:8px 0 6px}
+    input,select{width:100%;padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,.15);background:#120c22;color:#fff}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .btn{padding:12px 16px;border:0;border-radius:12px;font-weight:900;cursor:pointer}
+    .btn[disabled]{opacity:.5;cursor:not-allowed}
     .btn-blue{background:var(--blue);color:#fff}
     .btn-gold{background:var(--gold);color:#000}
     .btn-red{background:#ff4c61;color:#fff}
-    .btn-ghost{background:#271c44;color:#fff}
-    main{flex:1;display:grid;place-items:center;padding:16px}
-    .card{width:min(760px,calc(100% - 24px));background:#1b1430;border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:16px;box-shadow:0 8px 24px rgba(0,0,0,.45)}
-    h1,h2,h3{margin:0 0 8px}
+    .stack{display:flex;flex-wrap:wrap;gap:8px}
+    .center{display:flex;align-items:center;justify-content:center;text-align:center}
     .muted{opacity:.85}
-    .divider{height:1px;background:rgba(255,255,255,.12);margin:12px 0}
-    .choices{display:grid;gap:12px;margin-top:10px}
-    .choice{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px;border:1px solid rgba(255,255,255,.1);border-radius:12px;background:#170f2a}
-    .enc{border-color:rgba(39,208,125,.5)}
-    .one{border-color:rgba(244,211,94,.5)}
-    .may{border-color:rgba(255,89,100,.5)}
-    .badge{padding:4px 8px;border-radius:999px;font-weight:900}
-    .b-enc{background:var(--green);color:#000}
-    .b-one{background:var(--yellow);color:#000}
-    .b-may{background:var(--red);color:#fff}
-    .hint{margin-top:6px;font-size:.95rem}
-    .hidden{display:none !important}
-    .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-    input,select{width:100%;padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,.15);background:#120c22;color:#fff}
-    .toast{margin-top:10px;min-height:1.2em}
-    .center{text-align:center}
+    .choice{font-size:1.25rem}
+    .timer{font-size:1.25rem;font-weight:900}
+    .pill{display:inline-block;padding:6px 10px;border-radius:999px;background:#271c44}
   </style>
 
-  <!-- Firebase (compat) -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 </head>
 <body>
   <header>
-    <div class="brand">🎤 Earn Your Encore Karaoke • Vote</div>
-    <div class="right">
-      <span class="pill" id="venueBadge">Venue: —</span>
-      <span class="pill" id="statusBadge">Status: Loading…</span>
-      <button class="btn btn-ghost" id="enableSoundBtn" title="If your browser blocked autoplay">Enable Sound</button>
-      <button class="btn btn-blue" id="loginBtn">Log in</button>
-      <button class="btn btn-gold" id="signupBtn">Sign up</button>
-      <button class="btn btn-red hidden" id="logoutBtn">Log out</button>
+    <h1>📱 Earn Your Encore Karaoke • Vote</h1>
+    <div class="stack">
+      <button id="enableSoundBtn" class="btn btn-gold">Enable Sound</button>
+      <span id="eventBadge" class="pill">Event: —</span>
+      <span id="statusBadge" class="pill">Status: —</span>
+      <span id="timer" class="pill timer">—</span>
     </div>
   </header>
 
-  <main>
-    <div class="card">
-      <h2 id="headline" class="center">Get ready… voting will open soon!</h2>
-      <div class="center muted" id="subline">Please log in with your email + tonight’s PIN to vote.</div>
-      <div class="divider"></div>
-
-      <!-- Voting card -->
-      <div id="voteCard" class="hidden">
-        <div class="choices">
-          <div class="choice enc">
-            <div><div class="badge b-enc">Encore!</div></div>
-            <button class="btn btn-blue" data-v="Encore!">Vote</button>
-          </div>
-          <div class="choice one">
-            <div><div class="badge b-one">Another Shot!</div></div>
-            <button class="btn btn-blue" data-v="Another Shot!">Vote</button>
-          </div>
-          <div class="choice may">
-            <div><div class="badge b-may">Maybe Next Time!</div></div>
-            <button class="btn btn-blue" data-v="Maybe Next Time!">Vote</button>
-          </div>
-        </div>
-        <div class="hint muted" id="countdownNote"></div>
+  <div class="container">
+    <!-- Auth / Session -->
+    <div class="card" id="authCard">
+      <h3 style="margin:0 0 12px">Sign Up or Log In</h3>
+      <div class="stack" style="margin-bottom:10px">
+        <button id="showLogin" class="btn btn-blue">Log In</button>
+        <button id="showSignup" class="btn btn-gold">Sign Up</button>
+        <button id="logoutBtn" class="btn btn-red" style="display:none">Log Out</button>
       </div>
 
-      <div class="toast muted" id="toast"></div>
-    </div>
-  </main>
+      <!-- LOGIN: email + nightly PIN only -->
+      <div id="loginBox" style="display:none">
+        <div class="row">
+          <div>
+            <label>Email</label>
+            <input id="loginEmail" type="email" placeholder="you@example.com" />
+          </div>
+          <div>
+            <label>Tonight’s PIN</label>
+            <input id="loginPin" placeholder="Ask the host" />
+          </div>
+        </div>
+        <div class="stack" style="margin-top:10px">
+          <button id="loginBtn" class="btn btn-blue">Log In</button>
+        </div>
+        <div class="muted" id="loginMsg" style="margin-top:6px"></div>
+      </div>
 
-  <!-- AUDIO -->
-  <audio id="countdownAudio" preload="auto" src="https://vote.earnyourencorekaraoke.com/vote/quiz-countdown.mp3"></audio>
+      <!-- SIGNUP: full profile -->
+      <div id="signupBox" style="display:none">
+        <div class="row">
+          <div>
+            <label>Email</label>
+            <input id="suEmail" type="email" placeholder="you@example.com" />
+          </div>
+          <div>
+            <label>Zip Code</label>
+            <input id="suZip" placeholder="e.g. 59901" />
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label>First Name</label>
+            <input id="suFirst" placeholder="First name" />
+          </div>
+          <div>
+            <label>Last Name</label>
+            <input id="suLast" placeholder="Last name" />
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label>Age</label>
+            <input id="suAge" type="number" min="13" max="120" placeholder="Age" />
+          </div>
+          <div>
+            <label>Gender</label>
+            <select id="suGender">
+              <option value="">Prefer not to say</option>
+              <option>Female</option>
+              <option>Male</option>
+              <option>Non-binary</option>
+              <option>Other</option>
+            </select>
+          </div>
+        </div>
+        <div class="stack" style="margin-top:10px">
+          <button id="signupBtn" class="btn btn-gold">Create Account</button>
+        </div>
+        <div class="muted" id="signupMsg" style="margin-top:6px"></div>
+      </div>
 
-  <!-- LOGIN MODAL -->
-  <template id="tplModal">
-    <div class="backdrop" style="position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:60">
-      <div class="card" style="width:min(520px,calc(100% - 24px))"></div>
+      <!-- SESSION SUMMARY -->
+      <div id="sessionBox" style="display:none; margin-top:8px">
+        <div><b>Logged in as:</b> <span id="whoAmI">—</span></div>
+        <div class="muted small">PIN is validated against tonight’s event before voting.</div>
+      </div>
     </div>
-  </template>
+
+    <!-- Voting Card -->
+    <div class="card">
+      <div class="center" style="margin-bottom:8px">
+        <div>
+          <div class="muted" id="welcomeLine">Get ready… voting opens when the host starts it!</div>
+          <div style="font-size:2rem;font-weight:1000;margin-top:6px" id="currentSinger">—</div>
+        </div>
+      </div>
+
+      <div class="center" style="margin-top:10px">
+        <div class="stack">
+          <button id="btnEncore" class="btn btn-gold choice" disabled>Encore!</button>
+          <button id="btnAnother" class="btn btn-blue choice" disabled>Another Shot!</button>
+          <button id="btnMaybe"  class="btn btn-red  choice" disabled>Maybe Next Time!</button>
+        </div>
+      </div>
+
+      <div class="muted" id="voteMsg" style="margin-top:10px;text-align:center"></div>
+    </div>
+
+    <!-- Links (handy) -->
+    <div class="card">
+      <div class="stack">
+        <a class="btn btn-gold" href="https://vote.earnyourencorekaraoke.com/vote/index_vote.html">Vote (this)</a>
+        <a class="btn btn-blue" href="https://vote.earnyourencorekaraoke.com/screen/index_screen.html" target="_blank" rel="noopener">Open Screen</a>
+        <a class="btn btn-blue" href="https://vote.earnyourencorekaraoke.com/board/index_board.html" target="_blank" rel="noopener">Open Board</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sounds -->
+  <audio id="bgCountdown" preload="auto" src="https://vote.earnyourencorekaraoke.com/vote/quiz-countdown.mp3"></audio>
 
   <script>
-    /* ---------- Firebase ---------- */
+    // --- Firebase ---
     const firebaseConfig = {
       apiKey: "AIzaSyDGbC08WxruYIDPhZSlDlU-7Kzq-7mHENk",
       authDomain: "eyek-vote.firebaseapp.com",
@@ -109,281 +165,203 @@
       appId: "1:954696683994:web:21a84298a94648ff0230e3"
     };
     firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
+    const db=firebase.firestore();
 
-    /* ---------- Helpers ---------- */
-    const $ = (id)=>document.getElementById(id);
-    const toast = $('toast');
-    function say(msg){ toast.textContent = msg; }
-    const venueBadge=$('venueBadge'), statusBadge=$('statusBadge');
-    const headline=$('headline'), subline=$('subline');
-    const voteCard=$('voteCard'), countdownNote=$('countdownNote');
-    const countdownAudio=$('countdownAudio');
-    const enableSoundBtn=$('enableSoundBtn');
+    // --- Helpers ---
+    const $=id=>document.getElementById(id);
+    const eventBadge=$('eventBadge'), statusBadge=$('statusBadge'), timerEl=$('timer');
+    const currentSinger=$('currentSinger'), voteMsg=$('voteMsg'), welcomeLine=$('welcomeLine');
+    const bgCountdown=$('bgCountdown');
 
-    let soundEnabled = false;
-    enableSoundBtn.addEventListener('click', async ()=>{
+    function toast(el,msg){ el.textContent=msg; }
+    function canonicalKey(v){return String(v||'').toLowerCase().trim().replace(/[^\w]+/g,'-').replace(/(^-|-$)/g,'');}
+
+    // --- Session (no Firebase Auth; store profile in Firestore + localStorage) ---
+    const session = {
+      email: localStorage.getItem('eyek.email') || '',
+      name:  localStorage.getItem('eyek.name') || '',
+      pinOK: false
+    };
+    function saveSession(){
+      localStorage.setItem('eyek.email', session.email||'');
+      localStorage.setItem('eyek.name', session.name||'');
+    }
+    function showLoggedInUI(){
+      $('authCard').style.display='block';
+      $('logoutBtn').style.display='inline-block';
+      $('showLogin').style.display='inline-block';
+      $('showSignup').style.display='inline-block';
+      $('loginBox').style.display='none';
+      $('signupBox').style.display='none';
+      $('sessionBox').style.display='block';
+      $('whoAmI').textContent = `${session.name||session.email}`;
+    }
+    function showLoggedOutUI(){
+      session.email=''; session.name=''; session.pinOK=false; saveSession();
+      $('logoutBtn').style.display='none';
+      $('sessionBox').style.display='none';
+      $('loginBox').style.display='none';
+      $('signupBox').style.display='none';
+      $('showLogin').style.display='inline-block';
+      $('showSignup').style.display='inline-block';
+    }
+
+    $('showLogin').onclick=()=>{ $('loginBox').style.display='block'; $('signupBox').style.display='none'; };
+    $('showSignup').onclick=()=>{ $('signupBox').style.display='block'; $('loginBox').style.display='none'; };
+    $('logoutBtn').onclick=()=>{ showLoggedOutUI(); toast(voteMsg,'You are logged out.'); updateButtons(); };
+
+    // Signup
+    $('signupBtn').onclick=async ()=>{
+      const email=$('suEmail').value.trim();
+      const first=$('suFirst').value.trim();
+      const last =$('suLast').value.trim();
+      const zip  =$('suZip').value.trim();
+      const age  =Number($('suAge').value||'');
+      const gender=$('suGender').value||'';
+      if(!email){ toast($('signupMsg'),'Enter email.'); return; }
       try{
-        countdownAudio.muted=false;
-        await countdownAudio.play().then(()=>{ countdownAudio.pause(); countdownAudio.currentTime=0; });
-        soundEnabled = true;
-        enableSoundBtn.classList.add('hidden');
-        say('🔊 Sound enabled.');
-      }catch(e){
-        say('⚠️ Your browser still blocked audio. Try again.');
-      }
-    });
-
-    function tsv(d){ return (d && d.toDate) ? d.toDate().getTime() : Date.now(); }
-
-    /* ---------- Session (lightweight) ---------- */
-    function saveSession(obj){ localStorage.setItem('eyek-vote-session', JSON.stringify(obj||{})); }
-    function getSession(){ try{ return JSON.parse(localStorage.getItem('eyek-vote-session')||'{}'); }catch{return{}} }
-    function clearSession(){ localStorage.removeItem('eyek-vote-session'); }
-
-    function setLoggedInUI(email){
-      if(email){
-        $('loginBtn').classList.add('hidden');
-        $('signupBtn').classList.add('hidden');
-        $('logoutBtn').classList.remove('hidden');
-        $('subline').textContent = `Logged in as ${email}`;
-      }else{
-        $('loginBtn').classList.remove('hidden');
-        $('signupBtn').classList.remove('hidden');
-        $('logoutBtn').classList.add('hidden');
-        $('subline').textContent = 'Please log in with your email + tonight’s PIN to vote.';
-      }
-    }
-
-    /* ---------- Current Event ---------- */
-    let eventId=null, eventUnsub=null, winnersUnsub=null;
-    async function resolveCurrentEvent(){
-      try{
-        const s = await db.collection('app').doc('state').get();
-        eventId = (s.data()||{}).currentEventId || null;
-        if(!eventId){
-          statusBadge.textContent='Status: No event';
-          headline.textContent='No active event right now.';
-          return;
-        }
-        venueBadge.textContent='Venue: '+eventId;
-        wireEvent();
-      }catch(e){ statusBadge.textContent='Status: Error'; }
-    }
-
-    let autoTick=null;
-    function stopLocalTimer(){ if(autoTick){ clearInterval(autoTick); autoTick=null; countdownNote.textContent=''; } }
-
-    function startLocalTimer(vw, closeAtOverride){
-      stopLocalTimer();
-      let closeAt = closeAtOverride;
-      if(!closeAt){
-        const start = (vw && vw.openedAt) ? tsv(vw.openedAt) : Date.now();
-        const durMs = (vw && Number(vw.durationSec)) ? Number(vw.durationSec)*1000 : 30000;
-        closeAt = start + durMs;
-      }
-      autoTick = setInterval(()=>{
-        const remain = Math.max(0, Math.round((closeAt - Date.now())/1000));
-        countdownNote.textContent = `Voting ends in ${remain}s`;
-        if(remain<=0){ stopLocalTimer(); voteCard.classList.add('hidden'); statusBadge.textContent='Status: Voting Closed'; }
-      }, 250);
-    }
-
-    function wireEvent(){
-      if(eventUnsub) eventUnsub();
-      eventUnsub = db.collection('events').doc(eventId).onSnapshot(snap=>{
-        const d=snap.data()||{};
-        const singer = d.currentSingerName || '';
-        headline.textContent = d.isVotingOpen ? `Vote now for ${singer || 'the current singer'}!` : (singer ? `Get ready… ${singer} is up next!` : 'Get ready… voting will open soon!');
-        statusBadge.textContent = d.isVotingOpen ? 'Status: Voting Open' : 'Status: Voting Closed';
-
-        if(d.isVotingOpen){
-          voteCard.classList.remove('hidden');
-          // Prefer authoritative close time
-          const closeAt = (typeof d.voteClosesAt === 'number') ? d.voteClosesAt : null;
-          startLocalTimer(d.voteWindow, closeAt);
-
-          if(soundEnabled){
-            try{ countdownAudio.currentTime=0; countdownAudio.play().catch(()=>{});}catch(e){}
-          }else{
-            enableSoundBtn.classList.remove('hidden'); // prompt user
-          }
-        }else{
-          voteCard.classList.add('hidden');
-          stopLocalTimer();
-          try{ countdownAudio.pause(); }catch(e){}
-        }
-      }, (e)=> say('⚠️ Connection error.'));
-    }
-
-    /* ---------- Voting ---------- */
-    async function submitVote(result){
-      const s = getSession();
-      if(!s.email || !s.eventId || !s.pinOk){
-        say('⚠️ Please log in first.');
-        return;
-      }
-      if(s.eventId !== eventId){
-        say('⚠️ Your login was for a different event. Please log in again.');
-        return;
-      }
-      try{
-        const ref = db.collection('events').doc(eventId);
-        const ev = (await ref.get()).data()||{};
-        if(!ev.isVotingOpen){ say('Voting has closed.'); return; }
-
-        // Deduplicate: one vote per user per performanceId
-        const perfId = ev.performanceId || ev.roundId || 'current';
-        const voteId = `${(s.email||'').toLowerCase()}__${perfId}`;
-        await ref.collection('votes').doc(voteId).set({
-          voterEmail:(s.email||'').toLowerCase(),
-          performanceId: perfId,
-          singerName: ev.currentSingerName||'',
-          result,
+        await db.collection('users').doc(email).set({
+          email, first, last, zip, age:isFinite(age)?age:null, gender,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
           createdAt: firebase.firestore.FieldValue.serverTimestamp()
         }, { merge:true });
+        session.email=email; session.name=`${first||''} ${last||''}`.trim() || email; saveSession();
+        toast($('signupMsg'),'✅ Account saved. Now log in with tonight’s PIN.');
+        showLoggedInUI();
+      }catch(e){ toast($('signupMsg'),'❌ Error creating account.'); }
+    };
 
-        say('✅ Vote recorded. Thanks!');
-      }catch(e){
-        console.error(e);
-        say('❌ Error submitting vote.');
+    // Login (email + nightly PIN)
+    $('loginBtn').onclick=async ()=>{
+      const email=$('loginEmail').value.trim();
+      const pin  =$('loginPin').value.trim();
+      if(!email||!pin){ toast($('loginMsg'),'Enter email and PIN.'); return; }
+      try{
+        // ensure profile exists
+        const uref=db.collection('users').doc(email);
+        const us=await uref.get();
+        if(!us.exists){
+          await uref.set({ email, createdAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true });
+        }
+        // validate PIN against current event
+        const st=await db.collection('app').doc('state').get();
+        const eventId=(st.data()||{}).currentEventId;
+        if(!eventId){ toast($('loginMsg'),'Host has not selected an event yet.'); return; }
+        const ev=await db.collection('events').doc(eventId).get();
+        const expect=(ev.data()||{}).activePin || '';
+        if(!expect){ toast($('loginMsg'),'PIN not set by host.'); return; }
+        if(String(pin)!==String(expect)){ toast($('loginMsg'),'❌ Wrong PIN.'); session.pinOK=false; updateButtons(); return; }
+
+        session.email=email; session.name=(us.data()&& ((us.data().first||'')+' '+(us.data().last||'')).trim()) || email;
+        session.pinOK=true; saveSession();
+        toast($('loginMsg'),'✅ Logged in for tonight.');
+        showLoggedInUI(); updateButtons();
+        // mark attendance
+        await db.collection('events').doc(eventId).collection('attendees').doc(email).set({
+          email, lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge:true });
+      }catch(e){ toast($('loginMsg'),'❌ Error logging in.'); }
+    };
+
+    // --- Sound enable (mobile requires user gesture) ---
+    let soundEnabled=false;
+    $('enableSoundBtn').onclick=()=>{
+      bgCountdown.currentTime=0;
+      bgCountdown.play().then(()=>{
+        bgCountdown.pause(); bgCountdown.currentTime=0;
+        soundEnabled=true;
+        $('enableSoundBtn').textContent='Sound Enabled ✅';
+      }).catch(()=>{ /* user may need to tap again */ });
+    };
+
+    // --- Event wiring & vote window ---
+    let eventId=null, roundId=null, voteClosesAt=null, isVotingOpen=false, autoTick=null;
+
+    async function initEvent(){
+      const s = await db.collection('app').doc('state').get();
+      eventId = (s.data()||{}).currentEventId || null;
+      if(!eventId){ eventBadge.textContent='Event: —'; statusBadge.textContent='Status: —'; return; }
+      eventBadge.textContent='Event: '+eventId;
+
+      db.collection('events').doc(eventId).onSnapshot(snap=>{
+        const d=snap.data()||{};
+        statusBadge.textContent = 'Status: ' + (d.isVotingOpen?'Voting Open':'Voting Closed');
+        $('welcomeLine').textContent = d.isVotingOpen ? 'Voting is OPEN!' : 'Get ready… voting opens when the host starts it!';
+        currentSinger.textContent = d.currentSingerName || '—';
+
+        roundId = d.roundId || d.performanceId || null;
+        isVotingOpen = !!d.isVotingOpen;
+        voteClosesAt = (typeof d.voteClosesAt === 'number') ? d.voteClosesAt : null;
+
+        if(isVotingOpen){
+          updateButtons();
+          if(soundEnabled){
+            // start countdown audio (play once at open)
+            try{ bgCountdown.currentTime=0; bgCountdown.play().catch(()=>{});}catch(e){}
+          }
+          startTick();
+        }else{
+          stopTick();
+          timerEl.textContent='—';
+          updateButtons();
+          try{ bgCountdown.pause(); }catch(e){}
+        }
+      });
+    }
+
+    function startTick(){
+      stopTick();
+      autoTick=setInterval(()=>{
+        if(!isVotingOpen){ stopTick(); return; }
+        let remain='—';
+        if(voteClosesAt){
+          const sec=Math.max(0, Math.round((voteClosesAt - Date.now())/1000));
+          remain = sec+'s';
+          if(sec<=0){ stopTick(); }
+        }
+        timerEl.textContent = remain;
+      }, 250);
+    }
+    function stopTick(){ if(autoTick){ clearInterval(autoTick); autoTick=null; } }
+
+    function updateButtons(){
+      const canVote = isVotingOpen && !!roundId && !!session.email && session.pinOK;
+      $('btnEncore').disabled = !canVote;
+      $('btnAnother').disabled = !canVote;
+      $('btnMaybe').disabled  = !canVote;
+
+      if(!session.email){
+        toast(voteMsg,'Log in to vote (email + PIN).');
+      }else if(!session.pinOK){
+        toast(voteMsg,'Enter the correct PIN to enable voting.');
+      }else if(!isVotingOpen){
+        toast(voteMsg,'Voting is closed right now.');
+      }else{
+        toast(voteMsg,'Cast your vote!');
       }
     }
 
-    document.querySelectorAll('[data-v]').forEach(btn=>{
-      btn.addEventListener('click', ()=> submitVote(btn.getAttribute('data-v')));
-    });
-
-    /* ---------- Modals ---------- */
-    function modal(contentHtml){
-      const t = document.getElementById('tplModal');
-      const node = t.content.cloneNode(true);
-      const card = node.querySelector('.card');
-      card.innerHTML = contentHtml;
-      document.body.appendChild(node);
-      const backdrop = document.querySelector('.backdrop:last-of-type');
-      function close(){ backdrop.remove(); }
-      backdrop.addEventListener('click', (e)=>{ if(e.target===backdrop) close(); });
-      return { close, root: backdrop, card };
+    async function cast(choice){
+      if(!$('btnEncore').disabled){ /* allowed */ }
+      const canVote = isVotingOpen && !!roundId && !!session.email && session.pinOK;
+      if(!canVote){ updateButtons(); return; }
+      try{
+        const voteId = canonicalKey(session.email)+'-'+roundId;
+        await db.collection('events').doc(eventId).collection('votes').doc(voteId).set({
+          roundId, voter: session.email, choice,
+          at: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge:true });
+        toast(voteMsg,'✅ Vote received: '+choice);
+      }catch(e){ toast(voteMsg,'❌ Error submitting vote.'); }
     }
 
-    /* ---------- Login (Email + PIN only) ---------- */
-    $('loginBtn').addEventListener('click', ()=>{
-      const m = modal(`
-        <h3>Log in to Vote</h3>
-        <div class="divider"></div>
-        <label>Email</label>
-        <input id="liEmail" type="email" placeholder="you@example.com" />
-        <label style="margin-top:10px">Tonight’s PIN</label>
-        <input id="liPin" type="password" inputmode="numeric" placeholder="4–6 digits" />
-        <div class="divider"></div>
-        <div class="center">
-          <button class="btn btn-blue" id="liDo">Log in</button>
-          <button class="btn btn-ghost" id="liCancel">Cancel</button>
-        </div>
-        <div class="hint muted" style="margin-top:8px">No password needed. We verify your email + tonight’s PIN only.</div>
-      `);
-      m.card.querySelector('#liCancel').addEventListener('click', m.close);
-      m.card.querySelector('#liDo').addEventListener('click', async ()=>{
-        const email = String(m.card.querySelector('#liEmail').value||'').trim().toLowerCase();
-        const pin   = String(m.card.querySelector('#liPin').value||'').trim();
-        if(!email || !pin){ say('⚠️ Enter email and PIN.'); return; }
-        try{
-          const ev = (await db.collection('events').doc(eventId).get()).data()||{};
-          if(!ev.activePin){ say('⚠️ Voting PIN not set by host yet.'); return; }
-          if(pin !== String(ev.activePin)){ say('❌ Incorrect PIN.'); return; }
+    $('btnEncore').onclick = ()=>cast('Encore!');
+    $('btnAnother').onclick= ()=>cast('Another Shot!');
+    $('btnMaybe').onclick  = ()=>cast('Maybe Next Time!');
 
-          saveSession({ email, eventId, pinOk:true });
-          setLoggedInUI(email);
-          say('✅ Logged in. You can vote when the host opens voting.');
-          m.close();
-        }catch(e){ say('❌ Could not verify PIN.'); }
-      });
-    });
-
-    /* ---------- Sign up (profile) ---------- */
-    $('signupBtn').addEventListener('click', ()=>{
-      const m = modal(`
-        <h3>Create Your Voter Profile</h3>
-        <div class="divider"></div>
-        <div class="row">
-          <div>
-            <label>First name</label>
-            <input id="suFirst" />
-          </div>
-          <div>
-            <label>Last name</label>
-            <input id="suLast" />
-          </div>
-        </div>
-        <label style="margin-top:10px">Email</label>
-        <input id="suEmail" type="email" placeholder="you@example.com" />
-        <div class="row" style="margin-top:10px">
-          <div>
-            <label>ZIP</label>
-            <input id="suZip" inputmode="numeric" />
-          </div>
-          <div>
-            <label>Age</label>
-            <input id="suAge" inputmode="numeric" />
-          </div>
-        </div>
-        <label style="margin-top:10px">Gender</label>
-        <select id="suGender">
-          <option value="">Prefer not to say</option>
-          <option>Female</option>
-          <option>Male</option>
-          <option>Non-binary</option>
-          <option>Other / Self-describe</option>
-        </select>
-        <div class="divider"></div>
-        <div class="center">
-          <button class="btn btn-gold" id="suDo">Save Profile</button>
-          <button class="btn btn-ghost" id="suCancel">Cancel</button>
-        </div>
-        <div class="hint muted" style="margin-top:8px">Tip: After you sign up once, you can just <b>Log in</b> with email + PIN at events.</div>
-      `);
-      m.card.querySelector('#suCancel').addEventListener('click', m.close);
-      m.card.querySelector('#suDo').addEventListener('click', async ()=>{
-        const first = String(m.card.querySelector('#suFirst').value||'').trim();
-        const last  = String(m.card.querySelector('#suLast').value||'').trim();
-        const email = String(m.card.querySelector('#suEmail').value||'').trim().toLowerCase();
-        const zip   = String(m.card.querySelector('#suZip').value||'').trim();
-        const age   = String(m.card.querySelector('#suAge').value||'').trim();
-        const gender= String(m.card.querySelector('#suGender').value||'').trim();
-
-        if(!email){ say('⚠️ Email is required.'); return; }
-
-        try{
-          await db.collection('guests').doc(email).set({
-            email, first, last, zip, age, gender,
-            updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-          }, { merge:true });
-          say('✅ Profile saved.');
-          m.close();
-        }catch(e){ say('❌ Error saving profile.'); }
-      });
-    });
-
-    /* ---------- Log out ---------- */
-    $('logoutBtn').addEventListener('click', ()=>{
-      clearSession();
-      setLoggedInUI(null);
-      say('👋 Logged out.');
-    });
-
-    /* ---------- Init ---------- */
-    (function init(){
-      // restore session UI
-      const s = getSession(); setLoggedInUI(s.email||null);
-
-      // Auto-show sound button on load (many mobile browsers require it)
-      enableSoundBtn.classList.remove('hidden');
-
-      resolveCurrentEvent();
-    })();
-
+    // init
+    if(session.email){ showLoggedInUI(); } else { showLoggedOutUI(); }
+    initEvent();
   </script>
 
   <!-- File: index_vote.html | Earn Your Encore Karaoke -->
