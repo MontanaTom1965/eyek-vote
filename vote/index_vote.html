@@ -5,157 +5,142 @@
   <title>Earn Your Encore Karaoke – Vote</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    :root{--blue:#003e81;--gold:#eaba54;--purple:#2F0658;--ink:#0f0a18;--card:#1b1430}
+    :root{
+      --ink:#0f0a18; --card:#1b1430; --line:rgba(255,255,255,.12);
+      --green:#27d07d; --yellow:#f4d35e; --red:#ff5964;
+      --blue:#003e81; --purple:#2F0658;
+    }
     *{box-sizing:border-box}
     body{margin:0;background:var(--ink);color:#fff;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',Arial,sans-serif}
-    header{padding:18px 16px;background:linear-gradient(90deg,var(--blue),var(--purple));display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
-    h1{margin:0;font-size:1.1rem}
-    .container{max-width:980px;margin:16px auto;padding:0 12px;display:grid;gap:16px}
-    .card{background:var(--card);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:16px}
-    label{display:block;margin:8px 0 6px}
-    input,select{width:100%;padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,.15);background:#120c22;color:#fff}
-    .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-    .btn{padding:12px 16px;border:0;border-radius:12px;font-weight:900;cursor:pointer}
-    .btn[disabled]{opacity:.5;cursor:not-allowed}
-    .btn-blue{background:var(--blue);color:#fff}
-    .btn-gold{background:var(--gold);color:#000}
-    .btn-red{background:#ff4c61;color:#fff}
-    .stack{display:flex;flex-wrap:wrap;gap:8px}
-    .center{display:flex;align-items:center;justify-content:center;text-align:center}
+    header{padding:12px 16px;text-align:center;background:linear-gradient(90deg,var(--blue),var(--purple));font-weight:900}
+    .wrap{max-width:920px;margin:0 auto;padding:16px}
+    .row{display:grid;gap:16px}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px}
+    .badge{display:inline-block;padding:6px 12px;border-radius:999px;background:#271c44;border:1px solid var(--line);font-weight:900}
+    .title{font-weight:900;margin:0 0 8px}
     .muted{opacity:.85}
-    .choice{font-size:1.25rem}
-    .timer{font-size:1.25rem;font-weight:900}
-    .pill{display:inline-block;padding:6px 10px;border-radius:999px;background:#271c44}
+    .btn{display:block;width:100%;padding:16px;border:none;border-radius:14px;font-size:1.25rem;font-weight:1000;color:#000;cursor:pointer}
+    .btn:disabled{opacity:.5;cursor:not-allowed}
+    .b-green{background:var(--green)}
+    .b-yellow{background:var(--yellow)}
+    .b-red{background:var(--red); color:#000}
+    .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    input,select{width:100%;padding:10px;border-radius:10px;border:1px solid var(--line);background:#120c22;color:#fff}
+    label{font-size:.9rem;opacity:.9}
+    .rowcenter{display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap}
+    .small{font-size:.95rem}
+    .ok{color:#80ffb3}
+    .err{color:#ff9a9a}
   </style>
-
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 </head>
 <body>
-  <header>
-    <h1>📱 Earn Your Encore Karaoke • Vote</h1>
-    <div class="stack">
-      <button id="enableSoundBtn" class="btn btn-gold">Enable Sound</button>
-      <span id="eventBadge" class="pill">Event: —</span>
-      <span id="statusBadge" class="pill">Status: —</span>
-      <span id="timer" class="pill timer">—</span>
-    </div>
-  </header>
+  <header>Vote – Earn Your Encore Karaoke</header>
 
-  <div class="container">
-    <!-- Auth / Session -->
-    <div class="card" id="authCard">
-      <h3 style="margin:0 0 12px">Sign Up or Log In</h3>
-      <div class="stack" style="margin-bottom:10px">
-        <button id="showLogin" class="btn btn-blue">Log In</button>
-        <button id="showSignup" class="btn btn-gold">Sign Up</button>
-        <button id="logoutBtn" class="btn btn-red" style="display:none">Log Out</button>
+  <div class="wrap">
+    <!-- Event status -->
+    <div class="row">
+      <div class="card rowcenter small">
+        <span id="eventBadge" class="badge">Event: —</span>
+        <span id="statusBadge" class="badge">Status: —</span>
+        <span id="roundBadge" class="badge">Round: —</span>
       </div>
 
-      <!-- LOGIN: email + nightly PIN only -->
-      <div id="loginBox" style="display:none">
-        <div class="row">
-          <div>
-            <label>Email</label>
-            <input id="loginEmail" type="email" placeholder="you@example.com" />
-          </div>
-          <div>
-            <label>Tonight’s PIN</label>
-            <input id="loginPin" placeholder="Ask the host" />
-          </div>
-        </div>
-        <div class="stack" style="margin-top:10px">
-          <button id="loginBtn" class="btn btn-blue">Log In</button>
-        </div>
-        <div class="muted" id="loginMsg" style="margin-top:6px"></div>
+      <!-- Who's up -->
+      <div class="card">
+        <h3 class="title">Now Singing</h3>
+        <div id="currentSinger" style="font-size:1.6rem;font-weight:1000">—</div>
+        <div id="welcomeLine" class="muted" style="margin-top:6px">Get ready… voting opens when the host starts it!</div>
       </div>
 
-      <!-- SIGNUP: full profile -->
-      <div id="signupBox" style="display:none">
-        <div class="row">
-          <div>
-            <label>Email</label>
-            <input id="suEmail" type="email" placeholder="you@example.com" />
+      <!-- Session / Auth -->
+      <div id="authCard" class="card">
+        <div class="rowcenter" style="justify-content:space-between">
+          <div id="sessionBox" class="small" style="display:none">
+            Logged in as <b id="whoAmI">—</b>
           </div>
-          <div>
-            <label>Zip Code</label>
-            <input id="suZip" placeholder="e.g. 59901" />
-          </div>
-        </div>
-        <div class="row">
-          <div>
-            <label>First Name</label>
-            <input id="suFirst" placeholder="First name" />
-          </div>
-          <div>
-            <label>Last Name</label>
-            <input id="suLast" placeholder="Last name" />
+          <div class="rowcenter">
+            <button id="showLogin" class="badge">Log in</button>
+            <button id="showSignup" class="badge">Sign up</button>
+            <button id="logoutBtn" class="badge" style="display:none">Log out</button>
           </div>
         </div>
-        <div class="row">
-          <div>
-            <label>Age</label>
-            <input id="suAge" type="number" min="13" max="120" placeholder="Age" />
-          </div>
-          <div>
-            <label>Gender</label>
-            <select id="suGender">
-              <option value="">Prefer not to say</option>
-              <option>Female</option>
-              <option>Male</option>
-              <option>Non-binary</option>
-              <option>Other</option>
-            </select>
-          </div>
-        </div>
-        <div class="stack" style="margin-top:10px">
-          <button id="signupBtn" class="btn btn-gold">Create Account</button>
-        </div>
-        <div class="muted" id="signupMsg" style="margin-top:6px"></div>
-      </div>
 
-      <!-- SESSION SUMMARY -->
-      <div id="sessionBox" style="display:none; margin-top:8px">
-        <div><b>Logged in as:</b> <span id="whoAmI">—</span></div>
-        <div class="muted small">PIN is validated against tonight’s event before voting.</div>
-      </div>
-    </div>
+        <!-- Login -->
+        <div id="loginBox" style="display:none;margin-top:12px">
+          <div class="grid-2">
+            <div>
+              <label for="loginEmail">Email</label>
+              <input id="loginEmail" type="email" placeholder="you@example.com" />
+            </div>
+            <div>
+              <label for="loginPin">Tonight’s PIN</label>
+              <input id="loginPin" type="text" placeholder="PIN from host" />
+            </div>
+          </div>
+          <div class="rowcenter" style="margin-top:10px">
+            <button id="loginBtn" class="badge">Log in for tonight</button>
+            <div id="loginMsg" class="small muted"></div>
+          </div>
+        </div>
 
-    <!-- Voting Card -->
-    <div class="card">
-      <div class="center" style="margin-bottom:8px">
-        <div>
-          <div class="muted" id="welcomeLine">Get ready… voting opens when the host starts it!</div>
-          <div style="font-size:2rem;font-weight:1000;margin-top:6px" id="currentSinger">—</div>
+        <!-- Signup -->
+        <div id="signupBox" style="display:none;margin-top:12px">
+          <div class="grid-2">
+            <div>
+              <label for="suEmail">Email</label>
+              <input id="suEmail" type="email" placeholder="you@example.com" />
+            </div>
+            <div>
+              <label for="suZip">ZIP</label>
+              <input id="suZip" type="text" placeholder="e.g., 59901" />
+            </div>
+            <div>
+              <label for="suFirst">First name</label>
+              <input id="suFirst" type="text" />
+            </div>
+            <div>
+              <label for="suLast">Last name</label>
+              <input id="suLast" type="text" />
+            </div>
+            <div>
+              <label for="suAge">Age</label>
+              <input id="suAge" type="number" min="1" max="120" />
+            </div>
+            <div>
+              <label for="suGender">Gender</label>
+              <select id="suGender">
+                <option value="">Prefer not to say</option>
+                <option>Female</option>
+                <option>Male</option>
+                <option>Non-binary</option>
+                <option>Other</option>
+              </select>
+            </div>
+          </div>
+          <div class="rowcenter" style="margin-top:10px">
+            <button id="signupBtn" class="badge">Create / Update Profile</button>
+            <div id="signupMsg" class="small muted"></div>
+          </div>
         </div>
       </div>
 
-      <div class="center" style="margin-top:10px">
-        <div class="stack">
-          <button id="btnEncore" class="btn btn-gold choice" disabled>Encore!</button>
-          <button id="btnAnother" class="btn btn-blue choice" disabled>Another Shot!</button>
-          <button id="btnMaybe"  class="btn btn-red  choice" disabled>Maybe Next Time!</button>
+      <!-- Voting buttons -->
+      <div class="card">
+        <h3 class="title">Cast Your Vote</h3>
+        <div class="row" style="gap:10px">
+          <button id="btnEncore" class="btn b-green"  disabled>Encore!</button>
+          <button id="btnAnother" class="btn b-yellow" disabled>Another Shot!</button>
+          <button id="btnMaybe" class="btn b-red"    disabled>Maybe Next Time!</button>
         </div>
-      </div>
-
-      <div class="muted" id="voteMsg" style="margin-top:10px;text-align:center"></div>
-    </div>
-
-    <!-- Links (handy) -->
-    <div class="card">
-      <div class="stack">
-        <a class="btn btn-gold" href="https://vote.earnyourencorekaraoke.com/vote/index_vote.html">Vote (this)</a>
-        <a class="btn btn-blue" href="https://vote.earnyourencorekaraoke.com/screen/index_screen.html" target="_blank" rel="noopener">Open Screen</a>
-        <a class="btn btn-blue" href="https://vote.earnyourencorekaraoke.com/board/index_board.html" target="_blank" rel="noopener">Open Board</a>
+        <div id="voteMsg" class="small" style="margin-top:8px"></div>
       </div>
     </div>
   </div>
 
-  <!-- Sounds -->
-  <audio id="bgCountdown" preload="auto" src="https://vote.earnyourencorekaraoke.com/vote/quiz-countdown.mp3"></audio>
-
   <script>
-    // --- Firebase ---
+    // --- Firebase init (compat) ---
     const firebaseConfig = {
       apiKey: "AIzaSyDGbC08WxruYIDPhZSlDlU-7Kzq-7mHENk",
       authDomain: "eyek-vote.firebaseapp.com",
@@ -164,53 +149,54 @@
       messagingSenderId: "954696683994",
       appId: "1:954696683994:web:21a84298a94648ff0230e3"
     };
-    firebase.initializeApp(firebaseConfig);
-    const db=firebase.firestore();
+    if (firebase.apps.length === 0) firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
 
-    // --- Helpers ---
+    // --- Shorthands / elements ---
     const $=id=>document.getElementById(id);
-    const eventBadge=$('eventBadge'), statusBadge=$('statusBadge'), timerEl=$('timer');
-    const currentSinger=$('currentSinger'), voteMsg=$('voteMsg'), welcomeLine=$('welcomeLine');
-    const bgCountdown=$('bgCountdown');
+    const eventBadge=$('eventBadge'), statusBadge=$('statusBadge'), roundBadge=$('roundBadge');
+    const currentSinger=$('currentSinger'), welcomeLine=$('welcomeLine'), voteMsg=$('voteMsg');
 
-    function toast(el,msg){ el.textContent=msg; }
-    function canonicalKey(v){return String(v||'').toLowerCase().trim().replace(/[^\w]+/g,'-').replace(/(^-|-$)/g,'');}
-
-    // --- Session (no Firebase Auth; store profile in Firestore + localStorage) ---
+    // --- Local session cache ---
     const session = {
       email: localStorage.getItem('eyek.email') || '',
       name:  localStorage.getItem('eyek.name') || '',
-      pinOK: false
+      pinOK: (localStorage.getItem('eyek.pinOK') === '1'),
+      pinEventId: localStorage.getItem('eyek.pinEventId') || '' // event for which PIN was validated
     };
     function saveSession(){
       localStorage.setItem('eyek.email', session.email||'');
       localStorage.setItem('eyek.name', session.name||'');
+      localStorage.setItem('eyek.pinOK', session.pinOK ? '1':'0');
+      localStorage.setItem('eyek.pinEventId', session.pinEventId||'');
     }
+
+    // --- UI helpers ---
     function showLoggedInUI(){
-      $('authCard').style.display='block';
       $('logoutBtn').style.display='inline-block';
+      $('sessionBox').style.display='block';
       $('showLogin').style.display='inline-block';
       $('showSignup').style.display='inline-block';
       $('loginBox').style.display='none';
       $('signupBox').style.display='none';
-      $('sessionBox').style.display='block';
-      $('whoAmI').textContent = `${session.name||session.email}`;
+      $('whoAmI').textContent = (session.name||session.email||'—');
     }
     function showLoggedOutUI(){
-      session.email=''; session.name=''; session.pinOK=false; saveSession();
+      session.email=''; session.name=''; session.pinOK=false; session.pinEventId=''; saveSession();
       $('logoutBtn').style.display='none';
       $('sessionBox').style.display='none';
       $('loginBox').style.display='none';
       $('signupBox').style.display='none';
       $('showLogin').style.display='inline-block';
       $('showSignup').style.display='inline-block';
+      updateButtons();
     }
+    $('logoutBtn').onclick=()=>{ showLoggedOutUI(); voteMsg.textContent='You are logged out.'; };
 
     $('showLogin').onclick=()=>{ $('loginBox').style.display='block'; $('signupBox').style.display='none'; };
     $('showSignup').onclick=()=>{ $('signupBox').style.display='block'; $('loginBox').style.display='none'; };
-    $('logoutBtn').onclick=()=>{ showLoggedOutUI(); toast(voteMsg,'You are logged out.'); updateButtons(); };
 
-    // Signup
+    // --- Signup (create/update profile) ---
     $('signupBtn').onclick=async ()=>{
       const email=$('suEmail').value.trim();
       const first=$('suFirst').value.trim();
@@ -218,152 +204,148 @@
       const zip  =$('suZip').value.trim();
       const age  =Number($('suAge').value||'');
       const gender=$('suGender').value||'';
-      if(!email){ toast($('signupMsg'),'Enter email.'); return; }
+      if(!email){ $('signupMsg').textContent='Enter email.'; return; }
       try{
         await db.collection('users').doc(email).set({
-          email, first, last, zip, age:isFinite(age)?age:null, gender,
+          email, first, last, zip,
+          age: isFinite(age)?age:null,
+          gender,
           updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
           createdAt: firebase.firestore.FieldValue.serverTimestamp()
         }, { merge:true });
-        session.email=email; session.name=`${first||''} ${last||''}`.trim() || email; saveSession();
-        toast($('signupMsg'),'✅ Account saved. Now log in with tonight’s PIN.');
+        session.email=email;
+        session.name=`${first||''} ${last||''}`.trim() || email;
+        saveSession();
+        $('signupMsg').textContent='✅ Account saved. Now log in with tonight’s PIN.';
         showLoggedInUI();
-      }catch(e){ toast($('signupMsg'),'❌ Error creating account.'); }
+      }catch(e){ $('signupMsg').textContent='❌ Error creating account.'; }
     };
 
-    // Login (email + nightly PIN)
+    // --- Login (email + nightly PIN) ---
     $('loginBtn').onclick=async ()=>{
       const email=$('loginEmail').value.trim();
       const pin  =$('loginPin').value.trim();
-      if(!email||!pin){ toast($('loginMsg'),'Enter email and PIN.'); return; }
+      if(!email||!pin){ $('loginMsg').textContent='Enter email and PIN.'; return; }
       try{
-        // ensure profile exists
+        // ensure user doc exists (id = email)
         const uref=db.collection('users').doc(email);
         const us=await uref.get();
         if(!us.exists){
           await uref.set({ email, createdAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true });
         }
-        // validate PIN against current event
+        // current event
         const st=await db.collection('app').doc('state').get();
-        const eventId=(st.data()||{}).currentEventId;
-        if(!eventId){ toast($('loginMsg'),'Host has not selected an event yet.'); return; }
-        const ev=await db.collection('events').doc(eventId).get();
+        const currentEventId=(st.data()||{}).currentEventId;
+        if(!currentEventId){ $('loginMsg').textContent='Host has not selected an event yet.'; return; }
+        const ev=await db.collection('events').doc(currentEventId).get();
         const expect=(ev.data()||{}).activePin || '';
-        if(!expect){ toast($('loginMsg'),'PIN not set by host.'); return; }
-        if(String(pin)!==String(expect)){ toast($('loginMsg'),'❌ Wrong PIN.'); session.pinOK=false; updateButtons(); return; }
+        if(!expect){ $('loginMsg').textContent='PIN not set by host.'; return; }
+        if(String(pin)!==String(expect)){
+          $('loginMsg').textContent='❌ Wrong PIN.';
+          session.pinOK=false; session.pinEventId=''; saveSession(); updateButtons();
+          return;
+        }
+        // success
+        const data = us.data()||{};
+        session.email=email;
+        session.name=((data.first||'')+' '+(data.last||'')).trim() || email;
+        session.pinOK=true;
+        session.pinEventId=currentEventId;
+        saveSession();
 
-        session.email=email; session.name=(us.data()&& ((us.data().first||'')+' '+(us.data().last||'')).trim()) || email;
-        session.pinOK=true; saveSession();
-        toast($('loginMsg'),'✅ Logged in for tonight.');
+        $('loginMsg').textContent='✅ Logged in for tonight.';
         showLoggedInUI(); updateButtons();
+
         // mark attendance
-        await db.collection('events').doc(eventId).collection('attendees').doc(email).set({
+        await db.collection('events').doc(currentEventId).collection('attendees').doc(email).set({
           email, lastSeen: firebase.firestore.FieldValue.serverTimestamp()
         }, { merge:true });
-      }catch(e){ toast($('loginMsg'),'❌ Error logging in.'); }
+      }catch(e){ $('loginMsg').textContent='❌ Error logging in.'; }
     };
 
-    // --- Sound enable (mobile requires user gesture) ---
-    let soundEnabled=false;
-    $('enableSoundBtn').onclick=()=>{
-      bgCountdown.currentTime=0;
-      bgCountdown.play().then(()=>{
-        bgCountdown.pause(); bgCountdown.currentTime=0;
-        soundEnabled=true;
-        $('enableSoundBtn').textContent='Sound Enabled ✅';
-      }).catch(()=>{ /* user may need to tap again */ });
-    };
-
-    // --- Event wiring & vote window ---
-    let eventId=null, roundId=null, voteClosesAt=null, isVotingOpen=false, autoTick=null;
-
-    async function initEvent(){
-      const s = await db.collection('app').doc('state').get();
-      eventId = (s.data()||{}).currentEventId || null;
-      if(!eventId){ eventBadge.textContent='Event: —'; statusBadge.textContent='Status: —'; return; }
-      eventBadge.textContent='Event: '+eventId;
-
-      db.collection('events').doc(eventId).onSnapshot(snap=>{
-        const d=snap.data()||{};
-        statusBadge.textContent = 'Status: ' + (d.isVotingOpen?'Voting Open':'Voting Closed');
-        $('welcomeLine').textContent = d.isVotingOpen ? 'Voting is OPEN!' : 'Get ready… voting opens when the host starts it!';
-        currentSinger.textContent = d.currentSingerName || '—';
-
-        roundId = d.roundId || d.performanceId || null;
-        isVotingOpen = !!d.isVotingOpen;
-        voteClosesAt = (typeof d.voteClosesAt === 'number') ? d.voteClosesAt : null;
-
-        if(isVotingOpen){
-          updateButtons();
-          if(soundEnabled){
-            // start countdown audio (play once at open)
-            try{ bgCountdown.currentTime=0; bgCountdown.play().catch(()=>{});}catch(e){}
-          }
-          startTick();
-        }else{
-          stopTick();
-          timerEl.textContent='—';
-          updateButtons();
-          try{ bgCountdown.pause(); }catch(e){}
-        }
-      });
-    }
-
-    function startTick(){
-      stopTick();
-      autoTick=setInterval(()=>{
-        if(!isVotingOpen){ stopTick(); return; }
-        let remain='—';
-        if(voteClosesAt){
-          const sec=Math.max(0, Math.round((voteClosesAt - Date.now())/1000));
-          remain = sec+'s';
-          if(sec<=0){ stopTick(); }
-        }
-        timerEl.textContent = remain;
-      }, 250);
-    }
-    function stopTick(){ if(autoTick){ clearInterval(autoTick); autoTick=null; } }
+    // --- Event wiring & voting ---
+    let eventId=null, roundId=null, isVotingOpen=false;
 
     function updateButtons(){
-      const canVote = isVotingOpen && !!roundId && !!session.email && session.pinOK;
-      $('btnEncore').disabled = !canVote;
-      $('btnAnother').disabled = !canVote;
-      $('btnMaybe').disabled  = !canVote;
+      const canVote = !!(session.email && session.pinOK && session.pinEventId===eventId && isVotingOpen && roundId);
+      ['btnEncore','btnAnother','btnMaybe'].forEach(id=>{
+        const el=$(id); if(el) el.disabled=!canVote;
+      });
+      if(!session.email) voteMsg.textContent='Log in (or sign up) to vote.';
+      else if(!(session.pinOK && session.pinEventId===eventId)) voteMsg.textContent='Enter tonight’s PIN once to vote.';
+      else if(!isVotingOpen) voteMsg.textContent='Voting is closed.';
+      else if(!roundId) voteMsg.textContent='Host will start the next round shortly.';
+      else voteMsg.textContent='Pick one: Encore!, Another Shot!, or Maybe Next Time!';
+    }
 
-      if(!session.email){
-        toast(voteMsg,'Log in to vote (email + PIN).');
-      }else if(!session.pinOK){
-        toast(voteMsg,'Enter the correct PIN to enable voting.');
-      }else if(!isVotingOpen){
-        toast(voteMsg,'Voting is closed right now.');
-      }else{
-        toast(voteMsg,'Cast your vote!');
+    async function initEvent(){
+      try{
+        const s = await db.collection('app').doc('state').get();
+        eventId = (s.data()||{}).currentEventId || null;
+        eventBadge.textContent = 'Event: ' + (eventId || '—');
+        if(!eventId){ statusBadge.textContent='Status: —'; updateButtons(); return; }
+
+        // if already validated for this event, show as logged in
+        if(session.pinOK && session.pinEventId===eventId && session.email){ showLoggedInUI(); }
+
+        // Subscribe to event doc
+        db.collection('events').doc(eventId).onSnapshot(async snap=>{
+          const d=snap.data()||{};
+          statusBadge.textContent = 'Status: ' + (d.isVotingOpen?'Voting Open':'Voting Closed');
+          welcomeLine.textContent = d.isVotingOpen ? 'Voting is OPEN!' : 'Get ready… voting opens when the host starts it!';
+          currentSinger.textContent = d.currentSingerName || '—';
+
+          roundId = d.roundId || d.performanceId || null;
+          roundBadge.textContent = 'Round: ' + (roundId ? roundId.slice(0,6) + '…' : '—');
+          isVotingOpen = !!d.isVotingOpen;
+
+          // if not validated for this event, prompt once
+          if(!(session.pinOK && session.pinEventId===eventId && session.email)){
+            $('loginBox').style.display='block';
+            $('signupBox').style.display='none';
+            $('loginMsg').textContent='Please log in with tonight’s PIN once.';
+          }
+          updateButtons();
+        });
+      }catch(e){
+        statusBadge.textContent='Status: error'; updateButtons();
       }
     }
 
-    async function cast(choice){
-      if(!$('btnEncore').disabled){ /* allowed */ }
-      const canVote = isVotingOpen && !!roundId && !!session.email && session.pinOK;
-      if(!canVote){ updateButtons(); return; }
+    // --- Cast vote (1 per round per email) ---
+    async function castVote(choice){
+      if(!eventId || !roundId){ voteMsg.textContent='Wait for host to start the round.'; return; }
+      if(!(session.email && session.pinOK && session.pinEventId===eventId)){
+        voteMsg.textContent='Please log in for tonight with the PIN.'; return;
+      }
+      if(!isVotingOpen){ voteMsg.textContent='Voting is closed.'; return; }
+
+      const voteId = `${roundId}_${session.email}`.replace(/[^a-zA-Z0-9_\-\.@]/g,'_'); // safe id
       try{
-        const voteId = canonicalKey(session.email)+'-'+roundId;
-        await db.collection('events').doc(eventId).collection('votes').doc(voteId).set({
-          roundId, voter: session.email, choice,
-          at: firebase.firestore.FieldValue.serverTimestamp()
+        const evRef = db.collection('events').doc(eventId);
+        await evRef.collection('votes').doc(voteId).set({
+          voter: session.email,
+          choice: choice,
+          roundId: roundId,
+          singerName: (await evRef.get()).data()?.currentSingerName || null,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
         }, { merge:true });
-        toast(voteMsg,'✅ Vote received: '+choice);
-      }catch(e){ toast(voteMsg,'❌ Error submitting vote.'); }
+
+        voteMsg.innerHTML = `<span class="ok">✅ Vote recorded: ${choice}</span>`;
+      }catch(e){
+        voteMsg.innerHTML = `<span class="err">❌ Could not record vote.</span>`;
+      }
     }
 
-    $('btnEncore').onclick = ()=>cast('Encore!');
-    $('btnAnother').onclick= ()=>cast('Another Shot!');
-    $('btnMaybe').onclick  = ()=>cast('Maybe Next Time!');
+    $('btnEncore').onclick = ()=>castVote('Encore!');
+    $('btnAnother').onclick= ()=>castVote('Another Shot!');
+    $('btnMaybe').onclick  = ()=>castVote('Maybe Next Time!');
 
-    // init
-    if(session.email){ showLoggedInUI(); } else { showLoggedOutUI(); }
+    // Start
+    if(session.email){ showLoggedInUI(); }
     initEvent();
   </script>
 
-  <!-- File: index_vote.html | Earn Your Encore Karaoke -->
+  <!-- File: index_vote.html | Earn Your Encore Karaoke (remembers PIN per event; 1 vote/round/email) -->
 </body>
 </html>
