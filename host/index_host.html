@@ -5,272 +5,73 @@
   <title>Earn Your Encore Karaoke – Host</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    :root { --blue:#003e81; --gold:#eaba54; --purple:#2F0658; --white:#fff; }
+    :root {
+      --blue:#003e81; --gold:#eaba54; --purple:#2F0658;
+      --green:#27d07d; --yellow:#f4d35e; --red:#ff5964;
+    }
     *{box-sizing:border-box}
-    body { margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',Arial,sans-serif; background:#0f0a18; color:#fff; }
-    header { padding:18px 16px; background:linear-gradient(90deg,var(--blue),var(--purple)); display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
-    h1 { margin:0; font-size:1.25rem; }
-    .links a{ color:#000; background:#eaba54; padding:8px 12px; border-radius:999px; text-decoration:none; font-weight:900; margin-right:8px; display:inline-block }
-    .container { display:grid; grid-template-columns:300px 1fr; gap:16px; padding:16px; }
-    .sidebar { background:#1b1430; border:1px solid rgba(255,255,255,.08); border-radius:16px; padding:14px; max-height:calc(100vh - 110px); overflow:auto; }
-    .main { display:grid; gap:16px; }
-    .card { background:#1b1430; border:1px solid rgba(255,255,255,.08); border-radius:16px; padding:16px; box-shadow:0 8px 24px rgba(0,0,0,.4); }
-    label { display:block; margin:8px 0 6px; }
-    input,select { width:100%; padding:12px; border-radius:10px; border:1px solid rgba(255,255,255,.15); background:#120c22; color:#fff; }
-    .row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-    .btn { padding:10px 14px; border:0; border-radius:10px; font-weight:700; cursor:pointer; }
-    .btn[disabled]{opacity:.5; cursor:not-allowed}
-    .btn-blue { background:var(--blue); color:#fff; }
-    .btn-gold { background:var(--gold); color:#000; }
-    .btn-red  { background:#ff4c61; color:#fff; }
-    .small { font-size:.9rem }
-    .muted { opacity:.85; font-size:.92rem; }
-    .divider { height:1px; background:rgba(255,255,255,.12); margin:14px 0; }
-    .pill { display:inline-block; padding:6px 10px; border-radius:999px; background:#271c44; }
-    .singer { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:10px; border-radius:10px; border:1px solid rgba(255,255,255,.08); margin-bottom:8px; background:#170f2a; }
-    .singer .name { font-weight:800; }
-    .singer .mini { display:flex; gap:6px }
-    .topline { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
-    .setupHeader{display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:pointer}
-    .chev{transition:transform .2s ease}
-    .setupBody{display:block}
-    .setupBody.hidden{display:none}
-    .inline{display:flex;gap:8px;align-items:end}
-    .lockRow{display:flex;gap:12px;align-items:center;margin-top:8px}
-    .disabledish{opacity:.7}
-
-    /* Modal */
-    .backdrop{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;z-index:60}
-    .modal{width:min(760px,calc(100% - 32px)); background:#1b1430; border:1px solid rgba(255,255,255,.12); border-radius:16px; padding:16px;}
-
-    /* Directory list */
-    .tabbar{display:flex;gap:8px;margin-bottom:10px}
-    .tabbar button{background:#271c44;color:#fff}
-    .tabbar button.active{background:var(--blue)}
-    .dirRow{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px;border:1px solid rgba(255,255,255,.08);border-radius:10px;background:#170f2a;margin-bottom:8px}
-    .pin{cursor:pointer;opacity:.7}
-    .pin.pinned{opacity:1}
+    body{margin:0;background:#0f0a18;color:#fff;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',Arial,sans-serif}
+    header{padding:10px 16px; background:linear-gradient(90deg,var(--blue),var(--purple)); text-align:center}
+    header h1{margin:0;font-size:1.6rem;font-weight:700}
+    main{display:flex;height:calc(100vh - 60px)}
+    aside{width:260px;border-right:1px solid rgba(255,255,255,.15);overflow:auto;padding:12px}
+    aside h2{margin-top:0;font-size:1.2rem}
+    aside ul{list-style:none;padding:0;margin:0}
+    aside li{padding:6px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.1)}
+    aside li:hover{background:rgba(255,255,255,.05)}
+    section{flex:1;overflow:auto;padding:16px}
+    label{display:block;margin-top:10px}
+    input,select,button{padding:6px;margin-top:4px;font-size:1rem}
+    .btn{background:var(--blue);color:#fff;border:none;border-radius:4px;cursor:pointer}
+    .btn:hover{background:var(--purple)}
+    .row{margin:10px 0}
+    .lock{margin-left:8px}
+    .links a{color:var(--gold); margin-right:10px; text-decoration:none}
+    .links a:hover{text-decoration:underline}
+    .toast{position:fixed;bottom:10px;left:50%;transform:translateX(-50%);background:#333;padding:10px 16px;border-radius:6px;display:none}
   </style>
-
-  <!-- Firebase (compat) -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 </head>
 <body>
   <header>
-    <h1>🎤 Earn Your Encore Karaoke • Host</h1>
-    <div class="topline">
-      <span class="pill" id="eventBadge">Event: —</span>
-      <span class="pill" id="statusBadge">Status: —</span>
-    </div>
-    <div class="links">
-      <a href="https://vote.earnyourencorekaraoke.com/vote/index_vote.html" target="_blank" rel="noopener">Vote</a>
-      <a href="https://vote.earnyourencorekaraoke.com/screen/index_screen.html" target="_blank" rel="noopener">Screen</a>
-      <a href="https://vote.earnyourencorekaraoke.com/board/index_board.html" target="_blank" rel="noopener">Board</a>
-    </div>
+    <h1>Host Control Panel</h1>
   </header>
-
-  <div class="container">
-    <!-- LEFT: Singers list (names only) -->
-    <aside class="sidebar">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px">
-        <div style="font-weight:800">Singers (this event)</div>
-        <button class="btn btn-blue small" id="refreshSingersBtn">Refresh</button>
-      </div>
-      <div id="singersList"></div>
-      <div class="divider"></div>
-      <div class="muted small">Click <b>Set Current</b> to choose who sings now. You’ll be prompted for <b>Song & Artist</b> (stored for data only, not displayed to audience).</div>
+  <main>
+    <aside>
+      <h2>Singers</h2>
+      <ul id="singerList"></ul>
     </aside>
-
-    <!-- RIGHT: Controls -->
-    <main class="main">
-      <!-- Collapsible Setup -->
-      <div class="card" id="setupCard">
-        <div class="setupHeader" id="setupHeader">
-          <div style="font-weight:900">Setup (Venue, KJ, PIN)</div>
-          <div class="chev" id="setupChev">▾</div>
-        </div>
-        <div class="setupBody" id="setupBody">
-          <div id="setupFields">
-            <div class="row" style="align-items:end;margin-top:10px">
-              <div class="setupChunk">
-                <label>Event (Venue)</label>
-                <div class="inline">
-                  <input id="hostEventId" placeholder="e.g. The Raven – Bigfork" />
-                  <button class="btn btn-blue" id="pickVenueBtn" title="Choose prior venue">Pick</button>
-                </div>
-              </div>
-              <div class="setupChunk">
-                <label>Tonight’s PIN</label>
-                <div class="inline">
-                  <input id="hostPin" placeholder="1234" />
-                  <button class="btn btn-gold" id="savePinBtn">Save PIN</button>
-                </div>
-              </div>
-            </div>
-
-            <div class="divider"></div>
-
-            <div class="row" style="align-items:end">
-              <div class="setupChunk">
-                <label>KJ Name</label>
-                <div class="inline">
-                  <input id="kjName" placeholder="KJ first & last" />
-                  <button class="btn btn-blue" id="pickKjBtn" title="Choose prior KJ">Pick</button>
-                </div>
-              </div>
-              <div class="setupChunk">
-                <label>KJ Company</label>
-                <input id="kjCompany" placeholder="Company brand" />
-              </div>
-            </div>
-
-            <div class="lockRow">
-              <label><input type="checkbox" id="lockSetup"> Lock setup (prevent accidental changes)</label>
-              <span class="muted small" id="lockHint" style="display:none">🔒 Unlock to edit or use Pick.</span>
-            </div>
-
-            <div style="margin-top:10px">
-              <button class="btn btn-blue" id="saveKJBtn">Save & Collapse</button>
-              <span class="muted small">Saved to event; adds Venue/KJ to your lists.</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="card">
-        <h3 style="margin:0 0 10px">Singer Management</h3>
-        <div class="row">
-          <div>
-            <label>Singer Name</label>
-            <input id="singerName" placeholder="e.g. Jane Doe" />
-          </div>
-          <div>
-            <label>Song/Artist (optional)</label>
-            <input id="defaultArtist" placeholder="e.g. Bohemian Rhapsody – Queen" />
-          </div>
-        </div>
-        <div style="display:flex; gap:8px; margin-top:10px; flex-wrap:wrap">
-          <button class="btn btn-blue" id="addSingerBtn">Add/Update Singer in List</button>
-          <button class="btn btn-gold" id="openDirectoryBtn" title="Pick from regulars">Directory</button>
-        </div>
-
-        <div class="divider"></div>
-
-        <!-- Voting controls -->
-        <div style="display:flex; gap:8px; flex-wrap:wrap">
-          <button class="btn btn-blue" id="startVoteBtn">Start Voting!</button>
-          <button class="btn btn-blue" id="extend15Btn">Extend +15s</button>
-          <button class="btn btn-red"  id="endVoteBtn">End Voting!</button>
-        </div>
-
-        <div id="hostMsg" class="muted" style="margin-top:10px"></div>
-        <div class="muted small" id="timerHint"></div>
-      </div>
-    </main>
-  </div>
-
-  <!-- Venue Picker Modal -->
-  <div class="backdrop" id="venueModal">
-    <div class="modal">
-      <h3>Select a Venue</h3>
-      <div id="venuesList" style="max-height:50vh;overflow:auto;margin-bottom:10px"></div>
-      <div class="divider"></div>
+    <section>
       <div class="row">
-        <div>
-          <label>Add New Venue</label>
-          <input id="newVenue" placeholder="Enter new venue name" />
-        </div>
-        <div style="display:flex;align-items:flex-end">
-          <button class="btn btn-gold" id="addVenueBtn">Add Venue</button>
-        </div>
-      </div>
-      <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:12px">
-        <button class="btn btn-red" id="closeVenueBtn">Close</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- KJ Picker Modal -->
-  <div class="backdrop" id="kjModal">
-    <div class="modal">
-      <h3>Select a KJ</h3>
-      <div id="kjsList" style="max-height:50vh;overflow:auto;margin-bottom:10px"></div>
-      <div class="divider"></div>
-      <div class="row">
-        <div>
-          <label>Add New KJ (Name)</label>
-          <input id="newKjName" placeholder="e.g. Alex Smith" />
-        </div>
-        <div>
-          <label>Company (optional)</label>
-          <input id="newKjCompany" placeholder="e.g. Big Sky Karaoke" />
-        </div>
-      </div>
-      <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:12px">
-        <button class="btn btn-gold" id="addKjBtn">Add KJ</button>
-        <button class="btn btn-red" id="closeKjBtn">Close</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Performance (Set Current) Modal -->
-  <div class="backdrop" id="perfModal">
-    <div class="modal">
-      <h3 id="perfTitle">Set Current</h3>
-      <div class="row">
-        <div>
-          <label>Song Title</label>
-          <input id="perfTitleInput" placeholder="e.g. Bohemian Rhapsody" />
-        </div>
-        <div>
-          <label>Artist</label>
-          <input id="perfArtist" placeholder="e.g. Queen" />
-        </div>
-      </div>
-      <div class="divider"></div>
-      <div style="display:flex; gap:8px; justify-content:flex-end">
-        <button class="btn btn-blue" id="perfSaveBtn">Save & Set Current</button>
-        <button class="btn btn-red" id="perfCancelBtn">Cancel</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Singer Directory Modal -->
-  <div class="backdrop" id="dirModal">
-    <div class="modal">
-      <h3>Regulars Directory</h3>
-      <div class="tabbar">
-        <button class="btn small" id="tabMine">My Directory</button>
-        <button class="btn small" id="tabKj">This KJ’s Directory</button>
-        <button class="btn small" id="tabAll">All</button>
+        <label>Venue:
+          <input id="venueName" placeholder="Venue Name"/>
+          <button class="btn" onclick="pickVenue()">Pick Venue</button>
+          <input type="checkbox" id="lockVenue" class="lock"> Lock
+        </label>
       </div>
       <div class="row">
-        <div>
-          <label>Search</label>
-          <input id="dirSearch" placeholder="Type to filter by name or tag…" />
-        </div>
-        <div>
-          <label>Add New Regular</label>
-          <div style="display:flex;gap:8px">
-            <input id="dirNewName" placeholder="Singer name" />
-            <button class="btn btn-gold" id="dirAddBtn">Add</button>
-          </div>
-        </div>
+        <label>KJ Company:
+          <input id="kjName" placeholder="KJ Name"/>
+          <button class="btn" onclick="pickKj()">Pick KJ</button>
+          <input type="checkbox" id="lockKj" class="lock"> Lock
+        </label>
       </div>
-      <div class="divider"></div>
-      <div id="dirQuickPins" class="muted small" style="margin-bottom:6px"></div>
-      <div id="dirList" style="max-height:50vh;overflow:auto;margin-bottom:12px"></div>
-      <div style="display:flex; gap:8px; justify-content:flex-end">
-        <button class="btn btn-blue" id="dirAddSelectedBtn">Add Selected to Event</button>
-        <button class="btn btn-red" id="dirCloseBtn">Close</button>
+      <div class="row links">
+        <a href="https://vote.earnyourencorekaraoke.com/vote/index_vote.html" target="_blank">Vote</a>
+        <a href="https://vote.earnyourencorekaraoke.com/screen/index_screen.html" target="_blank">Screen</a>
+        <a href="https://vote.earnyourencorekaraoke.com/board/index_board.html" target="_blank">Board</a>
       </div>
-    </div>
-  </div>
+      <div class="row">
+        <button class="btn" onclick="startVoting()">Start Voting!</button>
+        <button class="btn" onclick="extend15()">Extend +15s</button>
+        <button class="btn" onclick="endVoting()">End Voting!</button>
+      </div>
+    </section>
+  </main>
+  <div id="toast" class="toast"></div>
 
   <script>
-    /* Firebase */
     const firebaseConfig = {
       apiKey: "AIzaSyDGbC08WxruYIDPhZSlDlU-7Kzq-7mHENk",
       authDomain: "eyek-vote.firebaseapp.com",
@@ -281,550 +82,95 @@
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
-    const auth = firebase.auth();
 
-    /* Helpers */
-    const $ = id => document.getElementById(id);
-    const hostMsg = $('hostMsg'), timerHint = $('timerHint');
-    const eventBadge = $('eventBadge'), statusBadge = $('statusBadge');
-    const singersList = $('singersList');
+    const singerList = document.getElementById('singerList');
+    const toastEl = document.getElementById('toast');
 
-    function toast(msg){ hostMsg.textContent = msg; }
-    function canonicalKey(name){ return String(name||'').toLowerCase().trim().replace(/[^\w]+/g,'-').replace(/(^-|-$)/g,''); }
-    function currentEventName(){ return $('hostEventId').value.trim(); }
-    function eventRef(){ const id=currentEventName(); if(!id){ toast('⚠️ Enter Event (Venue) first.'); return null; } return db.collection('events').doc(id); }
-    async function setGlobalCurrentEvent(venueName){
-      if (!venueName) return;
-      try { await db.collection('app').doc('state').set({ currentEventId: venueName, updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true }); } catch(e){}
+    let eventId = null;
+
+    function showToast(msg){
+      toastEl.textContent = msg;
+      toastEl.style.display='block';
+      setTimeout(()=>toastEl.style.display='none',2000);
     }
 
-    /* Wipe singers on venue change */
-    async function wipeSingersForEvent(evtName){
-      if(!evtName) return;
-      try{
-        const ref = db.collection('events').doc(evtName);
-        const snap = await ref.collection('singers').get();
-        if (!snap.empty){
-          const batch = db.batch();
-          snap.forEach(doc => batch.delete(doc.ref));
-          await batch.commit();
-        }
-        singersList.innerHTML = '<div class="muted small">No singers yet.</div>';
-        toast('🧹 Singer list cleared for this venue.');
-      }catch(e){ console.error(e); toast('⚠️ Could not clear singers for this venue.'); }
+    function eventRef(){
+      if(!eventId) return null;
+      return db.collection('events').doc(eventId);
     }
 
-    /* Collapsible Setup */
-    const setupHeader=$('setupHeader'), setupBody=$('setupBody'), setupChev=$('setupChev');
-    setupHeader.addEventListener('click', ()=>{
-      const hidden = setupBody.classList.toggle('hidden');
-      setupChev.textContent = hidden ? '▸' : '▾';
-    });
-    function collapseSetup(){ setupBody.classList.add('hidden'); setupChev.textContent='▸'; }
-
-    /* Lock Setup */
-    const lockSetup = $('lockSetup');
-    const lockHint = $('lockHint');
-    const lockTargets = [
-      'hostEventId','pickVenueBtn',
-      'hostPin','savePinBtn',
-      'kjName','pickKjBtn','kjCompany',
-      'saveKJBtn',
-      'newVenue','addVenueBtn',
-      'newKjName','newKjCompany','addKjBtn'
-    ];
-    function setDisabled(id, disabled){
-      const el = document.getElementById(id);
-      if(!el) return;
-      el.disabled = disabled;
-      el.style.pointerEvents = disabled ? 'none' : '';
-      if (disabled) el.classList.add('disabledish'); else el.classList.remove('disabledish');
-    }
-    function applyLockUI(){
-      const locked = lockSetup.checked;
-      lockTargets.forEach(id => setDisabled(id, locked));
-      lockHint.style.display = locked ? 'inline' : 'none';
-    }
-    lockSetup.addEventListener('change', ()=>{
-      localStorage.setItem('setup-locked', lockSetup.checked ? '1' : '0');
-      applyLockUI();
-      if (lockSetup.checked) collapseSetup();
-    });
-    if(localStorage.getItem('setup-locked')==='1'){ lockSetup.checked = true; }
-    applyLockUI();
-
-    /* Venue Picker */
-    const venueModal = $('venueModal'), venuesList = $('venuesList');
-    $('pickVenueBtn').addEventListener('click', async ()=>{
-      if(lockSetup.checked){ toast('🔒 Setup is locked. Uncheck “Lock setup” to pick a venue.'); return; }
-      await loadVenues(); venueModal.style.display='flex';
-    });
-    $('closeVenueBtn').addEventListener('click', ()=>venueModal.style.display='none');
-    async function loadVenues(){
-      venuesList.innerHTML = '<div class="muted">Loading…</div>';
-      try{
-        const snap = await db.collection('venues').orderBy('lastUsedAt','desc').limit(200).get();
-        venuesList.innerHTML = snap.empty ? '<div class="muted">No venues yet. Add one below.</div>' : '';
-        snap.forEach(doc=>{
-          const v = doc.data();
-          const div = document.createElement('div');
-          div.textContent=v.name;
-          div.style.cssText='padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,.08);margin-bottom:8px;background:#170f2a;cursor:pointer';
-          div.onclick = async ()=>{
-            $('hostEventId').value = v.name;
-            venueModal.style.display='none';
-            await db.collection('events').doc(v.name).set({ venueName: v.name }, { merge:true });
-            eventBadge.textContent = 'Event: ' + v.name;
-            await db.collection('venues').doc(v.name).set({ name: v.name, lastUsedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true });
-            await setGlobalCurrentEvent(v.name);
-            await wipeSingersForEvent(v.name);
-            wireEventListener(); loadSingers();
-          };
-          venuesList.appendChild(div);
+    async function loadCurrentEvent(){
+      const snap = await db.collection('app').doc('state').get();
+      eventId = (snap.data()||{}).currentEventId;
+      if(!eventId){ showToast("No event selected"); return; }
+      db.collection('events').doc(eventId).collection('singers')
+        .onSnapshot(qs=>{
+          singerList.innerHTML='';
+          qs.forEach(doc=>{
+            const d=doc.data();
+            const li=document.createElement('li');
+            li.textContent=d.singerName;
+            li.onclick=()=>setCurrentSinger(doc.id,d.singerName);
+            singerList.appendChild(li);
+          });
         });
-      }catch{ venuesList.innerHTML = '<div class="muted">Error loading venues.</div>'; }
-    }
-    $('addVenueBtn').addEventListener('click', async ()=>{
-      if(lockSetup.checked){ toast('🔒 Unlock Setup to add a venue.'); return; }
-      const name = $('newVenue').value.trim(); if(!name) return;
-      try{
-        await db.collection('venues').doc(name).set({ name, createdAt: firebase.firestore.FieldValue.serverTimestamp(), lastUsedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true });
-        $('hostEventId').value = name;
-        await db.collection('events').doc(name).set({ venueName: name }, { merge:true });
-        eventBadge.textContent='Event: '+name; await setGlobalCurrentEvent(name);
-        await wipeSingersForEvent(name);
-        toast('✅ Venue added & selected.');
-        $('newVenue').value=''; await loadVenues(); venueModal.style.display='none';
-        wireEventListener(); loadSingers();
-      }catch(e){ toast('❌ Error adding venue.'); }
-    });
-
-    /* KJ Picker */
-    const kjModal = $('kjModal'), kjsList = $('kjsList');
-    $('pickKjBtn').addEventListener('click', async ()=>{
-      if(lockSetup.checked){ toast('🔒 Setup is locked. Uncheck “Lock setup” to pick a KJ.'); return; }
-      await loadKjs(); kjModal.style.display='flex';
-    });
-    $('closeKjBtn').addEventListener('click', ()=>kjModal.style.display='none');
-    async function loadKjs(){
-      kjsList.innerHTML = '<div class="muted">Loading…</div>';
-      try{
-        const snap = await db.collection('kjs').orderBy('lastUsedAt','desc').limit(200).get();
-        kjsList.innerHTML = snap.empty ? '<div class="muted">No KJs yet. Add one below.</div>' : '';
-        snap.forEach(doc=>{
-          const k = doc.data();
-          const div = document.createElement('div');
-          div.textContent = k.company ? `${k.name} — ${k.company}` : k.name;
-          div.style.cssText='padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,.08);margin-bottom:8px;background:#170f2a;cursor:pointer';
-          div.onclick = ()=>{ $('kjName').value=k.name||''; $('kjCompany').value=k.company||''; kjModal.style.display='none'; };
-          kjsList.appendChild(div);
-        });
-      }catch{ kjsList.innerHTML = '<div class="muted">Error loading KJs.</div>'; }
-    }
-    $('addKjBtn').addEventListener('click', async ()=>{
-      if(lockSetup.checked){ toast('🔒 Unlock Setup to add a KJ.'); return; }
-      const name = $('newKjName').value.trim(); const company = $('newKjCompany').value.trim(); if(!name) return;
-      try{
-        await db.collection('kjs').doc(name).set({ name, company: company||'', createdAt: firebase.firestore.FieldValue.serverTimestamp(), lastUsedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true });
-        $('kjName').value=name; $('kjCompany').value=company; toast('✅ KJ saved.');
-        $('newKjName').value=''; $('newKjCompany').value=''; await loadKjs(); kjModal.style.display='none';
-      }catch(e){ toast('❌ Error saving KJ.'); }
-    });
-
-    /* Save PIN / KJ / Venue */
-    $('savePinBtn').addEventListener('click', async ()=>{
-      if(lockSetup.checked){ toast('🔒 Unlock Setup to save PIN.'); return; }
-      const ref = eventRef(); if(!ref) return;
-      const p = $('hostPin').value.trim(); if(!p){ toast('⚠️ Enter a PIN value.'); return; }
-      try{ await ref.set({ activePin: p }, { merge:true }); toast('✅ PIN saved.'); }catch{ toast('❌ Error saving PIN.'); }
-    });
-
-    $('saveKJBtn').addEventListener('click', async ()=>{
-      if(lockSetup.checked){ toast('🔒 Unlock Setup to save.'); return; }
-      const ref = eventRef(); if(!ref) return;
-      const venueName=currentEventName(); const kjName=$('kjName').value.trim(); const kjCompany=$('kjCompany').value.trim();
-      try{
-        await ref.set({ venueName, kjName, kjCompany, updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true });
-        if (venueName){ await db.collection('venues').doc(venueName).set({ name: venueName, lastUsedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true }); await setGlobalCurrentEvent(venueName); }
-        if (kjName){ await db.collection('kjs').doc(kjName).set({ name: kjName, company: kjCompany||'', lastUsedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true }); }
-        eventBadge.textContent='Event: '+venueName; toast('✅ Event/KJ info saved.'); collapseSetup();
-      }catch{ toast('❌ Error saving event info.'); }
-    });
-
-    /* Singer management */
-    $('addSingerBtn').addEventListener('click', async ()=>{
-      const ref = eventRef(); if(!ref) return;
-      const name=$('singerName').value.trim();
-      const defArtist=$('defaultArtist').value.trim();
-      if(!name){ toast('⚠️ Enter singer name.'); return; }
-      try{
-        const id=canonicalKey(name)||'singer';
-        const now=firebase.firestore.FieldValue.serverTimestamp();
-        await ref.collection('singers').doc(id).set({ name, defaultArtist:defArtist||'', updatedAt: now, createdAt: now }, { merge:true });
-        toast('✅ Singer added/updated.');
-        $('singerName').value='';
-        await loadSingers();
-      }catch(e){ toast('❌ Error adding singer.'); }
-    });
-
-    async function loadSingers(){
-      const ref = eventRef(); if(!ref) return;
-      singersList.innerHTML = '<div class="muted">Loading…</div>';
-      try{
-        let qs;
-        try { qs = await ref.collection('singers').orderBy('updatedAt','desc').limit(300).get(); }
-        catch { qs = await ref.collection('singers').orderBy('name').limit(300).get(); }
-        singersList.innerHTML = qs.empty ? '<div class="muted small">No singers yet.</div>' : '';
-        qs.forEach(doc=>{
-          const s=doc.data()||{};
-          const nameText = s.name || '(no name)';
-          const row=document.createElement('div'); row.className='singer';
-          row.innerHTML = `
-            <div style="min-width:0">
-              <div class="name">${nameText}</div>
-            </div>
-            <div class="mini">
-              <button class="btn btn-blue small" data-id="${doc.id}" data-name="${nameText}" data-artist="${s.defaultArtist||''}">Set Current</button>
-            </div>`;
-          row.querySelector('button').onclick = (e)=> openPerfModal(e.target.getAttribute('data-name')||'', e.target.getAttribute('data-artist')||'');
-          singersList.appendChild(row);
-        });
-      }catch(e){ singersList.innerHTML = `<div class="muted">Error loading singers.</div>`; }
-    }
-    $('refreshSingersBtn').addEventListener('click', loadSingers);
-
-    /* Performance modal (Song first, then Artist) */
-    const perfModal=$('perfModal'), perfArtist=$('perfArtist'), perfTitleInput=$('perfTitleInput'), perfSaveBtn=$('perfSaveBtn'), perfCancelBtn=$('perfCancelBtn'), perfTitleEl=$('perfTitle');
-    let perfSingerName='';
-
-    function openPerfModal(singerName, suggestedArtist){
-      perfSingerName = singerName;
-      perfTitleEl.textContent = `Set Current – ${singerName}`;
-      perfTitleInput.value = '';
-      perfArtist.value = suggestedArtist || '';
-      perfModal.style.display='flex';
-      setTimeout(()=>perfTitleInput.focus(), 50); // focus Song first
-    }
-    function closePerfModal(){ perfModal.style.display='none'; }
-
-    perfCancelBtn.addEventListener('click', closePerfModal);
-    perfSaveBtn.addEventListener('click', async ()=>{
-      const artist = perfArtist.value.trim();
-      const title  = perfTitleInput.value.trim();
-      await setCurrentPerformance(perfSingerName, artist, title);
-      closePerfModal();
-    });
-
-    /* Set current performance */
-    async function setCurrentPerformance(name, artist, title){
-      const ref = eventRef(); if(!ref) return;
-      if(!name){ toast('⚠️ Pick a singer.'); return; }
-      const performanceId = new Date().toISOString();
-      try{
-        await ref.collection('performances').doc(performanceId).set({
-          performanceId, singerName:name, artist:artist||'', title:title||'',
-          startedAt: firebase.firestore.FieldValue.serverTimestamp()
-        }, { merge:true });
-
-        const sid=canonicalKey(name)||'singer';
-        await ref.collection('singers').doc(sid).set({
-          name, defaultArtist: artist||'', updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        }, { merge:true });
-
-        await ref.set({
-          currentSingerName:name,
-          currentArtist: artist||'',
-          currentTitle: title||'',
-          performanceId,
-          roundId: performanceId,
-          isVotingOpen:false,
-          roundOpenedAt: firebase.firestore.FieldValue.delete(),
-          voteWindow: firebase.firestore.FieldValue.delete(),
-          voteClosesAt: firebase.firestore.FieldValue.delete(),
-          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        }, { merge:true });
-
-        statusBadge.textContent = 'Status: Voting Closed';
-        toast(`🎶 Current: ${name}. Ready to start voting.`);
-      }catch{ toast('❌ Error setting current singer.'); }
     }
 
-    /* Voting controls (with authoritative voteClosesAt) */
-    $('startVoteBtn').addEventListener('click', startVoting);
-    $('extend15Btn').addEventListener('click', extend15);
-    $('endVoteBtn').addEventListener('click', endVoting);
-
-    let autoCloseTimer=null;
-    let hostCloseTimerId=null;
-    function clearHostCloseTimer() { if (hostCloseTimerId) { clearTimeout(hostCloseTimerId); hostCloseTimerId = null; } }
-    function scheduleHostAutoClose(closeAtMs) { clearHostCloseTimer(); const delay = Math.max(0, closeAtMs - Date.now()); hostCloseTimerId = setTimeout(()=> { endVoting(); }, delay); }
+    async function setCurrentSinger(id,name){
+      const song=prompt("Enter Song Title:","");
+      const artist=prompt("Enter Artist:","");
+      try{
+        await eventRef().set({currentSingerId:id,currentSingerName:name,currentSong:song,currentArtist:artist},{merge:true});
+        showToast(`Now singing: ${name}`);
+      }catch(e){showToast("Error setting singer");}
+    }
 
     async function startVoting(){
-      const ref = eventRef(); if(!ref) return;
-      try{
-        const now = Date.now();
-        const closeAt = now + 30_000; // 30s
-        await ref.set({
-          isVotingOpen:true,
-          roundOpenedAt: firebase.firestore.FieldValue.serverTimestamp(),
-          voteWindow:{ openedAt: firebase.firestore.FieldValue.serverTimestamp(), durationSec:30, autoClose:true },
-          voteClosesAt: closeAt
-        }, { merge:true });
-
-        statusBadge.textContent = 'Status: Voting Open';
-        toast('⏱️ Voting started (30s).');
-        scheduleHostAutoClose(closeAt);
-        startAutoCloseWatch();
-      }catch{ toast('❌ Error starting voting.'); }
+      const ref=eventRef(); if(!ref) return;
+      const closeAt=Date.now()+30000;
+      await ref.set({
+        isVotingOpen:true,
+        voteClosesAt:closeAt,
+        voteWindow:{openedAt:firebase.firestore.FieldValue.serverTimestamp(),durationSec:30,autoClose:true}
+      },{merge:true});
+      showToast("Voting started");
     }
 
     async function extend15(){
-      const ref = eventRef(); if(!ref) return;
-      try{
-        const snap = await ref.get();
-        const d = snap.data() || {};
-        const vw = d.voteWindow || {};
-        const oldDuration = Number(vw.durationSec || 30);
-        const newDuration = oldDuration + 15;
-        const closeAt = (typeof d.voteClosesAt === 'number' ? d.voteClosesAt : Date.now()) + 15_000;
-
-        await ref.set({
-          voteWindow:{ openedAt: vw.openedAt || firebase.firestore.FieldValue.serverTimestamp(), durationSec:newDuration, autoClose: !!vw.autoClose },
-          voteClosesAt: closeAt
-        }, { merge:true });
-
-        toast('➕ Extended by 15 seconds.');
-        scheduleHostAutoClose(closeAt);
-        startAutoCloseWatch();
-      }catch{ toast('❌ Error extending.'); }
+      const ref=eventRef(); if(!ref) return;
+      const snap=await ref.get(); const d=snap.data()||{};
+      const closeAt=(typeof d.voteClosesAt==='number'?d.voteClosesAt:Date.now())+15000;
+      await ref.set({
+        voteClosesAt:closeAt,
+        voteWindow:{durationSec:(d.voteWindow?.durationSec||30)+15,autoClose:true}
+      },{merge:true});
+      showToast("Extended 15s");
     }
 
     async function endVoting(){
-      const ref = eventRef(); if(!ref) return;
-      try{
-        await ref.set({ isVotingOpen:false }, { merge:true });
-        statusBadge.textContent = 'Status: Voting Closed';
-        toast('🛑 Voting closed.');
-        clearInterval(autoCloseTimer); autoCloseTimer=null; timerHint.textContent='';
-        clearHostCloseTimer();
-
-        // give Screen/Board time to show splash; then clear current
-        setTimeout(async ()=>{
-          try{
-            await ref.set({ currentSingerName:'', currentArtist:'', currentTitle:'' }, { merge:true });
-          }catch(e){}
-        }, 6500);
-      }catch{ toast('❌ Error ending voting.'); }
+      const ref=eventRef(); if(!ref) return;
+      await ref.set({isVotingOpen:false},{merge:true});
+      showToast("Voting closed");
     }
 
-    function startAutoCloseWatch(){
-      clearInterval(autoCloseTimer); autoCloseTimer=null;
-      autoCloseTimer = setInterval(async ()=>{
-        const ref = eventRef(); if(!ref) return;
-        const snap = await ref.get(); const d=snap.data()||{}; const vw=d.voteWindow||null;
-        const closeAt = (typeof d.voteClosesAt === 'number') ? d.voteClosesAt : null;
-
-        if(!vw || !d.isVotingOpen){ clearInterval(autoCloseTimer); autoCloseTimer=null; timerHint.textContent=''; return; }
-
-        let remain;
-        if (closeAt) {
-          remain = Math.max(0, Math.round((closeAt - Date.now())/1000));
-        } else {
-          const openedAt = (vw.openedAt && vw.openedAt.toDate) ? vw.openedAt.toDate().getTime() : Date.now();
-          const endMs = openedAt + (Number(vw.durationSec||30)*1000);
-          remain = Math.max(0, Math.round((endMs - Date.now())/1000));
-        }
-
-        timerHint.textContent = `Voting ends in ${remain}s`;
-        if (remain <= 0 && (vw.autoClose || closeAt)){
-          try{ await ref.set({ isVotingOpen:false }, { merge:true }); }catch(e){}
-          clearInterval(autoCloseTimer); autoCloseTimer=null; timerHint.textContent='';
-          clearHostCloseTimer();
-          setTimeout(async ()=>{
-            try{ await ref.set({ currentSingerName:'', currentArtist:'', currentTitle:'' }, { merge:true }); }catch(e){}
-          }, 6500);
-        }
-      }, 500);
+    async function pickVenue(){
+      if(document.getElementById('lockVenue').checked) return;
+      const val=document.getElementById('venueName').value;
+      if(!val) return;
+      await eventRef().set({venueName:val},{merge:true});
+      showToast("Venue set");
     }
 
-    /* Live status badge + event listener */
-    let eventUnsub=null;
-    function wireEventListener(){
-      if(eventUnsub) eventUnsub();
-      const ref = eventRef(); if(!ref) return;
-      eventUnsub = ref.onSnapshot(snap=>{
-        const d=snap.data()||{};
-        eventBadge.textContent = 'Event: ' + (d.venueName || currentEventName() || '—');
-        statusBadge.textContent = 'Status: ' + (d.isVotingOpen ? 'Voting Open' : 'Voting Closed');
-      }, console.error);
+    async function pickKj(){
+      if(document.getElementById('lockKj').checked) return;
+      const val=document.getElementById('kjName').value;
+      if(!val) return;
+      await eventRef().set({kjName:val},{merge:true});
+      showToast("KJ set");
     }
 
-    $('hostEventId').addEventListener('keyup', e=>{ if (e.key==='Enter'){ handleEventChanged(); }});
-    $('hostEventId').addEventListener('change', handleEventChanged);
-    async function handleEventChanged(){
-      if(lockSetup.checked){ toast('🔒 Unlock Setup to change venue.'); return; }
-      const name=currentEventName(); if(!name) return;
-      try{
-        await db.collection('events').doc(name).set({ venueName: name }, { merge:true });
-        await db.collection('venues').doc(name).set({ name, lastUsedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true });
-        await setGlobalCurrentEvent(name);
-        eventBadge.textContent='Event: '+name;
-        await wipeSingersForEvent(name);
-        wireEventListener(); loadSingers();
-      }catch(e){}
-    }
-
-    // --- Singer Directory (Owner/KJ) ---
-    const dirModal = $('dirModal');
-    const dirList = $('dirList');
-    const dirSearch = $('dirSearch');
-    const dirQuickPins = $('dirQuickPins');
-    const dirAddBtn = $('dirAddBtn');
-    const dirAddSelectedBtn = $('dirAddSelectedBtn');
-    const tabMine=$('tabMine'), tabKj=$('tabKj'), tabAll=$('tabAll');
-    const dirNewName=$('dirNewName');
-    let dirActive='kj';
-    let dirDataMine=[], dirDataKj=[], dirPins=[];
-    let kjKey='';
-
-    function normKey(s){ return canonicalKey(s); }
-
-    function setActiveTab(key){
-      dirActive=key;
-      [tabMine,tabKj,tabAll].forEach(b=>b.classList.remove('active'));
-      if(key==='mine') tabMine.classList.add('active');
-      else if(key==='kj') tabKj.classList.add('active');
-      else tabAll.classList.add('active');
-      renderDirectory();
-    }
-    tabMine.addEventListener('click', ()=>setActiveTab('mine'));
-    tabKj.addEventListener('click',  ()=>setActiveTab('kj'));
-    tabAll.addEventListener('click', ()=>setActiveTab('all'));
-
-    $('openDirectoryBtn').addEventListener('click', async ()=>{
-      await loadDirectory();
-      setActiveTab('kj');
-      dirModal.style.display='flex';
-    });
-    $('dirCloseBtn').addEventListener('click', ()=> dirModal.style.display='none');
-
-    async function loadDirectory(){
-      const ownerUid = (auth.currentUser && auth.currentUser.uid) || 'owner';
-      kjKey = normKey(($('kjName').value||'') + ' ' + ($('kjCompany').value||'')).replace(/-+/g,'-') || 'kj';
-      dirPins = JSON.parse(localStorage.getItem('dirPins')||'[]');
-
-      try{
-        const s1 = await db.collection('owners').doc(ownerUid).collection('singers').orderBy('name').limit(500).get();
-        dirDataMine = s1.docs.map(d=>({id:d.id, ...d.data()}));
-      }catch{ dirDataMine=[]; }
-
-      try{
-        const s2 = await db.collection('kjs').doc(kjKey).collection('singers').orderBy('name').limit(500).get();
-        dirDataKj = s2.docs.map(d=>({id:d.id, ...d.data()}));
-      }catch{ dirDataKj=[]; }
-
-      renderDirectory();
-    }
-
-    function renderDirectory(){
-      const q=(dirSearch.value||'').toLowerCase().trim();
-      let list=[];
-      if(dirActive==='mine') list = dirDataMine.slice();
-      else if(dirActive==='kj') list = dirDataKj.slice();
-      else list = [...dirDataKj, ...dirDataMine].filter((v,i,a)=>a.findIndex(z=>z.id===v.id)===i);
-
-      if(q) list = list.filter(s=>{
-        const h = (s.name||'').toLowerCase();
-        const tags = (s.tags||[]).join(' ').toLowerCase();
-        const aliases = (s.aliases||[]).join(' ').toLowerCase();
-        return h.includes(q) || tags.includes(q) || aliases.includes(q);
-      });
-
-      list.sort((a,b)=> (a.name||'').localeCompare(b.name||''));
-
-      dirQuickPins.innerHTML = dirPins.length ? ('Pinned: ' + dirPins.map(p=>p.name).join(', ')) : 'Pinned: —';
-
-      dirList.innerHTML='';
-      list.forEach(s=>{
-        const pinned = !!dirPins.find(p=>p.id===s.id);
-        const row=document.createElement('div'); row.className='dirRow';
-        row.innerHTML = `
-          <label style="display:flex;align-items:center;gap:10px">
-            <input type="checkbox" class="dirCheck" data-id="${s.id}" data-name="${s.name}">
-            <span>${s.name}</span>
-          </label>
-          <div style="display:flex;gap:10px;align-items:center">
-            <span class="pin ${pinned?'pinned':''}" title="Pin/unpin">⭐</span>
-          </div>`;
-        const star=row.querySelector('.pin');
-        star.onclick = ()=>{
-          if(pinned){ dirPins = dirPins.filter(p=>p.id!==s.id); }
-          else { dirPins = [...dirPins, {id:s.id, name:s.name}]; }
-          localStorage.setItem('dirPins', JSON.stringify(dirPins));
-          renderDirectory();
-        };
-        dirList.appendChild(row);
-      });
-    }
-    dirSearch.addEventListener('input', renderDirectory);
-
-    dirAddBtn.addEventListener('click', async ()=>{
-      const name = (dirNewName.value||'').trim(); if(!name) return;
-      const id = normKey(name)||'singer';
-      const scope = (dirActive==='mine')?'owners':'kjs';
-      const parentId = (scope==='owners')? ((auth.currentUser&&auth.currentUser.uid)||'owner') : kjKey;
-      try{
-        await db.collection(scope).doc(parentId).collection('singers').doc(id).set({
-          name, createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        }, { merge:true });
-        dirNewName.value='';
-        await loadDirectory();
-        toast('✅ Added to directory.');
-      }catch(e){ toast('❌ Error adding to directory.'); }
-    });
-
-    dirAddSelectedBtn.addEventListener('click', async ()=>{
-      const checks = Array.from(dirList.querySelectorAll('.dirCheck:checked'));
-      if(checks.length===0){ toast('Pick at least one regular.'); return; }
-      const ref = eventRef(); if(!ref) return;
-      try{
-        const batch = db.batch();
-        checks.forEach(c=>{
-          const id = c.getAttribute('data-id');
-          const name = c.getAttribute('data-name');
-          const singerRef = ref.collection('singers').doc(id);
-          batch.set(singerRef, { name, updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true });
-        });
-        await batch.commit();
-        toast(`✅ Added ${checks.length} singer(s) to tonight's list.`);
-        dirModal.style.display='none';
-        loadSingers();
-      }catch(e){ toast('❌ Error adding to event.'); }
-    });
-
-    /* Live status + event listener */
-    let eventUnsub=null;
-    function wireEventListener(){
-      if(eventUnsub) eventUnsub();
-      const ref = eventRef(); if(!ref) return;
-      eventUnsub = ref.onSnapshot(snap=>{
-        const d=snap.data()||{};
-        eventBadge.textContent = 'Event: ' + (d.venueName || currentEventName() || '—');
-        statusBadge.textContent = 'Status: ' + (d.isVotingOpen ? 'Voting Open' : 'Voting Closed');
-      }, console.error);
-    }
-
-    // Init
-    $('startVoteBtn').addEventListener('click', startVoting);
-    $('extend15Btn').addEventListener('click', extend15);
-    $('endVoteBtn').addEventListener('click', endVoting);
-
-    $('hostEventId').addEventListener('keyup', e=>{ if (e.key==='Enter'){ handleEventChanged(); }});
-    $('hostEventId').addEventListener('change', handleEventChanged);
-
-    if (currentEventName()){ wireEventListener(); loadSingers(); }
+    loadCurrentEvent();
   </script>
-
-  <!-- File: index_host.html | Earn Your Encore Karaoke -->
+  <!-- FILE: index_host.html -->
 </body>
 </html>
