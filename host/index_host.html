@@ -136,7 +136,7 @@
             <input id="singerName" placeholder="e.g. Jane Doe" />
           </div>
           <div>
-            <!-- Renamed here -->
+            <!-- Renamed to reflect your workflow -->
             <label>Song/Artist (optional)</label>
             <input id="defaultArtist" placeholder="e.g. ‘Don’t Stop Believin’ – Journey’" />
           </div>
@@ -208,16 +208,16 @@
   <div class="backdrop" id="perfModal">
     <div class="modal">
       <h3 id="perfTitle">Set Current</h3>
-    <div class="row">
-      <div>
-        <label>Song Title</label>
-        <input id="perfTitleInput" placeholder="e.g. Bohemian Rhapsody" />
+      <div class="row">
+        <div>
+          <label>Song Title</label>
+          <input id="perfTitleInput" placeholder="e.g. Bohemian Rhapsody" />
+        </div>
+        <div>
+          <label>Artist</label>
+          <input id="perfArtist" placeholder="e.g. Queen" />
+        </div>
       </div>
-      <div>
-        <label>Artist</label>
-        <input id="perfArtist" placeholder="e.g. Queen" />
-      </div>
-    </div>
       <div class="divider"></div>
       <div style="display:flex; gap:8px; justify-content:flex-end">
         <button class="btn btn-blue" id="perfSaveBtn">Save & Set Current</button>
@@ -413,7 +413,6 @@
       try{
         const id=canonicalKey(name)||'singer';
         const now=firebase.firestore.FieldValue.serverTimestamp();
-        // Note: we keep storing this string to prefill Artist; Song is always typed in the Set Current modal
         await ref.collection('singers').doc(id).set({ name, defaultArtist:defArtist||'', updatedAt: now, createdAt: now }, { merge:true });
         toast('✅ Singer added/updated.');
         $('singerName').value='';
@@ -455,10 +454,9 @@
       perfSingerName = singerName;
       perfTitleEl.textContent = `Set Current – ${singerName}`;
       perfTitleInput.value = '';
-      // Prefill Artist from the right-side input if present
       perfArtist.value = suggestedArtist || '';
       perfModal.style.display='flex';
-      setTimeout(()=>perfTitleInput.focus(), 50); // focus Song first
+      setTimeout(()=>perfTitleInput.focus(), 50);
     }
     function closePerfModal(){ perfModal.style.display='none'; }
 
@@ -602,5 +600,7 @@
     // Init
     if (currentEventName()){ wireEventListener(); loadSingers(); }
   </script>
+
+  <!-- FILE: index_host.html | Earn Your Encore Karaoke -->
 </body>
 </html>
