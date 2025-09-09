@@ -279,7 +279,7 @@
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
-    const auth = firebase.auth(); // You can sign in on any page that uses auth.
+    const auth = firebase.auth();
 
     /* Helpers */
     const $ = id => document.getElementById(id);
@@ -533,6 +533,7 @@
           isVotingOpen:false,
           roundOpenedAt: firebase.firestore.FieldValue.delete(),
           voteWindow: firebase.firestore.FieldValue.delete(),
+          voteClosesAt: firebase.firestore.FieldValue.delete(),
           updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         }, { merge:true });
 
@@ -541,34 +542,60 @@
       }catch{ toast('❌ Error setting current singer.'); }
     }
 
-    /* Voting controls */
+    /* Voting controls (with authoritative voteClosesAt) */
     $('startVoteBtn').addEventListener('click', startVoting);
     $('extend15Btn').addEventListener('click', extend15);
     $('endVoteBtn').addEventListener('click', endVoting);
 
     let autoCloseTimer=null;
+    let hostCloseTimerId=null;
+
+    function clearHostCloseTimer() {
+      if (hostCloseTimerId) { clearTimeout(hostCloseTimerId); hostCloseTimerId = null; }
+    }
+    function scheduleHostAutoClose(closeAtMs) {
+      clearHostCloseTimer();
+      const delay = Math.max(0, closeAtMs - Date.now());
+      hostCloseTimerId = setTimeout(()=> { endVoting(); }, delay);
+    }
 
     async function startVoting(){
       const ref = eventRef(); if(!ref) return;
       try{
+        const now = Date.now();
+        const closeAt = now + 30_000; // 30s
         await ref.set({
           isVotingOpen:true,
           roundOpenedAt: firebase.firestore.FieldValue.serverTimestamp(),
-          voteWindow:{ openedAt: firebase.firestore.FieldValue.serverTimestamp(), durationSec:30, autoClose:true }
+          voteWindow:{ openedAt: firebase.firestore.FieldValue.serverTimestamp(), durationSec:30, autoClose:true },
+          voteClosesAt: closeAt
         }, { merge:true });
+
         statusBadge.textContent = 'Status: Voting Open';
         toast('⏱️ Voting started (30s).');
-        startAutoCloseWatch();
+        scheduleHostAutoClose(closeAt);
+        startAutoCloseWatch(); // for on-screen countdown on Host
       }catch{ toast('❌ Error starting voting.'); }
     }
 
     async function extend15(){
       const ref = eventRef(); if(!ref) return;
       try{
-        const snap = await ref.get(); const vw=(snap.data()||{}).voteWindow||{};
-        const duration = Number(vw.durationSec||30)+15;
-        await ref.set({ voteWindow:{ openedAt: vw.openedAt||firebase.firestore.FieldValue.serverTimestamp(), durationSec:duration, autoClose: !!vw.autoClose } }, { merge:true });
+        const snap = await ref.get();
+        const d = snap.data() || {};
+        const vw = d.voteWindow || {};
+        const oldDuration = Number(vw.durationSec || 30);
+        const newDuration = oldDuration + 15;
+
+        const closeAt = (typeof d.voteClosesAt === 'number' ? d.voteClosesAt : Date.now()) + 15_000;
+
+        await ref.set({
+          voteWindow:{ openedAt: vw.openedAt || firebase.firestore.FieldValue.serverTimestamp(), durationSec:newDuration, autoClose: !!vw.autoClose },
+          voteClosesAt: closeAt
+        }, { merge:true });
+
         toast('➕ Extended by 15 seconds.');
+        scheduleHostAutoClose(closeAt);
         startAutoCloseWatch();
       }catch{ toast('❌ Error extending.'); }
     }
@@ -580,8 +607,9 @@
         statusBadge.textContent = 'Status: Voting Closed';
         toast('🛑 Voting closed.');
         clearInterval(autoCloseTimer); autoCloseTimer=null; timerHint.textContent='';
+        clearHostCloseTimer();
 
-        // delay clearing singer so Screen can show splash/sounds
+        // give Screen/Board time to show splash; then clear current
         setTimeout(async ()=>{
           try{
             await ref.set({ currentSingerName:'', currentArtist:'', currentTitle:'' }, { merge:true });
@@ -595,14 +623,24 @@
       autoCloseTimer = setInterval(async ()=>{
         const ref = eventRef(); if(!ref) return;
         const snap = await ref.get(); const d=snap.data()||{}; const vw=d.voteWindow||null;
+        const closeAt = (typeof d.voteClosesAt === 'number') ? d.voteClosesAt : null;
+
         if(!vw || !d.isVotingOpen){ clearInterval(autoCloseTimer); autoCloseTimer=null; timerHint.textContent=''; return; }
-        const openedAt = (vw.openedAt && vw.openedAt.toDate) ? vw.openedAt.toDate().getTime() : Date.now();
-        const endMs = openedAt + (Number(vw.durationSec||30)*1000);
-        const remain = Math.max(0, Math.round((endMs - Date.now())/1000));
+
+        let remain;
+        if (closeAt) {
+          remain = Math.max(0, Math.round((closeAt - Date.now())/1000));
+        } else {
+          const openedAt = (vw.openedAt && vw.openedAt.toDate) ? vw.openedAt.toDate().getTime() : Date.now();
+          const endMs = openedAt + (Number(vw.durationSec||30)*1000);
+          remain = Math.max(0, Math.round((endMs - Date.now())/1000));
+        }
+
         timerHint.textContent = `Voting ends in ${remain}s`;
-        if (remain <= 0 && vw.autoClose){
+        if (remain <= 0 && (vw.autoClose || closeAt)){
           try{ await ref.set({ isVotingOpen:false }, { merge:true }); }catch(e){}
           clearInterval(autoCloseTimer); autoCloseTimer=null; timerHint.textContent='';
+          clearHostCloseTimer();
           setTimeout(async ()=>{
             try{ await ref.set({ currentSingerName:'', currentArtist:'', currentTitle:'' }, { merge:true }); }catch(e){}
           }, 6500);
@@ -647,7 +685,7 @@
     const dirAddSelectedBtn = $('dirAddSelectedBtn');
     const tabMine=$('tabMine'), tabKj=$('tabKj'), tabAll=$('tabAll');
     const dirNewName=$('dirNewName');
-    let dirActive='kj'; // default to KJ list
+    let dirActive='kj';
     let dirDataMine=[], dirDataKj=[], dirPins=[];
     let kjKey='';
 
@@ -677,13 +715,11 @@
       kjKey = normKey(($('kjName').value||'') + ' ' + ($('kjCompany').value||'')).replace(/-+/g,'-') || 'kj';
       dirPins = JSON.parse(localStorage.getItem('dirPins')||'[]');
 
-      // Owner directory
       try{
         const s1 = await db.collection('owners').doc(ownerUid).collection('singers').orderBy('name').limit(500).get();
         dirDataMine = s1.docs.map(d=>({id:d.id, ...d.data()}));
       }catch{ dirDataMine=[]; }
 
-      // KJ directory
       try{
         const s2 = await db.collection('kjs').doc(kjKey).collection('singers').orderBy('name').limit(500).get();
         dirDataKj = s2.docs.map(d=>({id:d.id, ...d.data()}));
@@ -767,6 +803,38 @@
         loadSingers();
       }catch(e){ toast('❌ Error adding to event.'); }
     });
+
+    /* Voting UI wire-up */
+    $('startVoteBtn').addEventListener('click', startVoting);
+    $('extend15Btn').addEventListener('click', extend15);
+    $('endVoteBtn').addEventListener('click', endVoting);
+
+    /* Live status */
+    let eventUnsub=null;
+    function wireEventListener(){
+      if(eventUnsub) eventUnsub();
+      const ref = eventRef(); if(!ref) return;
+      eventUnsub = ref.onSnapshot(snap=>{
+        const d=snap.data()||{};
+        eventBadge.textContent = 'Event: ' + (d.venueName || currentEventName() || '—');
+        statusBadge.textContent = 'Status: ' + (d.isVotingOpen ? 'Voting Open' : 'Voting Closed');
+      }, console.error);
+    }
+
+    $('hostEventId').addEventListener('keyup', e=>{ if (e.key==='Enter'){ handleEventChanged(); }});
+    $('hostEventId').addEventListener('change', handleEventChanged);
+    async function handleEventChanged(){
+      if(lockSetup.checked) return;
+      const name=currentEventName(); if(!name) return;
+      try{
+        await db.collection('events').doc(name).set({ venueName: name }, { merge:true });
+        await db.collection('venues').doc(name).set({ name, lastUsedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true });
+        await setGlobalCurrentEvent(name);
+        eventBadge.textContent='Event: '+name;
+        await wipeSingersForEvent(name);
+        wireEventListener(); loadSingers();
+      }catch(e){}
+    }
 
     // Init
     if (currentEventName()){ wireEventListener(); loadSingers(); }
