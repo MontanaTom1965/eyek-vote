@@ -1,79 +1,106 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Earn Your Encore Karaoke – Vote</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    body { margin:0; font-family:system-ui, sans-serif; background:#0f0a18; color:#fff; }
-    .soundBar{ position:fixed; top:0; left:0; right:0; z-index:1000; display:flex; gap:10px; align-items:center; justify-content:center; padding:10px 14px; background:#201637; border-bottom:1px solid rgba(255,255,255,.18);}
-    .soundBar button{background:#eaba54;color:#000;padding:8px 14px;border-radius:999px;border:0;font-weight:800;cursor:pointer}
-    .container { max-width:600px; margin:90px auto 30px; background:#1b1430; padding:20px; border-radius:16px; }
-    h1 { text-align:center; margin-bottom:20px; }
-    label { display:block; margin-top:12px; }
-    input, select { width:100%; padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,.15); background:#120c22; color:#fff; }
-    button { margin-top:16px; padding:12px; width:100%; border:0; border-radius:8px; font-weight:700; cursor:pointer; }
-    .btn-blue { background:#003e81; color:#fff; }
-    .btn-gold { background:#eaba54; color:#000; }
-    .vote-options { display:grid; gap:12px; margin-top:20px; }
-    .vote-options button { font-size:1.1rem; }
-    .hidden { display:none; }
-    .msg { margin-top:10px; text-align:center; opacity:.85; }
+    :root{ --bg:#0b0715; --card:#1b1430; --ink:#fff; --blue:#003e81; --gold:#eaba54; --red:#ff5a6b; }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',Arial,sans-serif}
+    header{padding:16px;background:linear-gradient(90deg,#003e81,#2F0658);display:flex;justify-content:center}
+    h1{margin:0;font-size:1.2rem}
+    .wrap{max-width:620px;margin:16px auto;padding:0 12px}
+    .card{background:var(--card);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:16px;margin-bottom:12px}
+    label{display:block;margin:8px 0 6px}
+    input,select{width:100%;padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,.15);background:#120c22;color:#fff}
+    .btn{padding:12px 14px;border:0;border-radius:10px;font-weight:800;cursor:pointer}
+    .btn-blue{background:var(--blue);color:#fff}
+    .btn-gold{background:var(--gold);color:#000}
+    .btn-red{background:var(--red);color:#fff}
+    .muted{opacity:.85}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .choices{display:grid;gap:10px;margin-top:10px}
+    .choice{padding:14px;border-radius:12px;border:1px solid rgba(255,255,255,.12);cursor:pointer;text-align:center;font-weight:900}
+    .choice:hover{filter:brightness(1.05)}
+    .enc{background:#0f3; color:#000}
+    .one{background:#eaba54; color:#000}
+    .neg{background:#ff5a6b}
+    .pill{display:inline-block;background:#271c44;padding:6px 10px;border-radius:999px}
   </style>
 
-  <!-- Firebase SDKs -->
+  <!-- Firebase (compat) -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 </head>
 <body>
-  <!-- Floating “Enable sound” bar -->
-  <div class="soundBar" id="soundBar">
-    <div>🔈 Enable sound for voting</div>
-    <button id="enableSoundBtn">Enable</button>
-  </div>
-
-  <div class="container">
-    <h1>🎤 Earn Your Encore Karaoke</h1>
-
-    <!-- Registration / login -->
-    <div id="authSection">
-      <h2>Sign Up / Log In</h2>
-      <label>Email</label><input id="email">
-      <label>Password</label><input id="password" type="password">
-      <label>First Name</label><input id="firstName">
-      <label>Last Name</label><input id="lastName">
-      <label>ZIP Code</label><input id="zip">
-      <label>Age</label><input id="age" type="number">
-      <label>Gender</label>
-      <select id="gender">
-        <option value="">-- Select --</option>
-        <option value="female">Female</option>
-        <option value="male">Male</option>
-        <option value="other">Other</option>
-      </select>
-      <button class="btn-blue" id="signUpBtn">Sign Up</button>
-      <button class="btn-gold" id="loginBtn">Log In</button>
-      <div class="msg" id="authMsg"></div>
+  <header><h1>🗳️ Earn Your Encore Karaoke – Vote</h1></header>
+  <div class="wrap">
+    <div class="card">
+      <div id="eventLine" class="muted">Event: —</div>
+      <div id="singerLine" style="font-size:1.6rem;font-weight:1000;margin-top:4px">Waiting for next singer…</div>
+      <div style="margin-top:6px"><span class="pill" id="statusPill">Loading…</span></div>
     </div>
 
-    <!-- Voting UI -->
-    <div id="voteSection" class="hidden">
-      <h2 id="currentSinger">Waiting for singer…</h2>
-      <div class="vote-options">
-        <button class="btn-gold" onclick="castVote('encore')">🔥 Encore!</button>
-        <button class="btn-blue" onclick="castVote('one_more')">🤔 One More Shot</button>
-        <button style="background:#ff4971;color:#fff" onclick="castVote('next_time')">❌ Maybe Next Time</button>
+    <!-- Registration / Login -->
+    <div class="card" id="regCard">
+      <h3 style="margin:0 0 10px">Register / Sign In</h3>
+      <div class="row">
+        <div><label>First Name</label><input id="firstName"/></div>
+        <div><label>Last Name</label><input id="lastName"/></div>
       </div>
-      <div class="msg" id="voteMsg"></div>
+      <div class="row">
+        <div><label>Email</label><input id="email" type="email" /></div>
+        <div><label>ZIP Code</label><input id="zip" inputmode="numeric" /></div>
+      </div>
+      <div class="row">
+        <div>
+          <label>Age</label>
+          <select id="age">
+            <option value="">Prefer not to say</option>
+            <option>Under 18</option><option>18-24</option><option>25-34</option>
+            <option>35-44</option><option>45-54</option><option>55-64</option><option>65+</option>
+          </select>
+        </div>
+        <div>
+          <label>Gender</label>
+          <select id="gender">
+            <option value="">Prefer not to say</option>
+            <option>Female</option><option>Male</option><option>Non-binary</option>
+            <option>Another / Prefer to self-describe</option>
+          </select>
+        </div>
+      </div>
+      <div class="row">
+        <div><button class="btn btn-blue" id="saveProfileBtn">Save Profile</button></div>
+        <div><button class="btn btn-gold" id="signOutBtn">Sign Out</button></div>
+      </div>
+      <div class="muted" id="regMsg" style="margin-top:8px"></div>
+    </div>
+
+    <!-- Nightly PIN -->
+    <div class="card" id="pinCard" style="display:none">
+      <h3 style="margin:0 0 10px">Enter Tonight’s PIN</h3>
+      <div class="row">
+        <div><input id="pinInput" placeholder="1234"/></div>
+        <div><button class="btn btn-blue" id="pinSaveBtn">Submit PIN</button></div>
+      </div>
+      <div class="muted" id="pinMsg" style="margin-top:8px"></div>
+    </div>
+
+    <!-- Vote buttons -->
+    <div class="card" id="voteCard" style="display:none">
+      <h3 style="margin:0 0 10px">Your Vote</h3>
+      <div class="choices">
+        <div class="choice enc" data-choice="encore">Encore!</div>
+        <div class="choice one" data-choice="one_more">One More Shot!</div>
+        <div class="choice neg" data-choice="next_time">Maybe Next Time!</div>
+      </div>
+      <div class="muted" id="voteMsg" style="margin-top:10px"></div>
     </div>
   </div>
-
-  <!-- Countdown sound (played when voting is open) -->
-  <audio id="countAudio" preload="auto" src="https://vote.earnyourencorekaraoke.com/vote/quiz-countdown.mp3" loop></audio>
 
 <script>
-/* Firebase init */
 const firebaseConfig = {
   apiKey: "AIzaSyDGbC08WxruYIDPhZSlDlU-7Kzq-7mHENk",
   authDomain: "eyek-vote.firebaseapp.com",
@@ -83,95 +110,142 @@ const firebaseConfig = {
   appId: "1:954696683994:web:21a84298a94648ff0230e3"
 };
 firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-const auth = firebase.auth();
+const db=firebase.firestore();
 
-/* DOM */
-const $ = id=>document.getElementById(id);
-const authSection=$('authSection'), voteSection=$('voteSection');
-const authMsg=$('authMsg'), voteMsg=$('voteMsg'), currentSingerEl=$('currentSinger');
-const countAudio=$('countAudio'), soundBar=$('soundBar'), enableSoundBtn=$('enableSoundBtn');
+const $=id=>document.getElementById(id);
+const regCard=$('regCard'), pinCard=$('pinCard'), voteCard=$('voteCard');
+const statusPill=$('statusPill'), eventLine=$('eventLine'), singerLine=$('singerLine');
+const regMsg=$('regMsg'), pinMsg=$('pinMsg'), voteMsg=$('voteMsg');
 
-/* Sound unlock (floating top bar) */
-function hideSoundBar(){ soundBar.style.display='none'; }
-enableSoundBtn.addEventListener('click', async ()=>{
-  try{ await countAudio.play(); countAudio.pause(); localStorage.setItem('sound-ok','1'); hideSoundBar(); }
-  catch(e){ alert('Please tap Enable again to allow audio.'); }
-});
-if(localStorage.getItem('sound-ok')==='1'){ hideSoundBar(); }
+let eventId=null, roundId=null, isVotingOpen=false, activePin=null;
+let userId=localStorage.getItem('eyek-uid') || null;
+if(!userId){ userId='anon_'+Math.random().toString(36).slice(2); localStorage.setItem('eyek-uid', userId); }
 
-/* Sign Up */
-$('signUpBtn').onclick=async()=>{
+/* Save profile (for contact + demos) */
+$('saveProfileBtn').onclick = async ()=>{
+  const profile = {
+    userId,
+    email: $('email').value.trim(),
+    firstName: $('firstName').value.trim(),
+    lastName: $('lastName').value.trim(),
+    zip: $('zip').value.trim(),
+    age: $('age').value,
+    gender: $('gender').value,
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  };
   try{
-    const email=$('email').value, pwd=$('password').value;
-    const cred=await auth.createUserWithEmailAndPassword(email, pwd);
-    await db.collection('users').doc(cred.user.uid).set({
-      email, firstName:$('firstName').value, lastName:$('lastName').value,
-      zip:$('zip').value, age:$('age').value, gender:$('gender').value,
-      createdAt:firebase.firestore.FieldValue.serverTimestamp()
-    }, { merge:true });
-  }catch(e){ authMsg.textContent=e.message; }
+    await db.collection('users').doc(userId).set(profile, { merge:true });
+    regMsg.textContent='✅ Profile saved.';
+  }catch{ regMsg.textContent='❌ Error saving profile.'; }
 };
-/* Log In */
-$('loginBtn').onclick=async()=>{
-  try{ await auth.signInWithEmailAndPassword($('email').value, $('password').value); }
-  catch(e){ authMsg.textContent=e.message; }
+$('signOutBtn').onclick = ()=>{
+  localStorage.removeItem('eyek-uid');
+  location.reload();
 };
 
-/* After login */
-auth.onAuthStateChanged(user=>{
-  if(user){
-    authSection.classList.add('hidden');
-    voteSection.classList.remove('hidden');
-    wireEvent();
-  }else{
-    authSection.classList.remove('hidden');
-    voteSection.classList.add('hidden');
+/* Follow the current event set by Host */
+db.collection('app').doc('state').onSnapshot(s=>{
+  const d=s.data()||{};
+  if(d.currentEventId && d.currentEventId!==eventId){
+    eventId=d.currentEventId; wireEvent(eventId);
   }
 });
 
-let eventId=null, roundId=null, isVotingOpen=false;
-
-function wireEvent(){
-  db.collection('app').doc('state').onSnapshot(s=>{
-    const d=s.data()||{};
-    if(!d.currentEventId) return;
-    if(eventId!==d.currentEventId){
-      eventId=d.currentEventId;
-      listenEvent();
-    }
-  });
-}
-
-function listenEvent(){
-  db.collection('events').doc(eventId).onSnapshot(snap=>{
+let evtUnsub=null, myVoteUnsub=null;
+function wireEvent(evt){
+  if(evtUnsub) evtUnsub();
+  if(myVoteUnsub) myVoteUnsub();
+  evtUnsub = db.collection('events').doc(evt).onSnapshot(async snap=>{
     const d=snap.data()||{};
-    roundId=d.roundId||null;
-    isVotingOpen=!!d.isVotingOpen;
-    currentSingerEl.textContent=d.currentSingerName||'Waiting for singer…';
+    eventLine.textContent = 'Event: ' + (d.venueName || evt);
+    activePin = d.activePin || null;
+    const curName = (d.currentSingerName||'').trim();
+    singerLine.textContent = curName ? curName : 'Waiting for next singer…';
 
-    if(isVotingOpen){
-      // play sound if unlocked
-      if(localStorage.getItem('sound-ok')==='1'){
-        try{countAudio.currentTime=0; countAudio.play().catch(()=>{});}catch(e){}
+    roundId = d.roundId || null;
+    isVotingOpen = !!d.isVotingOpen;
+
+    statusPill.textContent = isVotingOpen ? 'Voting Open' : 'Voting Closed';
+
+    // Require registration before PIN and voting
+    const hasProfile = !!localStorage.getItem('eyek-profile-ok');
+    regCard.style.display = hasProfile ? 'none' : 'block';
+
+    // If saved a profile, mark flag so it stays hidden
+    if(!hasProfile){
+      // Autocomplete from saved Firestore profile if exists
+      try{
+        const p = await db.collection('users').doc(userId).get();
+        if(p.exists){
+          const v=p.data();
+          $('email').value=v.email||''; $('firstName').value=v.firstName||''; $('lastName').value=v.lastName||'';
+          $('zip').value=v.zip||''; $('age').value=v.age||''; $('gender').value=v.gender||'';
+          localStorage.setItem('eyek-profile-ok','1');
+          regCard.style.display='none';
+        }
+      }catch{}
+    }
+
+    // After profile: PIN gate appears if event has a PIN
+    if(localStorage.getItem('eyek-profile-ok')==='1'){
+      if(activePin){
+        pinCard.style.display='block';
+      }else{
+        pinCard.style.display='none';
       }
+    }
+
+    // Show voting card only when open and PIN ok if required
+    const pinOk = (activePin==null) || (localStorage.getItem('eyek-pin-ok')===activePin);
+    voteCard.style.display = (isVotingOpen && roundId && pinOk) ? 'block' : 'none';
+
+    // Track user's vote this round to prevent duplicate
+    if(roundId){
+      if(myVoteUnsub) myVoteUnsub();
+      myVoteUnsub = db.collection('events').doc(evt).collection('rounds').doc(roundId)
+        .collection('votes').doc(userId).onSnapshot(vs=>{
+          const vd=vs.data()||{};
+          if(vd.choice){
+            voteMsg.textContent = `✅ You voted: ${vd.choice==='encore'?'Encore!':vd.choice==='one_more'?'One More Shot!':'Maybe Next Time!'}`;
+          }else{
+            voteMsg.textContent='';
+          }
+        });
     }else{
-      try{countAudio.pause();}catch(e){}
+      if(myVoteUnsub){ myVoteUnsub(); myVoteUnsub=null; }
+      voteMsg.textContent='';
     }
   });
 }
 
-async function castVote(choice){
-  if(!eventId||!roundId){ voteMsg.textContent='No active round.'; return; }
-  const uid=(auth.currentUser||{}).uid;
-  if(!uid){ voteMsg.textContent='Please log in.'; return; }
-  try{
-    await db.collection('events').doc(eventId).collection('rounds').doc(roundId).collection('votes').doc(uid).set({
-      choice, createdAt:firebase.firestore.FieldValue.serverTimestamp()
-    }, { merge:true });
-    voteMsg.textContent='✅ Vote cast!';
-  }catch(e){ voteMsg.textContent='❌ '+e.message; }
-}
+/* PIN handler */
+$('pinSaveBtn').onclick = ()=>{
+  const p = $('pinInput').value.trim();
+  if(!p){ pinMsg.textContent='Enter the PIN.'; return; }
+  if(p===activePin){ localStorage.setItem('eyek-pin-ok', p); pinMsg.textContent='✅ PIN OK.'; }
+  else { pinMsg.textContent='❌ Incorrect PIN.'; }
+};
+
+/* Vote clicks */
+document.querySelectorAll('.choice').forEach(el=>{
+  el.addEventListener('click', async ()=>{
+    if(!isVotingOpen || !roundId || !eventId){ voteMsg.textContent='Voting is closed.'; return; }
+    // If PIN required, enforce
+    if(activePin && localStorage.getItem('eyek-pin-ok')!==activePin){
+      voteMsg.textContent='Enter tonight’s PIN first.'; return;
+    }
+    const choice = el.getAttribute('data-choice');
+    try{
+      const ref = db.collection('events').doc(eventId).collection('rounds').doc(roundId)
+        .collection('votes').doc(userId);
+      await ref.set({ userId, choice, ts: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true });
+      voteMsg.textContent = '✅ Vote recorded!';
+    }catch{ voteMsg.textContent='❌ Error recording vote.'; }
+  });
+});
+
 </script>
+
+  <!-- FILE: index_vote.html | Earn Your Encore Karaoke -->
 </body>
 </html>
