@@ -128,7 +128,7 @@
         statusNote.textContent = d.isVotingOpen ? 'Voting Open' : 'Voting Closed';
       });
 
-      // winners live (Encore! and Another Shot! only)
+      // winners live (Encore! and Another Shot! only — never show Maybe Next Time list)
       db.collection('events').doc(eventId).collection('winners')
         .orderBy('decidedAt','asc').onSnapshot(qs=>{
           encList.innerHTML=''; anotherList.innerHTML='';
@@ -144,7 +144,7 @@
           });
         });
 
-      // splash triggers
+      // splash triggers from host result signal
       db.collection('events').doc(eventId).collection('signals').doc('result').onSnapshot(s=>{
         const d=s.data()||{};
         if(!d.type||!d.singerName) return;
