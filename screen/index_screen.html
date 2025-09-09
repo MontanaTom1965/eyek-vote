@@ -128,7 +128,7 @@
         statusNote.textContent = d.isVotingOpen ? 'Voting Open' : 'Voting Closed';
       });
 
-      // winners live (Encore! and Another Shot! only — never show Maybe Next Time list)
+      // winners live
       db.collection('events').doc(eventId).collection('winners')
         .orderBy('decidedAt','asc').onSnapshot(qs=>{
           encList.innerHTML=''; anotherList.innerHTML='';
@@ -144,7 +144,7 @@
           });
         });
 
-      // splash triggers from host result signal
+      // splash triggers
       db.collection('events').doc(eventId).collection('signals').doc('result').onSnapshot(s=>{
         const d=s.data()||{};
         if(!d.type||!d.singerName) return;
@@ -173,29 +173,22 @@
       }
     }
 
-    // Lightweight confetti
+    // Confetti effect
     const cvs=$('confetti'), ctx=cvs.getContext('2d'); let parts=[];
-    function size(){ cvs.width=innerWidth; cvs.height=innerHeight; }
-    window.addEventListener('resize', size); size();
+    function resize(){ cvs.width=innerWidth; cvs.height=innerHeight; }
+    addEventListener('resize', resize); resize();
     function confettiBurst(){
-      parts=[]; for(let i=0;i<180;i++){ parts.push({x:Math.random()*cvs.width,y:-20,vy:2+Math.random()*4,vx:(Math.random()-.5)*2,size:4+Math.random()*6,rot:Math.random()*6.28}); }
-      let t=0; function step(){
-        ctx.clearRect(0,0,cvs.width,cvs.height);
-        parts.forEach(p=>{
-          p.y+=p.vy; p.x+=p.vx; p.rot+=0.1;
-          ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.rot);
-          ctx.fillStyle='hsl('+((p.x+p.y)%360)+',80%,60%)';
-          ctx.fillRect(-p.size/2,-p.size/2,p.size,p.size);
-          ctx.restore();
-        });
-        t++; if(t<120) requestAnimationFrame(step); else ctx.clearRect(0,0,cvs.width,cvs.height);
+      parts=[];
+      for(let i=0;i<150;i++){
+        parts.push({x:Math.random()*cvs.width,y:Math.random()*cvs.height/2,vx:Math.random()*6-3,vy:Math.random()*-3-2,color:`hsl(${Math.random()*360},100%,50%)`,size:Math.random()*6+2});
       }
-      step();
+      requestAnimationFrame(updateConfetti);
     }
-
-    loadCurrentEvent();
-  </script>
-
-  <!-- File: index_screen.html | Earn Your Encore Karaoke -->
-</body>
-</html>
+    function updateConfetti(){
+      ctx.clearRect(0,0,cvs.width,cvs.height);
+      parts.forEach(p=>{
+        p.x+=p.vx; p.y+=p.vy; p.vy+=0.05;
+        ctx.fillStyle=p.color; ctx.beginPath(); ctx.arc(p.x,p.y,p.size,0,Math.PI*2); ctx.fill();
+      });
+      parts=parts.filter(p=>p.y<cvs.height);
+      if(parts.length>0) reque
