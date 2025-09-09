@@ -2,44 +2,625 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>EYEK – Reports (Private)</title>
+  <title>Earn Your Encore Karaoke — Reports (Admin)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    :root{ --bg:#0b0715; --card:#1b1430; --ink:#fff; --blue:#003e81; --gold:#eaba54; --red:#ff5a6b; --green:#19d36b; }
+    :root{
+      --ink:#0f0a18; --card:#1b1430; --line:rgba(255,255,255,.12);
+      --blue:#003e81; --gold:#eaba54; --purple:#2F0658;
+      --green:#27d07d; --yellow:#f4d35e; --red:#ff5964;
+    }
     *{box-sizing:border-box}
-    body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',Arial,sans-serif}
-    header{padding:16px;background:linear-gradient(90deg,#003e81,#2F0658);display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
-    h1{margin:0;font-size:1.2rem}
-    .wrap{max-width:1100px;margin:16px auto;padding:0 12px}
-    .card{background:var(--card);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:16px;margin-bottom:12px}
-    label{display:block;margin:8px 0 6px}
-    input,select{padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.15);background:#120c22;color:#fff}
-    .row{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px}
-    .btn{padding:10px 12px;border:0;border-radius:10px;font-weight:800;cursor:pointer}
-    .btn-blue{background:var(--blue);color:#fff}
-    .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    body{margin:0;background:var(--ink);color:#fff;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',Arial,sans-serif}
+    header{padding:16px;background:linear-gradient(90deg,var(--blue),var(--purple));display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+    header h1{margin:0;font-size:1.2rem}
+    .container{max-width:1200px;margin:20px auto;padding:0 12px;display:grid;gap:16px}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px}
+    .row{display:grid;grid-template-columns:repeat(12,1fr);gap:12px}
+    label{display:block;font-weight:700;margin-bottom:6px}
+    input,select,button{width:100%;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,.15);background:#120c22;color:#fff}
+    .btn{cursor:pointer;border:0;font-weight:900}
+    .btn-blue{background:var(--blue)}
+    .btn-gold{background:var(--gold);color:#000}
+    .btn-red{background:#ff4c61}
+    .btn-ghost{background:#271c44;border:1px solid var(--line)}
+    .stack{display:flex;gap:8px;flex-wrap:wrap}
+    .muted{opacity:.85}
     table{width:100%;border-collapse:collapse}
-    th,td{padding:8px;border-bottom:1px solid rgba(255,255,255,.12);text-align:left}
-    .pill{display:inline-block;background:#271c44;padding:6px 10px;border-radius:999px}
+    th,td{padding:10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+    th{position:sticky;top:0;background:#1f1737;z-index:1}
+    .badge{display:inline-block;padding:3px 8px;border-radius:999px;font-weight:900}
+    .enc{background:var(--green);color:#000}
+    .one{background:var(--yellow);color:#000}
+    .maybe{background:var(--red);color:#fff}
+    .pill{display:inline-block;padding:6px 10px;border-radius:999px;background:#271c44}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .right{display:flex;gap:8px;align-items:center;justify-content:flex-end}
+    .footbar{display:flex;gap:10px;justify-content:space-between;align-items:center;margin-top:8px}
+    .hint{font-size:.92rem}
+    @media print{
+      header,.no-print{display:none!important}
+      body{background:#fff;color:#000}
+      .card{border:0}
+      th{background:#eee;color:#000}
+      a{color:#000}
+    }
   </style>
 
-  <!-- Firebase (compat) -->
+  <!-- Firebase compat SDKs (match your site) -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 </head>
 <body>
-  <header>
-    <h1>🔒 EYEK – Reports</h1>
-    <div class="row" style="grid-template-columns:1fr 120px;gap:8px;min-width:320px">
-      <input id="ownerCode" placeholder="Owner access code" />
-      <button class="btn btn-blue" id="unlockBtn">Unlock</button>
+  <header class="no-print">
+    <h1>📊 Earn Your Encore Karaoke — Reports</h1>
+    <div class="stack">
+      <a class="btn btn-gold" href="https://vote.earnyourencorekaraoke.com/vote/index_vote.html" target="_blank" rel="noopener">Open Vote</a>
+      <a class="btn btn-blue" href="https://vote.earnyourencorekaraoke.com/screen/index_screen.html" target="_blank" rel="noopener">Open Screen</a>
+      <a class="btn btn-blue" href="https://vote.earnyourencorekaraoke.com/board/index_board.html" target="_blank" rel="noopener">Open Board</a>
+      <span id="eventBadge" class="pill">Current Event: —</span>
     </div>
   </header>
 
-  <div class="wrap">
-    <div class="card" id="filters" style="display:none">
+  <div class="container">
+    <!-- Filters -->
+    <div class="card">
       <div class="row">
-        <div><label>Date From</label><input id="dateFrom" type="date"></div>
-        <div><label>Date To</label><input id="dateTo" type="date"></div>
-        <div><label>Venue</label><input id="fVenue" placeholder="(all)"></div>
-        <div><label>KJ</label><input id="fKj" placeholder="
+        <div style="grid-column:span 3">
+          <label>From (date)</label>
+          <input type="date" id="fromDate" />
+        </div>
+        <div style="grid-column:span 3">
+          <label>To (date)</label>
+          <input type="date" id="toDate" />
+        </div>
+        <div style="grid-column:span 3">
+          <label>Venue</label>
+          <select id="venueFilter"><option value="">All venues</option></select>
+        </div>
+        <div style="grid-column:span 3">
+          <label>KJ (by name)</label>
+          <select id="kjFilter"><option value="">All KJs</option></select>
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:8px">
+        <div style="grid-column:span 4">
+          <label>Song Title (contains)</label>
+          <input id="songFilter" placeholder="e.g. Another One Bites the Dust" />
+        </div>
+        <div style="grid-column:span 4">
+          <label>Artist (contains)</label>
+          <input id="artistFilter" placeholder="e.g. Queen" />
+        </div>
+        <div style="grid-column:span 4">
+          <label>Singer Name (contains)</label>
+          <input id="singerFilter" placeholder="e.g. Lisa H." />
+        </div>
+      </div>
+
+      <div class="footbar">
+        <div class="stack no-print">
+          <button id="loadBtn" class="btn btn-blue">Load / Refresh</button>
+          <button id="clearBtn" class="btn btn-ghost">Clear Filters</button>
+        </div>
+        <div class="muted hint">Tips: set a date range + optional Venue/KJ, then run a quick report below. You can also export CSV or print.</div>
+      </div>
+    </div>
+
+    <!-- Quick Reports -->
+    <div class="card no-print">
+      <div class="grid2">
+        <div>
+          <h3 style="margin:0 0 8px">One-click reports</h3>
+          <div class="stack" style="margin-bottom:10px">
+            <button class="btn btn-gold" id="rSongDemographics">Avg age & gender for the filtered song</button>
+            <button class="btn btn-gold" id="rSongCountYear">How many times this song was sung this year</button>
+          </div>
+          <div class="stack" style="margin-bottom:10px">
+            <button class="btn btn-blue" id="rTopVenues">Top venues (by events)</button>
+            <button class="btn btn-blue" id="rGuestsPerEvent">Avg guests per event (by venue)</button>
+            <button class="btn btn-blue" id="rTopKJs">Who hosted us the most (KJ/company)</button>
+          </div>
+          <div class="stack">
+            <button class="btn btn-ghost" id="rSingerHistory">Songs for the filtered singer (with votes)</button>
+            <button class="btn btn-ghost" id="rPerSingerCounts">Total songs per singer (in range)</button>
+          </div>
+        </div>
+        <div>
+          <h3 style="margin:0 0 8px">Utilities</h3>
+          <div class="stack">
+            <button id="exportBtn" class="btn btn-gold">Export CSV</button>
+            <button onclick="window.print()" class="btn btn-ghost">Print</button>
+          </div>
+          <div class="muted hint" style="margin-top:8px">
+            CSV exports whatever is currently showing in the results table below.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Results -->
+    <div class="card">
+      <div class="stack" style="justify-content:space-between;align-items:flex-end;margin-bottom:8px">
+        <div>
+          <h3 id="resultsTitle" style="margin:0">Results</h3>
+          <div id="resultsSub" class="muted" style="margin-top:4px"></div>
+        </div>
+        <div class="right">
+          <span id="rowCount" class="pill">— rows</span>
+        </div>
+      </div>
+      <div style="max-height:60vh;overflow:auto">
+        <table id="resultsTable">
+          <thead></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Data footprint -->
+    <div class="muted" style="text-align:center">Data pulled live from Firestore according to your filters.</div>
+  </div>
+
+  <script>
+    /* ---------------- Firebase ---------------- */
+    const firebaseConfig = {
+      apiKey: "AIzaSyDGbC08WxruYIDPhZSlDlU-7Kzq-7mHENk",
+      authDomain: "eyek-vote.firebaseapp.com",
+      projectId: "eyek-vote",
+      storageBucket: "eyek-vote.firebasestorage.app",
+      messagingSenderId: "954696683994",
+      appId: "1:954696683994:web:21a84298a94648ff0230e3"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    /* ---------------- DOM helpers ---------------- */
+    const $ = id => document.getElementById(id);
+    const eventBadge=$('eventBadge');
+    const venueFilter=$('venueFilter'), kjFilter=$('kjFilter');
+    const fromDate=$('fromDate'), toDate=$('toDate');
+    const songFilter=$('songFilter'), artistFilter=$('artistFilter'), singerFilter=$('singerFilter');
+    const resultsTitle=$('resultsTitle'), resultsSub=$('resultsSub'), rowCount=$('rowCount');
+    const tblHead=$('resultsTable').querySelector('thead'), tblBody=$('resultsTable').querySelector('tbody');
+
+    function setResults(name, sub){ resultsTitle.textContent = name; resultsSub.textContent = sub || ''; }
+    function setRowsCount(n){ rowCount.textContent = (n||0) + ' rows'; }
+    function clearTable(){ tblHead.innerHTML=''; tblBody.innerHTML=''; setRowsCount(0); }
+
+    function renderTable(headers, rows){
+      clearTable();
+      const tr=document.createElement('tr');
+      headers.forEach(h=>{ const th=document.createElement('th'); th.textContent=h; tr.appendChild(th); });
+      tblHead.appendChild(tr);
+      rows.forEach(r=>{
+        const tr=document.createElement('tr');
+        headers.forEach(h=>{
+          const td=document.createElement('td'); td.textContent = (r[h]!==undefined && r[h]!==null) ? String(r[h]) : '';
+          tr.appendChild(td);
+        });
+        tblBody.appendChild(tr);
+      });
+      setRowsCount(rows.length);
+    }
+
+    function csvDownload(filename, headers, rows){
+      const esc = v => `"${String(v??'').replace(/"/g,'""')}"`;
+      const lines=[headers.map(esc).join(',')];
+      rows.forEach(r=> lines.push(headers.map(h=>esc(r[h])).join(',')));
+      const blob=new Blob([lines.join('\n')], {type:'text/csv;charset=utf-8;'});
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a'); a.href=url; a.download=filename; a.click();
+      setTimeout(()=>URL.revokeObjectURL(url), 500);
+    }
+
+    /* ---------------- Load pickers & current event ---------------- */
+    async function initPickersAndEvent(){
+      try{
+        const st=await db.collection('app').doc('state').get();
+        const currentEvent=(st.data()||{}).currentEventId||'';
+        eventBadge.textContent='Current Event: '+(currentEvent||'—');
+      }catch(e){ eventBadge.textContent='Current Event: —'; }
+
+      try{
+        const vs=await db.collection('venues').orderBy('name').limit(500).get();
+        vs.forEach(d=>{
+          const o=document.createElement('option');
+          o.value=d.id; o.textContent=d.id; venueFilter.appendChild(o);
+        });
+      }catch(e){/* ignore */ }
+
+      try{
+        // Two sources possible: /kjs collection by name, and/or we also add kjCompany as value
+        const ks=await db.collection('kjs').limit(500).get();
+        const seen=new Set();
+        ks.forEach(doc=>{
+          const k=doc.data()||{};
+          const name=k.name||doc.id;
+          if(!seen.has(name)){ const o=document.createElement('option'); o.value=name; o.textContent=name; kjFilter.appendChild(o); seen.add(name); }
+          if(k.company && !seen.has(k.company)){ const o=document.createElement('option'); o.value=k.company; o.textContent=k.company; kjFilter.appendChild(o); seen.add(k.company); }
+        });
+      }catch(e){/* ignore */ }
+    }
+
+    /* ---------------- Core data fetch ----------------
+       We fetch events within date range (if provided), optionally filter by venue/kj,
+       then join performances, votes, attendees, and users.
+       Note: Firestore client has query limits; we do wider fetches and filter in code. */
+    function toMidnightISO(d){ const t=new Date(d); t.setHours(0,0,0,0); return t; }
+    function toEndISO(d){ const t=new Date(d); t.setHours(23,59,59,999); return t; }
+    function contains(hay,needle){ return !needle || (String(hay||'').toLowerCase().includes(String(needle).toLowerCase())); }
+
+    async function loadData(){
+      setResults('Results','Loading…'); clearTable();
+
+      // 1) Figure date bounds
+      const fromVal = fromDate.value ? toMidnightISO(fromDate.value) : null;
+      const toVal   = toDate.value ? toEndISO(toDate.value) : null;
+
+      // 2) Pull candidate events. (We’ll do a broad fetch and filter client-side.)
+      let events=[];
+      try{
+        // If you store createdAt/updatedAt at event root, you could query by time.
+        // Here we just pull a bunch and filter. Adjust limit to your history size.
+        const evs = await db.collection('events').limit(1000).get();
+        evs.forEach(doc=>{
+          const d=doc.data()||{};
+          // FIELD MAPPING: venueName, kjName, kjCompany
+          const metaDate = d.updatedAt?.toDate?.() || d.createdAt?.toDate?.() || null;
+          // If we can’t derive a date, we’ll keep it, but later a performance may give a date.
+          events.push({
+            id: doc.id,
+            venueName: d.venueName || doc.id,
+            kjName: d.kjName || '',
+            kjCompany: d.kjCompany || '',
+            metaDate
+          });
+        });
+      }catch(e){ console.error('load events', e); }
+
+      // quick venue/kj filter
+      const vSel=venueFilter.value||'', kjSel=kjFilter.value||'';
+      if(vSel) events = events.filter(e=> (e.venueName===vSel || e.id===vSel));
+      if(kjSel) events = events.filter(e=> (e.kjName===kjSel || e.kjCompany===kjSel));
+
+      // 3) For each event, pull performances & votes (filtered to date range later)
+      const allPerformances=[];   // {eventId,singerName,title,artist,startedAt(Date)}
+      const allVotes=[];          // {eventId,roundId,voter,choice,at(Date)}
+      const allAttendees=[];      // {eventId,email,lastSeen(Date)}
+      const seenUsers=new Set();
+
+      for(const ev of events){
+        try{
+          const perfSnap = await db.collection('events').doc(ev.id).collection('performances').get();
+          perfSnap.forEach(p=>{
+            const x=p.data()||{};
+            const started = x.startedAt?.toDate?.() || null;
+            allPerformances.push({
+              eventId: ev.id,
+              venueName: ev.venueName,
+              kjName: ev.kjName,
+              kjCompany: ev.kjCompany,
+              singerName: x.singerName || '',
+              title: x.title || '',
+              artist: x.artist || '',
+              startedAt: started
+            });
+          });
+        }catch(e){/*ignore*/}
+
+        try{
+          const voteSnap = await db.collection('events').doc(ev.id).collection('votes').get();
+          voteSnap.forEach(v=>{
+            const x=v.data()||{};
+            const at = x.at?.toDate?.() || null;
+            allVotes.push({
+              eventId: ev.id,
+              venueName: ev.venueName,
+              kjName: ev.kjName,
+              kjCompany: ev.kjCompany,
+              roundId: x.roundId || '',
+              voter: x.voter || '',
+              choice: x.choice || '',
+              at
+            });
+            if(x.voter) seenUsers.add(x.voter);
+          });
+        }catch(e){/* ignore */}
+
+        try{
+          const attSnap = await db.collection('events').doc(ev.id).collection('attendees').get();
+          attSnap.forEach(a=>{
+            const x=a.data()||{};
+            const seen=x.lastSeen?.toDate?.() || null;
+            allAttendees.push({ eventId: ev.id, email: x.email||a.id, lastSeen: seen, venueName: ev.venueName });
+            if(x.email) seenUsers.add(x.email);
+          });
+        }catch(e){/* ignore */}
+      }
+
+      // 4) Pull user profiles (for demographics)
+      const userProfiles={}; // { email -> {first,last,age,gender,zip} }
+      for(const email of Array.from(seenUsers).slice(0,1200)){ // safety cap
+        try{
+          const u=await db.collection('users').doc(email).get();
+          const d=u.data()||{};
+          userProfiles[email] = {
+            email,
+            first: d.first || '',
+            last:  d.last  || '',
+            age:   (d.age!=null ? Number(d.age) : null),
+            gender: d.gender || '',
+            zip:   d.zip || ''
+          };
+        }catch(e){/* ignore */}
+      }
+
+      // 5) Apply date filter to perfs & votes (by startedAt/at)
+      function inRange(dt){
+        if(!dt) return !(fromVal||toVal); // if no date on item, only include when no range set
+        if(fromVal && dt < fromVal) return false;
+        if(toVal && dt > toVal) return false;
+        return true;
+      }
+      const perfs = allPerformances.filter(p=> inRange(p.startedAt));
+      const votes = allVotes.filter(v=> inRange(v.at));
+
+      // 6) Apply text filters song/artist/singer (contains)
+      const songQ = (songFilter.value||'').trim();
+      const artistQ=(artistFilter.value||'').trim();
+      const singerQ=(singerFilter.value||'').trim();
+      const perfsFiltered = perfs.filter(p=>
+        contains(p.title, songQ) &&
+        contains(p.artist, artistQ) &&
+        contains(p.singerName, singerQ)
+      );
+
+      // Store globally for report handlers
+      window.__EYEK = {
+        perfs: perfsFiltered,
+        votes: votes,
+        attendees: allAttendees.filter(a=> inRange(a.lastSeen)),
+        users: userProfiles,
+        filters: { fromVal, toVal, venue: vSel, kj: kjSel, songQ, artistQ, singerQ }
+      };
+
+      setResults('Results', 'Data loaded. Pick a one-click report.');
+      renderTable(['Note'], [{Note:'Choose a report above to display results.'}]);
+    }
+
+    /* ---------------- Report helpers ---------------- */
+    function yearOf(d){ return d ? (new Date(d)).getFullYear() : null; }
+    function labelRange(f){
+      const {fromVal,toVal,venue,kj,songQ,artistQ,singerQ} = f;
+      const a = [];
+      if(fromVal||toVal){ a.push(`Date: ${fromVal?fromVal.toLocaleDateString():'…'} → ${toVal?toVal.toLocaleDateString():'…'}`); }
+      if(venue) a.push(`Venue: ${venue}`);
+      if(kj) a.push(`KJ: ${kj}`);
+      if(songQ) a.push(`Song contains: “${songQ}”`);
+      if(artistQ) a.push(`Artist contains: “${artistQ}”`);
+      if(singerQ) a.push(`Singer contains: “${singerQ}”`);
+      return a.join(' · ') || 'All data';
+    }
+    function choicesForRound(votes, roundId){ return votes.filter(v=>v.roundId===roundId); }
+    function resultCounts(choices){
+      const c={ 'Encore!':0, 'Another Shot!':0, 'Maybe Next Time!':0 };
+      choices.forEach(x=>{ if(c[x.choice]!==undefined) c[x.choice]++; });
+      return c;
+    }
+    function avg(nums){ const a=nums.filter(n=>Number.isFinite(n)); return a.length? (a.reduce((s,n)=>s+n,0)/a.length): null; }
+
+    /* ---------------- Specific reports ---------------- */
+
+    // 1) Avg age & gender breakdown for filtered song (title/artist filters)
+    async function reportSongDemographics(){
+      const { perfs, votes, users, filters } = window.__EYEK || {};
+      const relPerfs = perfs; // already filtered by song/artist contains
+      // Join perfs to votes by roundId via startedAt timestamp proxy.
+      // We don’t have roundId on performances in all rows, but earlier we set performanceId as roundId.
+      // If not present, we approximate by time window: votes within +/- 10min of performance start.
+      const rows=[];
+      for(const p of relPerfs){
+        // try exact round join by timestamp bucketing
+        const winFrom = p.startedAt ? (p.startedAt.getTime() - 10*60*1000) : null;
+        const winTo   = p.startedAt ? (p.startedAt.getTime() + 20*60*1000) : null;
+        const choiceSet = votes.filter(v=>{
+          if(v.eventId!==p.eventId) return false;
+          if(!v.at||!winFrom||!winTo) return true; // fallback include if unknown
+          const t=v.at.getTime();
+          return (t>=winFrom && t<=winTo);
+        });
+        const voters = choiceSet.map(c=> users[c.voter]).filter(Boolean);
+        const ages   = voters.map(u=> Number(u.age)).filter(a=>Number.isFinite(a));
+        const genders= voters.map(u=> u.gender || '').filter(Boolean);
+        const gCounts = {};
+        genders.forEach(g=> gCounts[g]=(gCounts[g]||0)+1);
+        rows.push({
+          Event:p.eventId,
+          Venue:p.venueName,
+          'Song Title': p.title,
+          Artist: p.artist,
+          'Singer': p.singerName,
+          'Avg Age': (avg(ages)?.toFixed(1)) || '—',
+          'Gender Breakdown': Object.keys(gCounts).map(k=>`${k}:${gCounts[k]}`).join('  ') || '—',
+          'Votes Considered': choiceSet.length
+        });
+      }
+      setResults('Average age & gender for the filtered song', labelRange(filters));
+      renderTable(['Event','Venue','Song Title','Artist','Singer','Avg Age','Gender Breakdown','Votes Considered'], rows);
+    }
+
+    // 2) How many times this song was sung this year
+    async function reportSongCountYear(){
+      const { perfs, filters } = window.__EYEK || {};
+      const yr = (new Date()).getFullYear();
+      const rows=[];
+      const byKey = {};
+      perfs.forEach(p=>{
+        if(yearOf(p.startedAt)!==yr) return;
+        const key = (p.title||'')+' — '+(p.artist||'');
+        byKey[key] = (byKey[key]||0)+1;
+      });
+      Object.keys(byKey).sort((a,b)=>byKey[b]-byKey[a]).forEach(k=>{
+        rows.push({ 'Song — Artist': k, 'Count (this year)': byKey[k] });
+      });
+      setResults(`Song counts in ${yr}`, labelRange(filters));
+      renderTable(['Song — Artist','Count (this year)'], rows.length?rows:[{'Song — Artist':'(no matches)','Count (this year)':0}]);
+    }
+
+    // 3) Top venues (by number of events in range)
+    async function reportTopVenues(){
+      const { perfs, filters } = window.__EYEK || {};
+      // Count unique eventIds per venue
+      const map = new Map(); // venue -> Set(eventId)
+      perfs.forEach(p=>{
+        if(!map.has(p.venueName)) map.set(p.venueName, new Set());
+        map.get(p.venueName).add(p.eventId);
+      });
+      const rows = Array.from(map.entries()).map(([venue,set])=>({Venue:venue, Events:set.size}));
+      rows.sort((a,b)=>b.Events-a.Events);
+      setResults('Top venues (by events in range)', labelRange(filters));
+      renderTable(['Venue','Events'], rows);
+    }
+
+    // 4) Average guests per event (by venue) — uses attendees collection; falls back to voter unique count
+    async function reportGuestsPerEvent(){
+      const { attendees, votes, perfs, filters } = window.__EYEK || {};
+      // Build per event unique guests
+      const byEventGuests = {};
+      perfs.forEach(p=>{ byEventGuests[p.eventId] = byEventGuests[p.eventId] || new Set(); });
+      attendees.forEach(a=>{ if(byEventGuests[a.eventId]) byEventGuests[a.eventId].add(a.email); });
+
+      // fallback using voters if attendees missing
+      if(Object.values(byEventGuests).every(set=> set.size===0)){
+        votes.forEach(v=>{
+          byEventGuests[v.eventId] = byEventGuests[v.eventId] || new Set();
+          byEventGuests[v.eventId].add(v.voter);
+        });
+      }
+
+      // group by venue
+      const venueEvents = {};
+      perfs.forEach(p=>{
+        const v=p.venueName||'(unknown)';
+        venueEvents[v] = venueEvents[v] || new Set();
+        venueEvents[v].add(p.eventId);
+      });
+
+      const rows=[];
+      Object.keys(venueEvents).forEach(venue=>{
+        const evIds = Array.from(venueEvents[venue]);
+        const guestCounts = evIds.map(id => (byEventGuests[id]?.size)||0);
+        const average = guestCounts.length ? (guestCounts.reduce((s,n)=>s+n,0)/guestCounts.length) : 0;
+        rows.push({Venue:venue, 'Events': evIds.length, 'Avg Guests/Event': average.toFixed(1)});
+      });
+      rows.sort((a,b)=> Number(b['Avg Guests/Event']) - Number(a['Avg Guests/Event']) );
+      setResults('Average guests per event (by venue)', labelRange(filters));
+      renderTable(['Venue','Events','Avg Guests/Event'], rows);
+    }
+
+    // 5) Who hosted us the most (KJ/company)
+    async function reportTopKJs(){
+      const { perfs, filters } = window.__EYEK || {};
+      const kjEvents={}; // key -> Set(eventId)
+      perfs.forEach(p=>{
+        const key = (p.kjName || p.kjCompany || '(unknown)');
+        kjEvents[key] = kjEvents[key] || new Set();
+        kjEvents[key].add(p.eventId);
+      });
+      const rows = Object.keys(kjEvents).map(k=>({KJ_or_Company:k, Events: kjEvents[k].size}));
+      rows.sort((a,b)=>b.Events-a.Events);
+      setResults('Top KJs / Companies (by events)', labelRange(filters));
+      renderTable(['KJ_or_Company','Events'], rows);
+    }
+
+    // 6) Songs for the filtered singer (with votes)
+    async function reportSingerHistory(){
+      const { perfs, votes, filters } = window.__EYEK || {};
+      const singerQ = (filters.singerQ||'').trim();
+      if(!singerQ){ setResults('Singer history','Enter a Singer Name filter first.'); renderTable(['Note'],[{Note:'Please type a singer name in Filters.'}]); return; }
+
+      const mine = perfs.filter(p=> contains(p.singerName, singerQ));
+      const rows=[];
+      for(const p of mine){
+        // approximate vote bundle for this performance by time window
+        const winFrom = p.startedAt ? (p.startedAt.getTime() - 10*60*1000) : null;
+        const winTo   = p.startedAt ? (p.startedAt.getTime() + 20*60*1000) : null;
+        const vs = votes.filter(v=>{
+          if(v.eventId!==p.eventId) return false;
+          if(!v.at||!winFrom||!winTo) return true;
+          const t=v.at.getTime();
+          return (t>=winFrom && t<=winTo);
+        });
+        const counts=resultCounts(vs);
+        rows.push({
+          Date: p.startedAt ? p.startedAt.toLocaleString() : '(unknown)',
+          Venue: p.venueName,
+          Title: p.title,
+          Artist: p.artist,
+          'Encore!': counts['Encore!'],
+          'Another Shot!': counts['Another Shot!'],
+          'Maybe Next Time!': counts['Maybe Next Time!'],
+          'Total Votes': vs.length
+        });
+      }
+      rows.sort((a,b)=> new Date(a.Date) - new Date(b.Date));
+      setResults(`Song history for "${singerQ}"`, labelRange(filters));
+      renderTable(['Date','Venue','Title','Artist','Encore!','Another Shot!','Maybe Next Time!','Total Votes'], rows);
+    }
+
+    // 7) Total songs per singer (in range)
+    async function reportPerSingerCounts(){
+      const { perfs, filters } = window.__EYEK || {};
+      const map={}; // singer -> count
+      perfs.forEach(p=>{
+        const name=p.singerName||'(unknown)';
+        map[name]=(map[name]||0)+1;
+      });
+      const rows = Object.keys(map).map(k=>({Singer:k, 'Songs Performed':map[k]})).sort((a,b)=>b['Songs Performed']-a['Songs Performed']);
+      setResults('Total songs per singer (in range)', labelRange(filters));
+      renderTable(['Singer','Songs Performed'], rows);
+    }
+
+    /* ---------------- Wire buttons ---------------- */
+    $('loadBtn').onclick = loadData;
+    $('clearBtn').onclick = ()=>{
+      fromDate.value = ''; toDate.value='';
+      venueFilter.value=''; kjFilter.value='';
+      songFilter.value=''; artistFilter.value=''; singerFilter.value='';
+      clearTable(); setResults('Results','Filters cleared. Click Load to fetch.');
+    };
+    $('exportBtn').onclick = ()=>{
+      const headers = Array.from(tblHead.querySelectorAll('th')).map(th=>th.textContent);
+      const rows=[]; tblBody.querySelectorAll('tr').forEach(tr=>{
+        const obj={}; const tds=tr.querySelectorAll('td');
+        headers.forEach((h,i)=> obj[h]= tds[i] ? tds[i].textContent : '' );
+        rows.push(obj);
+      });
+      if(!headers.length){ alert('Nothing to export.'); return; }
+      csvDownload('eyek_report.csv', headers, rows);
+    };
+
+    $('rSongDemographics').onclick = reportSongDemographics;
+    $('rSongCountYear').onclick    = reportSongCountYear;
+    $('rTopVenues').onclick        = reportTopVenues;
+    $('rGuestsPerEvent').onclick   = reportGuestsPerEvent;
+    $('rTopKJs').onclick           = reportTopKJs;
+    $('rSingerHistory').onclick    = reportSingerHistory;
+    $('rPerSingerCounts').onclick  = reportPerSingerCounts;
+
+    // Boot
+    initPickersAndEvent();
+    // Optional: default to YTD
+    (function setYTD(){
+      const now=new Date(); const jan1=new Date(now.getFullYear(),0,1);
+      fromDate.valueAsDate=jan1; toDate.valueAsDate=now;
+    })();
+    // Load initial data
+    loadData();
+  </script>
+
+  <!-- FILE: /admin/index_report.html -->
+</body>
+</html>
