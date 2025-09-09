@@ -16,7 +16,7 @@
     .main { display:grid; gap:16px; }
     .card { background:#1b1430; border:1px solid rgba(255,255,255,.08); border-radius:16px; padding:16px; box-shadow:0 8px 24px rgba(0,0,0,.4); }
     label { display:block; margin:8px 0 6px; }
-    input { width:100%; padding:12px; border-radius:10px; border:1px solid rgba(255,255,255,.15); background:#120c22; color:#fff; }
+    input,select { width:100%; padding:12px; border-radius:10px; border:1px solid rgba(255,255,255,.15); background:#120c22; color:#fff; }
     .row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
     .btn { padding:10px 14px; border:0; border-radius:10px; font-weight:700; cursor:pointer; }
     .btn-blue { background:var(--blue); color:#fff; }
@@ -40,12 +40,21 @@
 
     /* Modal */
     .backdrop{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;z-index:60}
-    .modal{width:min(620px,calc(100% - 32px)); background:#1b1430; border:1px solid rgba(255,255,255,.12); border-radius:16px; padding:16px;}
+    .modal{width:min(760px,calc(100% - 32px)); background:#1b1430; border:1px solid rgba(255,255,255,.12); border-radius:16px; padding:16px;}
+
+    /* Directory list */
+    .tabbar{display:flex;gap:8px;margin-bottom:10px}
+    .tabbar button{background:#271c44;color:#fff}
+    .tabbar button.active{background:var(--blue)}
+    .dirRow{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px;border:1px solid rgba(255,255,255,.08);border-radius:10px;background:#170f2a;margin-bottom:8px}
+    .pin{cursor:pointer;opacity:.7}
+    .pin.pinned{opacity:1}
   </style>
 
   <!-- Firebase (compat) -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 </head>
 <body>
   <header>
@@ -136,13 +145,13 @@
             <input id="singerName" placeholder="e.g. Jane Doe" />
           </div>
           <div>
-            <!-- Renamed to reflect your workflow -->
             <label>Song/Artist (optional)</label>
-            <input id="defaultArtist" placeholder="e.g. ‘Don’t Stop Believin’ – Journey’" />
+            <input id="defaultArtist" placeholder="e.g. Bohemian Rhapsody – Queen" />
           </div>
         </div>
         <div style="display:flex; gap:8px; margin-top:10px; flex-wrap:wrap">
           <button class="btn btn-blue" id="addSingerBtn">Add/Update Singer in List</button>
+          <button class="btn btn-gold" id="openDirectoryBtn" title="Pick from regulars">Directory</button>
         </div>
 
         <div class="divider"></div>
@@ -226,8 +235,40 @@
     </div>
   </div>
 
+  <!-- Singer Directory Modal -->
+  <div class="backdrop" id="dirModal">
+    <div class="modal">
+      <h3>Regulars Directory</h3>
+      <div class="tabbar">
+        <button class="btn small" id="tabMine">My Directory</button>
+        <button class="btn small" id="tabKj">This KJ’s Directory</button>
+        <button class="btn small" id="tabAll">All</button>
+      </div>
+      <div class="row">
+        <div>
+          <label>Search</label>
+          <input id="dirSearch" placeholder="Type to filter by name or tag…" />
+        </div>
+        <div>
+          <label>Add New Regular</label>
+          <div style="display:flex;gap:8px">
+            <input id="dirNewName" placeholder="Singer name" />
+            <button class="btn btn-gold" id="dirAddBtn">Add</button>
+          </div>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div id="dirQuickPins" class="muted small" style="margin-bottom:6px"></div>
+      <div id="dirList" style="max-height:50vh;overflow:auto;margin-bottom:12px"></div>
+      <div style="display:flex; gap:8px; justify-content:flex-end">
+        <button class="btn btn-blue" id="dirAddSelectedBtn">Add Selected to Event</button>
+        <button class="btn btn-red" id="dirCloseBtn">Close</button>
+      </div>
+    </div>
+  </div>
+
   <script>
-    /* Firebase init */
+    /* Firebase */
     const firebaseConfig = {
       apiKey: "AIzaSyDGbC08WxruYIDPhZSlDlU-7Kzq-7mHENk",
       authDomain: "eyek-vote.firebaseapp.com",
@@ -238,6 +279,7 @@
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
+    const auth = firebase.auth(); // You can sign in on any page that uses auth.
 
     /* Helpers */
     const $ = id => document.getElementById(id);
@@ -260,16 +302,14 @@
       try{
         const ref = db.collection('events').doc(evtName);
         const snap = await ref.collection('singers').get();
-        if (snap.empty) { singersList.innerHTML = '<div class="muted small">No singers yet.</div>'; return; }
-        const batch = db.batch();
-        snap.forEach(doc => batch.delete(doc.ref));
-        await batch.commit();
+        if (!snap.empty){
+          const batch = db.batch();
+          snap.forEach(doc => batch.delete(doc.ref));
+          await batch.commit();
+        }
         singersList.innerHTML = '<div class="muted small">No singers yet.</div>';
         toast('🧹 Singer list cleared for this venue.');
-      }catch(e){
-        console.error('wipeSingersForEvent error', e);
-        toast('⚠️ Could not clear singers for this venue.');
-      }
+      }catch(e){ console.error(e); toast('⚠️ Could not clear singers for this venue.'); }
     }
 
     /* Collapsible Setup */
@@ -294,8 +334,8 @@
       const el = document.getElementById(id);
       if(!el) return;
       el.disabled = disabled;
-      if (disabled) el.classList.add('disabledish'); else el.classList.remove('disabledish');
       el.style.pointerEvents = disabled ? 'none' : '';
+      if (disabled) el.classList.add('disabledish'); else el.classList.remove('disabledish');
     }
     function applyLockUI(){ lockTargets.forEach(id => setDisabled(id, lockSetup.checked)); }
     lockSetup.addEventListener('change', ()=>{
@@ -425,8 +465,8 @@
       singersList.innerHTML = '<div class="muted">Loading…</div>';
       try{
         let qs;
-        try { qs = await ref.collection('singers').orderBy('updatedAt','desc').limit(200).get(); }
-        catch { qs = await ref.collection('singers').orderBy('name').limit(200).get(); }
+        try { qs = await ref.collection('singers').orderBy('updatedAt','desc').limit(300).get(); }
+        catch { qs = await ref.collection('singers').orderBy('name').limit(300).get(); }
         singersList.innerHTML = qs.empty ? '<div class="muted small">No singers yet.</div>' : '';
         qs.forEach(doc=>{
           const s=doc.data()||{};
@@ -456,7 +496,7 @@
       perfTitleInput.value = '';
       perfArtist.value = suggestedArtist || '';
       perfModal.style.display='flex';
-      setTimeout(()=>perfTitleInput.focus(), 50);
+      setTimeout(()=>perfTitleInput.focus(), 50); // focus Song first
     }
     function closePerfModal(){ perfModal.style.display='none'; }
 
@@ -502,9 +542,9 @@
     }
 
     /* Voting controls */
-    document.getElementById('startVoteBtn').addEventListener('click', startVoting);
-    document.getElementById('extend15Btn').addEventListener('click', extend15);
-    document.getElementById('endVoteBtn').addEventListener('click', endVoting);
+    $('startVoteBtn').addEventListener('click', startVoting);
+    $('extend15Btn').addEventListener('click', extend15);
+    $('endVoteBtn').addEventListener('click', endVoting);
 
     let autoCloseTimer=null;
 
@@ -597,10 +637,141 @@
       }catch(e){}
     }
 
+    // --- Singer Directory (Owner/KJ) ---
+
+    const dirModal = $('dirModal');
+    const dirList = $('dirList');
+    const dirSearch = $('dirSearch');
+    const dirQuickPins = $('dirQuickPins');
+    const dirAddBtn = $('dirAddBtn');
+    const dirAddSelectedBtn = $('dirAddSelectedBtn');
+    const tabMine=$('tabMine'), tabKj=$('tabKj'), tabAll=$('tabAll');
+    const dirNewName=$('dirNewName');
+    let dirActive='kj'; // default to KJ list
+    let dirDataMine=[], dirDataKj=[], dirPins=[];
+    let kjKey='';
+
+    function normKey(s){ return canonicalKey(s); }
+
+    function setActiveTab(key){
+      dirActive=key;
+      [tabMine,tabKj,tabAll].forEach(b=>b.classList.remove('active'));
+      if(key==='mine') tabMine.classList.add('active');
+      else if(key==='kj') tabKj.classList.add('active');
+      else tabAll.classList.add('active');
+      renderDirectory();
+    }
+    tabMine.addEventListener('click', ()=>setActiveTab('mine'));
+    tabKj.addEventListener('click',  ()=>setActiveTab('kj'));
+    tabAll.addEventListener('click', ()=>setActiveTab('all'));
+
+    $('openDirectoryBtn').addEventListener('click', async ()=>{
+      await loadDirectory();
+      setActiveTab('kj');
+      dirModal.style.display='flex';
+    });
+    $('dirCloseBtn').addEventListener('click', ()=> dirModal.style.display='none');
+
+    async function loadDirectory(){
+      const ownerUid = (auth.currentUser && auth.currentUser.uid) || 'owner';
+      kjKey = normKey(($('kjName').value||'') + ' ' + ($('kjCompany').value||'')).replace(/-+/g,'-') || 'kj';
+      dirPins = JSON.parse(localStorage.getItem('dirPins')||'[]');
+
+      // Owner directory
+      try{
+        const s1 = await db.collection('owners').doc(ownerUid).collection('singers').orderBy('name').limit(500).get();
+        dirDataMine = s1.docs.map(d=>({id:d.id, ...d.data()}));
+      }catch{ dirDataMine=[]; }
+
+      // KJ directory
+      try{
+        const s2 = await db.collection('kjs').doc(kjKey).collection('singers').orderBy('name').limit(500).get();
+        dirDataKj = s2.docs.map(d=>({id:d.id, ...d.data()}));
+      }catch{ dirDataKj=[]; }
+
+      renderDirectory();
+    }
+
+    function renderDirectory(){
+      const q=(dirSearch.value||'').toLowerCase().trim();
+      let list=[];
+      if(dirActive==='mine') list = dirDataMine.slice();
+      else if(dirActive==='kj') list = dirDataKj.slice();
+      else list = [...dirDataKj, ...dirDataMine].filter((v,i,a)=>a.findIndex(z=>z.id===v.id)===i);
+
+      if(q) list = list.filter(s=>{
+        const h = (s.name||'').toLowerCase();
+        const tags = (s.tags||[]).join(' ').toLowerCase();
+        const aliases = (s.aliases||[]).join(' ').toLowerCase();
+        return h.includes(q) || tags.includes(q) || aliases.includes(q);
+      });
+
+      list.sort((a,b)=> (a.name||'').localeCompare(b.name||''));
+
+      dirQuickPins.innerHTML = dirPins.length ? ('Pinned: ' + dirPins.map(p=>p.name).join(', ')) : 'Pinned: —';
+
+      dirList.innerHTML='';
+      list.forEach(s=>{
+        const pinned = !!dirPins.find(p=>p.id===s.id);
+        const row=document.createElement('div'); row.className='dirRow';
+        row.innerHTML = `
+          <label style="display:flex;align-items:center;gap:10px">
+            <input type="checkbox" class="dirCheck" data-id="${s.id}" data-name="${s.name}">
+            <span>${s.name}</span>
+          </label>
+          <div style="display:flex;gap:10px;align-items:center">
+            <span class="pin ${pinned?'pinned':''}" title="Pin/unpin">⭐</span>
+          </div>`;
+        const star=row.querySelector('.pin');
+        star.onclick = ()=>{
+          if(pinned){ dirPins = dirPins.filter(p=>p.id!==s.id); }
+          else { dirPins = [...dirPins, {id:s.id, name:s.name}]; }
+          localStorage.setItem('dirPins', JSON.stringify(dirPins));
+          renderDirectory();
+        };
+        dirList.appendChild(row);
+      });
+    }
+    dirSearch.addEventListener('input', renderDirectory);
+
+    dirAddBtn.addEventListener('click', async ()=>{
+      const name = (dirNewName.value||'').trim(); if(!name) return;
+      const id = normKey(name)||'singer';
+      const scope = (dirActive==='mine')?'owners':'kjs';
+      const parentId = (scope==='owners')? ((auth.currentUser&&auth.currentUser.uid)||'owner') : kjKey;
+      try{
+        await db.collection(scope).doc(parentId).collection('singers').doc(id).set({
+          name, createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge:true });
+        dirNewName.value='';
+        await loadDirectory();
+        toast('✅ Added to directory.');
+      }catch(e){ toast('❌ Error adding to directory.'); }
+    });
+
+    dirAddSelectedBtn.addEventListener('click', async ()=>{
+      const checks = Array.from(dirList.querySelectorAll('.dirCheck:checked'));
+      if(checks.length===0){ toast('Pick at least one regular.'); return; }
+      const ref = eventRef(); if(!ref) return;
+      try{
+        const batch = db.batch();
+        checks.forEach(c=>{
+          const id = c.getAttribute('data-id');
+          const name = c.getAttribute('data-name');
+          const singerRef = ref.collection('singers').doc(id);
+          batch.set(singerRef, { name, updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true });
+        });
+        await batch.commit();
+        toast(`✅ Added ${checks.length} singer(s) to tonight's list.`);
+        dirModal.style.display='none';
+        loadSingers();
+      }catch(e){ toast('❌ Error adding to event.'); }
+    });
+
     // Init
     if (currentEventName()){ wireEventListener(); loadSingers(); }
   </script>
 
-  <!-- FILE: index_host.html | Earn Your Encore Karaoke -->
+  <!-- File: index_host.html | Earn Your Encore Karaoke -->
 </body>
 </html>
