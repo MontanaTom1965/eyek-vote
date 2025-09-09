@@ -5,7 +5,10 @@
   <title>Earn Your Encore Karaoke – Screen</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    :root { --blue:#003e81; --gold:#eaba54; --purple:#2F0658; --green:#27d07d; --yellow:#f4d35e; --red:#ff5964; }
+    :root {
+      --blue:#003e81; --gold:#eaba54; --purple:#2F0658;
+      --green:#27d07d; --yellow:#f4d35e; --red:#ff5964;
+    }
     *{box-sizing:border-box}
     body{margin:0;background:#0f0a18;color:#fff;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',Arial,sans-serif;overflow:hidden}
     header{padding:10px 16px; text-align:center; background:linear-gradient(90deg,var(--blue),var(--purple));}
@@ -16,10 +19,13 @@
     .grid{display:grid; grid-template-columns:1fr 1fr; gap:16px; padding:16px; height:62vh}
     .col{border:1px solid rgba(255,255,255,.1); border-radius:16px; padding:12px; background:#1b1430; overflow:auto}
     h2{margin:0 0 8px}
+    h2.encLabel{color:var(--green)}
+    h2.oneLabel{color:var(--yellow)}
     ul{list-style:none; padding:0; margin:0}
     li{padding:10px 12px; border-bottom:1px solid rgba(255,255,255,.08)}
-    .enc{color:#27d07d; font-weight:900}
-    .one{color:#f4d35e; font-weight:900}
+    .badge{display:inline-block; padding:4px 8px; border-radius:999px; font-weight:900}
+    .enc{color:#000; background:var(--green)}
+    .one{color:#000; background:var(--yellow)}
     .footer{height:8vh;display:flex;align-items:center;justify-content:center;opacity:.8}
     .splash{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.9);z-index:50}
     .splash.show{display:flex}
@@ -48,12 +54,12 @@
 
   <div class="grid">
     <div class="col">
-      <h2>Encore!</h2>
+      <h2 class="encLabel">Encore!</h2>
       <ul id="encoreList"></ul>
     </div>
     <div class="col">
-      <h2>One More Shot!</h2>
-      <ul id="oneMoreList"></ul>
+      <h2 class="oneLabel">Another Shot!</h2>
+      <ul id="anotherList"></ul>
     </div>
   </div>
 
@@ -70,10 +76,10 @@
       <div class="splashSub" id="splashEncoreName">Great job!</div>
     </div>
   </div>
-  <div id="splashOne" class="splash">
+  <div id="splashAnother" class="splash">
     <div class="splashCard yellow">
       <h1 class="splashTitle">Another Shot!</h1>
-      <div class="splashSub" id="splashOneName">So close!</div>
+      <div class="splashSub" id="splashAnotherName">So close!</div>
     </div>
   </div>
   <div id="splashMaybe" class="splash">
@@ -99,7 +105,7 @@
     const db=firebase.firestore();
 
     const $=id=>document.getElementById(id);
-    const encList=$('encoreList'), oneList=$('oneMoreList');
+    const encList=$('encoreList'), anotherList=$('anotherList');
     const currentSinger=$('currentSinger'), venueTitle=$('venueTitle'), statusNote=$('statusNote');
 
     let eventId=null, unsub=null;
@@ -126,17 +132,17 @@
       // winners live
       db.collection('events').doc(eventId).collection('winners')
         .orderBy('decidedAt','asc').onSnapshot(qs=>{
-          encList.innerHTML=''; oneList.innerHTML='';
+          encList.innerHTML=''; anotherList.innerHTML='';
           qs.forEach(doc=>{
             const w=doc.data(); // {singerName, result}
             if(w.result==='Encore!'){
-              const li=document.createElement('li'); li.innerHTML=`<span class="enc">Encore!</span> — ${w.singerName}`;
+              const li=document.createElement('li'); li.innerHTML=`<span class="badge enc">Encore!</span> — ${w.singerName}`;
               encList.appendChild(li);
             }else if(w.result==='Another Shot!'){
-              const li=document.createElement('li'); li.innerHTML=`<span class="one">One More Shot!</span> — ${w.singerName}`;
-              oneList.appendChild(li);
+              const li=document.createElement('li'); li.innerHTML=`<span class="badge one">Another Shot!</span> — ${w.singerName}`;
+              anotherList.appendChild(li);
             }
-            // We intentionally do NOT list Maybe Next Time on screen page per your request
+            // We intentionally do NOT list "Maybe Next Time!" here
           });
         });
 
@@ -145,7 +151,7 @@
         const d=s.data()||{};
         if(!d.type||!d.singerName) return;
         if(d.type==='Encore!') showSplash('encore', d.singerName);
-        else if(d.type==='Another Shot!') showSplash('one', d.singerName);
+        else if(d.type==='Another Shot!') showSplash('another', d.singerName);
         else if(d.type==='Maybe Next Time!') showSplash('maybe', d.singerName);
       });
     }
@@ -157,10 +163,10 @@
         try{$('soundWin').play().catch(()=>{});}catch(e){}
         confettiBurst();
         setTimeout(()=> $('splashEncore').classList.remove('show'), 3500);
-      }else if(kind==='one'){
-        $('splashOneName').textContent = name;
-        $('splashOne').classList.add('show');
-        setTimeout(()=> $('splashOne').classList.remove('show'), 2500);
+      }else if(kind==='another'){
+        $('splashAnotherName').textContent = name;
+        $('splashAnother').classList.add('show');
+        setTimeout(()=> $('splashAnother').classList.remove('show'), 2500);
       }else{
         $('splashMaybeName').textContent = `Let’s hear it for ${name}! Thanks for playing along!`;
         $('splashMaybe').classList.add('show');
