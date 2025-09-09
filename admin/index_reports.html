@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>EYEK – Reports (Private)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root{ --bg:#0b0715; --card:#1b1430; --ink:#fff; --blue:#003e81; --gold:#eaba54; --red:#ff5a6b; --green:#19d36b; }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',Arial,sans-serif}
+    header{padding:16px;background:linear-gradient(90deg,#003e81,#2F0658);display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+    h1{margin:0;font-size:1.2rem}
+    .wrap{max-width:1100px;margin:16px auto;padding:0 12px}
+    .card{background:var(--card);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:16px;margin-bottom:12px}
+    label{display:block;margin:8px 0 6px}
+    input,select{padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.15);background:#120c22;color:#fff}
+    .row{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px}
+    .btn{padding:10px 12px;border:0;border-radius:10px;font-weight:800;cursor:pointer}
+    .btn-blue{background:var(--blue);color:#fff}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:8px;border-bottom:1px solid rgba(255,255,255,.12);text-align:left}
+    .pill{display:inline-block;background:#271c44;padding:6px 10px;border-radius:999px}
+  </style>
+
+  <!-- Firebase (compat) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+</head>
+<body>
+  <header>
+    <h1>🔒 EYEK – Reports</h1>
+    <div class="row" style="grid-template-columns:1fr 120px;gap:8px;min-width:320px">
+      <input id="ownerCode" placeholder="Owner access code" />
+      <button class="btn btn-blue" id="unlockBtn">Unlock</button>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <div class="card" id="filters" style="display:none">
+      <div class="row">
+        <div><label>Date From</label><input id="dateFrom" type="date"></div>
+        <div><label>Date To</label><input id="dateTo" type="date"></div>
+        <div><label>Venue</label><input id="fVenue" placeholder="(all)"></div>
+        <div><label>KJ</label><input id="fKj" placeholder="
