@@ -15,18 +15,24 @@
     header{padding:10px 16px; text-align:center; background:linear-gradient(90deg,var(--blue),var(--purple));}
     .welcome{font-size:1.2rem; opacity:.9}
     .venue{font-weight:900}
-    .current{display:flex;align-items:center;justify-content:center;text-align:center; height:18vh}
+    .toprow{display:flex;gap:16px;align-items:center;justify-content:center;padding:10px 16px}
+    .badge{display:inline-block;padding:8px 14px;border-radius:999px;background:#271c44;border:1px solid var(--line);font-weight:900}
+    .timer{font-size:1.6rem}
+    .status{opacity:.9}
+    .current{display:flex;align-items:center;justify-content:center;text-align:center; height:16vh}
     .current .name{font-size:7.2vw; line-height:1.05; font-weight:1000; letter-spacing:.5px}
-    .grid{display:grid; grid-template-columns:1fr 1fr; gap:16px; padding:16px; height:60vh}
+    .grid{display:grid; grid-template-columns:1fr; gap:16px; padding:16px; height:62vh}
     .col{border:1px solid rgba(255,255,255,.1); border-radius:16px; padding:12px; background:var(--card); overflow:auto}
     h2{margin:0 0 8px}
     h2.encLabel{color:var(--green)}
-    h2.oneLabel{color:var(--yellow)}
-    ul{list-style:none; padding:0; margin:0}
-    li{padding:10px 12px; border-bottom:1px solid rgba(255,255,255,.08)}
-    .badge{display:inline-block; padding:4px 8px; border-radius:999px; font-weight:900}
-    .enc{color:#000; background:var(--green)}
-    .one{color:#000; background:var(--yellow)}
+    /* Live tally bars */
+    .tally{border:1px solid var(--line); border-radius:16px; padding:12px; background:#120c22}
+    .bar{height:56px; border-radius:12px; position:relative; overflow:hidden; margin:10px 0; border:1px solid var(--line);}
+    .fill{height:100%; width:0%}
+    .label{position:absolute; inset:0; display:flex; align-items:center; justify-content:space-between; padding:0 16px; font-weight:1000; text-shadow:0 2px 4px rgba(0,0,0,.6); font-size:1.25rem}
+    .b-green .fill{background:var(--green)}
+    .b-yellow .fill{background:var(--yellow); color:#000}
+    .b-red .fill{background:var(--red)}
     .footer{height:6vh;display:flex;align-items:center;justify-content:center;opacity:.85}
     .muted{opacity:.85}
     /* Splash */
@@ -39,14 +45,6 @@
     .yellow{background:#aa7c00; box-shadow:0 0 60px rgba(255,234,100,.4) inset;}
     .red{background:#7a0010; box-shadow:0 0 60px rgba(255,90,100,.4) inset;}
     #confetti{position:fixed;inset:0;pointer-events:none;z-index:60}
-    /* Live tally bars */
-    .tally{border:1px solid var(--line); border-radius:16px; padding:12px; background:#120c22}
-    .bar{height:48px; border-radius:12px; position:relative; overflow:hidden; margin:8px 0; border:1px solid var(--line);}
-    .fill{height:100%; width:0%}
-    .label{position:absolute; inset:0; display:flex; align-items:center; justify-content:space-between; padding:0 12px; font-weight:900; text-shadow:0 2px 4px rgba(0,0,0,.6)}
-    .b-green .fill{background:var(--green)}
-    .b-yellow .fill{background:var(--yellow); color:#000}
-    .b-red .fill{background:var(--red)}
   </style>
 
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -56,6 +54,11 @@
   <header>
     <div class="welcome">Welcome to <span id="venueTitle" class="venue">—</span></div>
   </header>
+
+  <div class="toprow">
+    <span id="statusBadge" class="badge status">Status: —</span>
+    <span id="timerBadge" class="badge timer">—</span>
+  </div>
 
   <div class="current">
     <div class="name" id="currentSinger">Get ready…</div>
@@ -78,11 +81,6 @@
           <div class="label">Maybe Next Time! <span id="countMaybe">0</span></div>
         </div>
       </div>
-    </div>
-    <div class="col">
-      <h2 class="oneLabel">Winners Tonight</h2>
-      <ul id="encoreList"></ul>
-      <ul id="anotherList"></ul>
     </div>
   </div>
 
@@ -128,14 +126,65 @@
     const db=firebase.firestore();
 
     const $=id=>document.getElementById(id);
-    const encList=$('encoreList'), anotherList=$('anotherList');
+    const statusBadge=$('statusBadge'), timerBadge=$('timerBadge');
     const currentSinger=$('currentSinger'), venueTitle=$('venueTitle'), statusNote=$('statusNote');
 
     // tally elements
     const barEncore=$('barEncore'), barAnother=$('barAnother'), barMaybe=$('barMaybe');
     const countEncore=$('countEncore'), countAnother=$('countAnother'), countMaybe=$('countMaybe');
 
-    let eventId=null, unsubEvent=null, unsubVotes=null, currentRoundId=null;
+    // config
+    const FAILSAFE_AUTO_CLOSE = true; // will set isVotingOpen=false when timer hits 0s
+
+    let eventId=null, unsubEvent=null, unsubVotes=null, unsubWinners=null, unsubSignal=null;
+    let currentRoundId=null, voteEndsAtMs=null, tickHandle=null;
+    let lastWinnerDocId=null; // to avoid duplicate splash
+    let lastIsVotingOpen=false;
+    let didFailSafeClose=false;
+
+    function setBars(e,a,m){
+      const total=Math.max(1, e+a+m);
+      const pe=Math.round(100*e/total), pa=Math.round(100*a/total), pm=Math.round(100*m/total);
+      barEncore.style.width = pe+'%';
+      barAnother.style.width = pa+'%';
+      barMaybe.style.width = pm+'%';
+      countEncore.textContent = e;
+      countAnother.textContent = a;
+      countMaybe.textContent = m;
+    }
+
+    async function failsafeCloseIfNeeded(){
+      if(!FAILSAFE_AUTO_CLOSE || didFailSafeClose || !eventId) return;
+      try{
+        await db.collection('events').doc(eventId).set({
+          isVotingOpen: false,
+          voteClosedBy: 'screen-failsafe',
+          voteClosedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+        didFailSafeClose = true;
+      }catch(e){
+        // swallow; display-only page, but we tried
+      }
+    }
+
+    function startTimer() {
+      stopTimer();
+      tickHandle = setInterval(async ()=>{
+        if(!voteEndsAtMs){ timerBadge.textContent='—'; return; }
+        const ms = voteEndsAtMs - Date.now();
+        const s = Math.max(0, Math.ceil(ms/1000));
+        timerBadge.textContent = s + 's';
+        if(ms <= 0){
+          timerBadge.textContent = '0s';
+          stopTimer();
+          if(lastIsVotingOpen){
+            // host didn't extend/close; attempt failsafe close
+            await failsafeCloseIfNeeded();
+          }
+        }
+      }, 250);
+    }
+    function stopTimer(){ if(tickHandle){ clearInterval(tickHandle); tickHandle=null; } }
 
     async function loadCurrentEvent(){
       try{
@@ -148,12 +197,32 @@
 
     function wire(){
       if(unsubEvent) unsubEvent();
+      if(unsubVotes) unsubVotes();
+      if(unsubWinners) unsubWinners();
+      if(unsubSignal) unsubSignal();
+      didFailSafeClose = false;
+
       const ref = db.collection('events').doc(eventId);
       unsubEvent = ref.onSnapshot(snap=>{
         const d=snap.data()||{};
         venueTitle.textContent = d.venueName || eventId || '—';
         currentSinger.textContent = d.currentSingerName || 'Get ready…';
-        statusNote.textContent = d.isVotingOpen ? 'Voting Open' : 'Voting Closed';
+        const open = !!d.isVotingOpen;
+        lastIsVotingOpen = open;
+        statusBadge.textContent = 'Status: ' + (open ? 'Voting Open' : 'Voting Closed');
+        statusNote.textContent = open ? 'Voting Open' : 'Voting Closed';
+
+        // expected timer fields: voteClosesAt (Timestamp), OR voteEndsAt, OR voteStartedAt + 30s
+        voteEndsAtMs = null;
+        const vc = d.voteClosesAt?.toMillis?.() || (d.voteClosesAt?.seconds? d.voteClosesAt.seconds*1000 : null);
+        const ve = d.voteEndsAt?.toMillis?.()   || (d.voteEndsAt?.seconds?   d.voteEndsAt.seconds*1000   : null);
+        const vs = d.voteStartedAt?.toMillis?.()|| (d.voteStartedAt?.seconds?d.voteStartedAt.seconds*1000: null);
+
+        if (vc) voteEndsAtMs = vc;
+        else if (ve) voteEndsAtMs = ve;
+        else if (vs) voteEndsAtMs = vs + 30*1000; // fallback to 30s window
+
+        if (open && voteEndsAtMs) startTimer(); else { timerBadge.textContent='—'; stopTimer(); }
 
         // wire votes live by roundId (or performanceId)
         const newRoundId = d.roundId || d.performanceId || null;
@@ -163,30 +232,30 @@
         }
       });
 
-      // winners live (Encore! and Another Shot! only — we don't show Maybe Next Time in the list)
-      db.collection('events').doc(eventId).collection('winners')
+      // winners list watcher just to trigger splashes when a NEW winner doc appears
+      unsubWinners = db.collection('events').doc(eventId).collection('winners')
         .orderBy('decidedAt','asc').onSnapshot(qs=>{
-          encList.innerHTML=''; anotherList.innerHTML='';
-          qs.forEach(doc=>{
-            const w=doc.data();
-            if(w.result==='Encore!'){
-              const li=document.createElement('li'); li.innerHTML=`<span class="badge enc">Encore!</span> — ${w.singerName}`;
-              encList.appendChild(li);
-            }else if(w.result==='Another Shot!'){
-              const li=document.createElement('li'); li.innerHTML=`<span class="badge one">Another Shot!</span> — ${w.singerName}`;
-              anotherList.appendChild(li);
+          qs.docChanges().forEach(ch=>{
+            if(ch.type==='added'){
+              const id=ch.doc.id;
+              if(id!==lastWinnerDocId){
+                lastWinnerDocId=id;
+                const w=ch.doc.data()||{};
+                if(w.result==='Encore!') showSplash('encore', w.singerName||'');
+                else if(w.result==='Another Shot!') showSplash('another', w.singerName||'');
+                else if(w.result==='Maybe Next Time!') showSplash('maybe', w.singerName||'');
+              }
             }
           });
         });
 
-      // splash triggers from host result signal
-      db.collection('events').doc(eventId).collection('signals').doc('result').onSnapshot(s=>{
-        const d=s.data()||{};
-        if(!d.type||!d.singerName) return;
-        if(d.type==='Encore!') showSplash('encore', d.singerName);
-        else if(d.type==='Another Shot!') showSplash('another', d.singerName);
-        else if(d.type==='Maybe Next Time!') showSplash('maybe', d.singerName);
-      });
+      // signals doc (host may write here to force a splash)
+      unsubSignal = db.collection('events').doc(eventId).collection('signals').doc('result')
+        .onSnapshot(s=>{
+          const d=s.data()||{};
+          if(!d.type||!d.singerName) return;
+          showSplash(d.type==='Encore!' ? 'encore' : d.type==='Another Shot!' ? 'another' : 'maybe', d.singerName);
+        });
     }
 
     function wireVotes(){
@@ -208,30 +277,19 @@
       });
     }
 
-    function setBars(e,a,m){
-      const total=Math.max(1, e+a+m);
-      const pe=Math.round(100*e/total), pa=Math.round(100*a/total), pm=Math.round(100*m/total);
-      barEncore.style.width = pe+'%';
-      barAnother.style.width = pa+'%';
-      barMaybe.style.width = pm+'%';
-      countEncore.textContent = e;
-      countAnother.textContent = a;
-      countMaybe.textContent = m;
-    }
-
     function showSplash(kind, name){
       if(kind==='encore'){
-        $('splashEncoreName').textContent = name;
+        $('splashEncoreName').textContent = name || '';
         $('splashEncore').classList.add('show');
         try{$('soundWin').play().catch(()=>{});}catch(e){}
         confettiBurst();
         setTimeout(()=> $('splashEncore').classList.remove('show'), 3500);
       }else if(kind==='another'){
-        $('splashAnotherName').textContent = name;
+        $('splashAnotherName').textContent = name || '';
         $('splashAnother').classList.add('show');
         setTimeout(()=> $('splashAnother').classList.remove('show'), 2500);
       }else{
-        $('splashMaybeName').textContent = `Let’s hear it for ${name}! Thanks for playing along!`;
+        $('splashMaybeName').textContent = `Let’s hear it for ${name||''}! Thanks for playing along!`;
         $('splashMaybe').classList.add('show');
         try{$('soundSad').play().catch(()=>{});}catch(e){}
         setTimeout(()=> $('splashMaybe').classList.remove('show'), 3500);
@@ -261,5 +319,7 @@
 
     loadCurrentEvent();
   </script>
+
+  <!-- File: index_screen.html | Earn Your Encore Karaoke | includes FAILSAFE auto-close when timer hits 0s -->
 </body>
 </html>
