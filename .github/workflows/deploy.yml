@@ -2,7 +2,7 @@ name: Deploy to SiteGround
 
 on:
   push:
-    branches: [ main ]      # change if your default branch is different
+    branches: [ main ]       # change if your default branch differs
   workflow_dispatch:
 
 jobs:
@@ -19,57 +19,46 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Load your private key and passphrase into ssh-agent (no prompts)
-      - name: Prepare SSH (ssh-agent + passphrase)
+      # Load your private key into an ssh-agent (handles passphrase too)
+      - name: Setup SSH agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SG_SSH_KEY }}
+          ssh-passphrase: ${{ secrets.SG_SSH_PASSPHRASE }}
+
+      # Quick debug so you can see the agent has a key loaded
+      - name: Debug SSH agent & config
         shell: bash
-        env:
-          PASSPHRASE: ${{ secrets.SG_SSH_PASSPHRASE }}
         run: |
-          set -euo pipefail
+          ssh-add -l || true
           mkdir -p ~/.ssh
-          # write key
-          printf "%s" "${{ secrets.SG_SSH_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-
-          # start agent & feed passphrase through SSH_ASKPASS
-          eval "$(ssh-agent -s)"
-          echo 'echo $PASSPHRASE' > /tmp/askpass.sh
-          chmod +x /tmp/askpass.sh
-          export SSH_ASKPASS=/tmp/askpass.sh
-          export DISPLAY=:0   # required for askpass on headless linux
-          setsid ssh-add ~/.ssh/id_rsa < /dev/null
-
-          # host key checks (simple mode). If you added SG_KNOWN_HOSTS, use that instead.
-          if [ -n "${{ secrets.SG_KNOWN_HOSTS || '' }}" ]; then
-            echo "${{ secrets.SG_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
-            chmod 644 ~/.ssh/known_hosts
-          else
-            echo -e "Host *\n  StrictHostKeyChecking no\n  IdentitiesOnly yes\n" > ~/.ssh/config
-          fi
+          # simple host-key policy; you can replace with a known_hosts secret later
+          printf "Host *\n  StrictHostKeyChecking no\n  IdentitiesOnly yes\n" > ~/.ssh/config
+          echo "Repo tree (top-level):"
+          find . -maxdepth 2 -type d -print
 
       - name: Smoke test SSH (verbose)
         shell: bash
         run: |
-          set -e
           ssh -vvv -p "$SG_PORT" "$SG_USER@$SG_HOST" 'echo "SSH OK on $(hostname)"; whoami; pwd'
 
       - name: Ensure remote path exists
         shell: bash
         run: |
           ssh -p "$SG_PORT" "$SG_USER@$SG_HOST" "
-            echo 'Remote HOME:' \$HOME
-            mkdir -p '${{ secrets.SG_REMOTE_PATH }}'
+            mkdir -p '$SG_REMOTE_PATH'
+            echo 'Remote path ensured: $SG_REMOTE_PATH'
           "
 
       - name: Ensure subfolders (optional)
         shell: bash
         run: |
           ssh -p "$SG_PORT" "$SG_USER@$SG_HOST" "
-            mkdir -p '${{ secrets.SG_REMOTE_PATH }}/screen' \
-                     '${{ secrets.SG_REMOTE_PATH }}/board'  \
-                     '${{ secrets.SG_REMOTE_PATH }}/host'   \
-                     '${{ secrets.SG_REMOTE_PATH }}/vote'   \
-                     '${{ secrets.SG_REMOTE_PATH }}/admin'
+            mkdir -p '$SG_REMOTE_PATH/screen' \
+                     '$SG_REMOTE_PATH/board'  \
+                     '$SG_REMOTE_PATH/host'   \
+                     '$SG_REMOTE_PATH/vote'   \
+                     '$SG_REMOTE_PATH/admin'
           "
 
       - name: Deploy via rsync (screen/board/host/vote/admin)
