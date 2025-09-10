@@ -1,14 +1,13 @@
-name: Deploy to SiteGround (Debug)
+name: Deploy to SiteGround (Deep Debug)
 
 on:
-  push:
-    branches: [ main ]      # change if your default branch is different
   workflow_dispatch:
+  push:
+    branches: [ main ]  # change if your default branch is different
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     env:
       SG_HOST: ${{ secrets.SG_HOST }}
       SG_PORT: ${{ secrets.SG_PORT }}
@@ -19,15 +18,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Show repo tree (debug)
+      - name: Show local repo (debug)
         run: |
-          echo "== Local repo =="
+          echo "== Local repo path =="
           pwd
-          ls -la
-          echo "== Top-level dirs =="
-          find . -maxdepth 2 -type d -print
+          echo "== Tree (top 2 levels) =="
+          find . -maxdepth 2 -print
 
-      - name: Prepare SSH (with validation)
+      - name: Prepare SSH key (validate format/passphrase)
         shell: bash
         run: |
           set -euo pipefail
@@ -36,7 +34,6 @@ jobs:
           chmod 600 ~/.ssh/id_rsa.enc
 
           if [ -n "${{ secrets.SG_SSH_PASSPHRASE }}" ]; then
-            # Decrypt passphrase-protected key to id_rsa (try pkey first, fall back to rsa)
             (openssl pkey -in ~/.ssh/id_rsa.enc -passin env:SG_SSH_PASSPHRASE -out ~/.ssh/id_rsa 2>/dev/null) || \
             (openssl rsa  -in ~/.ssh/id_rsa.enc -passin env:SG_SSH_PASSPHRASE -out ~/.ssh/id_rsa)
           else
@@ -44,30 +41,44 @@ jobs:
           fi
           chmod 600 ~/.ssh/id_rsa
 
-          # Validate key format early (gives clear message if wrong key/passphrase)
-          if ! ssh-keygen -y -f ~/.ssh/id_rsa >/dev/null 2>~/key_error.txt; then
-            echo "❌ Invalid private key or wrong passphrase."
+          # Validate key immediately (fails fast with clear message)
+          if ! ssh-keygen -y -f ~/.ssh/id_rsa > ~/.ssh/id_rsa.pub 2>~/key_error.txt; then
+            echo "❌ Invalid private key OR wrong passphrase."
             echo "---- ssh-keygen error ----"
             cat ~/key_error.txt || true
             exit 1
           fi
+          echo "✅ SSH private key parsed OK."
+          echo "Public key fingerprint:"
+          ssh-keygen -lf ~/.ssh/id_rsa || true
 
-          # Host key handling: prefer known_hosts, else relax check for speed
-          if [ -n "${{ secrets.SG_KNOWN_HOSTS }}" ]; then
-            echo "${{ secrets.SG_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
-            chmod 644 ~/.ssh/known_hosts
-          else
-            echo -e "Host *\n  StrictHostKeyChecking no\n" > ~/.ssh/config
-          fi
+          # Keep host check simple for now (you can add known_hosts later)
+          echo -e "Host *\n  StrictHostKeyChecking no\n  IdentitiesOnly yes\n" > ~/.ssh/config
 
-          echo "OpenSSH version:"
-          ssh -V || true
-
-      - name: Smoke test SSH (very verbose)
+      - name: DNS lookup (debug)
         shell: bash
         run: |
           set -e
-          ssh -vvv -p "$SG_PORT" -i ~/.ssh/id_rsa "$SG_USER@$SG_HOST" 'echo "SSH OK on $(hostname)"; whoami; pwd'
+          echo "== getent hosts =="
+          getent hosts "$SG_HOST" || true
+          echo "== dig short (A/AAAA) =="
+          (dig +short "$SG_HOST" A; dig +short "$SG_HOST" AAAA) || true
+
+      - name: TCP port check (debug)
+        shell: bash
+        run: |
+          set -e
+          echo "Trying to open TCP $SG_HOST:$SG_PORT ..."
+          # Use bash /dev/tcp to check reachability with timeout
+          (timeout 5 bash -c "cat < /dev/null > /dev/tcp/$SG_HOST/$SG_PORT") && echo "✅ Port open" || (echo "❌ Cannot reach $SG_HOST:$SG_PORT"; exit 2)
+
+      - name: SSH handshake (VERY verbose)
+        shell: bash
+        run: |
+          set -e
+          echo "Attempting SSH to $SG_USER@$SG_HOST:$SG_PORT ..."
+          ssh -vvv -o BatchMode=yes -o PreferredAuthentications=publickey -o PubkeyAuthentication=yes \
+              -p "$SG_PORT" -i ~/.ssh/id_rsa "$SG_USER@$SG_HOST" 'echo "SSH OK on $(hostname)"; whoami; pwd'
 
       - name: Check remote path (ensure it exists)
         shell: bash
@@ -75,7 +86,7 @@ jobs:
           set -e
           ssh -p "$SG_PORT" -i ~/.ssh/id_rsa "$SG_USER@$SG_HOST" "
             echo 'HOME:' \$HOME
-            echo 'Listing SG_REMOTE_PATH:' '${{ secrets.SG_REMOTE_PATH }}'
+            echo 'SG_REMOTE_PATH:' '${{ secrets.SG_REMOTE_PATH }}'
             ls -la '${{ secrets.SG_REMOTE_PATH }}' || echo 'Path does not exist yet'
             mkdir -p '${{ secrets.SG_REMOTE_PATH }}'
             echo 'Ensured SG_REMOTE_PATH exists.'
@@ -86,9 +97,9 @@ jobs:
         run: |
           ssh -p "$SG_PORT" -i ~/.ssh/id_rsa "$SG_USER@$SG_HOST" "
             mkdir -p '${{ secrets.SG_REMOTE_PATH }}/screen' \
-                     '${{ secrets.SG_REMOTE_PATH }}/board' \
-                     '${{ secrets.SG_REMOTE_PATH }}/host' \
-                     '${{ secrets.SG_REMOTE_PATH }}/vote' \
+                     '${{ secrets.SG_REMOTE_PATH }}/board'  \
+                     '${{ secrets.SG_REMOTE_PATH }}/host'   \
+                     '${{ secrets.SG_REMOTE_PATH }}/vote'   \
                      '${{ secrets.SG_REMOTE_PATH }}/admin'
           "
 
@@ -96,10 +107,8 @@ jobs:
         shell: bash
         run: |
           set -e
-          any=0
           for d in screen board host vote admin; do
             if [ -d "$d" ]; then
-              any=1
               echo "== Deploying $d -> $SG_REMOTE_PATH/$d =="
               rsync -az --delete \
                 -e "ssh -p $SG_PORT -i ~/.ssh/id_rsa" \
@@ -107,17 +116,11 @@ jobs:
                 "$d/" "$SG_USER@$SG_HOST:$SG_REMOTE_PATH/$d/"
             fi
           done
-          if [ $any -eq 0 ]; then
-            echo "⚠️ No screen/board/host/vote/admin dirs found in repo. Nothing to deploy."
-          fi
 
-      - name: Post-deploy check
+      - name: Post-deploy listing
         shell: bash
         run: |
           ssh -p "$SG_PORT" -i ~/.ssh/id_rsa "$SG_USER@$SG_HOST" "
             echo '== Remote listing =='
-            ls -la '${{ secrets.SG_REMOTE_PATH }}'
-            echo
-            echo '== Disk usage =='
-            du -sh '${{ secrets.SG_REMOTE_PATH }}' || true
+            ls -la '${{ secrets.SG_REMOTE_PATH }}' || true
           "
