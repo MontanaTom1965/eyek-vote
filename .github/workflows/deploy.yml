@@ -1,63 +1,69 @@
-name: Deploy to SiteGround
+name: Deploy to SiteGround via SSH
 
 on:
   push:
-    branches: [ main ]         # change if your default branch is different
+    branches: [ main ]   # change if your default branch is different
   workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    env:
-      SG_HOST: ${{ secrets.SG_HOST }}
-      SG_PORT: ${{ secrets.SG_PORT }}
-      SG_USER: ${{ secrets.SG_USER }}
-      SG_REMOTE_PATH: ${{ secrets.SG_REMOTE_PATH }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Load your private key into ssh-agent (no passphrase)
-      - name: Setup SSH agent
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.SG_SSH_KEY }}
+      # If you have a build step, do it here.
+      # - name: Build
+      #   run: |
+      #     npm ci
+      #     npm run build
 
-      # Tiny debug: verify the agent has a key
-      - name: Debug ssh-agent
+      - name: Prepare SSH
+        shell: bash
         run: |
-          ssh-add -l || true
           mkdir -p ~/.ssh
-          printf "Host *\n  StrictHostKeyChecking no\n  IdentitiesOnly yes\n" > ~/.ssh/config
+          echo "${{ secrets.SG_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
 
-      - name: Smoke test SSH (verbose)
-        run: |
-          ssh -vvv -p "$SG_PORT" "$SG_USER@$SG_HOST" 'echo "SSH OK on $(hostname)"; whoami; pwd'
+          # known_hosts for SiteGround (custom port)
+          ssh-keyscan -p "${{ secrets.SG_PORT }}" "${{ secrets.SG_HOST }}" >> ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
 
-      - name: Ensure remote path exists
-        run: |
-          ssh -p "$SG_PORT" "$SG_USER@$SG_HOST" "mkdir -p '$SG_REMOTE_PATH'"
+          # If the key has a passphrase, start agent and add key using it.
+          if [ -n "${{ secrets.SG_PASSPHRASE }}" ]; then
+            eval "$(ssh-agent -s)"
+            # feed passphrase to ssh-add
+            (echo "${{ secrets.SG_PASSPHRASE }}"; echo) | ssh-add ~/.ssh/id_ed25519
+          fi
 
-      - name: Ensure subfolders (optional)
+      # Optional: quick connectivity check (diagnostics only)
+      - name: Test SSH connection
+        shell: bash
         run: |
-          ssh -p "$SG_PORT" "$SG_USER@$SG_HOST" "
-            mkdir -p '$SG_REMOTE_PATH/screen' \
-                     '$SG_REMOTE_PATH/board'  \
-                     '$SG_REMOTE_PATH/host'   \
-                     '$SG_REMOTE_PATH/vote'   \
-                     '$SG_REMOTE_PATH/admin'
-          "
+          ssh -p "${{ secrets.SG_PORT }}" -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            "${{ secrets.SG_USER }}@${{ secrets.SG_HOST }}" 'echo "SSH OK on $(hostname)"; pwd' || \
+            (echo "SSH failed"; exit 1)
 
-      - name: Deploy via rsync (screen/board/host/vote/admin)
+      - name: Deploy via rsync over SSH
+        shell: bash
         run: |
-          set -e
-          for d in screen board host vote admin; do
-            if [ -d "$d" ]; then
-              echo "== Deploying $d -> $SG_REMOTE_PATH/$d =="
-              rsync -az --delete \
-                -e "ssh -p $SG_PORT" \
-                --exclude ".DS_Store" \
-                "$d/" "$SG_USER@$SG_HOST:$SG_REMOTE_PATH/$d/"
-            fi
-          done
+          SRC="."
+          DEST="${{ secrets.SG_USER }}@${{ secrets.SG_HOST }}:${{ secrets.SG_PATH }}"
+          rsync -avz --delete \
+            -e "ssh -p ${{ secrets.SG_PORT }}" \
+            --exclude '.git' \
+            --exclude '.github' \
+            --exclude 'node_modules' \
+            "$SRC/" "$DEST/"
+
+      # Example: only push subfolders for your EYEK app
+      # - name: Deploy subdirectories
+      #   shell: bash
+      #   run: |
+      #     BASE="${{ secrets.SG_USER }}@${{ secrets.SG_HOST }}:${{ secrets.SG_PATH }}"
+      #     rsync -avz -e "ssh -p ${{ secrets.SG_PORT }}" ./vote/   "$BASE/vote/"
+      #     rsync -avz -e "ssh -p ${{ secrets.SG_PORT }}" ./screen/ "$BASE/screen/"
+      #     rsync -avz -e "ssh -p ${{ secrets.SG_PORT }}" ./board/  "$BASE/board/"
+      #     rsync -avz -e "ssh -p ${{ secrets.SG_PORT }}" ./host/   "$BASE/host/"
+      #     rsync -avz -e "ssh -p ${{ secrets.SG_PORT }}" ./admin/  "$BASE/admin/"
