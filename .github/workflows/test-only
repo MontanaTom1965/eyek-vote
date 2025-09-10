@@ -1,0 +1,26 @@
+name: Test Vote Deploy Connection
+
+on:
+  workflow_dispatch:   # manual trigger only
+
+jobs:
+  test-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SG_DEPLOY_KEY }}" > ~/.ssh/sg_deploy
+          chmod 600 ~/.ssh/sg_deploy
+          ssh-keyscan -p 18765 gcam1050.siteground.biz >> ~/.ssh/known_hosts
+
+      - name: Test rsync connection (dry run)
+        run: |
+          rsync -avz --dry-run --delete \
+            -e "ssh -p 18765 -i ~/.ssh/sg_deploy" \
+            vote/ \
+            u2212-6q1dxbl4nmbd@gcam1050.siteground.biz:~/www/vote.earnyourencorekaraoke.com/public_html/
