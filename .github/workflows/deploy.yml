@@ -1,13 +1,14 @@
-name: Deploy to SiteGround (Deep Debug)
+name: Deploy to SiteGround
 
 on:
-  workflow_dispatch:
   push:
-    branches: [ main ]  # change if your default branch is different
+    branches: [ main ]      # change if your default branch is different
+  workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     env:
       SG_HOST: ${{ secrets.SG_HOST }}
       SG_PORT: ${{ secrets.SG_PORT }}
@@ -18,84 +19,52 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Show local repo (debug)
-        run: |
-          echo "== Local repo path =="
-          pwd
-          echo "== Tree (top 2 levels) =="
-          find . -maxdepth 2 -print
-
-      - name: Prepare SSH key (validate format/passphrase)
+      # Load your private key and passphrase into ssh-agent (no prompts)
+      - name: Prepare SSH (ssh-agent + passphrase)
         shell: bash
+        env:
+          PASSPHRASE: ${{ secrets.SG_SSH_PASSPHRASE }}
         run: |
           set -euo pipefail
           mkdir -p ~/.ssh
-          printf "%s" "${{ secrets.SG_SSH_KEY }}" > ~/.ssh/id_rsa.enc
-          chmod 600 ~/.ssh/id_rsa.enc
-
-          if [ -n "${{ secrets.SG_SSH_PASSPHRASE }}" ]; then
-            (openssl pkey -in ~/.ssh/id_rsa.enc -passin env:SG_SSH_PASSPHRASE -out ~/.ssh/id_rsa 2>/dev/null) || \
-            (openssl rsa  -in ~/.ssh/id_rsa.enc -passin env:SG_SSH_PASSPHRASE -out ~/.ssh/id_rsa)
-          else
-            cp ~/.ssh/id_rsa.enc ~/.ssh/id_rsa
-          fi
+          # write key
+          printf "%s" "${{ secrets.SG_SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
 
-          # Validate key immediately (fails fast with clear message)
-          if ! ssh-keygen -y -f ~/.ssh/id_rsa > ~/.ssh/id_rsa.pub 2>~/key_error.txt; then
-            echo "❌ Invalid private key OR wrong passphrase."
-            echo "---- ssh-keygen error ----"
-            cat ~/key_error.txt || true
-            exit 1
+          # start agent & feed passphrase through SSH_ASKPASS
+          eval "$(ssh-agent -s)"
+          echo 'echo $PASSPHRASE' > /tmp/askpass.sh
+          chmod +x /tmp/askpass.sh
+          export SSH_ASKPASS=/tmp/askpass.sh
+          export DISPLAY=:0   # required for askpass on headless linux
+          setsid ssh-add ~/.ssh/id_rsa < /dev/null
+
+          # host key checks (simple mode). If you added SG_KNOWN_HOSTS, use that instead.
+          if [ -n "${{ secrets.SG_KNOWN_HOSTS || '' }}" ]; then
+            echo "${{ secrets.SG_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+            chmod 644 ~/.ssh/known_hosts
+          else
+            echo -e "Host *\n  StrictHostKeyChecking no\n  IdentitiesOnly yes\n" > ~/.ssh/config
           fi
-          echo "✅ SSH private key parsed OK."
-          echo "Public key fingerprint:"
-          ssh-keygen -lf ~/.ssh/id_rsa || true
 
-          # Keep host check simple for now (you can add known_hosts later)
-          echo -e "Host *\n  StrictHostKeyChecking no\n  IdentitiesOnly yes\n" > ~/.ssh/config
-
-      - name: DNS lookup (debug)
+      - name: Smoke test SSH (verbose)
         shell: bash
         run: |
           set -e
-          echo "== getent hosts =="
-          getent hosts "$SG_HOST" || true
-          echo "== dig short (A/AAAA) =="
-          (dig +short "$SG_HOST" A; dig +short "$SG_HOST" AAAA) || true
+          ssh -vvv -p "$SG_PORT" "$SG_USER@$SG_HOST" 'echo "SSH OK on $(hostname)"; whoami; pwd'
 
-      - name: TCP port check (debug)
+      - name: Ensure remote path exists
         shell: bash
         run: |
-          set -e
-          echo "Trying to open TCP $SG_HOST:$SG_PORT ..."
-          # Use bash /dev/tcp to check reachability with timeout
-          (timeout 5 bash -c "cat < /dev/null > /dev/tcp/$SG_HOST/$SG_PORT") && echo "✅ Port open" || (echo "❌ Cannot reach $SG_HOST:$SG_PORT"; exit 2)
-
-      - name: SSH handshake (VERY verbose)
-        shell: bash
-        run: |
-          set -e
-          echo "Attempting SSH to $SG_USER@$SG_HOST:$SG_PORT ..."
-          ssh -vvv -o BatchMode=yes -o PreferredAuthentications=publickey -o PubkeyAuthentication=yes \
-              -p "$SG_PORT" -i ~/.ssh/id_rsa "$SG_USER@$SG_HOST" 'echo "SSH OK on $(hostname)"; whoami; pwd'
-
-      - name: Check remote path (ensure it exists)
-        shell: bash
-        run: |
-          set -e
-          ssh -p "$SG_PORT" -i ~/.ssh/id_rsa "$SG_USER@$SG_HOST" "
-            echo 'HOME:' \$HOME
-            echo 'SG_REMOTE_PATH:' '${{ secrets.SG_REMOTE_PATH }}'
-            ls -la '${{ secrets.SG_REMOTE_PATH }}' || echo 'Path does not exist yet'
+          ssh -p "$SG_PORT" "$SG_USER@$SG_HOST" "
+            echo 'Remote HOME:' \$HOME
             mkdir -p '${{ secrets.SG_REMOTE_PATH }}'
-            echo 'Ensured SG_REMOTE_PATH exists.'
           "
 
       - name: Ensure subfolders (optional)
         shell: bash
         run: |
-          ssh -p "$SG_PORT" -i ~/.ssh/id_rsa "$SG_USER@$SG_HOST" "
+          ssh -p "$SG_PORT" "$SG_USER@$SG_HOST" "
             mkdir -p '${{ secrets.SG_REMOTE_PATH }}/screen' \
                      '${{ secrets.SG_REMOTE_PATH }}/board'  \
                      '${{ secrets.SG_REMOTE_PATH }}/host'   \
@@ -111,16 +80,8 @@ jobs:
             if [ -d "$d" ]; then
               echo "== Deploying $d -> $SG_REMOTE_PATH/$d =="
               rsync -az --delete \
-                -e "ssh -p $SG_PORT -i ~/.ssh/id_rsa" \
+                -e "ssh -p $SG_PORT" \
                 --exclude ".DS_Store" \
                 "$d/" "$SG_USER@$SG_HOST:$SG_REMOTE_PATH/$d/"
             fi
           done
-
-      - name: Post-deploy listing
-        shell: bash
-        run: |
-          ssh -p "$SG_PORT" -i ~/.ssh/id_rsa "$SG_USER@$SG_HOST" "
-            echo '== Remote listing =='
-            ls -la '${{ secrets.SG_REMOTE_PATH }}' || true
-          "
