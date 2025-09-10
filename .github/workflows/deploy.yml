@@ -1,0 +1,62 @@
+name: Deploy to SiteGround
+
+on:
+  push:
+    branches: [ main ]     # change if your default branch is different
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    env:
+      SG_HOST: ${{ secrets.SG_HOST }}
+      SG_PORT: ${{ secrets.SG_PORT }}
+      SG_USER: ${{ secrets.SG_USER }}
+      SG_REMOTE_PATH: ${{ secrets.SG_REMOTE_PATH }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare SSH
+        shell: bash
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SG_SSH_KEY }}" > ~/.ssh/id_rsa.enc
+          chmod 600 ~/.ssh/id_rsa.enc
+
+          if [ -n "${{ secrets.SG_SSH_PASSPHRASE }}" ]; then
+            (openssl pkey -in ~/.ssh/id_rsa.enc -passin env:SG_SSH_PASSPHRASE -out ~/.ssh/id_rsa 2>/dev/null) || \
+            (openssl rsa  -in ~/.ssh/id_rsa.enc -passin env:SG_SSH_PASSPHRASE -out ~/.ssh/id_rsa)
+          else
+            cp ~/.ssh/id_rsa.enc ~/.ssh/id_rsa
+          fi
+          chmod 600 ~/.ssh/id_rsa
+
+          # Keep it simple: skip host key checks for now
+          echo -e "Host *\n  StrictHostKeyChecking no\n" > ~/.ssh/config
+
+      - name: Smoke test SSH
+        shell: bash
+        run: |
+          ssh -p "$SG_PORT" -i ~/.ssh/id_rsa "$SG_USER@$SG_HOST" 'echo "SSH OK on $(hostname)"'
+
+      - name: Ensure remote folders exist
+        shell: bash
+        run: |
+          ssh -p "$SG_PORT" -i ~/.ssh/id_rsa "$SG_USER@$SG_HOST" \
+            "mkdir -p '$SG_REMOTE_PATH/screen' '$SG_REMOTE_PATH/board' '$SG_REMOTE_PATH/host' '$SG_REMOTE_PATH/vote' '$SG_REMOTE_PATH/admin'"
+
+      - name: Deploy via rsync (screen/board/host/vote/admin)
+        shell: bash
+        run: |
+          set -e
+          for d in screen board host vote admin; do
+            if [ -d "$d" ]; then
+              rsync -az --delete \
+                -e "ssh -p $SG_PORT -i ~/.ssh/id_rsa" \
+                --exclude ".DS_Store" \
+                "$d/" "$SG_USER@$SG_HOST:$SG_REMOTE_PATH/$d/"
+            fi
+          done
