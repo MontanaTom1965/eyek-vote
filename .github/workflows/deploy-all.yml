@@ -1,0 +1,39 @@
+name: Deploy EYEK — vote subdomain only
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'vote/**'
+      - '.github/workflows/deploy-vote.yml'
+  workflow_dispatch:
+
+jobs:
+  deploy-vote:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prepare SSH
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SG_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -p "${{ secrets.SG_PORT }}" "${{ secrets.SG_HOST }}" >> ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+          eval "$(ssh-agent -s)"
+          # no passphrase set
+          ssh-add ~/.ssh/id_ed25519
+
+      - name: Rsync /vote to vote subdomain root
+        shell: bash
+        run: |
+          set -euo pipefail
+          rsync -avz --delete \
+            -e "ssh -p ${{ secrets.SG_PORT }}" \
+            --exclude '.git' \
+            --exclude '.github' \
+            --exclude 'node_modules' \
+            vote/ "${{ secrets.SG_USER }}@${{ secrets.SG_HOST }}:${{ secrets.SG_PATH_VOTE }}/"
