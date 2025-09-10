@@ -1,8 +1,8 @@
-name: Deploy to SiteGround
+name: Deploy to SiteGround (Debug)
 
 on:
   push:
-    branches: [ main ]     # change if your default branch is different
+    branches: [ main ]      # change if your default branch is different
   workflow_dispatch:
 
 jobs:
@@ -19,14 +19,24 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Prepare SSH
+      - name: Show repo tree (debug)
+        run: |
+          echo "== Local repo =="
+          pwd
+          ls -la
+          echo "== Top-level dirs =="
+          find . -maxdepth 2 -type d -print
+
+      - name: Prepare SSH (with validation)
         shell: bash
         run: |
+          set -euo pipefail
           mkdir -p ~/.ssh
-          echo "${{ secrets.SG_SSH_KEY }}" > ~/.ssh/id_rsa.enc
+          printf "%s" "${{ secrets.SG_SSH_KEY }}" > ~/.ssh/id_rsa.enc
           chmod 600 ~/.ssh/id_rsa.enc
 
           if [ -n "${{ secrets.SG_SSH_PASSPHRASE }}" ]; then
+            # Decrypt passphrase-protected key to id_rsa (try pkey first, fall back to rsa)
             (openssl pkey -in ~/.ssh/id_rsa.enc -passin env:SG_SSH_PASSPHRASE -out ~/.ssh/id_rsa 2>/dev/null) || \
             (openssl rsa  -in ~/.ssh/id_rsa.enc -passin env:SG_SSH_PASSPHRASE -out ~/.ssh/id_rsa)
           else
@@ -34,29 +44,80 @@ jobs:
           fi
           chmod 600 ~/.ssh/id_rsa
 
-          # Keep it simple: skip host key checks for now
-          echo -e "Host *\n  StrictHostKeyChecking no\n" > ~/.ssh/config
+          # Validate key format early (gives clear message if wrong key/passphrase)
+          if ! ssh-keygen -y -f ~/.ssh/id_rsa >/dev/null 2>~/key_error.txt; then
+            echo "❌ Invalid private key or wrong passphrase."
+            echo "---- ssh-keygen error ----"
+            cat ~/key_error.txt || true
+            exit 1
+          fi
 
-      - name: Smoke test SSH
+          # Host key handling: prefer known_hosts, else relax check for speed
+          if [ -n "${{ secrets.SG_KNOWN_HOSTS }}" ]; then
+            echo "${{ secrets.SG_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+            chmod 644 ~/.ssh/known_hosts
+          else
+            echo -e "Host *\n  StrictHostKeyChecking no\n" > ~/.ssh/config
+          fi
+
+          echo "OpenSSH version:"
+          ssh -V || true
+
+      - name: Smoke test SSH (very verbose)
         shell: bash
         run: |
-          ssh -p "$SG_PORT" -i ~/.ssh/id_rsa "$SG_USER@$SG_HOST" 'echo "SSH OK on $(hostname)"'
+          set -e
+          ssh -vvv -p "$SG_PORT" -i ~/.ssh/id_rsa "$SG_USER@$SG_HOST" 'echo "SSH OK on $(hostname)"; whoami; pwd'
 
-      - name: Ensure remote folders exist
+      - name: Check remote path (ensure it exists)
         shell: bash
         run: |
-          ssh -p "$SG_PORT" -i ~/.ssh/id_rsa "$SG_USER@$SG_HOST" \
-            "mkdir -p '$SG_REMOTE_PATH/screen' '$SG_REMOTE_PATH/board' '$SG_REMOTE_PATH/host' '$SG_REMOTE_PATH/vote' '$SG_REMOTE_PATH/admin'"
+          set -e
+          ssh -p "$SG_PORT" -i ~/.ssh/id_rsa "$SG_USER@$SG_HOST" "
+            echo 'HOME:' \$HOME
+            echo 'Listing SG_REMOTE_PATH:' '${{ secrets.SG_REMOTE_PATH }}'
+            ls -la '${{ secrets.SG_REMOTE_PATH }}' || echo 'Path does not exist yet'
+            mkdir -p '${{ secrets.SG_REMOTE_PATH }}'
+            echo 'Ensured SG_REMOTE_PATH exists.'
+          "
+
+      - name: Ensure subfolders (optional)
+        shell: bash
+        run: |
+          ssh -p "$SG_PORT" -i ~/.ssh/id_rsa "$SG_USER@$SG_HOST" "
+            mkdir -p '${{ secrets.SG_REMOTE_PATH }}/screen' \
+                     '${{ secrets.SG_REMOTE_PATH }}/board' \
+                     '${{ secrets.SG_REMOTE_PATH }}/host' \
+                     '${{ secrets.SG_REMOTE_PATH }}/vote' \
+                     '${{ secrets.SG_REMOTE_PATH }}/admin'
+          "
 
       - name: Deploy via rsync (screen/board/host/vote/admin)
         shell: bash
         run: |
           set -e
+          any=0
           for d in screen board host vote admin; do
             if [ -d "$d" ]; then
+              any=1
+              echo "== Deploying $d -> $SG_REMOTE_PATH/$d =="
               rsync -az --delete \
                 -e "ssh -p $SG_PORT -i ~/.ssh/id_rsa" \
                 --exclude ".DS_Store" \
                 "$d/" "$SG_USER@$SG_HOST:$SG_REMOTE_PATH/$d/"
             fi
           done
+          if [ $any -eq 0 ]; then
+            echo "⚠️ No screen/board/host/vote/admin dirs found in repo. Nothing to deploy."
+          fi
+
+      - name: Post-deploy check
+        shell: bash
+        run: |
+          ssh -p "$SG_PORT" -i ~/.ssh/id_rsa "$SG_USER@$SG_HOST" "
+            echo '== Remote listing =='
+            ls -la '${{ secrets.SG_REMOTE_PATH }}'
+            echo
+            echo '== Disk usage =='
+            du -sh '${{ secrets.SG_REMOTE_PATH }}' || true
+          "
