@@ -1,24 +1,30 @@
-name: Deploy EYEK — vote subdomain only
+name: Deploy Vote Site
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
     paths:
       - 'vote/**'
-      - '.github/workflows/deploy-vote.yml'
-  workflow_dispatch:
 
 jobs:
-  deploy-vote:
+  deploy:
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
 
-      - name: Prepare SSH
-        shell: bash
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
         run: |
-          set -euo pipefail
           mkdir -p ~/.ssh
-          printf '%s\n' "${{ secrets.SG_SSH_KEY }}" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -p "${{ secrets.SG_PORT }}" "${{ secrets.SG_HOST }}" >> ~/.ssh/known
+          echo "${{ secrets.SG_DEPLOY_KEY }}" > ~/.ssh/sg_deploy
+          chmod 600 ~/.ssh/sg_deploy
+          ssh-keyscan -p 18765 gcam1050.siteground.biz >> ~/.ssh/known_hosts
+
+      - name: Deploy to SiteGround (vote subdomain only)
+        run: |
+          rsync -avz --delete \
+            -e "ssh -p 18765 -i ~/.ssh/sg_deploy" \
+            vote/ \
+            u2212-6q1dxbl4nmbd@gcam1050.siteground.biz:~/www/vote.earnyourencorekaraoke.com/public_html/
