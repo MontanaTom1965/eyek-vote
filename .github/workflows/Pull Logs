@@ -1,0 +1,29 @@
+name: Fetch Vote Site Logs
+
+on:
+  workflow_dispatch:   # run manually only
+
+jobs:
+  fetch-logs:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SG_DEPLOY_KEY }}" > ~/.ssh/sg_deploy
+          chmod 600 ~/.ssh/sg_deploy
+          ssh-keyscan -p 18765 gcam1050.siteground.biz >> ~/.ssh/known_hosts
+
+      - name: Pull logs folder (dry sync)
+        run: |
+          rsync -avz \
+            -e "ssh -p 18765 -i ~/.ssh/sg_deploy" \
+            u2212-6q1dxbl4nmbd@gcam1050.siteground.biz:~/www/vote.earnyourencorekaraoke.com/public_html/ \
+            ./server_snapshot/
+          
+      - name: Upload logs as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: vote-site-snapshot
+          path: ./server_snapshot
