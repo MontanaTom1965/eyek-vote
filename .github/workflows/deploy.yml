@@ -1,23 +1,18 @@
-name: Deploy to SiteGround via SSH
+name: Deploy EYEK Vote (subdomain only)
 
 on:
   push:
-    branches: [ main ]   # change if your default branch is different
+    branches: [ main ]
+    paths:
+      - 'vote/**'
+      - '.github/workflows/deploy-vote.yml'
   workflow_dispatch:
 
 jobs:
-  deploy:
+  deploy-vote:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      # If you have a build step, do it here.
-      # - name: Build
-      #   run: |
-      #     npm ci
-      #     npm run build
+      - uses: actions/checkout@v4
 
       - name: Prepare SSH
         shell: bash
@@ -25,45 +20,20 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.SG_SSH_KEY }}" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-
-          # known_hosts for SiteGround (custom port)
           ssh-keyscan -p "${{ secrets.SG_PORT }}" "${{ secrets.SG_HOST }}" >> ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
-
-          # If the key has a passphrase, start agent and add key using it.
+          eval "$(ssh-agent -s)"
+          # Only unlock if you actually set a passphrase (yours appears empty)
           if [ -n "${{ secrets.SG_PASSPHRASE }}" ]; then
-            eval "$(ssh-agent -s)"
-            # feed passphrase to ssh-add
             (echo "${{ secrets.SG_PASSPHRASE }}"; echo) | ssh-add ~/.ssh/id_ed25519
+          else
+            ssh-add ~/.ssh/id_ed25519
           fi
 
-      # Optional: quick connectivity check (diagnostics only)
-      - name: Test SSH connection
+      - name: Rsync vote app to subdomain
         shell: bash
         run: |
-          ssh -p "${{ secrets.SG_PORT }}" -o BatchMode=yes -o StrictHostKeyChecking=yes \
-            "${{ secrets.SG_USER }}@${{ secrets.SG_HOST }}" 'echo "SSH OK on $(hostname)"; pwd' || \
-            (echo "SSH failed"; exit 1)
-
-      - name: Deploy via rsync over SSH
-        shell: bash
-        run: |
-          SRC="."
-          DEST="${{ secrets.SG_USER }}@${{ secrets.SG_HOST }}:${{ secrets.SG_PATH }}"
           rsync -avz --delete \
             -e "ssh -p ${{ secrets.SG_PORT }}" \
-            --exclude '.git' \
-            --exclude '.github' \
-            --exclude 'node_modules' \
-            "$SRC/" "$DEST/"
-
-      # Example: only push subfolders for your EYEK app
-      # - name: Deploy subdirectories
-      #   shell: bash
-      #   run: |
-      #     BASE="${{ secrets.SG_USER }}@${{ secrets.SG_HOST }}:${{ secrets.SG_PATH }}"
-      #     rsync -avz -e "ssh -p ${{ secrets.SG_PORT }}" ./vote/   "$BASE/vote/"
-      #     rsync -avz -e "ssh -p ${{ secrets.SG_PORT }}" ./screen/ "$BASE/screen/"
-      #     rsync -avz -e "ssh -p ${{ secrets.SG_PORT }}" ./board/  "$BASE/board/"
-      #     rsync -avz -e "ssh -p ${{ secrets.SG_PORT }}" ./host/   "$BASE/host/"
-      #     rsync -avz -e "ssh -p ${{ secrets.SG_PORT }}" ./admin/  "$BASE/admin/"
+            --exclude '.git' --exclude '.github' --exclude 'node_modules' \
+            vote/ "${{ secrets.SG_USER }}@${{ secrets.SG_HOST }}:${{ secrets.SG_PATH_VOTE }}/"
