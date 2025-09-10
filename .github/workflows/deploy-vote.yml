@@ -5,11 +5,6 @@ on:
     branches: [ main ]
     paths:
       - 'vote/**'
-      - 'screen/**'
-      - 'board/**'
-      - 'host/**'
-      - 'admin/**'
-      - 'assets/**'
       - '.github/workflows/deploy-vote.yml'
   workflow_dispatch:
 
@@ -24,60 +19,6 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p ~/.ssh
-          echo "${{ secrets.SG_SSH_KEY }}" > ~/.ssh/id_ed25519
+          printf '%s\n' "${{ secrets.SG_SSH_KEY }}" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -p "${{ secrets.SG_PORT }}" "${{ secrets.SG_HOST }}" >> ~/.ssh/known_hosts
-          chmod 600 ~/.ssh/known_hosts
-          eval "$(ssh-agent -s)"
-          ssh-add ~/.ssh/id_ed25519
-
-      - name: Ensure folders
-        shell: bash
-        run: |
-          ssh -p "${{ secrets.SG_PORT }}" "${{ secrets.SG_USER }}@${{ secrets.SG_HOST }}" <<'EOSSH'
-          set -euo pipefail
-          ROOT="${SG_PATH_VOTE:-${{ secrets.SG_PATH_VOTE }}}"
-          mkdir -p "$ROOT"/{vote,screen,board,host,admin,assets}
-          EOSSH
-
-      - name: Upload /vote
-        if: ${{ hashFiles('vote/**') != '' }}
-        shell: bash
-        run: |
-          rsync -avz --delete -e "ssh -p ${{ secrets.SG_PORT }}" \
-            vote/ "${{ secrets.SG_USER }}@${{ secrets.SG_HOST }}:${{ secrets.SG_PATH_VOTE }}/vote/"
-
-      - name: Upload /screen
-        if: ${{ hashFiles('screen/**') != '' }}
-        shell: bash
-        run: |
-          rsync -avz --delete -e "ssh -p ${{ secrets.SG_PORT }}" \
-            screen/ "${{ secrets.SG_USER }}@${{ secrets.SG_HOST }}:${{ secrets.SG_PATH_VOTE }}/screen/"
-
-      - name: Upload /board
-        if: ${{ hashFiles('board/**') != '' }}
-        shell: bash
-        run: |
-          rsync -avz --delete -e "ssh -p ${{ secrets.SG_PORT }}" \
-            board/ "${{ secrets.SG_USER }}@${{ secrets.SG_HOST }}:${{ secrets.SG_PATH_VOTE }}/board/"
-
-      - name: Upload /host
-        if: ${{ hashFiles('host/**') != '' }}
-        shell: bash
-        run: |
-          rsync -avz --delete -e "ssh -p ${{ secrets.SG_PORT }}" \
-            host/ "${{ secrets.SG_USER }}@${{ secrets.SG_HOST }}:${{ secrets.SG_PATH_VOTE }}/host/"
-
-      - name: Upload /admin
-        if: ${{ hashFiles('admin/**') != '' }}
-        shell: bash
-        run: |
-          rsync -avz --delete -e "ssh -p ${{ secrets.SG_PORT }}" \
-            admin/ "${{ secrets.SG_USER }}@${{ secrets.SG_HOST }}:${{ secrets.SG_PATH_VOTE }}/admin/"
-
-      - name: Upload /assets (optional)
-        if: ${{ hashFiles('assets/**') != '' }}
-        shell: bash
-        run: |
-          rsync -avz --delete -e "ssh -p ${{ secrets.SG_PORT }}" \
-            assets/ "${{ secrets.SG_USER }}@${{ secrets.SG_HOST }}:${{ secrets.SG_PATH_VOTE }}/assets/"
+          ssh-keyscan -p "${{ secrets.SG_PORT }}" "${{ secrets.SG_HOST }}" >> ~/.ssh/known
