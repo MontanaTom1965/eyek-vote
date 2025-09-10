@@ -2,13 +2,12 @@ name: Deploy to SiteGround
 
 on:
   push:
-    branches: [ main ]       # change if your default branch differs
+    branches: [ main ]         # change if your default branch is different
   workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     env:
       SG_HOST: ${{ secrets.SG_HOST }}
       SG_PORT: ${{ secrets.SG_PORT }}
@@ -19,39 +18,28 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Load your private key into an ssh-agent (handles passphrase too)
+      # Load your private key into ssh-agent (no passphrase)
       - name: Setup SSH agent
         uses: webfactory/ssh-agent@v0.9.0
         with:
           ssh-private-key: ${{ secrets.SG_SSH_KEY }}
-          ssh-passphrase: ${{ secrets.SG_SSH_PASSPHRASE }}
 
-      # Quick debug so you can see the agent has a key loaded
-      - name: Debug SSH agent & config
-        shell: bash
+      # Tiny debug: verify the agent has a key
+      - name: Debug ssh-agent
         run: |
           ssh-add -l || true
           mkdir -p ~/.ssh
-          # simple host-key policy; you can replace with a known_hosts secret later
           printf "Host *\n  StrictHostKeyChecking no\n  IdentitiesOnly yes\n" > ~/.ssh/config
-          echo "Repo tree (top-level):"
-          find . -maxdepth 2 -type d -print
 
       - name: Smoke test SSH (verbose)
-        shell: bash
         run: |
           ssh -vvv -p "$SG_PORT" "$SG_USER@$SG_HOST" 'echo "SSH OK on $(hostname)"; whoami; pwd'
 
       - name: Ensure remote path exists
-        shell: bash
         run: |
-          ssh -p "$SG_PORT" "$SG_USER@$SG_HOST" "
-            mkdir -p '$SG_REMOTE_PATH'
-            echo 'Remote path ensured: $SG_REMOTE_PATH'
-          "
+          ssh -p "$SG_PORT" "$SG_USER@$SG_HOST" "mkdir -p '$SG_REMOTE_PATH'"
 
       - name: Ensure subfolders (optional)
-        shell: bash
         run: |
           ssh -p "$SG_PORT" "$SG_USER@$SG_HOST" "
             mkdir -p '$SG_REMOTE_PATH/screen' \
@@ -62,7 +50,6 @@ jobs:
           "
 
       - name: Deploy via rsync (screen/board/host/vote/admin)
-        shell: bash
         run: |
           set -e
           for d in screen board host vote admin; do
