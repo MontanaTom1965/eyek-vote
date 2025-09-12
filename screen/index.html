@@ -1,282 +1,286 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Earn Your Encore Karaoke – Screen</title>
+  <meta charset="utf-8" />
+  <title>EYEK — Host Console</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    :root {
-      --blue:#003e81; --gold:#eaba54; --purple:#2F0658;
-      --green:#27d07d; --yellow:#f4d35e; --red:#ff5964;
-      --ink:#0f0a18; --card:#1b1430; --line:rgba(255,255,255,.12);
+    :root{
+      --bg:#0f1222; --panel:#171b34; --muted:#9aa3b2; --text:#eef2ff; --accent:#60a5fa; --danger:#fb7185; --ok:#34d399;
+      --card:#12162b; --border:#262b4a;
     }
     *{box-sizing:border-box}
-    body{margin:0;background:var(--ink);color:#fff;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',Arial,sans-serif;overflow:hidden}
-    header{padding:10px 16px; text-align:center; background:linear-gradient(90deg,var(--blue),var(--purple));}
-    .welcome{font-size:1.2rem; opacity:.9}
-    .venue{font-weight:900}
-    .toprow{display:flex;gap:24px;align-items:center;justify-content:center;padding:10px 16px}
-    .badge{display:inline-block;padding:10px 18px;border-radius:999px;background:#271c44;border:1px solid var(--line);font-weight:900}
-    .timer{font-size:2.4rem; letter-spacing:.5px}
-    .status{opacity:.9}
-    .current{display:flex;align-items:center;justify-content:center;text-align:center; height:16vh}
-    .current .name{font-size:7.2vw; line-height:1.05; font-weight:1000; letter-spacing:.5px}
-    .grid{display:grid; grid-template-columns:1fr; gap:16px; padding:16px; height:62vh}
-    .col{border:1px solid rgba(255,255,255,.1); border-radius:16px; padding:12px; background:var(--card); overflow:auto}
-    h2{margin:0 0 8px}
-    h2.encLabel{color:var(--green)}
-    /* Live tally bars */
-    .tally{border:1px solid var(--line); border-radius:16px; padding:12px; background:#120c22}
-    .bar{height:56px; border-radius:12px; position:relative; overflow:hidden; margin:10px 0; border:1px solid var(--line);}
-    .fill{height:100%; width:0%}
-    .label{position:absolute; inset:0; display:flex; align-items:center; justify-content:space-between; padding:0 16px; font-weight:1000; text-shadow:0 2px 4px rgba(0,0,0,.6); font-size:1.25rem}
-    .b-green .fill{background:var(--green)}
-    .b-yellow .fill{background:var(--yellow); color:#000}
-    .b-red .fill{background:var(--red)}
-    .footer{height:6vh;display:flex;align-items:center;justify-content:center;opacity:.85}
-    .muted{opacity:.85}
-    /* Splash */
-    .splash{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.9);z-index:50}
-    .splash.show{display:flex}
-    .splashCard{border-radius:24px; padding:24px 28px; text-align:center; max-width:90vw}
-    .splashTitle{font-size:9vw; font-weight:1000; margin:0}
-    .splashSub{font-size:3.2vw; margin-top:12px}
-    .green{background:#0b2; box-shadow:0 0 60px rgba(0,255,140,.4) inset;}
-    .yellow{background:#aa7c00; box-shadow:0 0 60px rgba(255,234,100,.4) inset;}
-    .red{background:#7a0010; box-shadow:0 0 60px rgba(255,90,100,.4) inset;}
-    #confetti{position:fixed;inset:0;pointer-events:none;z-index:60}
+    body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial}
+    header{display:flex;gap:16px;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border);background:linear-gradient(0deg,transparent,rgba(255,255,255,0.02))}
+    .grid{display:grid;grid-template-columns:320px 1fr 380px;gap:16px;padding:16px;min-height:calc(100vh - 62px)}
+    .panel{background:var(--panel);border:1px solid var(--border);border-radius:14px;overflow:hidden;display:flex;flex-direction:column}
+    .panel h2{margin:0;padding:12px 14px;border-bottom:1px solid var(--border);font-size:16px;color:var(--muted);letter-spacing:.3px}
+    .content{padding:12px 14px;display:flex;flex-direction:column;gap:10px}
+    input,button,select,textarea{border-radius:10px;border:1px solid var(--border);background:var(--card);color:var(--text);padding:10px 12px;font-size:14px}
+    input[readonly]{opacity:.7}
+    button{cursor:pointer}
+    .row{display:flex;gap:10px}
+    .row > *{flex:1}
+    .pill{display:inline-flex;align-items:center;gap:8px;background:#101429;border:1px solid var(--border);padding:6px 10px;border-radius:999px;font-size:12px;color:var(--muted)}
+    .list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;overflow:auto}
+    .item{display:flex;gap:10px;align-items:flex-start;justify-content:space-between;padding:10px;border:1px solid var(--border);background:var(--card);border-radius:12px}
+    .item .meta{font-size:12px;color:var(--muted)}
+    .actions{display:flex;gap:8px}
+    .actions button{padding:6px 10px;font-size:12px}
+    .muted{color:var(--muted)}
+    .ok{border-color:#194235;background:#0f2f24}
+    .danger{border-color:#51202a;background:#2a1116}
+    .section{display:flex;flex-direction:column;gap:8px}
+    .split{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .small{font-size:12px}
+    .tag{display:inline-block;background:#0f2036;color:#a8c8ff;border:1px solid #1f3a64;padding:3px 8px;border-radius:999px;font-size:12px}
+    .flex{display:flex;gap:10px;align-items:center}
+    .grow{flex:1}
+    .right{text-align:right}
+    .switch{display:inline-flex;align-items:center;gap:8px;cursor:pointer}
+    .switch input{display:none}
+    .switch span{width:38px;height:22px;background:#1a2242;border:1px solid var(--border);display:inline-block;border-radius:999px;position:relative;transition:.2s}
+    .switch span:after{content:'';position:absolute;top:2px;left:2px;width:18px;height:18px;background:#fff;border-radius:50%;transition:.2s}
+    .switch input:checked + span{background:#17351f;border-color:#2e6b3d}
+    .switch input:checked + span:after{left:18px}
+    .help{font-size:12px;color:var(--muted)}
   </style>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 </head>
 <body>
-  <header>
-    <div class="welcome">Welcome to <span id="venueTitle" class="venue">—</span></div>
-  </header>
 
-  <div class="toprow">
-    <span id="statusBadge" class="badge status">Status: —</span>
-    <span id="timerBadge" class="badge timer" aria-live="polite">—</span>
+<header>
+  <div class="flex grow">
+    <div class="pill">EYEK Host Console</div>
   </div>
-
-  <div class="current">
-    <div class="name" id="currentSinger">Get ready…</div>
+  <div class="flex">
+    <label class="switch small">
+      <input id="lockToggle" type="checkbox">
+      <span></span>
+    </label>
+    <div class="help">Lock KJ / Venue / PIN</div>
   </div>
+</header>
 
-  <div class="grid">
-    <div class="col">
-      <h2 class="encLabel">Live Votes</h2>
-      <div class="tally">
-        <div class="bar b-green">
-          <div id="barEncore" class="fill"></div>
-          <div class="label">Encore! <span id="countEncore">0</span></div>
+<main class="grid">
+  <!-- LEFT: SINGER LIST -->
+  <section class="panel">
+    <h2>Singer Queue</h2>
+    <div class="content section">
+      <ul id="queue" class="list"></ul>
+      <div class="help">Tip: drag to reorder coming soon; for now use ↑/↓ buttons.</div>
+    </div>
+  </section>
+
+  <!-- CENTER: KJ & ENTRY -->
+  <section class="panel">
+    <h2>KJ & Entry</h2>
+    <div class="content section">
+      <div class="split">
+        <div class="section">
+          <label class="small muted">Venue Name</label>
+          <input id="venue" placeholder="e.g., The Blue Note" />
         </div>
-        <div class="bar b-yellow">
-          <div id="barAnother" class="fill"></div>
-          <div class="label">Another Shot! <span id="countAnother">0</span></div>
-        </div>
-        <div class="bar b-red">
-          <div id="barMaybe" class="fill"></div>
-          <div class="label">Maybe Next Time! <span id="countMaybe">0</span></div>
+        <div class="section">
+          <label class="small muted">KJ Name (shows Tonight’s PIN)</label>
+          <input id="kj" placeholder="e.g., Tom — PIN 1234" />
         </div>
       </div>
+
+      <div class="row">
+        <div class="section grow">
+          <label class="small muted">Tonight’s PIN</label>
+          <input id="pin" placeholder="e.g., 1234" />
+        </div>
+        <div class="section" style="width:160px">
+          <label class="small muted">Lock Info</label>
+          <button id="lockBtn" class="ok">Lock</button>
+        </div>
+      </div>
+
+      <hr style="border:none;border-top:1px solid var(--border);margin:6px 0 8px 0" />
+
+      <div class="section">
+        <label class="small muted">Add Singer</label>
+        <div class="row">
+          <input id="singerName" placeholder="Singer name" />
+          <input id="songTitle" placeholder="Song — Artist" />
+          <button id="addBtn">Add</button>
+        </div>
+        <div class="help">Example: <span class="tag">Don’t Stop Believin’ — Journey</span></div>
+      </div>
     </div>
-  </div>
+  </section>
 
-  <div class="footer">
-    <div class="muted" id="statusNote">Waiting for voting…</div>
-  </div>
-
-  <canvas id="confetti"></canvas>
-
-  <!-- Splashes -->
-  <div id="splashEncore" class="splash" aria-hidden="true">
-    <div class="splashCard green">
-      <h1 class="splashTitle">Encore!</h1>
-      <div class="splashSub" id="splashEncoreName">Great job!</div>
+  <!-- RIGHT: QUICK ACTIONS / TOOLS -->
+  <section class="panel">
+    <h2>Tools</h2>
+    <div class="content section">
+      <div class="section">
+        <div class="muted small">Current Settings</div>
+        <div id="settingsSummary" class="help"></div>
+      </div>
+      <div class="section">
+        <button id="clearQueue" class="danger">Clear Queue</button>
+        <button id="clearAll">Clear All (incl. KJ/Venue/PIN)</button>
+      </div>
+      <div class="section">
+        <div class="muted small">Auto-refresh hint</div>
+        <div class="help">If TVs don’t live-update, we can add auto-refresh or real-time sync later.</div>
+      </div>
     </div>
-  </div>
-  <div id="splashAnother" class="splash" aria-hidden="true">
-    <div class="splashCard yellow">
-      <h1 class="splashTitle">Another Shot!</h1>
-      <div class="splashSub" id="splashAnotherName">So close!</div>
-    </div>
-  </div>
-  <div id="splashMaybe" class="splash" aria-hidden="true">
-    <div class="splashCard red">
-      <h1 class="splashTitle">Maybe Next Time!</h1>
-      <div class="splashSub" id="splashMaybeName">Let’s hear it for …</div>
-    </div>
-  </div>
+  </section>
+</main>
 
-  <audio id="soundWin" preload="auto" src="https://vote.earnyourencorekaraoke.com/vote/you_win_001.mp3"></audio>
-  <audio id="soundSad" preload="auto" src="https://vote.earnyourencorekaraoke.com/vote/sad_horn.mp3"></audio>
+<script>
+  // --- State in localStorage (can swap to Firebase later) ---
+  const $ = sel => document.querySelector(sel);
+  const queueEl = $('#queue');
+  const venueEl = $('#venue');
+  const kjEl = $('#kj');
+  const pinEl = $('#pin');
+  const lockBtn = $('#lockBtn');
+  const lockToggle = $('#lockToggle');
+  const singerNameEl = $('#singerName');
+  const songTitleEl = $('#songTitle');
+  const addBtn = $('#addBtn');
+  const clearQueueBtn = $('#clearQueue');
+  const clearAllBtn = $('#clearAll');
+  const settingsSummary = $('#settingsSummary');
 
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyDGbC08WxruYIDPhZSlDlU-7Kzq-7mHENk",
-      authDomain: "eyek-vote.firebaseapp.com",
-      projectId: "eyek-vote",
-      storageBucket: "eyek-vote.firebasestorage.app",
-      messagingSenderId: "954696683994",
-      appId: "1:954696683994:web:21a84298a94648ff0230e3"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db=firebase.firestore();
-    const $=id=>document.getElementById(id);
-
-    const statusBadge=$('statusBadge'), timerBadge=$('timerBadge');
-    const currentSinger=$('currentSinger'), venueTitle=$('venueTitle'), statusNote=$('statusNote');
-    const barEncore=$('barEncore'), barAnother=$('barAnother'), barMaybe=$('barMaybe');
-    const countEncore=$('countEncore'), countAnother=$('countAnother'), countMaybe=$('countMaybe');
-
-    let eventId=null, unsubEvent=null, unsubVotes=null, unsubWinners=null, unsubSignal=null;
-    let currentRoundId=null, voteEndsAtMs=null, tickHandle=null;
-
-    function setBars(e,a,m){
-      const total=Math.max(1, e+a+m);
-      const pe=Math.round(100*e/total), pa=Math.round(100*a/total), pm=Math.round(100*m/total);
-      barEncore.style.width = pe+'%';
-      barAnother.style.width = pa+'%';
-      barMaybe.style.width = pm+'%';
-      countEncore.textContent = e;
-      countAnother.textContent = a;
-      countMaybe.textContent = m;
+  const LS = {
+    get() {
+      try { return JSON.parse(localStorage.getItem('eyek_host_state')||'{}'); }
+      catch { return {}; }
+    },
+    set(data) {
+      localStorage.setItem('eyek_host_state', JSON.stringify(data));
     }
+  };
 
-    function startTimer() {
-      stopTimer();
-      tickHandle = setInterval(()=>{
-        if(!voteEndsAtMs){ timerBadge.textContent='—'; return; }
-        const ms = voteEndsAtMs - Date.now();
-        const s = Math.max(0, Math.ceil(ms/1000));
-        timerBadge.textContent = s + 's';
-        if(ms <= 0){ timerBadge.textContent = '0s'; stopTimer(); }
-      }, 250);
+  function loadState() {
+    const s = LS.get();
+    venueEl.value = s.venue || '';
+    kjEl.value = s.kj || '';
+    pinEl.value = s.pin || '';
+    lockToggle.checked = !!s.locked;
+    setLockState(!!s.locked);
+    renderQueue(s.queue || []);
+    renderSummary();
+  }
+
+  function saveState(patch) {
+    const s = Object.assign(LS.get(), patch);
+    LS.set(s);
+    renderSummary();
+  }
+
+  function setLockState(locked){
+    [venueEl,kjEl,pinEl].forEach(el=>el.readOnly = locked);
+    lockBtn.textContent = locked ? 'Unlock' : 'Lock';
+    lockBtn.className = locked ? '' : 'ok';
+  }
+
+  function renderSummary(){
+    const s = LS.get();
+    const locked = s.locked ? 'Locked' : 'Editable';
+    const venue = s.venue || '—';
+    const kj = s.kj || '—';
+    const pin = s.pin || '—';
+    settingsSummary.innerHTML = `
+      <div><strong>Status:</strong> ${locked}</div>
+      <div><strong>Venue:</strong> ${venue}</div>
+      <div><strong>KJ / PIN:</strong> ${kj} <span class="muted">(PIN: ${pin})</span></div>
+    `;
+    // Also ensure KJ field shows the PIN as part of its text if not already:
+    if (pin && kjEl.value && !kjEl.value.includes(pin)) {
+      // Append " — PIN 1234" once, non-destructive
+      kjEl.value = kjEl.value.replace(/\s*—\s*PIN\s+\S+$/,'') + ` — PIN ${pin}`;
+      saveState({ kj: kjEl.value });
     }
-    function stopTimer(){ if(tickHandle){ clearInterval(tickHandle); tickHandle=null; } }
+  }
 
-    async function loadCurrentEvent(){
-      const s = await db.collection('app').doc('state').get();
-      eventId = (s.data()||{}).currentEventId || null;
-      if(!eventId){ statusNote.textContent='No event selected by Host.'; return; }
-      wire();
+  function renderQueue(q){
+    queueEl.innerHTML = '';
+    q.forEach((item, idx) => {
+      const li = document.createElement('li');
+      li.className = 'item';
+      li.innerHTML = `
+        <div class="grow">
+          <div><strong>${escapeHtml(item.singer)}</strong></div>
+          <div class="meta">${escapeHtml(item.song)}</div>
+        </div>
+        <div class="actions">
+          <button data-act="up"    data-idx="${idx}">↑</button>
+          <button data-act="down"  data-idx="${idx}">↓</button>
+          <button data-act="del"   data-idx="${idx}">Remove</button>
+        </div>
+      `;
+      queueEl.appendChild(li);
+    });
+  }
+
+  function escapeHtml(s){ return (s||'').replace(/[&<>"']/g,c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
+
+  // --- Events ---
+  venueEl.addEventListener('input', () => saveState({ venue: venueEl.value }));
+  kjEl.addEventListener('input', () => saveState({ kj: kjEl.value }));
+  pinEl.addEventListener('input', () => saveState({ pin: pinEl.value }));
+
+  lockBtn.addEventListener('click', () => {
+    const locked = !LS.get().locked;
+    setLockState(locked);
+    saveState({ locked });
+  });
+  lockToggle.addEventListener('change', (e) => {
+    const locked = e.target.checked;
+    setLockState(locked);
+    saveState({ locked });
+  });
+
+  addBtn.addEventListener('click', () => {
+    const singer = singerNameEl.value.trim();
+    const song = songTitleEl.value.trim();
+    if(!singer || !song) return alert('Please enter both singer and song — artist.');
+    const s = LS.get();
+    const q = s.queue || [];
+    q.push({ singer, song, at: Date.now() });
+    saveState({ queue: q });
+    renderQueue(q);
+    singerNameEl.value = '';
+    songTitleEl.value = '';
+    singerNameEl.focus();
+  });
+
+  queueEl.addEventListener('click', (e) => {
+    const btn = e.target.closest('button');
+    if(!btn) return;
+    const act = btn.dataset.act;
+    const idx = +btn.dataset.idx;
+    const s = LS.get();
+    const q = s.queue || [];
+    if(act === 'del'){ q.splice(idx,1); }
+    if(act === 'up' && idx>0){ [q[idx-1],q[idx]] = [q[idx],q[idx-1]]; }
+    if(act === 'down' && idx<q.length-1){ [q[idx+1],q[idx]] = [q[idx],q[idx+1]]; }
+    saveState({ queue: q });
+    renderQueue(q);
+  });
+
+  clearQueueBtn.addEventListener('click', () => {
+    if(confirm('Clear the entire queue?')) {
+      saveState({ queue: [] });
+      renderQueue([]);
     }
+  });
 
-    function wire(){
-      if(unsubEvent) unsubEvent();
-      if(unsubVotes) unsubVotes();
-      if(unsubWinners) unsubWinners();
-      if(unsubSignal) unsubSignal();
-
-      const ref = db.collection('events').doc(eventId);
-      unsubEvent = ref.onSnapshot(snap=>{
-        const d=snap.data()||{};
-        venueTitle.textContent = d.venueName || eventId || '—';
-        currentSinger.textContent = d.currentSingerName || 'Get ready…';
-        const open = !!d.isVotingOpen;
-        statusBadge.textContent = 'Status: ' + (open ? 'Voting Open' : 'Voting Closed');
-        statusNote.textContent = open ? 'Voting Open' : 'Voting Closed';
-
-        // screen shows timer; host controls end
-        voteEndsAtMs = null;
-        const vc = d.voteClosesAt?.toMillis?.() || (d.voteClosesAt?.seconds? d.voteClosesAt.seconds*1000 : null);
-        const ve = d.voteEndsAt?.toMillis?.()   || (d.voteEndsAt?.seconds?   d.voteEndsAt.seconds*1000   : null);
-        const vs = d.voteStartedAt?.toMillis?.()|| (d.voteStartedAt?.seconds?d.voteStartedAt.seconds*1000: null);
-        if (vc) voteEndsAtMs = vc;
-        else if (ve) voteEndsAtMs = ve;
-        else if (vs) voteEndsAtMs = vs + 30*1000;
-
-        if (open && voteEndsAtMs) startTimer(); else { timerBadge.textContent='—'; stopTimer(); }
-
-        const newRoundId = d.roundId || d.performanceId || null;
-        if(newRoundId !== currentRoundId){ currentRoundId = newRoundId; wireVotes(); }
-      });
-
-      // splashes on new winner doc
-      unsubWinners = db.collection('events').doc(eventId).collection('winners')
-        .orderBy('decidedAt','asc').onSnapshot(qs=>{
-          qs.docChanges().forEach(ch=>{
-            if(ch.type==='added'){
-              const w=ch.doc.data()||{};
-              splashFromResult(w.result, w.singerName||'');
-            }
-          });
-        });
-
-      // or explicit signal
-      unsubSignal = db.collection('events').doc(eventId).collection('signals').doc('result')
-        .onSnapshot(s=>{
-          const d=s.data()||{};
-          if(!d.type||!d.singerName) return;
-          splashFromResult(d.type, d.singerName);
-        });
+  clearAllBtn.addEventListener('click', () => {
+    if(confirm('Clear ALL saved data (KJ, Venue, PIN, and Queue)?')) {
+      localStorage.removeItem('eyek_host_state');
+      loadState();
     }
+  });
 
-    function wireVotes(){
-      setBars(0,0,0);
-      if(unsubVotes) unsubVotes();
-      if(!currentRoundId){ return; }
-      unsubVotes = db.collection('events').doc(eventId).collection('votes')
-        .where('roundId','==',currentRoundId)
-        .onSnapshot(qs=>{
-          let e=0,a=0,m=0;
-          qs.forEach(doc=>{
-            const c=(doc.data()||{}).choice;
-            if(c==='Encore!') e++;
-            else if(c==='Another Shot!') a++;
-            else if(c==='Maybe Next Time!') m++;
-          });
-          setBars(e,a,m);
-        });
-    }
-
-    function splashFromResult(result, name){
-      if(result==='Encore!') showSplash('encore', name);
-      else if(result==='Another Shot!') showSplash('another', name);
-      else if(result==='Maybe Next Time!') showSplash('maybe', name);
-    }
-
-    function showSplash(kind, name){
-      if(kind==='encore'){
-        $('splashEncoreName').textContent = name || '';
-        $('splashEncore').classList.add('show');
-        try{$('soundWin').play().catch(()=>{});}catch(e){}
-        confettiBurst();
-        setTimeout(()=> $('splashEncore').classList.remove('show'), 3500);
-      }else if(kind==='another'){
-        $('splashAnotherName').textContent = name || '';
-        $('splashAnother').classList.add('show');
-        setTimeout(()=> $('splashAnother').classList.remove('show'), 2500);
-      }else{
-        $('splashMaybeName').textContent = `Let’s hear it for ${name||''}! Thanks for playing along!`;
-        $('splashMaybe').classList.add('show');
-        try{$('soundSad').play().catch(()=>{});}catch(e){}
-        setTimeout(()=> $('splashMaybe').classList.remove('show'), 3500);
-      }
-    }
-
-    // Confetti
-    const cvs=$('confetti'), ctx=cvs.getContext('2d'); let parts=[];
-    function resize(){ cvs.width=innerWidth; cvs.height=innerHeight; }
-    addEventListener('resize', resize); resize();
-    function confettiBurst(){
-      parts=[];
-      for(let i=0;i<150;i++){
-        parts.push({x:Math.random()*cvs.width,y:Math.random()*cvs.height/2,vx:Math.random()*6-3,vy:Math.random()*-3-2,color:`hsl(${Math.random()*360},100%,50%)`,size:Math.random()*6+2});
-      }
-      requestAnimationFrame(updateConfetti);
-    }
-    function updateConfetti(){
-      ctx.clearRect(0,0,cvs.width,cvs.height);
-      parts.forEach(p=>{ p.x+=p.vx; p.y+=p.vy; p.vy+=0.05; ctx.fillStyle=p.color; ctx.beginPath(); ctx.arc(p.x,p.y,p.size,0,Math.PI*2); ctx.fill(); });
-      parts=parts.filter(p=>p.y<cvs.height);
-      if(parts.length>0) requestAnimationFrame(updateConfetti);
-    }
-
-    loadCurrentEvent();
-  </script>
-
-  <!-- File: index_screen.html | Earn Your Encore Karaoke (Display-only; timer reads host fields) -->
+  // Init
+  loadState();
+</script>
 </body>
 </html>
