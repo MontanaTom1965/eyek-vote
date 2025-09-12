@@ -1,15 +1,20 @@
-name: Deploy EYEK — vote subdomain only
+name: Deploy EYEK — vote subdomain (all folders)
 
 on:
   push:
     branches: [ main ]
     paths:
       - 'vote/**'
-      - '.github/workflows/deploy-vote.yml'
+      - 'screen/**'
+      - 'board/**'
+      - 'host/**'
+      - 'admin/**'
+      - 'assets/**'
+      - '.github/workflows/deploy-all.yml'
   workflow_dispatch:
 
 jobs:
-  deploy-vote:
+  deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -19,21 +24,60 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p ~/.ssh
-          echo "${{ secrets.SG_SSH_KEY }}" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "${{ secrets.SG_DEPLOY_KEY }}" > ~/.ssh/sg_deploy
+          chmod 600 ~/.ssh/sg_deploy
           ssh-keyscan -p "${{ secrets.SG_PORT }}" "${{ secrets.SG_HOST }}" >> ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
-          eval "$(ssh-agent -s)"
-          # no passphrase set
-          ssh-add ~/.ssh/id_ed25519
 
-      - name: Rsync /vote to vote subdomain root
+      - name: Create remote folders
+        shell: bash
+        env:
+          SG_BASE_PATH: ${{ secrets.SG_BASE_PATH }}
+        run: |
+          ssh -p "${{ secrets.SG_PORT }}" -i ~/.ssh/sg_deploy \
+            "${{ secrets.SG_USER }}@${{ secrets.SG_HOST }}" \
+            "mkdir -p ${SG_BASE_PATH}/{vote,screen,board,host,admin,assets}"
+
+      - name: Connectivity smoke test
         shell: bash
         run: |
+          ssh -o ConnectTimeout=10 -p "${{ secrets.SG_PORT }}" -i ~/.ssh/sg_deploy \
+            "${{ secrets.SG_USER }}@${{ secrets.SG_HOST }}" "echo OK && exit"
+
+      - name: Deploy folders (vote, screen, board, host, admin, assets)
+        shell: bash
+        env:
+          SG_BASE_PATH: ${{ secrets.SG_BASE_PATH }}
+        run: |
           set -euo pipefail
-          rsync -avz --delete \
-            -e "ssh -p ${{ secrets.SG_PORT }}" \
-            --exclude '.git' \
-            --exclude '.github' \
-            --exclude 'node_modules' \
-            vote/ "${{ secrets.SG_USER }}@${{ secrets.SG_HOST }}:${{ secrets.SG_PATH_VOTE }}/"
+          for dir in vote screen board host admin assets; do
+            if [ -d "$dir" ]; then
+              echo "Deploying ./$dir -> ${SG_BASE_PATH}/$dir/"
+              rsync -avz --delete \
+                -e "ssh -p ${{ secrets.SG_PORT }} -i ~/.ssh/sg_deploy" \
+                "$dir/" "${{ secrets.SG_USER }}@${{ secrets.SG_HOST }}:${SG_BASE_PATH}/$dir/"
+            else
+              echo "Skipping $dir (no local folder)"
+            fi
+          done
+
+      # Optional: make subdomain root show /vote automatically (uncomment ONE of the steps below)
+
+      # - name: Root -> /vote redirect via .htaccess (temporary 302)
+      #   shell: bash
+      #   env:
+      #     SG_BASE_PATH: ${{ secrets.SG_BASE_PATH }}
+      #   run: |
+      #     ssh -p "${{ secrets.SG_PORT }}" -i ~/.ssh/sg_deploy \
+      #       "${{ secrets.SG_USER }}@${{ secrets.SG_HOST }}" \
+      #       "printf '%s\n' 'RewriteEngine On' 'RewriteCond %{REQUEST_URI} ^/$' 'RewriteRule ^$ /vote/ [R=302,L]' > ${SG_BASE_PATH}/.htaccess"
+
+      # - name: Copy vote/index.html to subdomain root (no redirect)
+      #   if: ${{ always() }}
+      #   shell: bash
+      #   env:
+      #     SG_BASE_PATH: ${{ secrets.SG_BASE_PATH }}
+      #   run: |
+      #     ssh -p "${{ secrets.SG_PORT }}" -i ~/.ssh/sg_deploy \
+      #       "${{ secrets.SG_USER }}@${{ secrets.SG_HOST }}" \
+      #       "cp -f ${SG_BASE_PATH}/vote/index.html ${SG_BASE_PATH}/index.html"
