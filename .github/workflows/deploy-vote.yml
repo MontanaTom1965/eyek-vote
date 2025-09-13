@@ -1,30 +1,75 @@
-name: Deploy Vote Site
+name: Deploy to SiteGround (vote.earnyourencorekaraoke.com)
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
     paths:
       - 'vote/**'
+      - 'screen/**'
+      - 'board/**'
+      - 'host/**'
+      - 'admin/**'
+      - 'assets/**'
+      - 'reports/**'
+      - '.github/workflows/deploy-vote.yml'
+  workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Setup SSH
+      # Write the private key from secret, strip any CR characters,
+      # preload known_hosts, and verify the key parses.
+      - name: Prepare SSH key & known_hosts
+        shell: bash
         run: |
+          set -euo pipefail
           mkdir -p ~/.ssh
-          echo "${{ secrets.SG_DEPLOY_KEY }}" > ~/.ssh/sg_deploy
+          # Write key from secret and remove ALL CR characters that can break libcrypto
+          printf '%s' "${{ secrets.SG_DEPLOY_KEY }}" | tr -d '\r' > ~/.ssh/sg_deploy
           chmod 600 ~/.ssh/sg_deploy
-          ssh-keyscan -p 18765 gcam1050.siteground.biz >> ~/.ssh/known_hosts
+          # Preload remote host key to avoid interactive trust prompt
+          ssh-keyscan -p "${{ secrets.SG_PORT }}" "${{ secrets.SG_HOST }}" >> ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+          # Sanity: ensure the private key parses
+          ssh-keygen -y -f ~/.ssh/sg_deploy > /dev/null
 
-      - name: Deploy to SiteGround (vote subdomain only)
+      # Quick non-interactive SSH check so we fail early with a clear error
+      - name: Connectivity smoke test
+        shell: bash
         run: |
-          rsync -avz --delete \
-            -e "ssh -p 18765 -i ~/.ssh/sg_deploy" \
-            vote/ \
-            u2212-6q1dxbl4nmbd@gcam1050.siteground.biz:~/www/vote.earnyourencorekaraoke.com/public_html/
+          ssh -o BatchMode=yes -o ConnectTimeout=10 \
+            -p "${{ secrets.SG_PORT }}" -i ~/.ssh/sg_deploy \
+            "${{ secrets.SG_USER }}@${{ secrets.SG_HOST }}" "echo OK"
+
+      # Ensure the remote folder structure exists
+      - name: Create remote folders
+        shell: bash
+        env:
+          SG_BASE_PATH: ${{ secrets.SG_BASE_PATH }}
+        run: |
+          ssh -p "${{ secrets.SG_PORT }}" -i ~/.ssh/sg_deploy \
+            "${{ secrets.SG_USER }}@${{ secrets.SG_HOST }}" \
+            "mkdir -p ${SG_BASE_PATH}/{vote,screen,board,host,admin,assets,reports}"
+
+      # Deploy each local folder to its matching remote directory
+      - name: Deploy folders (vote, screen, board, host, admin, assets, reports)
+        shell: bash
+        env:
+          SG_BASE_PATH: ${{ secrets.SG_BASE_PATH }}
+        run: |
+          set -euo pipefail
+          for dir in vote screen board host admin assets reports; do
+            if [ -d "$dir" ]; then
+              echo "Deploying ./$dir -> ${SG_BASE_PATH}/$dir/"
+              rsync -avz --delete \
+                -e "ssh -p ${{ secrets.SG_PORT }} -i ~/.ssh/sg_deploy" \
+                "$dir/" "${{ secrets.SG_USER }}@${{ secrets.SG_HOST }}:${SG_BASE_PATH}/$dir/"
+            else
+              echo "Skipping $dir (no local folder)"
+            fi
+          done
