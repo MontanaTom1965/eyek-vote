@@ -1,103 +1,25 @@
-name: Deploy EYEK Vote (subdomain only)
+name: Deploy Vote App
 
 on:
-  workflow_dispatch:
-  push:
-    branches: [ main ]
-    paths:
-      - 'vote/**'
-      - 'screen/**'
-      - 'board/**'
-      - 'host/**'
-      - 'admin/**'
-      - 'assets/**'
-      - 'reports/**'
-      - '.github/workflows/deploy-vote.yml'
+  workflow_dispatch:   # Only runs when you trigger it manually
 
 jobs:
-  deploy-vote:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      # ---------- SSH PREP (base64-safe) ----------
-      - name: Prepare SSH key & known_hosts (base64-safe)
-        shell: bash
+      - name: Set up SSH key from Base64
         run: |
-          set -euo pipefail
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SG_KEY_BASE64 }}" | base64 -d > ~/.ssh/sg_deploy
-          chmod 600 ~/.ssh/sg_deploy
-          # Preload host key so SSH won't ask
-          ssh-keyscan -p "${{ secrets.SG_PORT }}" "${{ secrets.SG_HOST }}" >> ~/.ssh/known_hosts
-          chmod 644 ~/.ssh/known_hosts
+          mkdir -p $HOME/.ssh
+          echo "${{ secrets.SG_SSH_KEY_BASE64 }}" | base64 -d > $HOME/.ssh/eyek_ci
+          chmod 600 $HOME/.ssh/eyek_ci
+          ssh-keyscan -p ${{ secrets.SG_PORT }} ${{ secrets.SG_HOST }} >> $HOME/.ssh/known_hosts
 
-      # ---------- CONNECTIVITY SMOKE TEST ----------
-      - name: Connectivity smoke test
-        shell: bash
+      - name: Deploy to SiteGround (vote/)
         run: |
-          set -euo pipefail
-          ssh -p "${{ secrets.SG_PORT }}" -i ~/.ssh/sg_deploy \
-            -o IdentitiesOnly=yes -o BatchMode=yes \
-            "${{ secrets.SG_USER }}@${{ secrets.SG_HOST }}" \
-            "echo OK: \$(hostname); pwd"
-
-      # ---------- ENSURE DEST FOLDERS EXIST ----------
-      - name: Ensure remote folders exist
-        shell: bash
-        run: |
-          set -euo pipefail
-          ssh -p "${{ secrets.SG_PORT }}" -i ~/.ssh/sg_deploy -o IdentitiesOnly=yes \
-            "${{ secrets.SG_USER }}@${{ secrets.SG_HOST }}" '
-              set -e
-              base="${{ secrets.SG_BASE_PATH }}"
-              mkdir -p "$base/vote" "$base/screen" "$base/board" "$base/host" "$base/admin" "$base/assets" "$base/reports"
-              for d in vote screen board host admin assets reports; do
-                [ -f "$base/$d/health.txt" ] || echo "$(date -Is) alive" > "$base/$d/health.txt"
-              done
-            '
-
-      # ---------- RSYNC HELPERS ----------
-      - name: Rsync vote
-        shell: bash
-        run: |
-          rsync -avz --delete -e "ssh -p ${{ secrets.SG_PORT }} -i ~/.ssh/sg_deploy -o IdentitiesOnly=yes" \
-            ./vote/ "${{ secrets.SG_USER }}@${{ secrets.SG_HOST }}:${{ secrets.SG_BASE_PATH }}/vote/"
-
-      - name: Rsync screen
-        shell: bash
-        run: |
-          rsync -avz --delete -e "ssh -p ${{ secrets.SG_PORT }} -i ~/.ssh/sg_deploy -o IdentitiesOnly=yes" \
-            ./screen/ "${{ secrets.SG_USER }}@${{ secrets.SG_HOST }}:${{ secrets.SG_BASE_PATH }}/screen/"
-
-      - name: Rsync board
-        shell: bash
-        run: |
-          rsync -avz --delete -e "ssh -p ${{ secrets.SG_PORT }} -i ~/.ssh/sg_deploy -o IdentitiesOnly=yes" \
-            ./board/ "${{ secrets.SG_USER }}@${{ secrets.SG_HOST }}:${{ secrets.SG_BASE_PATH }}/board/"
-
-      - name: Rsync host
-        shell: bash
-        run: |
-          rsync -avz --delete -e "ssh -p ${{ secrets.SG_PORT }} -i ~/.ssh/sg_deploy -o IdentitiesOnly=yes" \
-            ./host/ "${{ secrets.SG_USER }}@${{ secrets.SG_HOST }}:${{ secrets.SG_BASE_PATH }}/host/"
-
-      - name: Rsync admin
-        shell: bash
-        run: |
-          rsync -avz --delete -e "ssh -p ${{ secrets.SG_PORT }} -i ~/.ssh/sg_deploy -o IdentitiesOnly=yes" \
-            ./admin/ "${{ secrets.SG_USER }}@${{ secrets.SG_HOST }}:${{ secrets.SG_BASE_PATH }}/admin/"
-
-      - name: Rsync assets
-        shell: bash
-        run: |
-          rsync -avz --delete -e "ssh -p ${{ secrets.SG_PORT }} -i ~/.ssh/sg_deploy -o IdentitiesOnly=yes" \
-            ./assets/ "${{ secrets.SG_USER }}@${{ secrets.SG_HOST }}:${{ secrets.SG_BASE_PATH }}/assets/"
-
-      - name: Rsync reports
-        shell: bash
-        run: |
-          rsync -avz --delete -e "ssh -p ${{ secrets.SG_PORT }} -i ~/.ssh/sg_deploy -o IdentitiesOnly=yes" \
-            ./reports/ "${{ secrets.SG_USER }}@${{ secrets.SG_HOST }}:${{ secrets.SG_BASE_PATH }}/reports/"
+          rsync -avz --delete -e "ssh -i $HOME/.ssh/eyek_ci -p ${{ secrets.SG_PORT }}" \
+            ./vote/ \
+            ${{ secrets.SG_USER }}@${{ secrets.SG_HOST }}:${{ secrets.SG_BASE_PATH }}/vote/
