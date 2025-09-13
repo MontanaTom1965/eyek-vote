@@ -1,11 +1,7 @@
-name: Deploy Vote Site
+name: Deploy to SiteGround (Vote Site)
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'vote/**'
+  workflow_dispatch:   # ✅ manual trigger only
 
 jobs:
   deploy:
@@ -13,18 +9,16 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
       - name: Setup SSH
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SG_DEPLOY_KEY }}" > ~/.ssh/sg_deploy
-          chmod 600 ~/.ssh/sg_deploy
-          ssh-keyscan -p 18765 gcam1050.siteground.biz >> ~/.ssh/known_hosts
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SG_DEPLOY_KEY }}
 
-      - name: Deploy to SiteGround (vote subdomain only)
+      - name: Deploy files to SiteGround (vote subdomain only)
         run: |
           rsync -avz --delete \
-            -e "ssh -p 18765 -i ~/.ssh/sg_deploy" \
-            vote/ \
-            u2212-6q1dxbl4nmbd@gcam1050.siteground.biz:~/www/vote.earnyourencorekaraoke.com/public_html/
+            --exclude ".git" \
+            ./vote/ ./screen/ ./host/ ./board/ ./assets/ ./reports/ \
+            u2212-6q1dxbl4nmbd@gcam1050.siteground.biz:/home/u2212-6q1dxbl4nmbd/www/vote.earnyourencorekaraoke.com/public_html/
