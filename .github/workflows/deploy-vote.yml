@@ -22,32 +22,28 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      # Write the private key from secret, strip any CR characters,
-      # preload known_hosts, and verify the key parses.
-      - name: Prepare SSH key & known_hosts
+      - name: Prepare SSH key & known_hosts (base64-safe)
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p ~/.ssh
-          # Write key from secret and remove ALL CR characters that can break libcrypto
-          printf '%s' "${{ secrets.SG_DEPLOY_KEY }}" | tr -d '\r' > ~/.ssh/sg_deploy
+          echo "${{ secrets.SG_DEPLOY_KEY_B64 }}" | base64 -d > ~/.ssh/sg_deploy
           chmod 600 ~/.ssh/sg_deploy
-          # Preload remote host key to avoid interactive trust prompt
+          # show a non-sensitive fingerprint to prove the key parses
+          echo "Key fingerprint:"
+          ssh-keygen -lf ~/.ssh/sg_deploy
+          # preload host key to avoid prompt
           ssh-keyscan -p "${{ secrets.SG_PORT }}" "${{ secrets.SG_HOST }}" >> ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
-          # Sanity: ensure the private key parses
-          ssh-keygen -y -f ~/.ssh/sg_deploy > /dev/null
 
-      # Quick non-interactive SSH check so we fail early with a clear error
-      - name: Connectivity smoke test
+      - name: Connectivity smoke test (non-interactive)
         shell: bash
         run: |
           ssh -o BatchMode=yes -o ConnectTimeout=10 \
             -p "${{ secrets.SG_PORT }}" -i ~/.ssh/sg_deploy \
             "${{ secrets.SG_USER }}@${{ secrets.SG_HOST }}" "echo OK"
 
-      # Ensure the remote folder structure exists
-      - name: Create remote folders
+      - name: Ensure remote folders exist
         shell: bash
         env:
           SG_BASE_PATH: ${{ secrets.SG_BASE_PATH }}
@@ -56,7 +52,6 @@ jobs:
             "${{ secrets.SG_USER }}@${{ secrets.SG_HOST }}" \
             "mkdir -p ${SG_BASE_PATH}/{vote,screen,board,host,admin,assets,reports}"
 
-      # Deploy each local folder to its matching remote directory
       - name: Deploy folders (vote, screen, board, host, admin, assets, reports)
         shell: bash
         env:
