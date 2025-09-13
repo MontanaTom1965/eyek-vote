@@ -1,25 +1,79 @@
-name: Deploy Vote App
+name: Deploy EYEK Vote (subdomain only)
 
 on:
-  workflow_dispatch:   # Only runs when you trigger it manually
+  workflow_dispatch:
 
 jobs:
-  deploy:
+  deploy-vote:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
+      - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Set up SSH key from Base64
+      # Prepare SSH without using ssh-agent (so the runner can't auto-pick id_ed25519)
+      - name: Prepare SSH key & known_hosts (base64-safe, no agent)
+        shell: bash
+        env:
+          SG_DEPLOY_KEY_B64: ${{ secrets.SG_DEPLOY_KEY_B64 }}
+          SG_KNOWN_HOSTS: ${{ secrets.SG_KNOWN_HOSTS }}
         run: |
-          mkdir -p $HOME/.ssh
-          echo "${{ secrets.SG_SSH_KEY_BASE64 }}" | base64 -d > $HOME/.ssh/eyek_ci
-          chmod 600 $HOME/.ssh/eyek_ci
-          ssh-keyscan -p ${{ secrets.SG_PORT }} ${{ secrets.SG_HOST }} >> $HOME/.ssh/known_hosts
+          set -eu
+          mkdir -p ~/.ssh
+          # Write our ONLY key
+          echo "$SG_DEPLOY_KEY_B64" | base64 -d > ~/.ssh/sg_deploy
+          chmod 600 ~/.ssh/sg_deploy
+          # Known hosts
+          printf "%s\n" "$SG_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+          # Make sure no ssh-agent key interferes
+          unset SSH_AUTH_SOCK
 
-      - name: Deploy to SiteGround (vote/)
+      - name: Connectivity smoke test
+        shell: bash
+        env:
+          SG_HOST: ${{ secrets.SG_HOST }}
+          SG_PORT: ${{ secrets.SG_PORT }}
+          SG_USER: ${{ secrets.SG_USER }}
         run: |
-          rsync -avz --delete -e "ssh -i $HOME/.ssh/eyek_ci -p ${{ secrets.SG_PORT }}" \
-            ./vote/ \
-            ${{ secrets.SG_USER }}@${{ secrets.SG_HOST }}:${{ secrets.SG_BASE_PATH }}/vote/
+          set -eu
+          ssh -o StrictHostKeyChecking=yes \
+              -o IdentitiesOnly=yes \
+              -i ~/.ssh/sg_deploy \
+              -p "$SG_PORT" "$SG_USER@$SG_HOST" \
+              "echo OK && whoami && pwd"
+
+      - name: Ensure remote folders exist (vote app only)
+        shell: bash
+        env:
+          SG_HOST: ${{ secrets.SG_HOST }}
+          SG_PORT: ${{ secrets.SG_PORT }}
+          SG_USER: ${{ secrets.SG_USER }}
+          SG_BASE_PATH: ${{ secrets.SG_BASE_PATH }}
+        run: |
+          set -eu
+          ssh -o IdentitiesOnly=yes -i ~/.ssh/sg_deploy -p "$SG_PORT" "$SG_USER@$SG_HOST" "
+            mkdir -p \"$SG_BASE_PATH/vote\" \
+                     \"$SG_BASE_PATH/screen\" \
+                     \"$SG_BASE_PATH/board\" \
+                     \"$SG_BASE_PATH/host\" \
+                     \"$SG_BASE_PATH/admin\" \
+                     \"$SG_BASE_PATH/assets\" \
+                     \"$SG_BASE_PATH/reports\"
+          "
+
+      - name: Deploy folders (vote, screen, board, host, admin, assets, reports)
+        shell: bash
+        env:
+          SG_HOST: ${{ secrets.SG_HOST }}
+          SG_PORT: ${{ secrets.SG_PORT }}
+          SG_USER: ${{ secrets.SG_USER }}
+          SG_BASE_PATH: ${{ secrets.SG_BASE_PATH }}
+        run: |
+          set -eu
+          rsync -avz --delete -e "ssh -o IdentitiesOnly=yes -i ~/.ssh/sg_deploy -p $SG_PORT" ./vote/   "$SG_USER@$SG_HOST:$SG_BASE_PATH/vote/"
+          rsync -avz --delete -e "ssh -o IdentitiesOnly=yes -i ~/.ssh/sg_deploy -p $SG_PORT" ./screen/ "$SG_USER@$SG_HOST:$SG_BASE_PATH/screen/"
+          rsync -avz --delete -e "ssh -o IdentitiesOnly=yes -i ~/.ssh/sg_deploy -p $SG_PORT" ./board/  "$SG_USER@$SG_HOST:$SG_BASE_PATH/board/"
+          rsync -avz --delete -e "ssh -o IdentitiesOnly=yes -i ~/.ssh/sg_deploy -p $SG_PORT" ./host/   "$SG_USER@$SG_HOST:$SG_BASE_PATH/host/"
+          rsync -avz --delete -e "ssh -o IdentitiesOnly=yes -i ~/.ssh/sg_deploy -p $SG_PORT" ./admin/  "$SG_USER@$SG_HOST:$SG_BASE_PATH/admin/"
+          rsync -avz --delete -e "ssh -o IdentitiesOnly=yes -i ~/.ssh/sg_deploy -p $SG_PORT" ./assets/ "$SG_USER@$SG_HOST:$SG_BASE_PATH/assets/"
+          rsync -avz --delete -e "ssh -o IdentitiesOnly=yes -i ~/.ssh/sg_deploy -p $SG_PORT" ./reports/ "$SG_USER@$SG_HOST:$SG_BASE_PATH/reports/"
