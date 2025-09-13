@@ -1,95 +1,57 @@
-name: Deploy to SiteGround (vote subdomain)
+name: deploy-vote
 
 on:
+  workflow_dispatch:
   push:
-    branches: [ "main" ]
+    branches: [ main ]
     paths:
-      - "vote/**"
-      - "screen/**"
-      - "host/**"
-      - "board/**"
-      - "admin/**"
-      - "assets/**"
-      - "reports/**"
-      - ".github/workflows/deploy-vote.yml"
-  workflow_dispatch: {}
+      - 'vote/**'
+      - '.github/workflows/deploy-vote.yml'
 
 jobs:
   deploy:
-    name: Rsync folders to SiteGround
     runs-on: ubuntu-latest
-
-    env:
-      SG_USER: ${{ secrets.SG_USER }}
-      SG_HOST: ${{ secrets.SG_HOST }}
-      SG_PORT: ${{ secrets.SG_PORT }}
-      SG_BASE_PATH: ${{ secrets.SG_BASE_PATH }}
-
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Prepare SSH
+      - name: Prepare SSH key & known_hosts (base64-safe)
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p ~/.ssh
-          chmod 700 ~/.ssh
-
-          # Write CI private key (must be an OPENSSH private key, no passphrase)
-          printf '%s\n' "${{ secrets.EYEK_CI_KEY }}" > ~/.ssh/id_ed25519
+          echo "${{ secrets.SG_DEPLOY_KEY_B64 }}" | base64 -d > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-
-          # Trust SiteGround host key (pull fresh host key from SG)
-          ssh-keyscan -p "${SG_PORT:-18765}" "${SG_HOST}" >> ~/.ssh/known_hosts
+          # SiteGround host key (first connect gets tricky on runners, so pin it)
+          ssh-keyscan -p 18765 gcam1050.siteground.biz >> ~/.ssh/known_hosts
           chmod 644 ~/.ssh/known_hosts
 
-          # quick sanity
-          ssh -p "${SG_PORT:-18765}" -o StrictHostKeyChecking=yes "${SG_USER}@${SG_HOST}" 'echo "SSH OK on $(hostname)"'
-
-      - name: Create remote folders if missing
+      - name: Connectivity smoke test
         shell: bash
+        env:
+          SG_USER: u2212-6q1dxbl4nmbd
+          SG_HOST: gcam1050.siteground.biz
         run: |
-          set -euo pipefail
-          read -r -d '' CMDS <<'EOS'
-          mkdir -p "$SG_BASE_PATH/vote"
-          mkdir -p "$SG_BASE_PATH/screen"
-          mkdir -p "$SG_BASE_PATH/host"
-          mkdir -p "$SG_BASE_PATH/board"
-          mkdir -p "$SG_BASE_PATH/admin"
-          mkdir -p "$SG_BASE_PATH/assets"
-          mkdir -p "$SG_BASE_PATH/reports"
-          EOS
-          ssh -p "${SG_PORT:-18765}" "${SG_USER}@${SG_HOST}" "SG_BASE_PATH='${SG_BASE_PATH}'; ${CMDS}"
+          ssh -p 18765 -i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes $SG_USER@$SG_HOST 'echo OK && pwd && ls -ld ~/www/vote.earnyourencorekaraoke.com/public_html || true'
 
-      - name: Deploy changed folders
+      - name: Ensure remote folders exist
         shell: bash
+        env:
+          SG_USER: u2212-6q1dxbl4nmbd
+          SG_HOST: gcam1050.siteground.biz
+          SG_BASE_PATH: /home/u2212-6q1dxbl4nmbd/www/vote.earnyourencorekaraoke.com/public_html
         run: |
-          set -euo pipefail
+          ssh -p 18765 -i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes $SG_USER@$SG_HOST "
+            set -e
+            mkdir -p $SG_BASE_PATH/vote
+          "
 
-          rsync_ssh="ssh -p ${SG_PORT:-18765} -o StrictHostKeyChecking=yes"
-
-          deploy_dir () {
-            local SRC_DIR="$1"
-            local DEST_DIR="$2"
-
-            if [ -d "$SRC_DIR" ]; then
-              echo "→ Deploying $SRC_DIR -> $DEST_DIR"
-              rsync -avz \
-                -e "$rsync_ssh" \
-                --exclude=".git/" \
-                --exclude=".github/" \
-                --exclude="**/.DS_Store" \
-                "$SRC_DIR"/ "${SG_USER}@${SG_HOST}:${SG_BASE_PATH}/${DEST_DIR}/"
-            else
-              echo "• Skipping $SRC_DIR (not present)"
-            fi
-          }
-
-          deploy_dir vote   vote
-          deploy_dir screen screen
-          deploy_dir host   host
-          deploy_dir board  board
-          deploy_dir admin  admin
-          deploy_dir assets assets
-          deploy_dir reports reports
+      - name: Deploy vote folder via rsync
+        shell: bash
+        env:
+          SG_USER: u2212-6q1dxbl4nmbd
+          SG_HOST: gcam1050.siteground.biz
+          SG_BASE_PATH: /home/u2212-6q1dxbl4nmbd/www/vote.earnyourencorekaraoke.com/public_html
+        run: |
+          rsync -avz --delete -e "ssh -p 18765 -i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes" \
+            vote/  $SG_USER@$SG_HOST:$SG_BASE_PATH/vote/
