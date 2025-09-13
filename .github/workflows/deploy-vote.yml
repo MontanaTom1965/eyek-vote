@@ -1,49 +1,95 @@
-name: deploy
+name: Deploy to SiteGround (vote subdomain)
 
 on:
-  workflow_dispatch:
+  push:
+    branches: [ "main" ]
+    paths:
+      - "vote/**"
+      - "screen/**"
+      - "host/**"
+      - "board/**"
+      - "admin/**"
+      - "assets/**"
+      - "reports/**"
+      - ".github/workflows/deploy-vote.yml"
+  workflow_dispatch: {}
 
 jobs:
   deploy:
+    name: Rsync folders to SiteGround
     runs-on: ubuntu-latest
 
     env:
+      SG_USER: ${{ secrets.SG_USER }}
       SG_HOST: ${{ secrets.SG_HOST }}
       SG_PORT: ${{ secrets.SG_PORT }}
-      SG_USER: ${{ secrets.SG_USER }}
-      SG_BASE_PATH: ${{ secrets.SG_BASE_PATH }} # e.g. /home/u2212-6q1dxbl4nmbd/www/vote.earnyourencorekaraoke.com/public_html
+      SG_BASE_PATH: ${{ secrets.SG_BASE_PATH }}
 
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      # Decode your base64 private key secret into ~/.ssh/sg_deploy
-      - name: Prepare SSH key & known_hosts (base64-safe)
+      - name: Prepare SSH
         shell: bash
         run: |
+          set -euo pipefail
           mkdir -p ~/.ssh
-          echo "${{ secrets.SG_DEPLOY_KEY_B64 }}" | base64 -d > ~/.ssh/sg_deploy
-          chmod 600 ~/.ssh/sg_deploy
-          # trust host once (avoids interactive prompt)
-          ssh-keyscan -p "$SG_PORT" "$SG_HOST" >> ~/.ssh/known_hosts
+          chmod 700 ~/.ssh
 
-      - name: Connectivity smoke test
-        run: |
-          ssh -p "$SG_PORT" -i ~/.ssh/sg_deploy "$SG_USER@$SG_HOST" "echo ok && whoami && pwd"
+          # Write CI private key (must be an OPENSSH private key, no passphrase)
+          printf '%s\n' "${{ secrets.EYEK_CI_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
 
-      # ✅ FIXED: one single-line command; no line breaks, no brace expansion
-      - name: Ensure remote folders exist
-        run: |
-          ssh -p "$SG_PORT" -i ~/.ssh/sg_deploy "$SG_USER@$SG_HOST" \
-            "mkdir -p '$SG_BASE_PATH/vote' '$SG_BASE_PATH/screen' '$SG_BASE_PATH/board' '$SG_BASE_PATH/host' '$SG_BASE_PATH/admin' '$SG_BASE_PATH/assets' '$SG_BASE_PATH/reports'"
+          # Trust SiteGround host key (pull fresh host key from SG)
+          ssh-keyscan -p "${SG_PORT:-18765}" "${SG_HOST}" >> ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
 
-      # Upload without --delete (safe)
-      - name: Deploy folders (vote, screen, board, host, admin, assets, reports)
+          # quick sanity
+          ssh -p "${SG_PORT:-18765}" -o StrictHostKeyChecking=yes "${SG_USER}@${SG_HOST}" 'echo "SSH OK on $(hostname)"'
+
+      - name: Create remote folders if missing
+        shell: bash
         run: |
-          rsync -avz -e "ssh -p $SG_PORT -i ~/.ssh/sg_deploy" ./vote/   "$SG_USER@$SG_HOST:$SG_BASE_PATH/vote/"
-          rsync -avz -e "ssh -p $SG_PORT -i ~/.ssh/sg_deploy" ./screen/ "$SG_USER@$SG_HOST:$SG_BASE_PATH/screen/"
-          rsync -avz -e "ssh -p $SG_PORT -i ~/.ssh/sg_deploy" ./board/  "$SG_USER@$SG_HOST:$SG_BASE_PATH/board/"
-          rsync -avz -e "ssh -p $SG_PORT -i ~/.ssh/sg_deploy" ./host/   "$SG_USER@$SG_HOST:$SG_BASE_PATH/host/"
-          rsync -avz -e "ssh -p $SG_PORT -i ~/.ssh/sg_deploy" ./admin/  "$SG_USER@$SG_HOST:$SG_BASE_PATH/admin/"
-          rsync -avz -e "ssh -p $SG_PORT -i ~/.ssh/sg_deploy" ./assets/ "$SG_USER@$SG_HOST:$SG_BASE_PATH/assets/"
-          rsync -avz -e "ssh -p $SG_PORT -i ~/.ssh/sg_deploy" ./reports/ "$SG_USER@$SG_HOST:$SG_BASE_PATH/reports/"
+          set -euo pipefail
+          read -r -d '' CMDS <<'EOS'
+          mkdir -p "$SG_BASE_PATH/vote"
+          mkdir -p "$SG_BASE_PATH/screen"
+          mkdir -p "$SG_BASE_PATH/host"
+          mkdir -p "$SG_BASE_PATH/board"
+          mkdir -p "$SG_BASE_PATH/admin"
+          mkdir -p "$SG_BASE_PATH/assets"
+          mkdir -p "$SG_BASE_PATH/reports"
+          EOS
+          ssh -p "${SG_PORT:-18765}" "${SG_USER}@${SG_HOST}" "SG_BASE_PATH='${SG_BASE_PATH}'; ${CMDS}"
+
+      - name: Deploy changed folders
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          rsync_ssh="ssh -p ${SG_PORT:-18765} -o StrictHostKeyChecking=yes"
+
+          deploy_dir () {
+            local SRC_DIR="$1"
+            local DEST_DIR="$2"
+
+            if [ -d "$SRC_DIR" ]; then
+              echo "→ Deploying $SRC_DIR -> $DEST_DIR"
+              rsync -avz \
+                -e "$rsync_ssh" \
+                --exclude=".git/" \
+                --exclude=".github/" \
+                --exclude="**/.DS_Store" \
+                "$SRC_DIR"/ "${SG_USER}@${SG_HOST}:${SG_BASE_PATH}/${DEST_DIR}/"
+            else
+              echo "• Skipping $SRC_DIR (not present)"
+            fi
+          }
+
+          deploy_dir vote   vote
+          deploy_dir screen screen
+          deploy_dir host   host
+          deploy_dir board  board
+          deploy_dir admin  admin
+          deploy_dir assets assets
+          deploy_dir reports reports
