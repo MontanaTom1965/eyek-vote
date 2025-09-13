@@ -1,0 +1,90 @@
+name: Deploy to SiteGround
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [ main ]
+    paths:
+      - 'vote/**'
+      - 'screen/**'
+      - 'host/**'
+      - 'board/**'
+      - 'admin/**'
+      - 'assets/**'
+      - 'reports/**'
+      - '.github/workflows/deploy-siteground.yml'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      # Write the SSH key from your base64 secret and set up SSH config
+      - name: Prepare SSH key
+        shell: bash
+        env:
+          SG_DEPLOY_KEY_B64: ${{ secrets.SG_DEPLOY_KEY_B64 }}
+          SG_HOST: ${{ secrets.SG_HOST }}
+          SG_USER: ${{ secrets.SG_USER }}
+          SG_PORT: ${{ secrets.SG_PORT }}
+        run: |
+          set -e
+          mkdir -p ~/.ssh
+          echo "$SG_DEPLOY_KEY_B64" | base64 -d > ~/.ssh/eyek_ci
+          chmod 600 ~/.ssh/eyek_ci
+          {
+            echo "Host sg"
+            echo "  HostName $SG_HOST"
+            echo "  User $SG_USER"
+            echo "  Port ${SG_PORT:-18765}"
+            echo "  IdentityFile ~/.ssh/eyek_ci"
+            echo "  IdentitiesOnly yes"
+            echo "  StrictHostKeyChecking no"
+          } >> ~/.ssh/config
+
+      - name: Verify SSH connectivity
+        shell: bash
+        run: |
+          set -e
+          ssh -o BatchMode=yes sg 'echo "SSH OK on $(hostname)"'
+
+      - name: Ensure rsync is available
+        run: sudo apt-get update && sudo apt-get install -y rsync
+
+      - name: Ensure target folders exist
+        shell: bash
+        env:
+          SG_BASE_PATH: ${{ secrets.SG_BASE_PATH }}
+        run: |
+          set -e
+          ssh sg "mkdir -p \
+            '$SG_BASE_PATH/vote' \
+            '$SG_BASE_PATH/screen' \
+            '$SG_BASE_PATH/host' \
+            '$SG_BASE_PATH/board' \
+            '$SG_BASE_PATH/admin' \
+            '$SG_BASE_PATH/assets' \
+            '$SG_BASE_PATH/reports'"
+
+      - name: Deploy subfolders (vote/screen/host/board/admin/assets/reports)
+        shell: bash
+        env:
+          SG_HOST: ${{ secrets.SG_HOST }}
+          SG_USER: ${{ secrets.SG_USER }}
+          SG_PORT: ${{ secrets.SG_PORT }}
+          SG_BASE_PATH: ${{ secrets.SG_BASE_PATH }}
+        run: |
+          set -e
+          for dir in vote screen host board admin assets reports; do
+            if [ -d "$dir" ]; then
+              echo "Deploying $dir/"
+              rsync -avz --delete \
+                -e "ssh -i ~/.ssh/eyek_ci -p ${SG_PORT:-18765} -o StrictHostKeyChecking=no -o IdentitiesOnly=yes" \
+                "$dir/" "${SG_USER}@${SG_HOST}:${SG_BASE_PATH}/$dir/"
+            else
+              echo "Skipping $dir/ (folder not in repo)"
+            fi
+          done
