@@ -1,4 +1,4 @@
-name: Deploy to SiteGround (vote.earnyourencorekaraoke.com)
+name: deploy-vote
 
 on:
   push:
@@ -11,7 +11,7 @@ on:
       - 'admin/**'
       - 'assets/**'
       - 'reports/**'
-      - '.github/workflows/deploy-vote.yml'
+      - '.github/workflows/*.yml'
   workflow_dispatch:
 
 jobs:
@@ -26,14 +26,16 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p ~/.ssh
+          # Write our private key from the repo secret (NO ssh-agent)
           echo "${{ secrets.SG_DEPLOY_KEY_B64 }}" | base64 -d > ~/.ssh/sg_deploy
           chmod 600 ~/.ssh/sg_deploy
-          echo "Key fingerprint:"
+          # Show a fingerprint so we know the key parsed correctly
           ssh-keygen -lf ~/.ssh/sg_deploy
+          # Preload the remote host key to avoid interactive prompt
           ssh-keyscan -p "${{ secrets.SG_PORT }}" "${{ secrets.SG_HOST }}" >> ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
 
-      - name: Connectivity smoke test (non-interactive)
+      - name: Connectivity smoke test
         shell: bash
         run: |
           ssh -o BatchMode=yes -o ConnectTimeout=10 \
