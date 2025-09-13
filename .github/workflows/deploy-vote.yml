@@ -1,69 +1,49 @@
-name: deploy-vote
+name: deploy
 
 on:
-  push:
-    branches: [ main ]
-    paths:
-      - 'vote/**'
-      - 'screen/**'
-      - 'board/**'
-      - 'host/**'
-      - 'admin/**'
-      - 'assets/**'
-      - 'reports/**'
-      - '.github/workflows/*.yml'
   workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
+    env:
+      SG_HOST: ${{ secrets.SG_HOST }}
+      SG_PORT: ${{ secrets.SG_PORT }}
+      SG_USER: ${{ secrets.SG_USER }}
+      SG_BASE_PATH: ${{ secrets.SG_BASE_PATH }} # e.g. /home/u2212-6q1dxbl4nmbd/www/vote.earnyourencorekaraoke.com/public_html
+
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
 
+      # Decode your base64 private key secret into ~/.ssh/sg_deploy
       - name: Prepare SSH key & known_hosts (base64-safe)
         shell: bash
         run: |
-          set -euo pipefail
           mkdir -p ~/.ssh
-          # Write our private key from the repo secret (NO ssh-agent)
           echo "${{ secrets.SG_DEPLOY_KEY_B64 }}" | base64 -d > ~/.ssh/sg_deploy
           chmod 600 ~/.ssh/sg_deploy
-          # Show a fingerprint so we know the key parsed correctly
-          ssh-keygen -lf ~/.ssh/sg_deploy
-          # Preload the remote host key to avoid interactive prompt
-          ssh-keyscan -p "${{ secrets.SG_PORT }}" "${{ secrets.SG_HOST }}" >> ~/.ssh/known_hosts
-          chmod 600 ~/.ssh/known_hosts
+          # trust host once (avoids interactive prompt)
+          ssh-keyscan -p "$SG_PORT" "$SG_HOST" >> ~/.ssh/known_hosts
 
       - name: Connectivity smoke test
-        shell: bash
         run: |
-          ssh -o BatchMode=yes -o ConnectTimeout=10 \
-            -p "${{ secrets.SG_PORT }}" -i ~/.ssh/sg_deploy \
-            "${{ secrets.SG_USER }}@${{ secrets.SG_HOST }}" "echo OK"
+          ssh -p "$SG_PORT" -i ~/.ssh/sg_deploy "$SG_USER@$SG_HOST" "echo ok && whoami && pwd"
 
+      # ✅ FIXED: one single-line command; no line breaks, no brace expansion
       - name: Ensure remote folders exist
-        shell: bash
-        env:
-          SG_BASE_PATH: ${{ secrets.SG_BASE_PATH }}
         run: |
-          ssh -p "${{ secrets.SG_PORT }}" -i ~/.ssh/sg_deploy \
-            "${{ secrets.SG_USER }}@${{ secrets.SG_HOST }}" \
-            "mkdir -p ${SG_BASE_PATH}/{vote,screen,board,host,admin,assets,reports}"
+          ssh -p "$SG_PORT" -i ~/.ssh/sg_deploy "$SG_USER@$SG_HOST" \
+            "mkdir -p '$SG_BASE_PATH/vote' '$SG_BASE_PATH/screen' '$SG_BASE_PATH/board' '$SG_BASE_PATH/host' '$SG_BASE_PATH/admin' '$SG_BASE_PATH/assets' '$SG_BASE_PATH/reports'"
 
+      # Upload without --delete (safe)
       - name: Deploy folders (vote, screen, board, host, admin, assets, reports)
-        shell: bash
-        env:
-          SG_BASE_PATH: ${{ secrets.SG_BASE_PATH }}
         run: |
-          set -euo pipefail
-          for dir in vote screen board host admin assets reports; do
-            if [ -d "$dir" ]; then
-              echo "Deploying ./$dir -> ${SG_BASE_PATH}/$dir/"
-              rsync -avz --delete \
-                -e "ssh -p ${{ secrets.SG_PORT }} -i ~/.ssh/sg_deploy" \
-                "$dir/" "${{ secrets.SG_USER }}@${{ secrets.SG_HOST }}:${SG_BASE_PATH}/$dir/"
-            else
-              echo "Skipping $dir (no local folder)"
-            fi
-          done
+          rsync -avz -e "ssh -p $SG_PORT -i ~/.ssh/sg_deploy" ./vote/   "$SG_USER@$SG_HOST:$SG_BASE_PATH/vote/"
+          rsync -avz -e "ssh -p $SG_PORT -i ~/.ssh/sg_deploy" ./screen/ "$SG_USER@$SG_HOST:$SG_BASE_PATH/screen/"
+          rsync -avz -e "ssh -p $SG_PORT -i ~/.ssh/sg_deploy" ./board/  "$SG_USER@$SG_HOST:$SG_BASE_PATH/board/"
+          rsync -avz -e "ssh -p $SG_PORT -i ~/.ssh/sg_deploy" ./host/   "$SG_USER@$SG_HOST:$SG_BASE_PATH/host/"
+          rsync -avz -e "ssh -p $SG_PORT -i ~/.ssh/sg_deploy" ./admin/  "$SG_USER@$SG_HOST:$SG_BASE_PATH/admin/"
+          rsync -avz -e "ssh -p $SG_PORT -i ~/.ssh/sg_deploy" ./assets/ "$SG_USER@$SG_HOST:$SG_BASE_PATH/assets/"
+          rsync -avz -e "ssh -p $SG_PORT -i ~/.ssh/sg_deploy" ./reports/ "$SG_USER@$SG_HOST:$SG_BASE_PATH/reports/"
