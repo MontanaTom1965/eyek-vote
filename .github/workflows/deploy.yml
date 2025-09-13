@@ -1,39 +1,86 @@
-name: Deploy EYEK Vote (subdomain only)
+name: Deploy to SiteGround (All)
 
 on:
+  workflow_dispatch:        # lets you run it manually
   push:
-    branches: [ main ]
-    paths:
-      - 'vote/**'
-      - '.github/workflows/deploy-vote.yml'
-  workflow_dispatch:
+    branches: [ "main" ]    # auto-deploy when you push to main (optional)
 
 jobs:
-  deploy-vote:
+  deploy:
     runs-on: ubuntu-latest
+
+    env:
+      SG_HOST: ${{ secrets.SG_HOST }}
+      SG_PORT: ${{ secrets.SG_PORT }}
+      SG_USER: ${{ secrets.SG_USER }}
+      SG_BASE_PATH: ${{ secrets.SG_BASE_PATH }}
+      DEPLOY_KEY_B64: ${{ secrets.SG_DEPLOY_KEY_B64 }}
+
+      # local → remote mapping (comma-separated list of "local:remote-subdir")
+      MAP: >
+        vote:vote,
+        screen:screen,
+        host:host,
+        board:board,
+        assets:assets,
+        reports:reports
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Check out repository
+        uses: actions/checkout@v4
 
-      - name: Prepare SSH
+      - name: Prepare SSH key
         shell: bash
         run: |
+          set -euo pipefail
           mkdir -p ~/.ssh
-          echo "${{ secrets.SG_SSH_KEY }}" > ~/.ssh/id_ed25519
+          echo "$DEPLOY_KEY_B64" | base64 -d > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -p "${{ secrets.SG_PORT }}" "${{ secrets.SG_HOST }}" >> ~/.ssh/known_hosts
-          chmod 600 ~/.ssh/known_hosts
-          eval "$(ssh-agent -s)"
-          # Only unlock if you actually set a passphrase (yours appears empty)
-          if [ -n "${{ secrets.SG_PASSPHRASE }}" ]; then
-            (echo "${{ secrets.SG_PASSPHRASE }}"; echo) | ssh-add ~/.ssh/id_ed25519
-          else
-            ssh-add ~/.ssh/id_ed25519
-          fi
+          # known_hosts so ssh/rsync won't ask to trust
+          ssh-keyscan -p "${SG_PORT}" "${SG_HOST}" >> ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
 
-      - name: Rsync vote app to subdomain
+      - name: Sanity check SSH connects
         shell: bash
         run: |
-          rsync -avz --delete \
-            -e "ssh -p ${{ secrets.SG_PORT }}" \
-            --exclude '.git' --exclude '.github' --exclude 'node_modules' \
-            vote/ "${{ secrets.SG_USER }}@${{ secrets.SG_HOST }}:${{ secrets.SG_PATH_VOTE }}/"
+          set -euo pipefail
+          ssh -p "${SG_PORT}" -o StrictHostKeyChecking=yes "${SG_USER}@${SG_HOST}" "echo 'SSH OK on $(hostname)'"
+
+      - name: Ensure remote base and subfolders exist
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Make sure base path exists
+          ssh -p "${SG_PORT}" "${SG_USER}@${SG_HOST}" "mkdir -p '${SG_BASE_PATH}'"
+          # Create each subfolder (vote, screen, host, board, assets, reports)
+          IFS=',' read -ra ITEMS <<< "${MAP}"
+          for item in "${ITEMS[@]}"; do
+            local="${item%%:*}"
+            remote="${item##*:}"
+            ssh -p "${SG_PORT}" "${SG_USER}@${SG_HOST}" "mkdir -p '${SG_BASE_PATH}/${remote}'"
+          done
+
+      - name: Deploy folders (only if they exist locally)
+        shell: bash
+        run: |
+          set -euo pipefail
+          IFS=',' read -ra ITEMS <<< "${MAP}"
+          for item in "${ITEMS[@]}"; do
+            local="${item%%:*}"
+            remote="${item##*:}"
+
+            if [ -d "${local}" ]; then
+              echo "→ Syncing ./${local}/ to ${SG_BASE_PATH}/${remote}/"
+              rsync -avz --delete \
+                -e "ssh -p ${SG_PORT} -o StrictHostKeyChecking=yes" \
+                "./${local}/" "${SG_USER}@${SG_HOST}:${SG_BASE_PATH}/${remote}/"
+            else
+              echo "⏭  Skipping ./${local}/ (not found locally)"
+            fi
+          done
+
+      - name: List remote result (for quick confirmation)
+        shell: bash
+        run: |
+          set -euo pipefail
+          ssh -p "${SG_PORT}" "${SG_USER}@${SG_HOST}" "ls -la '${SG_BASE_PATH}'; echo; for d in vote screen host board assets reports; do echo '---' \$d; ls -la '${SG_BASE_PATH}'/\$d || true; done"
