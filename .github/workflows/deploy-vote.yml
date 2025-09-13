@@ -17,7 +17,6 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -29,10 +28,8 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.SG_DEPLOY_KEY_B64 }}" | base64 -d > ~/.ssh/sg_deploy
           chmod 600 ~/.ssh/sg_deploy
-          # show a non-sensitive fingerprint to prove the key parses
           echo "Key fingerprint:"
           ssh-keygen -lf ~/.ssh/sg_deploy
-          # preload host key to avoid prompt
           ssh-keyscan -p "${{ secrets.SG_PORT }}" "${{ secrets.SG_HOST }}" >> ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
 
