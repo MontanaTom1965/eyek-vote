@@ -1,60 +1,194 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>EYEK • Screen</title>
+<style>
+  :root{
+    --bg:#05070c; --text:#e8f2ff; --muted:#a9bcd9; --accent:#00e38d; --warn:#ffd25a; --danger:#ff5478;
+  }
+  *{box-sizing:border-box;font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+  html,body{height:100%}
+  body{margin:0;background:radial-gradient(1200px 800px at 70% 10%,rgba(0,227,141,.08),transparent),
+               radial-gradient(900px 600px at 20% 90%,rgba(64,180,255,.08),transparent),
+               #05070c;color:var(--text);overflow:hidden}
+  .wrap{min-height:100%;display:grid;place-items:center;padding:32px}
+  .stage{width:min(1200px,95vw);aspect-ratio:16/9;border-radius:24px;border:1px solid #1b2233;background:#0a0f1a;
+         box-shadow:0 40px 100px #000c;position:relative;overflow:hidden}
+  .inner{position:absolute;inset:0;padding:32px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center}
+  h1{font-size:clamp(28px,5vw,56px);margin:0 0 8px}
+  .sub{font-size:clamp(16px,2.2vw,22px);color:var(--muted);margin-bottom:24px}
+
+  .now{font-size:clamp(22px,3.2vw,38px);margin-top:8px}
+  .song{font-size:clamp(26px,4vw,48px);font-weight:800;letter-spacing:.3px}
+  .pill{display:inline-block;padding:.35rem .75rem;border-radius:999px;border:1px solid #2a344a;background:#0d1320;color:#cfe3ff}
+  .marquee{position:absolute;inset:auto 0 0 0;background:linear-gradient(90deg,#0b1220,#0e1727);border-top:1px solid #1c2638;padding:10px 20px;color:#a5bad9}
+  .hint{font-size:clamp(14px,2vw,18px);opacity:.9}
+
+  /* Result overlays */
+  .burst{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none}
+  .result{font-size:clamp(40px,8vw,110px);font-weight:900;letter-spacing:1px;text-shadow:0 8px 40px #000a;opacity:0;transform:scale(.9);transition:600ms}
+  .result.show{opacity:1;transform:scale(1)}
+  .result.encore{color:#00f0a4}
+  .result.another{color:#ffd25a}
+  .result.next{color:#ff5478}
+
+  /* Prevent TV sleep: tiny pulsing dot in corner */
+  .keepalive{position:absolute;top:10px;right:16px;width:10px;height:10px;border-radius:50%;background:#2b8c6c;
+             animation:pulse 4s ease-in-out infinite}
+  @keyframes pulse{0%,100%{transform:scale(.8);opacity:.5}50%{transform:scale(1.3);opacity:1}}
+
+  /* subtle background shimmer */
+  .shimmer{position:absolute;inset:-20% -10%;background:
+     radial-gradient(40% 25% at 10% 10%,rgba(64,180,255,.05),transparent 60%),
+     radial-gradient(50% 35% at 90% 80%,rgba(0,227,141,.05),transparent 60%);
+     filter:blur(8px);animation:float 14s ease-in-out infinite alternate}
+  @keyframes float{0%{transform:translateY(-2%)}100%{transform:translateY(2%)}}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="stage">
+      <div class="shimmer"></div>
+      <div class="keepalive" title="anti-sleep"></div>
+      <div class="inner">
+        <h1 id="headline">Welcome!</h1>
+        <div class="sub"><span id="venue">—</span> • KJ: <span id="kj">—</span> • PIN: <span id="pin">—</span></div>
+
+        <div id="nowBlock" style="display:none">
+          <div class="pill" id="phaseLabel">Performing</div>
+          <div class="now" id="singer">—</div>
+          <div class="song" id="song">—</div>
+        </div>
+
+        <div id="voteHint" class="hint" style="display:none;margin-top:18px">
+          Get ready to vote on your phone: <strong>Encore!</strong> • <strong>Another Shot</strong> • <strong>Maybe Next Time</strong>
+        </div>
+      </div>
+
+      <!-- Result overlay -->
+      <div class="burst">
+        <div id="resultText" class="result">Encore!</div>
+      </div>
+
+      <div class="marquee" id="marquee">Earn Your Encore Karaoke • eyek</div>
+    </div>
+  </div>
+
+  <audio id="sfxWin"  src="/assets/you_win_001.mp3" preload="auto"></audio>
+  <audio id="sfxAnother" src="/assets/end of voting.wav" preload="auto"></audio>
+  <audio id="sfxLose" src="/assets/sad_horn.mp3" preload="auto"></audio>
+
 <script>
-const EVENT_KEY = 'eyek:event';
-const NOW_KEY   = 'eyek:now';
-const CH        = new BroadcastChannel('eyek');
+const API='/assets/status.php';
 
-const $ = (s) => document.querySelector(s);
-function read(key, def={}) {
-  try { return JSON.parse(localStorage.getItem(key)) || def; }
-  catch { return def; }
-}
-
-function renderAll() {
-  const evt = read(EVENT_KEY, {});
-  const now = read(NOW_KEY, {});
-
-  // Top banner: Venue / KJ / PIN (PIN optional if you don’t want to show it)
-  $('#venueName').textContent = evt.venue || '';
-  $('#kjName').textContent    = evt.kj || '';
-  $('#pinCode').textContent   = evt.pin || '';
-
-  // Center stage: Now Playing
-  $('#nowSinger').textContent = now.singer || '';
-  $('#nowSong').textContent   = now.song || '';
-  $('#nowArtist').textContent = now.artist || '';
-}
-
-// BroadcastChannel: live updates
-CH.onmessage = (ev) => {
-  const { type } = ev.data || {};
-  if (type === 'event:update' || type === 'now:update') renderAll();
+const el = {
+  headline: document.getElementById('headline'),
+  venue: document.getElementById('venue'),
+  kj: document.getElementById('kj'),
+  pin: document.getElementById('pin'),
+  nowBlock: document.getElementById('nowBlock'),
+  phaseLabel: document.getElementById('phaseLabel'),
+  singer: document.getElementById('singer'),
+  song: document.getElementById('song'),
+  voteHint: document.getElementById('voteHint'),
+  resultText: document.getElementById('resultText'),
+  marquee: document.getElementById('marquee'),
+  sfxWin: document.getElementById('sfxWin'),
+  sfxAnother: document.getElementById('sfxAnother'),
+  sfxLose: document.getElementById('sfxLose'),
 };
 
-// Storage events (other browser windows)
-window.addEventListener('storage', (e) => {
-  if (e.key === EVENT_KEY || e.key === NOW_KEY) renderAll();
-});
+let last = null;
+let lastResult = null;
 
-// Tiny heartbeat (prevents some smart TVs from sleeping)
-setInterval(() => {
-  const t = new Date();
-  $('#ticker').textContent = t.toLocaleTimeString();
-}, 20 * 1000);
+function showState(s) {
+  // Header
+  el.venue.textContent = s.venue || '—';
+  el.kj.textContent    = s.kj || '—';
+  el.pin.textContent   = s.pin || '—';
 
-// Optionally, light confetti / sfx triggers could listen for a flag set by Host.
-// Example (leave hooks here):
-CH.addEventListener('message', (ev) => {
-  const { type, payload } = ev.data || {};
-  if (type === 'celebrate' && payload === 'encore') {
-    try { window.playEncore && window.playEncore(); } catch {}
-  }
-  if (type === 'celebrate' && payload === 'another') {
-    try { window.playAnother && window.playAnother(); } catch {}
-  }
-  if (type === 'celebrate' && payload === 'next') {
-    try { window.playMaybe && window.playMaybe(); } catch {}
-  }
-});
+  // Phase views
+  const phase = s.phase || 'idle';
 
-document.addEventListener('DOMContentLoaded', renderAll);
+  if (!s.venue && !s.kj) {
+    el.headline.textContent = 'Welcome!';
+  } else {
+    el.headline.textContent = `Welcome to ${s.venue || 'tonight'}!`;
+  }
+
+  if (phase === 'idle') {
+    el.nowBlock.style.display = 'none';
+    el.voteHint.style.display = 'none';
+  }
+
+  if (phase === 'performing' || phase === 'voting' || phase === 'result') {
+    el.nowBlock.style.display = '';
+    el.singer.textContent = s.currentSinger || '—';
+    const songLine = s.currentSong && s.artist ? `${s.currentSong} – ${s.artist}` : (s.currentSong || '—');
+    el.song.textContent = songLine;
+
+    el.phaseLabel.textContent = (phase === 'performing' ? 'Performing' : (phase === 'voting' ? 'Voting' : 'Result'));
+    el.voteHint.style.display = (phase === 'voting' ? '' : 'none');
+  }
+
+  // Results (animate only on change)
+  if (phase === 'result') {
+    if (s.result !== lastResult) {
+      lastResult = s.result;
+      showResultOverlay(s.result);
+    }
+  } else {
+    lastResult = null;
+    hideResultOverlay();
+  }
+
+  // marquee keep-alive tick
+  el.marquee.textContent = `Earn Your Encore Karaoke • ${new Date().toLocaleTimeString()}`;
+}
+
+function hideResultOverlay(){
+  el.resultText.className = 'result';
+}
+
+function showResultOverlay(result){
+  let text = 'Encore!';
+  let cls = 'encore';
+  let sfx = el.sfxWin;
+
+  if (result === 'another') {
+    text = 'Another Shot!';
+    cls = 'another';
+    sfx = el.sfxAnother;
+  } else if (result === 'next') {
+    text = 'Maybe Next Time!';
+    cls = 'next';
+    sfx = el.sfxLose;
+  }
+
+  el.resultText.textContent = text;
+  el.resultText.className = 'result show ' + cls;
+
+  // kick audio
+  try { sfx.currentTime = 0; sfx.play().catch(()=>{}); } catch(e){}
+}
+
+async function fetchState(){
+  try{
+    const r = await fetch(API + '?_=' + Date.now(), { cache:'no-store' });
+    const s = await r.json();
+    if (!last || JSON.stringify(s) !== JSON.stringify(last)) {
+      showState(s);
+      last = s;
+    }
+  }catch(e){
+    // ignore to keep screen clean
+  }
+}
+
+fetchState();
+setInterval(fetchState, 2000);
 </script>
+</body>
+</html>
