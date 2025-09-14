@@ -1,0 +1,10 @@
+{
+  "venue": "",
+  "kj": "",
+  "pin": "",
+  "locked": false,
+  "phase": "welcome",
+  "result": null,
+  "current": { "singer": "", "song": "" },
+  "updated": 0
+}
