@@ -1,5 +1,12 @@
 {
-  "now_singing": {"name":"Jessie", "song":"Zombie", "artist":"The Cranberries"},
-  "phase":"vote",                   // "splash" | "vote" | "result"
-  "result": null                    // null | "encore" | "another" | "next"
+  "venue": "",
+  "kj": "",
+  "pin": "",
+  "locked": false,
+  "currentSinger": "",
+  "currentSong": "",
+  "artist": "",
+  "phase": "idle",
+  "result": null,
+  "updated": 0
 }
