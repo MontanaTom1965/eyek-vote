@@ -1,146 +1,277 @@
-<script>
-/** ---------- Shared keys & helpers ---------- **/
-const EVENT_KEY = 'eyek:event';       // { venue, kj, pin, locked }
-const NOW_KEY   = 'eyek:now';         // { singer, song, artist }
-const CH        = new BroadcastChannel('eyek'); // cross-tab signalling
-
-const $ = (sel) => document.querySelector(sel);
-const byId = (id) => document.getElementById(id);
-
-function loadEvent() {
-  try { return JSON.parse(localStorage.getItem(EVENT_KEY)) || {}; }
-  catch { return {}; }
-}
-function saveEvent(evt) {
-  localStorage.setItem(EVENT_KEY, JSON.stringify(evt));
-  CH.postMessage({ type:'event:update', payload: evt });
-}
-
-function loadNow() {
-  try { return JSON.parse(localStorage.getItem(NOW_KEY)) || {}; }
-  catch { return {}; }
-}
-function saveNow(now) {
-  localStorage.setItem(NOW_KEY, JSON.stringify(now));
-  CH.postMessage({ type:'now:update', payload: now });
-}
-
-/** ---------- UI wiring ---------- **/
-const venueInput = byId('venueInput');
-const kjInput    = byId('kjInput');
-const pinInput   = byId('pinInput');
-
-const singerInput = byId('singerInput');
-const songInput   = byId('songInput');
-const artistInput = byId('artistInput');
-
-const lockBtn   = byId('lockBtn');
-const saveBtn   = byId('saveBtn');
-const resetBtn  = byId('resetBtn');
-const startBtn  = byId('startBtn'); // set “Now Playing”
-
-function renderLockState(locked) {
-  // Disable venue/KJ/PIN inputs when locked
-  [venueInput, kjInput, pinInput].forEach(el => el.disabled = !!locked);
-  // Button style/text
-  lockBtn.dataset.locked = locked ? '1' : '0';
-  lockBtn.textContent = locked ? 'Unlock Event' : 'Lock Event';
-  lockBtn.classList.toggle('locked', !!locked);
-}
-
-function hydrateUI() {
-  const evt = loadEvent();
-  venueInput.value = evt.venue || '';
-  kjInput.value    = evt.kj || '';
-  pinInput.value   = evt.pin || '';
-  renderLockState(!!evt.locked);
-
-  const now = loadNow();
-  byId('nowWho').textContent   = now.singer || '—';
-  byId('nowSong').textContent  = now.song   || '—';
-  byId('nowArtist').textContent= now.artist || '—';
-}
-
-/** ---------- Handlers ---------- **/
-lockBtn.addEventListener('click', () => {
-  // Toggle lock immediately (no Save needed)
-  const evt = loadEvent();
-  const newLocked = !evt.locked;
-  const next = {
-    venue: venueInput.value.trim(),
-    kj:    kjInput.value.trim(),
-    pin:   pinInput.value.trim(),
-    locked: newLocked
-  };
-  saveEvent(next);
-  renderLockState(newLocked);
-});
-
-saveBtn.addEventListener('click', () => {
-  // Save current fields without changing lock state
-  const evt = loadEvent();
-  const next = {
-    venue: venueInput.value.trim(),
-    kj:    kjInput.value.trim(),
-    pin:   pinInput.value.trim(),
-    locked: !!evt.locked
-  };
-  saveEvent(next);
-  // visual nudge (optional)
-  saveBtn.disabled = true;
-  setTimeout(() => (saveBtn.disabled = false), 400);
-});
-
-resetBtn.addEventListener('click', () => {
-  if (!confirm('Reset this event? This clears Venue/KJ/PIN and Now Playing.')) return;
-  const cleared = { venue:'', kj:'', pin:'', locked:false };
-  saveEvent(cleared);
-  saveNow({ singer:'', song:'', artist:'' });
-  hydrateUI();
-});
-
-startBtn.addEventListener('click', () => {
-  const now = {
-    singer: singerInput.value.trim(),
-    song:   songInput.value.trim(),
-    artist: artistInput.value.trim(),
-  };
-  saveNow(now);
-  // clear add fields if you want
-  // singerInput.value = songInput.value = artistInput.value = '';
-});
-
-/** ---------- Cross-tab listeners (if Screen changes) ---------- **/
-CH.onmessage = (ev) => {
-  const { type, payload } = ev.data || {};
-  if (type === 'event:update') {
-    // screen/other tabs changed it — reflect here
-    venueInput.value = payload.venue || '';
-    kjInput.value    = payload.kj || '';
-    pinInput.value   = payload.pin || '';
-    renderLockState(!!payload.locked);
-  } else if (type === 'now:update') {
-    byId('nowWho').textContent   = payload.singer || '—';
-    byId('nowSong').textContent  = payload.song   || '—';
-    byId('nowArtist').textContent= payload.artist || '—';
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>EYEK • Host Control</title>
+<link rel="icon" href="/assets/favicon.ico">
+<style>
+  :root{
+    --bg:#0c0f14; --card:#131823; --accent:#00e38d; --accent2:#40b4ff; --text:#e6f0ff; --muted:#9cb2d1; --danger:#ff4d6d; --warn:#ffb100;
   }
+  *{box-sizing:border-box;font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+  body{margin:0;background:linear-gradient(135deg,#0b1220,#0e1526 40%,#0b1220);color:var(--text);min-height:100svh}
+  .wrap{max-width:1100px;margin:0 auto;padding:24px;}
+  h1{font-weight:800;letter-spacing:.3px;margin:0 0 16px}
+  .grid{display:grid;gap:16px;grid-template-columns:1.2fr .8fr}
+  .card{background:var(--card);border:1px solid #1f2635;border-radius:16px;padding:16px;box-shadow:0 10px 40px #0004}
+  .card h2{margin:0 0 12px;font-size:18px}
+  .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+  label{display:block;font-size:12px;color:var(--muted);margin:8px 4px 6px}
+  input,select,button,textarea{
+    background:#0d1320;border:1px solid #263044;color:var(--text);border-radius:12px;
+    padding:10px 12px;font-size:14px;outline:none;min-width:0;
+  }
+  input:focus,textarea:focus{border-color:#3a92ff;box-shadow:0 0 0 3px #3a92ff22}
+  button{background:linear-gradient(180deg,#111a2b,#0f1727);border:1px solid #2e3a52;cursor:pointer}
+  button.primary{background:linear-gradient(180deg,#00f0a4,#00ca8c);border:0;color:#032218;font-weight:700}
+  button.warn{background:linear-gradient(180deg,#ffd25a,#ffb800);border:0;color:#221b03;font-weight:700}
+  button.ghost{background:#0d1320}
+  button.danger{background:linear-gradient(180deg,#ff6b8a,#ff476e);border:0;color:#2a0610;font-weight:800}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .muted{color:var(--muted)}
+  .pill{display:inline-block;padding:.25rem .6rem;border-radius:999px;border:1px solid #2a344a;background:#0d1320}
+  details summary{cursor:pointer;list-style:none}
+  details summary::-webkit-details-marker{display:none}
+  .flex{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .big{font-size:18px;font-weight:700}
+  .status{display:flex;align-items:center;gap:10px}
+  .dot{width:10px;height:10px;border-radius:50%}
+  .dot.ok{background:var(--accent)} .dot.warn{background:var(--warn)} .dot.idle{background:#3a4a66}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Host Control</h1>
+
+    <div class="grid">
+      <!-- LEFT: Event setup + performance -->
+      <div class="card">
+        <details open>
+          <summary class="row">
+            <h2 class="big">Event Setup</h2>
+            <span class="pill" id="lockBadge">Unlocked</span>
+          </summary>
+
+          <div class="two">
+            <div>
+              <label>Venue</label>
+              <input id="venue" placeholder="Venue name" />
+            </div>
+            <div>
+              <label>KJ / Host</label>
+              <input id="kj" placeholder="KJ name" />
+            </div>
+          </div>
+
+          <div class="two">
+            <div>
+              <label>Tonight's PIN</label>
+              <input id="pin" placeholder="e.g. 8426" />
+            </div>
+            <div class="row" style="align-items:end">
+              <button id="saveEvent" class="primary">Save</button>
+              <button id="lockBtn"  class="ghost">Lock</button>
+              <button id="unlockBtn" class="ghost">Unlock</button>
+              <button id="resetBtn" class="danger">Reset Event</button>
+            </div>
+          </div>
+        </details>
+
+        <hr style="border:0;border-top:1px solid #24314a;margin:16px 0">
+
+        <h2 class="big">Performance</h2>
+        <div class="two">
+          <div>
+            <label>Singer</label>
+            <input id="singer" placeholder="Singer name" />
+          </div>
+          <div>
+            <label>Song • Artist</label>
+            <input id="song" placeholder="Song – Artist" />
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:10px">
+          <button id="startPerf">Start Performance</button>
+          <button id="startVote" class="primary">Start Voting</button>
+          <button id="showEncore" class="ghost">Result: Encore!</button>
+          <button id="showAnother" class="ghost">Result: Another Shot</button>
+          <button id="showNext" class="ghost">Result: Maybe Next Time</button>
+          <button id="clearResult" class="ghost">Clear Result</button>
+        </div>
+      </div>
+
+      <!-- RIGHT: Now / Status -->
+      <div class="card">
+        <h2 class="big">Now</h2>
+        <div class="status">
+          <div id="phaseDot" class="dot idle"></div>
+          <div id="phaseText" class="muted">idle</div>
+        </div>
+        <div style="margin-top:12px">
+          <div class="muted">Venue</div>
+          <div id="nowVenue" class="big">—</div>
+        </div>
+        <div style="margin-top:12px">
+          <div class="muted">KJ</div>
+          <div id="nowKj" class="big">—</div>
+        </div>
+        <div style="margin-top:12px">
+          <div class="muted">PIN</div>
+          <div id="nowPin" class="big">—</div>
+        </div>
+        <div style="margin-top:12px">
+          <div class="muted">Singer</div>
+          <div id="nowSinger" class="big">—</div>
+        </div>
+        <div style="margin-top:12px">
+          <div class="muted">Song</div>
+          <div id="nowSong" class="big">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+const API = '/assets/status.php';
+
+const els = {
+  venue:  document.getElementById('venue'),
+  kj:     document.getElementById('kj'),
+  pin:    document.getElementById('pin'),
+  singer: document.getElementById('singer'),
+  song:   document.getElementById('song'),
+  lockBadge: document.getElementById('lockBadge'),
+  nowVenue:  document.getElementById('nowVenue'),
+  nowKj:     document.getElementById('nowKj'),
+  nowPin:    document.getElementById('nowPin'),
+  nowSinger: document.getElementById('nowSinger'),
+  nowSong:   document.getElementById('nowSong'),
+  phaseDot:  document.getElementById('phaseDot'),
+  phaseText: document.getElementById('phaseText'),
+  saveEvent: document.getElementById('saveEvent'),
+  lockBtn:   document.getElementById('lockBtn'),
+  unlockBtn: document.getElementById('unlockBtn'),
+  resetBtn:  document.getElementById('resetBtn'),
+  startPerf: document.getElementById('startPerf'),
+  startVote: document.getElementById('startVote'),
+  showEncore: document.getElementById('showEncore'),
+  showAnother: document.getElementById('showAnother'),
+  showNext: document.getElementById('showNext'),
+  clearResult: document.getElementById('clearResult'),
 };
 
-// also react to Storage events (other browser window, same origin)
-window.addEventListener('storage', (e) => {
-  if (e.key === EVENT_KEY) {
-    try { renderLockState(JSON.parse(e.newValue||'{}').locked); } catch {}
-  }
-  if (e.key === NOW_KEY) {
-    try {
-      const n = JSON.parse(e.newValue||'{}');
-      byId('nowWho').textContent   = n.singer || '—';
-      byId('nowSong').textContent  = n.song   || '—';
-      byId('nowArtist').textContent= n.artist || '—';
-    } catch {}
-  }
-});
+function setPhaseUI(phase) {
+  els.phaseText.textContent = phase || 'idle';
+  els.phaseDot.className = 'dot ' + (phase === 'voting' ? 'warn' : (phase === 'performing' || phase === 'result') ? 'ok' : 'idle');
+}
 
-/** ---------- Init ---------- **/
-document.addEventListener('DOMContentLoaded', hydrateUI);
+async function getState() {
+  const r = await fetch(API + '?_=' + Date.now());
+  return r.json();
+}
+
+async function post(body) {
+  const r = await fetch(API, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(body)
+  });
+  return r.json();
+}
+
+function fillForm(s) {
+  els.venue.value = s.venue || '';
+  els.kj.value = s.kj || '';
+  els.pin.value = s.pin || '';
+  els.singer.value = s.currentSinger || '';
+  els.song.value = s.currentSong && s.artist ? `${s.currentSong} – ${s.artist}` : (s.currentSong || '');
+  els.lockBadge.textContent = (s.locked ? 'Locked' : 'Unlocked');
+  els.lockBadge.style.borderColor = s.locked ? '#2b8c6c' : '#2a344a';
+}
+
+function fillNow(s) {
+  els.nowVenue.textContent  = s.venue || '—';
+  els.nowKj.textContent     = s.kj || '—';
+  els.nowPin.textContent    = s.pin || '—';
+  els.nowSinger.textContent = s.currentSinger || '—';
+  els.nowSong.textContent   = s.currentSong && s.artist ? `${s.currentSong} – ${s.artist}` : (s.currentSong || '—');
+  setPhaseUI(s.phase || 'idle');
+}
+
+async function refresh() {
+  const s = await getState();
+  fillForm(s);
+  fillNow(s);
+}
+
+function splitSongArtist(input) {
+  const parts = (input || '').split('–');
+  if (parts.length >= 2) {
+    return { song: parts[0].trim(), artist: parts.slice(1).join('–').trim() };
+  }
+  return { song: input.trim(), artist: '' };
+}
+
+// Buttons
+els.saveEvent.onclick = async () => {
+  const {song, artist} = splitSongArtist(els.song.value);
+  await post({
+    action:'save',
+    venue: els.venue.value.trim(),
+    kj: els.kj.value.trim(),
+    pin: els.pin.value.trim(),
+    currentSinger: els.singer.value.trim(),
+    currentSong: song,
+    artist: artist
+  });
+  refresh();
+};
+
+els.lockBtn.onclick = async () => {
+  await post({
+    action: 'lock',
+    venue: els.venue.value.trim(),
+    kj: els.kj.value.trim(),
+    pin: els.pin.value.trim()
+  });
+  refresh();
+};
+els.unlockBtn.onclick = async () => {
+  await post({ action:'unlock' });
+  refresh();
+};
+els.resetBtn.onclick = async () => {
+  if (!confirm('Reset event? This clears venue/KJ/PIN and current singer/song.')) return;
+  await post({ action:'reset' });
+  refresh();
+};
+
+els.startPerf.onclick = async () => {
+  const {song, artist} = splitSongArtist(els.song.value);
+  await post({
+    action:'save',
+    currentSinger: els.singer.value.trim(),
+    currentSong: song,
+    artist: artist,
+    phase: 'performing',
+    result: null
+  });
+  refresh();
+};
+els.startVote.onclick = async () => {
+  await post({ action:'save', phase:'voting', result:null });
+  refresh();
+};
+els.showEncore.onclick = async () => { await post({ action:'save', phase:'result', result:'encore' }); refresh(); };
+els.showAnother.onclick = async () => { await post({ action:'save', phase:'result', result:'another' }); refresh(); };
+els.showNext.onclick = async () => { await post({ action:'save', phase:'result', result:'next' }); refresh(); };
+els.clearResult.onclick = async () => { await post({ action:'save', result:null, phase:'performing' }); refresh(); };
+
+// Auto-refresh the side panel
+refresh();
+setInterval(refresh, 2000);
 </script>
+</body>
+</html>
