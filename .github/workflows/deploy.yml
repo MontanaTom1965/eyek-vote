@@ -2,26 +2,20 @@ name: Deploy
 
 on:
   workflow_dispatch:
-  push:
-    branches: [ "main" ]
-    paths:
-      - 'vote/**'
-      - 'screen/**'
-      - 'host/**'
-      - 'board/**'
-      - 'reports/**'
-      - 'assets/**'
-      - '.github/workflows/deploy.yml'
+
+permissions:
+  contents: read
+
+env:
+  SG_HOST: ${{ secrets.SG_HOST }}
+  SG_PORT: ${{ secrets.SG_PORT }}
+  SG_USER: ${{ secrets.SG_USER }}
+  SG_BASE_PATH: ${{ secrets.SG_BASE_PATH }}
+  SG_DEPLOY_KEY_B64: ${{ secrets.SG_DEPLOY_KEY_B64 }}
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    env:
-      SG_HOST: ${{ secrets.SG_HOST }}
-      SG_PORT: ${{ secrets.SG_PORT }}
-      SG_USER: ${{ secrets.SG_USER }}
-      SG_BASE_PATH: ${{ secrets.SG_BASE_PATH }}
-      SG_DEPLOY_KEY_B64: ${{ secrets.SG_DEPLOY_KEY_B64 }}
 
     steps:
       - name: Fail fast if secrets missing
@@ -53,7 +47,24 @@ jobs:
           ssh -i ~/.ssh/eyek_ci -p "$SG_PORT" "$SG_USER@$SG_HOST" \
             "mkdir -p '$SG_BASE_PATH/vote' '$SG_BASE_PATH/screen' '$SG_BASE_PATH/host' '$SG_BASE_PATH/board' '$SG_BASE_PATH/reports' '$SG_BASE_PATH/assets'"
 
-      - name: Rsync folders
+      # --- NEW: sync ONLY the root index.html to the subdomain root ---
+      - name: Sync root index.html to subdomain root
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -f "index.html" ]; then
+            echo "→ Syncing ./index.html -> $SG_BASE_PATH/index.html"
+            rsync -avz --delete \
+              -e "ssh -i ~/.ssh/eyek_ci -p $SG_PORT" \
+              --include="index.html" \
+              --exclude="*" \
+              ./ "$SG_USER@$SG_HOST:$SG_BASE_PATH/"
+          else
+            echo "⚠ No ./index.html found in repo root; skipping root homepage deploy."
+          fi
+
+      # Subfolders (unchanged)
+      - name: Sync folders
         shell: bash
         run: |
           set -euo pipefail
@@ -75,3 +86,13 @@ jobs:
           sync_dir board board
           sync_dir reports reports
           sync_dir assets assets
+
+      # --- NEW: verify on the server so you can see it in the logs ---
+      - name: Verify on server
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Listing $SG_BASE_PATH:"
+          ssh -i ~/.ssh/eyek_ci -p "$SG_PORT" "$SG_USER@$SG_HOST" "ls -la '$SG_BASE_PATH' | sed -n '1,80p'"
+          echo "First lines of $SG_BASE_PATH/index.html:"
+          ssh -i ~/.ssh/eyek_ci -p "$SG_PORT" "$SG_USER@$SG_HOST" "head -n 20 '$SG_BASE_PATH/index.html' || echo 'No index.html found'"
