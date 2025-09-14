@@ -1,143 +1,110 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>EYEK • Screen</title>
-<link rel="icon" href="../assets/eyek-icon.png" />
 <style>
   :root{
-    --bg:#020617; --panel:#0b1020; --muted:#94a3b8; --fg:#e2e8f0;
-    --accent:#22d3ee; --good:#10b981; --warn:#f59e0b; --bad:#ef4444;
+    --bg:#030712; --text:#e6f0ff; --muted:#9fb3c8;
+    --encore:#14b8a6; --another:#f59e0b; --maybe:#ef4444;
   }
-  *{box-sizing:border-box}
   html,body{height:100%}
-  body{margin:0;background:radial-gradient(1200px 800px at 20% 10%, #0a1228 0%, #020617 60%);color:var(--fg);font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;overflow:hidden}
-  .center{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px}
-  .card{background:rgba(15,23,42,0.6);border:1px solid rgba(148,163,184,.15);backdrop-filter: blur(8px);border-radius:24px;padding:28px;max-width:1000px;box-shadow:0 10px 40px rgba(0,0,0,.5)}
-  .title{font-size:56px;font-weight:800;letter-spacing:.5px;margin:0 0 10px}
-  .sub{font-size:22px;color:var(--muted);margin:0 0 24px}
-  .now{font-size:42px;margin:0 0 6px}
-  .song{font-size:24px;color:var(--muted);margin:0 0 18px}
-  .pill{display:inline-block;padding:6px 14px;border-radius:999px;border:1px solid rgba(148,163,184,.2);background:rgba(2,6,23,.6);color:var(--muted);font-size:14px}
-  .big{font-size:64px;font-weight:900;margin:10px 0 0}
-  .encore{color:#052016;background:linear-gradient(90deg,#10b98122,#10b98111)}
-  .another{color:#2b1a05;background:linear-gradient(90deg,#f59e0b22,#f59e0b11)}
-  .maybe{color:#2a0909;background:linear-gradient(90deg,#ef444422,#ef444411)}
-  .spark{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .5s}
-  .spark.show{opacity:1;animation:pop .9s ease forwards}
-  @keyframes pop{0%{transform:scale(.95)}70%{transform:scale(1.02)}100%{transform:scale(1)}}
-  /* confetti */
+  body{margin:0;background:radial-gradient(1200px 600px at 50% -10%, #0b1222 0%, #030712 60%);color:var(--text);font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;overflow:hidden}
+  .wrap{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:1rem;text-align:center}
+  h1{font-size:3.2vw;letter-spacing:.15vw;margin:.3rem 0 .1rem}
+  .sub{font-size:1.2vw;color:var(--muted);letter-spacing:.1vw}
+  .singer{font-size:5.2vw;font-weight:800;letter-spacing:.2vw;margin:.6rem 0}
+  .song{font-size:2vw;color:#c7ddff}
+  .badge{position:absolute;top:1.2rem;left:1.2rem;background:#0e1a2a;border:1px solid #20334d;padding:.35rem .6rem;border-radius:10px;color:#9bd1ff;font-size:.9vw}
+  .kj{position:absolute;top:1.2rem;right:1.2rem;background:#0e1a2a;border:1px solid #20334d;padding:.35rem .6rem;border-radius:10px;color:#9bd1ff;font-size:.9vw}
+  .flash{position:fixed;inset:0;pointer-events:none;display:none;place-items:center;font-size:7vw;font-weight:900}
+  .flash.show{display:grid;animation: pop .9s ease-out forwards}
+  .flash.encore{background:rgba(20,184,166,.1);color:#052521;text-shadow:0 0 40px rgba(20,184,166,.9)}
+  .flash.another{background:rgba(245,158,11,.08);color:#2b1e05;text-shadow:0 0 40px rgba(245,158,11,.9)}
+  .flash.maybe{background:rgba(239,68,68,.08);color:#2d0c0c;text-shadow:0 0 40px rgba(239,68,68,.9)}
+  @keyframes pop{0%{transform:scale(.9);opacity:0}40%{transform:scale(1);opacity:1}100%{opacity:0}}
   .confetti{position:fixed;inset:0;pointer-events:none;overflow:hidden}
-  .confetti i{position:absolute;width:8px;height:14px;opacity:0;animation:drop 2.2s ease-out forwards}
-  @keyframes drop{0%{transform:translateY(-20vh) rotate(0deg);opacity:0}10%{opacity:1}100%{transform:translateY(110vh) rotate(540deg);opacity:0}}
-  .footer{position:fixed;left:16px;bottom:12px;color:var(--muted);font-size:14px}
-  .soundGate{position:fixed;inset:0;background:#000a;color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;z-index:99}
-  .soundGate button{padding:12px 18px;border-radius:12px;border:1px solid #334155;background:#0f172a;color:#e2e8f0;cursor:pointer}
+  .dot{position:absolute;width:8px;height:8px;border-radius:50%;opacity:0;animation: fall 1.2s linear forwards}
+  @keyframes fall{
+    0%{transform:translateY(-10vh) scale(1);opacity:1}
+    100%{transform:translateY(105vh) scale(.9);opacity:0}
+  }
 </style>
 </head>
 <body>
-<div id="soundGate" class="soundGate">
-  <div>
-    <div style="text-align:center;margin-bottom:12px">Tap to enable sound for results</div>
-    <div style="text-align:center"><button id="enableSound">Enable Sound</button></div>
-  </div>
+<div class="wrap">
+  <div class="badge" id="venue">Welcome!</div>
+  <div class="kj" id="kj">KJ: —</div>
+  <h1>Earn Your Encore Karaoke</h1>
+  <div class="sub">Get ready to vote: <strong>Encore!</strong> • <strong>Another Shot</strong> • <strong>Maybe Next Time</strong></div>
+  <div class="singer" id="singer">Waiting for first singer…</div>
+  <div class="song" id="song"></div>
 </div>
 
-<div class="center">
-  <div class="card" id="card">
-    <div class="title" id="title">Welcome!</div>
-    <div class="sub" id="venueKj">…</div>
-    <div class="now" id="now"></div>
-    <div class="song" id="song"></div>
-    <div class="pill" id="phasePill">welcome</div>
-    <div class="big" id="big"></div>
-  </div>
-  <div class="spark" id="spark"></div>
-</div>
+<div class="flash encore" id="flashEncore">ENCORE!</div>
+<div class="flash another" id="flashAnother">ANOTHER SHOT</div>
+<div class="flash maybe" id="flashMaybe">MAYBE NEXT TIME</div>
 <div class="confetti" id="confetti"></div>
-<div class="footer" id="footer"></div>
 
-<audio id="sndEncore" src="../assets/you_win_001.mp3" preload="auto"></audio>
-<audio id="sndAnother" src="../assets/quiz-countdown.mp3" preload="auto"></audio>
-<audio id="sndMaybe"  src="../assets/sad_horn.mp3" preload="auto"></audio>
+<audio id="sndEncore" src="/assets/you_win_001.mp3" preload="auto"></audio>
+<audio id="sndMaybe"  src="/assets/sad_horn.mp3"   preload="auto"></audio>
 
 <script>
-const API = '../assets/api/state.php';
-let allowSound = false;
-const el = {
-  title: qs('#title'), venueKj: qs('#venueKj'), now: qs('#now'), song: qs('#song'),
-  phasePill: qs('#phasePill'), big: qs('#big'), spark: qs('#spark'), confetti: qs('#confetti'),
-  footer: qs('#footer'), sndEncore: qs('#sndEncore'), sndAnother: qs('#sndAnother'), sndMaybe: qs('#sndMaybe'),
-  gate: qs('#soundGate'), enableSound: qs('#enableSound'), card: qs('#card')
-};
-function qs(s){return document.querySelector(s);}
-el.enableSound.onclick = async()=>{ allowSound = true; el.gate.style.display='none'; try{ await el.sndMaybe.play().catch(()=>{}); el.sndMaybe.pause(); el.sndMaybe.currentTime=0; }catch{} };
+const $ = sel => document.querySelector(sel);
 
-let last = {phase:null, result:null, updated:0};
-function confettiBurst() {
-  el.confetti.innerHTML = '';
-  for (let i=0;i<120;i++){
-    const p = document.createElement('i');
-    p.style.left = Math.random()*100+'%';
-    p.style.background = `hsl(${Math.random()*360},90%,60%)`;
-    p.style.animationDelay = (Math.random()*0.6)+'s';
-    el.confetti.appendChild(p);
+function read(key, def){ try{ return JSON.parse(localStorage.getItem(key)) ?? def; }catch{ return def; } }
+
+function renderFromState(){
+  const now = read('eyek_now', null);
+  const evt = read('eyek_event', {venue:'', kj:''});
+
+  $('#venue').textContent = evt.venue ? evt.venue : 'Welcome!';
+  $('#kj').textContent = 'KJ: ' + (evt.kj || '—');
+
+  if(now && now.name){
+    $('#singer').textContent = now.name;
+    $('#song').textContent   = now.song || '';
+    if(now.outcome) showOutcome(now.outcome);
   }
 }
-function flare(){ el.spark.classList.add('show'); setTimeout(()=>el.spark.classList.remove('show'), 900); }
 
-function setPhase(state){
-  el.venueKj.textContent = `${state.venue || '—'} • ${state.kj || '—'}`;
-  el.phasePill.textContent = state.phase;
-
-  if (state.phase === 'welcome') {
-    el.title.textContent = 'Welcome to ' + (state.venue || 'the show') + '!';
-    el.now.textContent = 'Get ready to vote for encores!';
-    el.song.textContent = '';
-    el.big.textContent  = '';
-    el.card.style.border = '1px solid rgba(148,163,184,.15)';
+// simple visuals/sounds
+function showOutcome(o){
+  if(o==='encore'){ showFlash('#flashEncore'); confetti(); $('#sndEncore').currentTime=0; $('#sndEncore').play().catch(()=>{}); }
+  if(o==='another'){ showFlash('#flashAnother'); }
+  if(o==='maybe'){  showFlash('#flashMaybe'); $('#sndMaybe').currentTime=0; $('#sndMaybe').play().catch(()=>{}); }
+}
+function showFlash(id){
+  const el = $(id);
+  el.classList.remove('show'); void el.offsetWidth; // reflow
+  el.classList.add('show');
+  setTimeout(()=> el.classList.remove('show'), 1000);
+}
+function confetti(){
+  const box = $('#confetti');
+  for(let i=0;i<80;i++){
+    const d = document.createElement('div');
+    d.className='dot';
+    d.style.left = Math.random()*100 + 'vw';
+    d.style.top  = (-Math.random()*20) + 'vh';
+    d.style.background = `hsl(${Math.random()*360},90%,60%)`;
+    d.style.animationDelay = (Math.random()*0.4)+'s';
+    d.style.transform = `translateY(-10vh) scale(${0.6+Math.random()*0.8})`;
+    box.appendChild(d);
+    setTimeout(()=> d.remove(), 1400);
   }
-  if (state.phase === 'performing') {
-    el.title.textContent = 'Now Singing';
-    el.now.textContent = state.current?.singer || '';
-    el.song.textContent = state.current?.song   || '';
-    el.big.textContent  = 'Get Ready to Vote!';
-    el.card.style.border = '1px solid rgba(34,211,238,.35)';
-    flare();
-  }
-  if (state.phase === 'result') {
-    let txt = 'Result';
-    let cls = '';
-    if (state.result === 'encore') { txt = 'Encore!'; cls='encore'; if (allowSound) el.sndEncore.play().catch(()=>{}); confettiBurst(); }
-    if (state.result === 'another'){ txt = 'Another Shot'; cls='another'; if (allowSound) el.sndAnother.play().catch(()=>{}); }
-    if (state.result === 'maybe')  { txt = 'Maybe Next Time'; cls='maybe'; if (allowSound) el.sndMaybe.play().catch(()=>{}); }
-    el.title.textContent = txt;
-    el.now.textContent = state.current?.singer || '';
-    el.song.textContent = state.current?.song   || '';
-    el.big.textContent  = '';
-    el.card.classList.remove('encore','another','maybe');
-    if (cls) el.card.classList.add(cls);
-    flare();
-  }
-
-  el.footer.textContent = 'Last update: ' + new Date(state.updated*1000).toLocaleTimeString();
 }
 
-async function tick(){
-  try{
-    const r = await fetch(API + '?t=' + Date.now(), {cache:'no-store'});
-    const s = await r.json();
-    if (s.updated !== last.updated || s.phase !== last.phase || s.result !== last.result) {
-      setPhase(s);
-      last = {phase:s.phase, result:s.result, updated:s.updated};
-    }
-  }catch(e){
-    // ignore brief outages
-  }
-}
-setInterval(tick, 1500);
-tick();
+// react to other tab changes
+window.addEventListener('storage', (e)=>{
+  if(e.key==='eyek_now' || e.key==='eyek_now_ping'){ renderFromState(); }
+});
+
+// periodic refresh (keeps TVs awake-ish)
+setInterval(()=>{ document.title = 'EYEK • Screen • ' + (new Date().toLocaleTimeString()); }, 30000);
+
+renderFromState();
 </script>
 </body>
 </html>
