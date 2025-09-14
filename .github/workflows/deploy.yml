@@ -1,22 +1,26 @@
 name: Deploy to SiteGround (folders)
 
 on:
-  workflow_dispatch: {}
+  workflow_dispatch:
   push:
-    branches: [ main ]
+    branches: [ "main" ]
     paths:
-      - 'vote/**'
-      - 'screen/**'
-      - 'host/**'
-      - 'board/**'
-      - 'assets/**'
-      - 'reports/**'
-      - '.github/workflows/deploy-all.yml'
+      - "vote/**"
+      - "screen/**"
+      - "host/**"
+      - "board/**"
+      - "assets/**"
+      - "reports/**"
+      - ".github/workflows/**"
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
+    env:
+      SG_HOST: gcam1050.siteground.biz       # <- keep
+      SG_PORT: "18765"                       # <- keep
+      SG_USER: ${{ secrets.SG_USER }}        # e.g. u2212-6q1dxbl4nmbd
+      SG_BASE_PATH: ${{ secrets.SG_BASE_PATH }} # e.g. /home/…/www/vote.earnyourencorekaraoke.com/public_html
     steps:
       - name: Checkout full repo
         uses: actions/checkout@v4
@@ -25,62 +29,84 @@ jobs:
 
       - name: Show what we actually checked out (sanity)
         run: |
-          echo "Workspace is: $GITHUB_WORKSPACE"
-          ls -la "$GITHUB_WORKSPACE"
-          echo "---- first two levels ----"
-          find "$GITHUB_WORKSPACE" -maxdepth 2 -type d | sort
+          echo "Repo root contents:"
+          ls -la
+          echo
+          for d in vote screen host board assets reports; do
+            if [ -d "$d" ]; then
+              echo "---- $d ----"
+              find "$d" -maxdepth 2 -type f -printf "%P\n" | sed 's/^/  /'
+            else
+              echo "---- $d (missing) ----"
+            fi
+            echo
+          done
 
       - name: Prepare SSH
-        env:
-          SG_DEPLOY_KEY_B64: ${{ secrets.SG_DEPLOY_KEY_B64 }}
-          SG_KNOWN_HOSTS: ${{ secrets.SG_KNOWN_HOSTS }}
         run: |
           set -euo pipefail
           mkdir -p ~/.ssh
-          echo "$SG_DEPLOY_KEY_B64" | base64 -d > ~/.ssh/sg_key
-          chmod 600 ~/.ssh/sg_key
-          # known_hosts lets SSH trust SiteGround's host key
-          printf "%s\n" "$SG_KNOWN_HOSTS" >> ~/.ssh/known_hosts
+          chmod 700 ~/.ssh
+
+          # 1) Install our private key from the base64 secret
+          echo "${{ secrets.SG_DEPLOY_KEY_B64 }}" | base64 -d > ~/.ssh/sg_deploy
+          chmod 600 ~/.ssh/sg_deploy
+
+          # 2) (Re)build known_hosts for this runner so strict checking passes
+          : > ~/.ssh/known_hosts
+          ssh-keyscan -p "$SG_PORT" -H "$SG_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+          chmod 644 ~/.ssh/known_hosts
+
+          # Quick connectivity smoke test (does not run a shell)
+          ssh -p "$SG_PORT" -i ~/.ssh/sg_deploy -o BatchMode=yes \
+              -o StrictHostKeyChecking=yes "$SG_USER@$SG_HOST" true
 
       - name: Make remote folders (once, safe if they already exist)
-        env:
-          SG_USER: ${{ secrets.SG_USER }}
-          SG_HOST: ${{ secrets.SG_HOST }}
-          SG_PORT: ${{ secrets.SG_PORT }}
-          SG_BASE_PATH: ${{ secrets.SG_BASE_PATH }}
         run: |
           set -euo pipefail
-          ssh -p "$SG_PORT" -i ~/.ssh/sg_key -o StrictHostKeyChecking=yes \
-            "${SG_USER}@${SG_HOST}" \
-            "mkdir -p '${SG_BASE_PATH}/vote' '${SG_BASE_PATH}/screen' '${SG_BASE_PATH}/host' '${SG_BASE_PATH}/board' '${SG_BASE_PATH}/assets' '${SG_BASE_PATH}/reports'"
+          ssh -p "$SG_PORT" -i ~/.ssh/sg_deploy "$SG_USER@$SG_HOST" bash -lc '
+            set -e
+            mkdir -p "$SG_BASE_PATH"/{vote,screen,host,board,assets,reports}
+          '
+        env:
+          SG_BASE_PATH: ${{ env.SG_BASE_PATH }}
 
-      # Helper: a tiny function to deploy a folder if it exists locally
       - name: Deploy folders
-        env:
-          SG_USER: ${{ secrets.SG_USER }}
-          SG_HOST: ${{ secrets.SG_HOST }}
-          SG_PORT: ${{ secrets.SG_PORT }}
-          SG_BASE_PATH: ${{ secrets.SG_BASE_PATH }}
         run: |
           set -euo pipefail
+          RSYNC="rsync -avz --delete -e \"ssh -p $SG_PORT -i $HOME/.ssh/sg_deploy -o StrictHostKeyChecking=yes\""
 
-          deploy_dir () {
-            LOCAL_DIR="$1"
-            REMOTE_DIR="$2"
-            if [ -d "$LOCAL_DIR" ]; then
-              echo "→ Syncing $LOCAL_DIR → $REMOTE_DIR"
-              rsync -avz --delete \
-                -e "ssh -i ~/.ssh/sg_key -p ${SG_PORT} -o StrictHostKeyChecking=yes" \
-                "$LOCAL_DIR/" "${SG_USER}@${SG_HOST}:${SG_BASE_PATH}/${REMOTE_DIR}/"
+          sync_dir () {
+            local SRC="$1"
+            local DEST="$2"
+            if [ -d "$SRC" ]; then
+              echo "→ Syncing ./$SRC/ to $DEST"
+              eval $RSYNC "$SRC/\"$SG_USER@$SG_HOST\":\"$SG_BASE_PATH\"/$DEST/"
             else
-              echo "⏭  Skipping $LOCAL_DIR (not found in checkout)"
+              echo "⏭  Skipping ./$SRC/ (not found in repo)"
             fi
           }
 
-          cd "$GITHUB_WORKSPACE"
-          deploy_dir "./vote" "vote"
-          deploy_dir "./screen" "screen"
-          deploy_dir "./host" "host"
-          deploy_dir "./board" "board"
-          deploy_dir "./assets" "assets"
-          deploy_dir "./reports" "reports"
+          sync_dir vote   vote
+          sync_dir screen screen
+          sync_dir host   host
+          sync_dir board  board
+          sync_dir assets assets
+          sync_dir reports reports
+
+      - name: Post-check (list remote)
+        run: |
+          ssh -p "$SG_PORT" -i ~/.ssh/sg_deploy "$SG_USER@$SG_HOST" bash -lc '
+            echo "Remote listing under $SG_BASE_PATH:"
+            for d in vote screen host board assets reports; do
+              echo "---- $d ----"
+              if [ -d "$SG_BASE_PATH/$d" ]; then
+                find "$SG_BASE_PATH/$d" -maxdepth 2 -type f -printf "  %P\n"
+              else
+                echo "  (missing)"
+              fi
+              echo
+            done
+          '
+        env:
+          SG_BASE_PATH: ${{ env.SG_BASE_PATH }}
