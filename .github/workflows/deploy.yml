@@ -1,108 +1,77 @@
-name: Deploy to SiteGround
+name: Deploy
 
 on:
-  workflow_dispatch:    # run it manually
-  push:                 # also deploy on every push to main
-    branches: [ main ]
-
-concurrency:
-  group: siteground-deploy
-  cancel-in-progress: true
+  workflow_dispatch:
+  push:
+    branches: [ "main" ]
+    paths:
+      - 'vote/**'
+      - 'screen/**'
+      - 'host/**'
+      - 'board/**'
+      - 'reports/**'
+      - 'assets/**'
+      - '.github/workflows/deploy.yml'
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     env:
-      SG_HOST: ${{ secrets.SG_HOST }}                # gcam1050.siteground.biz
-      SG_PORT: ${{ secrets.SG_PORT }}                # 18765
-      SG_USER: ${{ secrets.SG_USER }}                # u2212-6q1dxbl4nmbd
-      SG_BASE_PATH: ${{ secrets.SG_BASE_PATH }}      # /home/u2212-6q1dxbl4nmbd/www/vote.earnyourencorekaraoke.com/public_html
-      SSH_KEY_B64: ${{ secrets.SG_DEPLOY_KEY_B64 }}  # your Base64-encoded PRIVATE key
+      SG_HOST: ${{ secrets.SG_HOST }}
+      SG_PORT: ${{ secrets.SG_PORT }}
+      SG_USER: ${{ secrets.SG_USER }}
+      SG_BASE_PATH: ${{ secrets.SG_BASE_PATH }}
+      SG_DEPLOY_KEY_B64: ${{ secrets.SG_DEPLOY_KEY_B64 }}
 
     steps:
-      - name: Check out repo
+      - name: Fail fast if secrets missing
+        shell: bash
+        run: |
+          set -e
+          missing=0
+          for v in SG_HOST SG_PORT SG_USER SG_BASE_PATH SG_DEPLOY_KEY_B64; do
+            if [ -z "${!v}" ]; then echo "MISSING SECRET: $v"; missing=1; fi
+          done
+          [ "$missing" -eq 0 ] || { echo "::error::Missing one or more required secrets"; exit 1; }
+
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Restore private key from Base64
+      - name: Setup SSH
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p ~/.ssh
-          echo "$SSH_KEY_B64" | base64 -d > ~/.ssh/eyek_ci
+          echo "$SG_DEPLOY_KEY_B64" | base64 -d > ~/.ssh/eyek_ci
           chmod 600 ~/.ssh/eyek_ci
-          # Be lenient about host key so we don't need SG_HOSTKEY
-          echo -e "Host *\n  StrictHostKeyChecking no\n  UserKnownHostsFile=/dev/null\n" >> ~/.ssh/config
-          chmod 600 ~/.ssh/config
-
-      - name: Sanity: SSH hello
-        shell: bash
-        run: |
-          ssh -i ~/.ssh/eyek_ci -p "$SG_PORT" "$SG_USER@$SG_HOST" 'echo OK && hostname && pwd'
+          ssh-keyscan -p "$SG_PORT" "$SG_HOST" >> ~/.ssh/known_hosts
 
       - name: Ensure remote folders exist
         shell: bash
         run: |
-          ssh -i ~/.ssh/eyek_ci -p "$SG_PORT" "$SG_USER@$SG_HOST" "mkdir -p \
-            '$SG_BASE_PATH' \
-            '$SG_BASE_PATH/vote' \
-            '$SG_BASE_PATH/screen' \
-            '$SG_BASE_PATH/host' \
-            '$SG_BASE_PATH/board' \
-            '$SG_BASE_PATH/assets' \
-            '$SG_BASE_PATH/reports'"
-
-      - name: Deploy root index (optional)
-        if: ${{ hashFiles('index.html') != '' }}
-        shell: bash
-        run: |
-          rsync -avz --delete -e "ssh -i ~/.ssh/eyek_ci -p $SG_PORT" \
-            ./index.html "$SG_USER@$SG_HOST:$SG_BASE_PATH/"
-
-      - name: Deploy vote
-        if: ${{ hashFiles('vote/**') != '' }}
-        shell: bash
-        run: |
-          rsync -avz --delete -e "ssh -i ~/.ssh/eyek_ci -p $SG_PORT" \
-            ./vote/ "$SG_USER@$SG_HOST:$SG_BASE_PATH/vote/"
-
-      - name: Deploy screen
-        if: ${{ hashFiles('screen/**') != '' }}
-        shell: bash
-        run: |
-          rsync -avz --delete -e "ssh -i ~/.ssh/eyek_ci -p $SG_PORT" \
-            ./screen/ "$SG_USER@$SG_HOST:$SG_BASE_PATH/screen/"
-
-      - name: Deploy host
-        if: ${{ hashFiles('host/**') != '' }}
-        shell: bash
-        run: |
-          rsync -avz --delete -e "ssh -i ~/.ssh/eyek_ci -p $SG_PORT" \
-            ./host/ "$SG_USER@$SG_HOST:$SG_BASE_PATH/host/"
-
-      - name: Deploy board
-        if: ${{ hashFiles('board/**') != '' }}
-        shell: bash
-        run: |
-          rsync -avz --delete -e "ssh -i ~/.ssh/eyek_ci -p $SG_PORT" \
-            ./board/ "$SG_USER@$SG_HOST:$SG_BASE_PATH/board/"
-
-      - name: Deploy assets
-        if: ${{ hashFiles('assets/**') != '' }}
-        shell: bash
-        run: |
-          rsync -avz --delete -e "ssh -i ~/.ssh/eyek_ci -p $SG_PORT" \
-            ./assets/ "$SG_USER@$SG_HOST:$SG_BASE_PATH/assets/"
-
-      - name: Deploy reports
-        if: ${{ hashFiles('reports/**') != '' }}
-        shell: bash
-        run: |
-          rsync -avz --delete -e "ssh -i ~/.ssh/eyek_ci -p $SG_PORT" \
-            ./reports/ "$SG_USER@$SG_HOST:$SG_BASE_PATH/reports/"
-
-      - name: List remote (summary)
-        shell: bash
-        run: |
+          set -euo pipefail
           ssh -i ~/.ssh/eyek_ci -p "$SG_PORT" "$SG_USER@$SG_HOST" \
-            "ls -la '$SG_BASE_PATH' && find '$SG_BASE_PATH' -maxdepth 2 -type f -name 'index.html' -printf '%P\n' 2>/dev/null || true"
+            "mkdir -p '$SG_BASE_PATH/vote' '$SG_BASE_PATH/screen' '$SG_BASE_PATH/host' '$SG_BASE_PATH/board' '$SG_BASE_PATH/reports' '$SG_BASE_PATH/assets'"
+
+      - name: Rsync folders
+        shell: bash
+        run: |
+          set -euo pipefail
+          sync_dir () {
+            local local_dir="$1"
+            local remote_dir="$2"
+            if [ -d "$local_dir" ]; then
+              echo "→ Syncing $local_dir -> $remote_dir"
+              rsync -avz --delete --exclude ".git" \
+                -e "ssh -i ~/.ssh/eyek_ci -p $SG_PORT" \
+                "$local_dir"/ "$SG_USER@$SG_HOST:$SG_BASE_PATH/$remote_dir/"
+            else
+              echo "⏭  Skipping $local_dir (not found)"
+            fi
+          }
+          sync_dir vote vote
+          sync_dir screen screen
+          sync_dir host host
+          sync_dir board board
+          sync_dir reports reports
+          sync_dir assets assets
