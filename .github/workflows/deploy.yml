@@ -1,112 +1,92 @@
 name: Deploy to SiteGround (folders)
 
 on:
-  workflow_dispatch:
-  push:
-    branches: [ "main" ]
-    paths:
-      - "vote/**"
-      - "screen/**"
-      - "host/**"
-      - "board/**"
-      - "assets/**"
-      - "reports/**"
-      - ".github/workflows/**"
+  workflow_dispatch: {}
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     env:
-      SG_HOST: gcam1050.siteground.biz       # <- keep
-      SG_PORT: "18765"                       # <- keep
-      SG_USER: ${{ secrets.SG_USER }}        # e.g. u2212-6q1dxbl4nmbd
-      SG_BASE_PATH: ${{ secrets.SG_BASE_PATH }} # e.g. /home/…/www/vote.earnyourencorekaraoke.com/public_html
+      SG_HOST: ${{ secrets.SG_HOST }}                  # gcam1050.siteground.biz
+      SG_PORT: ${{ secrets.SG_PORT }}                  # 18765
+      SG_USER: ${{ secrets.SG_USER }}                  # u2212-6q1dxbl4nmbd
+      SG_BASE_PATH: ${{ secrets.SG_BASE_PATH }}        # /home/u2212-6q1dxbl4nmbd/www/vote.earnyourencorekaraoke.com/public_html
+
     steps:
       - name: Checkout full repo
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Show what we actually checked out (sanity)
+      - name: Sanity – show what we checked out
         run: |
-          echo "Repo root contents:"
+          set -euxo pipefail
+          pwd
+          git rev-parse --short HEAD
+          echo "Top-level:"
           ls -la
           echo
-          for d in vote screen host board assets reports; do
-            if [ -d "$d" ]; then
-              echo "---- $d ----"
-              find "$d" -maxdepth 2 -type f -printf "%P\n" | sed 's/^/  /'
-            else
-              echo "---- $d (missing) ----"
+          echo "Find index.html files (maxdepth 2):"
+          find . -maxdepth 2 -type f -name index.html -print
+
+      - name: Prepare SSH key & known_hosts (base64-safe)
+        shell: bash
+        env:
+          SG_DEPLOY_KEY_B64: ${{ secrets.SG_DEPLOY_KEY_B64 }}   # base64 of your *private* key
+          SG_HOSTKEY: ${{ secrets.SG_HOSTKEY }}                 # siteground host key line: [gcam1050.siteground.biz]:18765 ssh-ed25519 AAAA...
+        run: |
+          set -euxo pipefail
+
+          # Fail fast if any required secret is missing
+          for v in SG_HOST SG_PORT SG_USER SG_BASE_PATH SG_DEPLOY_KEY_B64 SG_HOSTKEY; do
+            if [ -z "${!v:-}" ]; then
+              echo "::error::Missing required secret/env: $v"
+              exit 1
             fi
-            echo
           done
 
-      - name: Prepare SSH
-        run: |
-          set -euo pipefail
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
 
-          # 1) Install our private key from the base64 secret
-          echo "${{ secrets.SG_DEPLOY_KEY_B64 }}" | base64 -d > ~/.ssh/sg_deploy
+          echo "$SG_HOSTKEY" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+          echo "$SG_DEPLOY_KEY_B64" | base64 -d > ~/.ssh/sg_deploy
           chmod 600 ~/.ssh/sg_deploy
 
-          # 2) (Re)build known_hosts for this runner so strict checking passes
-          : > ~/.ssh/known_hosts
-          ssh-keyscan -p "$SG_PORT" -H "$SG_HOST" >> ~/.ssh/known_hosts 2>/dev/null
-          chmod 644 ~/.ssh/known_hosts
-
-          # Quick connectivity smoke test (does not run a shell)
-          ssh -p "$SG_PORT" -i ~/.ssh/sg_deploy -o BatchMode=yes \
-              -o StrictHostKeyChecking=yes "$SG_USER@$SG_HOST" true
-
-      - name: Make remote folders (once, safe if they already exist)
-        run: |
-          set -euo pipefail
-          ssh -p "$SG_PORT" -i ~/.ssh/sg_deploy "$SG_USER@$SG_HOST" bash -lc '
-            set -e
-            mkdir -p "$SG_BASE_PATH"/{vote,screen,host,board,assets,reports}
-          '
-        env:
-          SG_BASE_PATH: ${{ env.SG_BASE_PATH }}
-
       - name: Deploy folders
+        shell: bash
         run: |
-          set -euo pipefail
-          RSYNC="rsync -avz --delete -e \"ssh -p $SG_PORT -i $HOME/.ssh/sg_deploy -o StrictHostKeyChecking=yes\""
+          set -euxo pipefail
 
-          sync_dir () {
-            local SRC="$1"
-            local DEST="$2"
+          SSH_CMD="ssh -p $SG_PORT -i ~/.ssh/sg_deploy -o StrictHostKeyChecking=yes"
+
+          # Ensure all target dirs exist on the server *before* rsync
+          $SSH_CMD "$SG_USER@$SG_HOST" "set -e; test -n \"$SG_BASE_PATH\"; mkdir -p \"$SG_BASE_PATH\"/{vote,screen,host,board,admin,assets,reports}"
+
+          rsync_push () {
+            local SRC="$1" DST_SUB="$2"
             if [ -d "$SRC" ]; then
-              echo "→ Syncing ./$SRC/ to $DEST"
-              eval $RSYNC "$SRC/\"$SG_USER@$SG_HOST\":\"$SG_BASE_PATH\"/$DEST/"
+              rsync -avz --delete \
+                -e "$SSH_CMD" \
+                "$SRC"/ "$SG_USER@$SG_HOST:$SG_BASE_PATH/$DST_SUB/"
             else
-              echo "⏭  Skipping ./$SRC/ (not found in repo)"
+              echo "⏭  Skipping $SRC (not found in repo)"
             fi
           }
 
-          sync_dir vote   vote
-          sync_dir screen screen
-          sync_dir host   host
-          sync_dir board  board
-          sync_dir assets assets
-          sync_dir reports reports
+          rsync_push "./vote"    "vote"
+          rsync_push "./screen"  "screen"
+          rsync_push "./host"    "host"
+          rsync_push "./board"   "board"
+          rsync_push "./admin"   "admin"
+          rsync_push "./assets"  "assets"
+          rsync_push "./reports" "reports"
 
-      - name: Post-check (list remote)
+      - name: Post-check on remote (list index pages)
+        shell: bash
         run: |
-          ssh -p "$SG_PORT" -i ~/.ssh/sg_deploy "$SG_USER@$SG_HOST" bash -lc '
-            echo "Remote listing under $SG_BASE_PATH:"
-            for d in vote screen host board assets reports; do
-              echo "---- $d ----"
-              if [ -d "$SG_BASE_PATH/$d" ]; then
-                find "$SG_BASE_PATH/$d" -maxdepth 2 -type f -printf "  %P\n"
-              else
-                echo "  (missing)"
-              fi
-              echo
-            done
-          '
-        env:
-          SG_BASE_PATH: ${{ env.SG_BASE_PATH }}
+          set -euxo pipefail
+          SSH_CMD="ssh -p $SG_PORT -i ~/.ssh/sg_deploy -o StrictHostKeyChecking=yes"
+          $SSH_CMD "$SG_USER@$SG_HOST" "set -e; find \"$SG_BASE_PATH\" -maxdepth 2 -type f -name index.html -printf '%p -> %TY-%Tm-%Td %TH:%TM\n'"
