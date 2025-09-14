@@ -1,110 +1,60 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>EYEK • Screen</title>
-<style>
-  :root{
-    --bg:#030712; --text:#e6f0ff; --muted:#9fb3c8;
-    --encore:#14b8a6; --another:#f59e0b; --maybe:#ef4444;
-  }
-  html,body{height:100%}
-  body{margin:0;background:radial-gradient(1200px 600px at 50% -10%, #0b1222 0%, #030712 60%);color:var(--text);font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;overflow:hidden}
-  .wrap{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:1rem;text-align:center}
-  h1{font-size:3.2vw;letter-spacing:.15vw;margin:.3rem 0 .1rem}
-  .sub{font-size:1.2vw;color:var(--muted);letter-spacing:.1vw}
-  .singer{font-size:5.2vw;font-weight:800;letter-spacing:.2vw;margin:.6rem 0}
-  .song{font-size:2vw;color:#c7ddff}
-  .badge{position:absolute;top:1.2rem;left:1.2rem;background:#0e1a2a;border:1px solid #20334d;padding:.35rem .6rem;border-radius:10px;color:#9bd1ff;font-size:.9vw}
-  .kj{position:absolute;top:1.2rem;right:1.2rem;background:#0e1a2a;border:1px solid #20334d;padding:.35rem .6rem;border-radius:10px;color:#9bd1ff;font-size:.9vw}
-  .flash{position:fixed;inset:0;pointer-events:none;display:none;place-items:center;font-size:7vw;font-weight:900}
-  .flash.show{display:grid;animation: pop .9s ease-out forwards}
-  .flash.encore{background:rgba(20,184,166,.1);color:#052521;text-shadow:0 0 40px rgba(20,184,166,.9)}
-  .flash.another{background:rgba(245,158,11,.08);color:#2b1e05;text-shadow:0 0 40px rgba(245,158,11,.9)}
-  .flash.maybe{background:rgba(239,68,68,.08);color:#2d0c0c;text-shadow:0 0 40px rgba(239,68,68,.9)}
-  @keyframes pop{0%{transform:scale(.9);opacity:0}40%{transform:scale(1);opacity:1}100%{opacity:0}}
-  .confetti{position:fixed;inset:0;pointer-events:none;overflow:hidden}
-  .dot{position:absolute;width:8px;height:8px;border-radius:50%;opacity:0;animation: fall 1.2s linear forwards}
-  @keyframes fall{
-    0%{transform:translateY(-10vh) scale(1);opacity:1}
-    100%{transform:translateY(105vh) scale(.9);opacity:0}
-  }
-</style>
-</head>
-<body>
-<div class="wrap">
-  <div class="badge" id="venue">Welcome!</div>
-  <div class="kj" id="kj">KJ: —</div>
-  <h1>Earn Your Encore Karaoke</h1>
-  <div class="sub">Get ready to vote: <strong>Encore!</strong> • <strong>Another Shot</strong> • <strong>Maybe Next Time</strong></div>
-  <div class="singer" id="singer">Waiting for first singer…</div>
-  <div class="song" id="song"></div>
-</div>
-
-<div class="flash encore" id="flashEncore">ENCORE!</div>
-<div class="flash another" id="flashAnother">ANOTHER SHOT</div>
-<div class="flash maybe" id="flashMaybe">MAYBE NEXT TIME</div>
-<div class="confetti" id="confetti"></div>
-
-<audio id="sndEncore" src="/assets/you_win_001.mp3" preload="auto"></audio>
-<audio id="sndMaybe"  src="/assets/sad_horn.mp3"   preload="auto"></audio>
-
 <script>
-const $ = sel => document.querySelector(sel);
+const EVENT_KEY = 'eyek:event';
+const NOW_KEY   = 'eyek:now';
+const CH        = new BroadcastChannel('eyek');
 
-function read(key, def){ try{ return JSON.parse(localStorage.getItem(key)) ?? def; }catch{ return def; } }
-
-function renderFromState(){
-  const now = read('eyek_now', null);
-  const evt = read('eyek_event', {venue:'', kj:''});
-
-  $('#venue').textContent = evt.venue ? evt.venue : 'Welcome!';
-  $('#kj').textContent = 'KJ: ' + (evt.kj || '—');
-
-  if(now && now.name){
-    $('#singer').textContent = now.name;
-    $('#song').textContent   = now.song || '';
-    if(now.outcome) showOutcome(now.outcome);
-  }
+const $ = (s) => document.querySelector(s);
+function read(key, def={}) {
+  try { return JSON.parse(localStorage.getItem(key)) || def; }
+  catch { return def; }
 }
 
-// simple visuals/sounds
-function showOutcome(o){
-  if(o==='encore'){ showFlash('#flashEncore'); confetti(); $('#sndEncore').currentTime=0; $('#sndEncore').play().catch(()=>{}); }
-  if(o==='another'){ showFlash('#flashAnother'); }
-  if(o==='maybe'){  showFlash('#flashMaybe'); $('#sndMaybe').currentTime=0; $('#sndMaybe').play().catch(()=>{}); }
-}
-function showFlash(id){
-  const el = $(id);
-  el.classList.remove('show'); void el.offsetWidth; // reflow
-  el.classList.add('show');
-  setTimeout(()=> el.classList.remove('show'), 1000);
-}
-function confetti(){
-  const box = $('#confetti');
-  for(let i=0;i<80;i++){
-    const d = document.createElement('div');
-    d.className='dot';
-    d.style.left = Math.random()*100 + 'vw';
-    d.style.top  = (-Math.random()*20) + 'vh';
-    d.style.background = `hsl(${Math.random()*360},90%,60%)`;
-    d.style.animationDelay = (Math.random()*0.4)+'s';
-    d.style.transform = `translateY(-10vh) scale(${0.6+Math.random()*0.8})`;
-    box.appendChild(d);
-    setTimeout(()=> d.remove(), 1400);
-  }
+function renderAll() {
+  const evt = read(EVENT_KEY, {});
+  const now = read(NOW_KEY, {});
+
+  // Top banner: Venue / KJ / PIN (PIN optional if you don’t want to show it)
+  $('#venueName').textContent = evt.venue || '';
+  $('#kjName').textContent    = evt.kj || '';
+  $('#pinCode').textContent   = evt.pin || '';
+
+  // Center stage: Now Playing
+  $('#nowSinger').textContent = now.singer || '';
+  $('#nowSong').textContent   = now.song || '';
+  $('#nowArtist').textContent = now.artist || '';
 }
 
-// react to other tab changes
-window.addEventListener('storage', (e)=>{
-  if(e.key==='eyek_now' || e.key==='eyek_now_ping'){ renderFromState(); }
+// BroadcastChannel: live updates
+CH.onmessage = (ev) => {
+  const { type } = ev.data || {};
+  if (type === 'event:update' || type === 'now:update') renderAll();
+};
+
+// Storage events (other browser windows)
+window.addEventListener('storage', (e) => {
+  if (e.key === EVENT_KEY || e.key === NOW_KEY) renderAll();
 });
 
-// periodic refresh (keeps TVs awake-ish)
-setInterval(()=>{ document.title = 'EYEK • Screen • ' + (new Date().toLocaleTimeString()); }, 30000);
+// Tiny heartbeat (prevents some smart TVs from sleeping)
+setInterval(() => {
+  const t = new Date();
+  $('#ticker').textContent = t.toLocaleTimeString();
+}, 20 * 1000);
 
-renderFromState();
+// Optionally, light confetti / sfx triggers could listen for a flag set by Host.
+// Example (leave hooks here):
+CH.addEventListener('message', (ev) => {
+  const { type, payload } = ev.data || {};
+  if (type === 'celebrate' && payload === 'encore') {
+    try { window.playEncore && window.playEncore(); } catch {}
+  }
+  if (type === 'celebrate' && payload === 'another') {
+    try { window.playAnother && window.playAnother(); } catch {}
+  }
+  if (type === 'celebrate' && payload === 'next') {
+    try { window.playMaybe && window.playMaybe(); } catch {}
+  }
+});
+
+document.addEventListener('DOMContentLoaded', renderAll);
 </script>
-</body>
-</html>
