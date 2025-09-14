@@ -4,309 +4,140 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>EYEK • Screen</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;900&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<link rel="icon" href="../assets/eyek-icon.png" />
 <style>
   :root{
-    --bg:#0b1020;
-    --panel:#121735;
-    --text:#f5f7ff;
-    --muted:#9fb0ff;
-    --eyek:#00e5a8;        /* accent */
-    --good:#16c784;        /* encore green */
-    --warn:#f0ad2d;        /* another shot amber */
-    --bad:#ff4d4f;         /* maybe next time red */
+    --bg:#020617; --panel:#0b1020; --muted:#94a3b8; --fg:#e2e8f0;
+    --accent:#22d3ee; --good:#10b981; --warn:#f59e0b; --bad:#ef4444;
   }
   *{box-sizing:border-box}
   html,body{height:100%}
-  body{
-    margin:0;background:radial-gradient(1200px 700px at 20% -10%, #1b2250 0%, var(--bg) 55%),
-             radial-gradient(900px 600px at 120% 120%, #13204a 0%, transparent 55%) var(--bg);
-    color:var(--text); font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
-    display:flex; align-items:center; justify-content:center; overflow:hidden;
-  }
-  .wrap{width:min(1200px, 96vw); height:min(92vh, 1000px); position:relative}
-  header{
-    display:flex; align-items:center; justify-content:space-between;
-    gap:16px; padding:16px 20px; background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
-    border:1px solid rgba(255,255,255,.08); border-radius:20px;
-    backdrop-filter: blur(6px); box-shadow:0 10px 30px rgba(0,0,0,.35);
-  }
-  .brand{display:flex; align-items:center; gap:14px}
-  .mark{width:38px; height:38px; border-radius:12px; background:linear-gradient(135deg, #00e5a8, #00c2ff);}
-  .title{
-    font: 900 18px Montserrat, sans-serif; letter-spacing:.6px; text-transform:uppercase;
-  }
-  .meta{font-weight:600; color:var(--muted); font-size:14px}
-  .pin{
-    display:inline-flex; gap:8px; align-items:center; font-weight:800; color:#111;
-    background:var(--eyek); padding:10px 14px; border-radius:12px; box-shadow:0 4px 16px rgba(0,229,168,.35)
-  }
-  .board{
-    margin-top:18px; height:calc(100% - 86px);
-    display:grid; grid-template-rows:auto 1fr auto; gap:16px;
-  }
-  .splash,.stage,.result{
-    background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.01));
-    border:1px solid rgba(255,255,255,.08); border-radius:24px;
-    padding:22px 26px; position:relative; overflow:hidden;
-  }
-  .splash h1{
-    margin:0; font:900 clamp(32px,6vw,64px) Montserrat,sans-serif; letter-spacing:1.2px;
-  }
-  .splash .sub{margin-top:8px; color:var(--muted); font-size:clamp(16px,2.5vw,22px); font-weight:600}
-  .stage h2{
-    margin:0 0 6px 0; color:var(--muted); font-weight:800; text-transform:uppercase; letter-spacing:1.5px; font-size:14px
-  }
-  .now{
-    display:flex; align-items:baseline; gap:14px; flex-wrap:wrap
-  }
-  .who{
-    font:900 clamp(32px,7.2vw,80px) Montserrat,sans-serif;
-    text-shadow:0 6px 30px rgba(0,0,0,.45);
-  }
-  .song{
-    font:800 clamp(18px,3.2vw,32px) Inter,sans-serif; color:#bfc9ff
-  }
-  .ticker{
-    display:flex; align-items:center; justify-content:space-between; gap:16px;
-    padding:14px 18px; border-radius:18px; background:rgba(255,255,255,.04);
-    border:1px solid rgba(255,255,255,.06); font-weight:700; letter-spacing:.3px;
-  }
-  .blink{animation:blink 1.2s linear infinite}
-  @keyframes blink{50%{opacity:.6}}
-  .buttons{position:absolute; right:14px; bottom:14px; display:flex; gap:8px}
-  .btn{
-    user-select:none; cursor:pointer; border:1px solid rgba(255,255,255,.12); color:var(--text);
-    background:rgba(255,255,255,.06); padding:10px 14px; border-radius:12px; font-weight:700
-  }
-  .btn:hover{background:rgba(255,255,255,.1)}
-  .flash{
-    position:absolute; inset:0; background:transparent; pointer-events:none; opacity:0;
-  }
-  .flash.show.encore{background:rgba(22,199,132,.18); box-shadow:inset 0 0 90px rgba(22,199,132,.6); animation:flash .9s ease}
-  .flash.show.another{background:rgba(240,173,45,.18); box-shadow:inset 0 0 90px rgba(240,173,45,.6); animation:flash .9s ease}
-  .flash.show.next{background:rgba(255,77,79,.18); box-shadow:inset 0 0 90px rgba(255,77,79,.6); animation:flash .9s ease}
-  @keyframes flash{0%{opacity:0}10%{opacity:1}60%{opacity:1}100%{opacity:0}}
-  .result h3{
-    margin:0; font:900 clamp(26px,5vw,52px) Montserrat,sans-serif; letter-spacing:.6px
-  }
-  .tag{font-weight:900; padding:.15em .5em; border-radius:.5em; margin-left:.35em}
-  .tag.encore{background:var(--good); color:#052d1e}
-  .tag.another{background:var(--warn); color:#2a1e00}
-  .tag.next{background:var(--bad); color:#2d0000}
-  .foot{
-    display:flex; align-items:center; justify-content:space-between; gap:12px; color:#dbe0ff;
-    opacity:.8; font-weight:600
-  }
-  .small{font-size:14px}
+  body{margin:0;background:radial-gradient(1200px 800px at 20% 10%, #0a1228 0%, #020617 60%);color:var(--fg);font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;overflow:hidden}
+  .center{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px}
+  .card{background:rgba(15,23,42,0.6);border:1px solid rgba(148,163,184,.15);backdrop-filter: blur(8px);border-radius:24px;padding:28px;max-width:1000px;box-shadow:0 10px 40px rgba(0,0,0,.5)}
+  .title{font-size:56px;font-weight:800;letter-spacing:.5px;margin:0 0 10px}
+  .sub{font-size:22px;color:var(--muted);margin:0 0 24px}
+  .now{font-size:42px;margin:0 0 6px}
+  .song{font-size:24px;color:var(--muted);margin:0 0 18px}
+  .pill{display:inline-block;padding:6px 14px;border-radius:999px;border:1px solid rgba(148,163,184,.2);background:rgba(2,6,23,.6);color:var(--muted);font-size:14px}
+  .big{font-size:64px;font-weight:900;margin:10px 0 0}
+  .encore{color:#052016;background:linear-gradient(90deg,#10b98122,#10b98111)}
+  .another{color:#2b1a05;background:linear-gradient(90deg,#f59e0b22,#f59e0b11)}
+  .maybe{color:#2a0909;background:linear-gradient(90deg,#ef444422,#ef444411)}
+  .spark{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .5s}
+  .spark.show{opacity:1;animation:pop .9s ease forwards}
+  @keyframes pop{0%{transform:scale(.95)}70%{transform:scale(1.02)}100%{transform:scale(1)}}
+  /* confetti */
+  .confetti{position:fixed;inset:0;pointer-events:none;overflow:hidden}
+  .confetti i{position:absolute;width:8px;height:14px;opacity:0;animation:drop 2.2s ease-out forwards}
+  @keyframes drop{0%{transform:translateY(-20vh) rotate(0deg);opacity:0}10%{opacity:1}100%{transform:translateY(110vh) rotate(540deg);opacity:0}}
+  .footer{position:fixed;left:16px;bottom:12px;color:var(--muted);font-size:14px}
+  .soundGate{position:fixed;inset:0;background:#000a;color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;z-index:99}
+  .soundGate button{padding:12px 18px;border-radius:12px;border:1px solid #334155;background:#0f172a;color:#e2e8f0;cursor:pointer}
 </style>
 </head>
 <body>
-  <div class="wrap">
-    <header>
-      <div class="brand">
-        <div class="mark" aria-hidden="true"></div>
-        <div>
-          <div class="title">Earn Your Encore Karaoke</div>
-          <div class="meta"><span id="venueLabel">Venue</span> • Host: <span id="kjLabel">KJ</span></div>
-        </div>
-      </div>
-      <div class="pin">PIN: <span id="pinLabel">0000</span></div>
-    </header>
-
-    <div class="board">
-      <!-- Splash -->
-      <section class="splash" id="splash">
-        <h1>Welcome to <span id="venueBig">Your Venue</span>!</h1>
-        <div class="sub">Hosted by <strong id="kjBig">Your KJ</strong> • Get ready to vote for <em>Encore!</em> 🔥</div>
-      </section>
-
-      <!-- Stage -->
-      <section class="stage" id="stage">
-        <div class="flash" id="flash"></div>
-        <h2>Now Singing</h2>
-        <div class="now">
-          <div class="who" id="who">—</div>
-          <div class="song" id="song">Waiting for next singer…</div>
-        </div>
-        <div class="buttons">
-          <button class="btn" id="fullBtn" title="Fullscreen (F)">Fullscreen</button>
-          <button class="btn" id="settingsBtn" title="Settings">Settings</button>
-        </div>
-      </section>
-
-      <!-- Result / ticker -->
-      <section class="result">
-        <div class="ticker">
-          <div>⏱ <span id="clock">--:--</span></div>
-          <div id="statusText" class="blink">Get ready to vote!</div>
-          <div>🔄 auto-refresh</div>
-        </div>
-        <div style="margin-top:14px">
-          <h3 id="resultLine">Waiting for results…</h3>
-        </div>
-        <div class="foot small">
-          <div>Tip: add <code>?venue=Lucky+Tap&kj=Tom&pin=4321</code> to the URL once — we’ll remember.</div>
-          <div>Press <b>F</b> for fullscreen</div>
-        </div>
-      </section>
-    </div>
+<div id="soundGate" class="soundGate">
+  <div>
+    <div style="text-align:center;margin-bottom:12px">Tap to enable sound for results</div>
+    <div style="text-align:center"><button id="enableSound">Enable Sound</button></div>
   </div>
+</div>
 
-  <!-- sounds -->
-  <audio id="snd-encore"  preload="auto" src="../assets/sounds/encore.mp3"></audio>
-  <audio id="snd-another" preload="auto" src="../assets/sounds/another.mp3"></audio>
-  <audio id="snd-next"    preload="auto" src="../assets/sounds/next.mp3"></audio>
+<div class="center">
+  <div class="card" id="card">
+    <div class="title" id="title">Welcome!</div>
+    <div class="sub" id="venueKj">…</div>
+    <div class="now" id="now"></div>
+    <div class="song" id="song"></div>
+    <div class="pill" id="phasePill">welcome</div>
+    <div class="big" id="big"></div>
+  </div>
+  <div class="spark" id="spark"></div>
+</div>
+<div class="confetti" id="confetti"></div>
+<div class="footer" id="footer"></div>
+
+<audio id="sndEncore" src="../assets/you_win_001.mp3" preload="auto"></audio>
+<audio id="sndAnother" src="../assets/quiz-countdown.mp3" preload="auto"></audio>
+<audio id="sndMaybe"  src="../assets/sad_horn.mp3" preload="auto"></audio>
 
 <script>
-(function(){
-  const $ = (s)=>document.querySelector(s);
-  const venueLabel = $('#venueLabel'), kjLabel = $('#kjLabel'), pinLabel = $('#pinLabel');
-  const venueBig = $('#venueBig'), kjBig = $('#kjBig');
-  const who = $('#who'), song = $('#song'), statusText = $('#statusText'), clock = $('#clock');
-  const resultLine = $('#resultLine'), flash = $('#flash');
-  const snd = {
-    encore:  $('#snd-encore'),
-    another: $('#snd-another'),
-    next:    $('#snd-next')
-  };
-  const state = { venue:null, kj:null, pin:null, lastResult:null, lastPayload:null };
-  const STORE = 'eyek.screen.settings';
-  const PARAMS = new URLSearchParams(location.search);
+const API = '../assets/api/state.php';
+let allowSound = false;
+const el = {
+  title: qs('#title'), venueKj: qs('#venueKj'), now: qs('#now'), song: qs('#song'),
+  phasePill: qs('#phasePill'), big: qs('#big'), spark: qs('#spark'), confetti: qs('#confetti'),
+  footer: qs('#footer'), sndEncore: qs('#sndEncore'), sndAnother: qs('#sndAnother'), sndMaybe: qs('#sndMaybe'),
+  gate: qs('#soundGate'), enableSound: qs('#enableSound'), card: qs('#card')
+};
+function qs(s){return document.querySelector(s);}
+el.enableSound.onclick = async()=>{ allowSound = true; el.gate.style.display='none'; try{ await el.sndMaybe.play().catch(()=>{}); el.sndMaybe.pause(); el.sndMaybe.currentTime=0; }catch{} };
 
-  // restore or collect initial labels
-  function initIdentity(){
-    const saved = JSON.parse(localStorage.getItem(STORE)||'{}');
-    state.venue = PARAMS.get('venue') || saved.venue || prompt('Venue name?') || 'Your Venue';
-    state.kj    = PARAMS.get('kj')    || saved.kj    || prompt('KJ name?')    || 'Your KJ';
-    state.pin   = PARAMS.get('pin')   || saved.pin   || prompt('Tonight PIN?')|| '0000';
-    localStorage.setItem(STORE, JSON.stringify({venue:state.venue, kj:state.kj, pin:state.pin}));
-    [venueLabel.textContent, venueBig.textContent] = [state.venue, state.venue];
-    [kjLabel.textContent, kjBig.textContent] = [state.kj, state.kj];
-    pinLabel.textContent = state.pin;
+let last = {phase:null, result:null, updated:0};
+function confettiBurst() {
+  el.confetti.innerHTML = '';
+  for (let i=0;i<120;i++){
+    const p = document.createElement('i');
+    p.style.left = Math.random()*100+'%';
+    p.style.background = `hsl(${Math.random()*360},90%,60%)`;
+    p.style.animationDelay = (Math.random()*0.6)+'s';
+    el.confetti.appendChild(p);
+  }
+}
+function flare(){ el.spark.classList.add('show'); setTimeout(()=>el.spark.classList.remove('show'), 900); }
+
+function setPhase(state){
+  el.venueKj.textContent = `${state.venue || '—'} • ${state.kj || '—'}`;
+  el.phasePill.textContent = state.phase;
+
+  if (state.phase === 'welcome') {
+    el.title.textContent = 'Welcome to ' + (state.venue || 'the show') + '!';
+    el.now.textContent = 'Get ready to vote for encores!';
+    el.song.textContent = '';
+    el.big.textContent  = '';
+    el.card.style.border = '1px solid rgba(148,163,184,.15)';
+  }
+  if (state.phase === 'performing') {
+    el.title.textContent = 'Now Singing';
+    el.now.textContent = state.current?.singer || '';
+    el.song.textContent = state.current?.song   || '';
+    el.big.textContent  = 'Get Ready to Vote!';
+    el.card.style.border = '1px solid rgba(34,211,238,.35)';
+    flare();
+  }
+  if (state.phase === 'result') {
+    let txt = 'Result';
+    let cls = '';
+    if (state.result === 'encore') { txt = 'Encore!'; cls='encore'; if (allowSound) el.sndEncore.play().catch(()=>{}); confettiBurst(); }
+    if (state.result === 'another'){ txt = 'Another Shot'; cls='another'; if (allowSound) el.sndAnother.play().catch(()=>{}); }
+    if (state.result === 'maybe')  { txt = 'Maybe Next Time'; cls='maybe'; if (allowSound) el.sndMaybe.play().catch(()=>{}); }
+    el.title.textContent = txt;
+    el.now.textContent = state.current?.singer || '';
+    el.song.textContent = state.current?.song   || '';
+    el.big.textContent  = '';
+    el.card.classList.remove('encore','another','maybe');
+    if (cls) el.card.classList.add(cls);
+    flare();
   }
 
-  // clock + tiny wiggle/minute to keep some displays awake-ish
-  function startClock(){
-    const fmt=n=>String(n).padStart(2,'0');
-    setInterval(()=>{
-      const d=new Date(); clock.textContent = fmt(d.getHours())+':'+fmt(d.getMinutes());
-      // micro “wiggle”
-      resultLine.style.transform='scale(1.002)'; setTimeout(()=>resultLine.style.transform='',200);
-    }, 60*1000);
-    const d=new Date(); clock.textContent = fmt(d.getHours())+':'+fmt(d.getMinutes());
-  }
+  el.footer.textContent = 'Last update: ' + new Date(state.updated*1000).toLocaleTimeString();
+}
 
-  // Wake Lock (not all browsers support it)
-  let wakeLock = null;
-  async function keepAwake(){
-    try{
-      if ('wakeLock' in navigator) {
-        wakeLock = await navigator.wakeLock.request('screen');
-        document.addEventListener('visibilitychange', async ()=>{
-          if (document.visibilityState === 'visible') {
-            try{ wakeLock = await navigator.wakeLock.request('screen'); }catch{}
-          }
-        });
-      }
-    }catch{}
-  }
-
-  // confetti (tiny inline)
-  function confetti(color='#16c784'){
-    const cv=document.createElement('canvas'); cv.style.position='fixed'; cv.style.inset=0; cv.style.pointerEvents='none';
-    document.body.appendChild(cv); const ctx=cv.getContext('2d'); cv.width=innerWidth; cv.height=innerHeight;
-    const parts=Array.from({length:160},()=>({
-      x:Math.random()*cv.width, y:-20-Math.random()*cv.height*.3, r:2+Math.random()*5,
-      vy:2+Math.random()*5, vx:(Math.random()-.5)*2, a:1
-    }));
-    let t=0; const id=setInterval(()=>{
-      ctx.clearRect(0,0,cv.width,cv.height);
-      parts.forEach(p=>{
-        p.x+=p.vx; p.y+=p.vy; p.vy+=.05; p.a-=.008;
-        ctx.globalAlpha=Math.max(p.a,0);
-        ctx.fillStyle=color; ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill();
-      });
-      if((t+=16)>2600){ clearInterval(id); cv.remove(); }
-    },16);
-  }
-
-  // flash + sound on result
-  function celebrate(kind){
-    flash.className='flash show '+kind;
-    setTimeout(()=>flash.className='flash', 900);
-    if (snd[kind]) { snd[kind].currentTime=0; snd[kind].play().catch(()=>{}); }
-    if (kind==='encore') confetti('#16c784');
-  }
-
-  // fetch loop
-  const STATUS_URL = '../assets/status.json';
-  async function poll(){
-    try{
-      const res = await fetch(STATUS_URL + '?t=' + Date.now(), {cache:'no-store'});
-      if(!res.ok) throw new Error(res.status);
-      const data = await res.json();
-
-      // update main line
-      const ns = data.now_singing||{};
-      who.textContent  = ns.name ? ns.name : '—';
-      song.textContent = (ns.song||ns.artist) ? `${ns.song||''}${ns.artist ? ' — '+ns.artist : ''}` : 'Waiting for next singer…';
-
-      // phase + result
-      if (data.phase === 'splash'){
-        statusText.textContent = 'Welcome — show starts soon!';
-      } else if (data.phase === 'vote'){
-        statusText.textContent = 'Get ready to vote!';
-      } else if (data.phase === 'result'){
-        statusText.textContent = 'Results are in!';
-      } else {
-        statusText.textContent = '…';
-      }
-
-      // result banner
-      if (data.result && data.result !== state.lastResult) {
-        state.lastResult = data.result;
-        if (data.result==='encore'){
-          resultLine.innerHTML = `Result: <span class="tag encore">Encore!</span>`;
-          celebrate('encore');
-        } else if (data.result==='another'){
-          resultLine.innerHTML = `Result: <span class="tag another">Another Shot</span>`;
-          celebrate('another');
-        } else if (data.result==='next'){
-          resultLine.innerHTML = `Result: <span class="tag next">Maybe Next Time</span>`;
-          celebrate('next');
-        }
-      }
-    }catch(e){
-      statusText.textContent = 'Waiting for host… (no status.json yet)';
-    }finally{
-      setTimeout(poll, 5000); // every 5s
+async function tick(){
+  try{
+    const r = await fetch(API + '?t=' + Date.now(), {cache:'no-store'});
+    const s = await r.json();
+    if (s.updated !== last.updated || s.phase !== last.phase || s.result !== last.result) {
+      setPhase(s);
+      last = {phase:s.phase, result:s.result, updated:s.updated};
     }
+  }catch(e){
+    // ignore brief outages
   }
-
-  // UI
-  $('#fullBtn').addEventListener('click', ()=>{ if(!document.fullscreenElement) document.documentElement.requestFullscreen().catch(()=>{}); else document.exitFullscreen().catch(()=>{}); });
-  document.addEventListener('keydown', (e)=>{ if(e.key.toLowerCase()==='f') $('#fullBtn').click(); });
-
-  // Settings minimal
-  $('#settingsBtn').addEventListener('click', ()=>{
-    const v = prompt('Change Venue •KJ •PIN (comma separated)', `${state.venue}, ${state.kj}, ${state.pin}`);
-    if(!v) return;
-    const [vn,kj,pn]=v.split(',').map(s=>s && s.trim());
-    if(vn) state.venue=vn; if(kj) state.kj=kj; if(pn) state.pin=pn;
-    localStorage.setItem(STORE, JSON.stringify({venue:state.venue, kj:state.kj, pin:state.pin}));
-    venueLabel.textContent=venueBig.textContent=state.venue;
-    kjLabel.textContent=kjBig.textContent=state.kj;
-    pinLabel.textContent=state.pin;
-  });
-
-  // start
-  initIdentity();
-  startClock();
-  keepAwake();
-  poll();
-})();
+}
+setInterval(tick, 1500);
+tick();
 </script>
 </body>
 </html>
