@@ -1,311 +1,252 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Earn Your Encore – Host</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style>
-    :root{--ink:#0f0a18;--card:#1b1430;--line:rgba(255,255,255,.12);--green:#27d07d;--yellow:#f4d35e;--red:#ff5964;--blue:#003e81;--purple:#2F0658}
-    *{box-sizing:border-box}
-    body{margin:0;background:var(--ink);color:#fff;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',Arial,sans-serif}
-    header{padding:12px 16px;text-align:center;background:linear-gradient(90deg,var(--blue),var(--purple));font-weight:900}
-    .wrap{max-width:1100px;margin:0 auto;padding:16px}
-    .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-    .full{grid-column:1/-1}
-    .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px}
-    .title{margin:0 0 10px;font-weight:900}
-    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-    .col{display:flex;flex-direction:column;gap:6px}
-    label{opacity:.9;font-size:.95rem}
-    input{padding:10px;border:1px solid var(--line);border-radius:10px;background:#120c22;color:#fff;min-width:180px}
-    .btn{padding:10px 14px;border:none;border-radius:12px;font-weight:900;cursor:pointer}
-    .btn:disabled{opacity:.5;cursor:not-allowed}
-    .b-green{background:var(--green);color:#000}
-    .b-yellow{background:var(--yellow);color:#000}
-    .b-red{background:var(--red);color:#000}
-    .b-blue{background:#79aec1;color:#000}
-    .badge{display:inline-block;padding:6px 12px;border-radius:999px;background:#271c44;border:1px solid var(--line);font-weight:900}
-    .muted{opacity:.85}
-    .ok{color:#80ffb3}.err{color:#ff9a9a}
-    .hint{font-size:.9rem;opacity:.8}
-  </style>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>EYEK • Host</title>
+<link rel="icon" href="../assets/eyek-icon.png" />
+<style>
+  :root{
+    --bg:#0b1120; --panel:#111827; --muted:#9ca3af; --fg:#e5e7eb;
+    --accent:#22d3ee; --good:#10b981; --warn:#f59e0b; --bad:#ef4444;
+  }
+  body{margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+  .wrap{max-width:1000px;margin:0 auto;padding:16px 16px 48px}
+  .card{background:var(--panel);border-radius:16px;padding:16px;box-shadow:0 10px 30px rgba(0,0,0,.3);margin-bottom:16px}
+  h1{margin:8px 0 12px;font-size:24px}
+  h2{margin:0 0 12px;font-size:18px;color:var(--muted)}
+  label{display:block;margin:10px 0 6px;color:var(--muted);font-size:14px}
+  input{width:100%;padding:12px 14px;border-radius:12px;border:1px solid #1f2937;background:#0f172a;color:var(--fg)}
+  .row{display:grid;gap:12px;grid-template-columns:repeat(12,1fr)}
+  .col6{grid-column:span 6}
+  .col4{grid-column:span 4}
+  .col8{grid-column:span 8}
+  .col12{grid-column:span 12}
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border-radius:12px;border:1px solid #1f2937;background:#0f172a;color:var(--fg);cursor:pointer}
+  .btn:hover{background:#111827}
+  .btn.primary{background:linear-gradient(90deg,#22d3ee,#60a5fa);color:#001018;border:none}
+  .btn.good{background:#10b981;color:#00140f;border:none}
+  .btn.warn{background:#f59e0b;color:#1b1000;border:none}
+  .btn.bad{background:#ef4444;color:#220405;border:none}
+  .stack{display:flex;flex-wrap:wrap;gap:10px}
+  details{border:1px solid #1f2937;border-radius:12px;overflow:hidden}
+  summary{cursor:pointer;list-style:none;padding:14px 16px;background:#0f172a;color:var(--fg);font-weight:600}
+  summary::-webkit-details-marker{display:none}
+  details .inner{padding:16px;background:var(--panel)}
+  .line{height:1px;background:#1f2937;margin:8px 0 16px}
+  .pill{display:inline-block;padding:4px 10px;border-radius:999px;background:#0f172a;border:1px solid #1f2937;font-size:12px;color:var(--muted)}
+  .live{color:#10b981}
+</style>
 </head>
 <body>
-  <header>Host – Earn Your Encore Karaoke</header>
+<div class="wrap">
+  <h1>Host Controls</h1>
 
-  <div class="wrap">
-    <!-- Status strip -->
-    <div class="card full">
-      <div class="row">
-        <span id="eventBadge" class="badge">Event: —</span>
-        <span id="statusBadge" class="badge">Status: —</span>
-        <span id="roundBadge" class="badge">Round: —</span>
-        <span id="timerBadge" class="badge">Ends in: —</span>
-        <span id="autoStatus" class="badge">Auto-close: watching</span>
-      </div>
-      <div class="hint" id="hostMsg"></div>
-    </div>
-
-    <!-- Singer & PIN -->
-    <div class="grid">
-      <div class="card">
-        <h3 class="title">Current Singer</h3>
+  <div class="card">
+    <details id="eventBox" open>
+      <summary>
+        Event Setup
+        <span id="lockPill" class="pill" style="margin-left:10px">Unlocked</span>
+      </summary>
+      <div class="inner">
         <div class="row">
-          <div class="col">
-            <label for="singerName">Name</label>
-            <input id="singerName" placeholder="e.g., Jamie K." />
+          <div class="col6">
+            <label>Venue</label>
+            <input id="venue" placeholder="Venue name">
           </div>
-          <button class="btn b-blue" id="btnSetSinger">Set Singer</button>
-        </div>
-        <div class="hint">Sets <b>currentSingerName</b> on the event so the Screen & Vote pages show it.</div>
-      </div>
-
-      <div class="card">
-        <h3 class="title">Tonight’s PIN</h3>
-        <div class="row">
-          <div class="col">
-            <label for="pin">PIN</label>
-            <input id="pin" placeholder="e.g., 4321" />
+          <div class="col6">
+            <label>KJ</label>
+            <input id="kj" placeholder="Host/KJ name">
           </div>
-          <button class="btn b-blue" id="btnSavePin">Save PIN</button>
+          <div class="col4">
+            <label>PIN (current)</label>
+            <input id="pin" placeholder="Enter PIN to control" type="password">
+          </div>
+          <div class="col4">
+            <label>Set/Change PIN (new)</label>
+            <input id="newPin" placeholder="New PIN (optional)" type="password">
+          </div>
+          <div class="col4" style="display:flex;align-items:end">
+            <button class="btn primary" id="saveConfig">Save / Update</button>
+          </div>
         </div>
-        <div class="hint">Audience logs in once per event with this PIN. Stored as <b>activePin</b> on the event.</div>
-      </div>
-    </div>
 
-    <!-- Voting controls -->
-    <div class="card full">
-      <h3 class="title">Voting Controls</h3>
-      <div class="row">
-        <div class="col">
-          <label for="seconds">Duration (seconds)</label>
-          <input id="seconds" type="number" min="5" max="300" value="30" />
-        </div>
-        <button class="btn b-green" id="btnStart">Start Voting</button>
-        <button class="btn b-yellow" id="btnExtend">Extend +15s</button>
-        <button class="btn b-red" id="btnEndNow">End Now</button>
-      </div>
-      <div class="hint">Start sets <b>isVotingOpen=true</b>, new <b>roundId</b>, <b>voteStartedAt</b> and <b>voteClosesAt</b> = now + duration. Host auto-closes when time hits 0.</div>
-    </div>
+        <div class="line"></div>
 
-    <!-- Shout-outs (banners on Screen) -->
-    <div class="card full">
-      <h3 class="title">Shout-Outs (show banner on Screen)</h3>
-      <div class="row">
-        <button class="btn b-green" id="btnHorray">Horray!</button>
-        <button class="btn b-yellow" id="btnThanks">Thanks for coming out!</button>
-        <div class="col">
-          <label for="kjInfo">KJ Info</label>
-          <input id="kjInfo" placeholder="e.g., Follow us @KJNight | Drink specials until 11" />
+        <div class="stack">
+          <button class="btn" id="lockBtn">🔒 Lock</button>
+          <button class="btn warn" id="unlockBtn">🔓 Unlock</button>
+          <button class="btn bad" id="resetBtn">🗑️ Reset Event</button>
+          <span class="pill">Phase: <span id="phaseLabel" class="live">welcome</span></span>
         </div>
-        <button class="btn b-blue" id="btnSendKj">Show KJ Info</button>
       </div>
-      <div class="row" style="margin-top:8px">
-        <div class="col">
-          <label for="customMsg">Custom banner</label>
-          <input id="customMsg" placeholder="Type a message to display…" />
+    </details>
+  </div>
+
+  <div class="card">
+    <h2>Current Singer</h2>
+    <div class="row">
+      <div class="col6">
+        <label>Singer</label>
+        <input id="singer" placeholder="Singer name">
+      </div>
+      <div class="col6">
+        <label>Song • Artist</label>
+        <input id="song" placeholder="Song – Artist">
+      </div>
+      <div class="col12" style="margin-top:10px">
+        <div class="stack">
+          <button class="btn primary" id="showWelcome">Show Welcome</button>
+          <button class="btn" id="startSong">Start / Show Performing</button>
         </div>
-        <button class="btn b-blue" id="btnShow8">Show 8s</button>
-        <button class="btn b-blue" id="btnShow15">Show 15s</button>
       </div>
-      <div class="hint">Writes <b>signals/banner</b> with your text. I can wire the Screen to display this (1-line snippet) whenever you’re ready.</div>
     </div>
   </div>
 
-  <script>
-    // --- Firebase init (compat) ---
-    const firebaseConfig = {
-      apiKey: "AIzaSyDGbC08WxruYIDPhZSlDlU-7Kzq-7mHENk",
-      authDomain: "eyek-vote.firebaseapp.com",
-      projectId: "eyek-vote",
-      storageBucket: "eyek-vote.firebasestorage.app",
-      messagingSenderId: "954696683994",
-      appId: "1:954696683994:web:21a84298a94648ff0230e3"
+  <div class="card">
+    <h2>Results</h2>
+    <div class="stack">
+      <button class="btn good" id="resEncore">Encore!</button>
+      <button class="btn warn" id="resAnother">Another Shot</button>
+      <button class="btn bad"  id="resMaybe">Maybe Next Time</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Status</h2>
+    <div class="row">
+      <div class="col4"><label>Venue</label><div id="liveVenue" class="pill"></div></div>
+      <div class="col4"><label>KJ</label><div id="liveKJ" class="pill"></div></div>
+      <div class="col4"><label>Locked</label><div id="liveLocked" class="pill"></div></div>
+      <div class="col6"><label>Current Singer</label><div id="liveSinger" class="pill"></div></div>
+      <div class="col6"><label>Song</label><div id="liveSong" class="pill"></div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = '../assets/api/state.php';
+
+async function getState() {
+  const r = await fetch(API + '?t=' + Date.now());
+  return r.json();
+}
+async function post(action, payload={}) {
+  const r = await fetch(API, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({action, ...payload})
+  });
+  if(!r.ok){ const t = await r.text(); throw new Error(t || r.statusText); }
+  return r.json();
+}
+
+// UI els
+const els = {
+  venue: qs('#venue'), kj: qs('#kj'), pin: qs('#pin'), newPin: qs('#newPin'),
+  singer: qs('#singer'), song: qs('#song'),
+  saveConfig: qs('#saveConfig'), lockBtn: qs('#lockBtn'), unlockBtn: qs('#unlockBtn'), resetBtn: qs('#resetBtn'),
+  showWelcome: qs('#showWelcome'), startSong: qs('#startSong'),
+  resEncore: qs('#resEncore'), resAnother: qs('#resAnother'), resMaybe: qs('#resMaybe'),
+  liveVenue: qs('#liveVenue'), liveKJ: qs('#liveKJ'), liveLocked: qs('#liveLocked'),
+  liveSinger: qs('#liveSinger'), liveSong: qs('#liveSong'), phaseLabel: qs('#phaseLabel'),
+  lockPill: qs('#lockPill')
+};
+
+function qs(s){return document.querySelector(s);}
+
+function pinPayload() {
+  const pin = (els.pin.value || '').trim();
+  return { pin };
+}
+
+function applyState(s){
+  els.liveVenue.textContent = s.venue || '—';
+  els.liveKJ.textContent    = s.kj || '—';
+  els.liveLocked.textContent= s.locked ? 'Locked' : 'Unlocked';
+  els.phaseLabel.textContent= s.phase;
+  els.lockPill.textContent  = s.locked ? 'Locked' : 'Unlocked';
+  els.liveSinger.textContent= s.current?.singer || '—';
+  els.liveSong.textContent  = s.current?.song || '—';
+
+  // Pre-fill inputs if empty
+  if (!els.venue.value) els.venue.value = s.venue || '';
+  if (!els.kj.value)    els.kj.value    = s.kj || '';
+}
+
+async function refresh(){
+  try{ applyState(await getState()); }catch(e){ console.error(e); }
+}
+setInterval(refresh, 2500);
+refresh();
+
+// Actions
+els.saveConfig.onclick = async () => {
+  try{
+    const payload = {
+      ...pinPayload(),
+      venue: els.venue.value.trim(),
+      kj: els.kj.value.trim()
     };
-    if (firebase.apps.length === 0) firebase.initializeApp(firebaseConfig);
-    const db=firebase.firestore();
-    const $=id=>document.getElementById(id);
+    const newPin = els.newPin.value.trim();
+    if (newPin) payload.newPin = newPin;
+    const res = await post('set_config', payload);
+    els.newPin.value = '';
+    applyState(res.state);
+    alert('Saved.');
+  }catch(e){ alert(parseErr(e)); }
+};
 
-    // Badges
-    const eventBadge=$('eventBadge'), statusBadge=$('statusBadge'), roundBadge=$('roundBadge'), timerBadge=$('timerBadge'), hostMsg=$('hostMsg');
+els.lockBtn.onclick   = async()=> actionWrap('lock');
+els.unlockBtn.onclick = async()=> actionWrap('unlock');
 
-    // Helpers
-    const serverTs = firebase.firestore.FieldValue.serverTimestamp;
-    const uuid = ()=> Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+els.resetBtn.onclick  = async()=>{
+  if(!confirm('This will wipe venue, KJ, PIN, current singer & status. Continue?')) return;
+  try{
+    const res = await post('reset_event', pinPayload());
+    // clear inputs too
+    els.venue.value=''; els.kj.value=''; els.pin.value=''; els.newPin.value='';
+    els.singer.value=''; els.song.value='';
+    applyState(res.state);
+    alert('Event reset.');
+  }catch(e){ alert(parseErr(e)); }
+};
 
-    // State
-    let eventId=null, autoTick=null;
+els.showWelcome.onclick = async()=> {
+  try{
+    const res = await post('show_welcome', pinPayload());
+    applyState(res.state);
+  }catch(e){ alert(parseErr(e)); }
+};
 
-    // Load current eventId from app/state
-    async function getEventId(){
-      const s = await db.collection('app').doc('state').get();
-      eventId = (s.data()||{}).currentEventId || null;
-      eventBadge.textContent = 'Event: ' + (eventId || '—');
-      return eventId;
-    }
+els.startSong.onclick = async()=> {
+  try{
+    const res = await post('set_current', {
+      ...pinPayload(),
+      singer: els.singer.value.trim(),
+      song:   els.song.value.trim()
+    });
+    applyState(res.state);
+  }catch(e){ alert(parseErr(e)); }
+};
 
-    // --- Singer & PIN ---
-    $('btnSetSinger').onclick = async ()=>{
-      await getEventId(); if(!eventId) return alert('No event selected');
-      const name=$('singerName').value.trim();
-      await db.collection('events').doc(eventId).set({ currentSingerName: name || null }, { merge:true });
-      hostMsg.textContent='✅ Singer set.';
-    };
-    $('btnSavePin').onclick = async ()=>{
-      await getEventId(); if(!eventId) return alert('No event selected');
-      const pin=$('pin').value.trim();
-      await db.collection('events').doc(eventId).set({ activePin: pin || null }, { merge:true });
-      hostMsg.textContent='✅ PIN saved.';
-    };
+els.resEncore.onclick = ()=> showResult('encore');
+els.resAnother.onclick= ()=> showResult('another');
+els.resMaybe.onclick  = ()=> showResult('maybe');
 
-    // --- Voting lifecycle ---
-    $('btnStart').onclick = async ()=>{
-      await getEventId(); if(!eventId) return alert('No event selected');
-      const seconds = Math.max(5, Math.min(300, Number($('seconds').value||30)));
-      const roundId = uuid();
-      const closesAt = new Date(Date.now() + seconds*1000);
+async function showResult(which){
+  try{
+    const res = await post('show_result', { ...pinPayload(), result: which });
+    applyState(res.state);
+  }catch(e){ alert(parseErr(e)); }
+}
 
-      await db.collection('events').doc(eventId).set({
-        isVotingOpen: true,
-        roundId,
-        voteStartedAt: serverTs(),
-        voteClosesAt: firebase.firestore.Timestamp.fromDate(closesAt)
-      }, { merge:true });
-
-      hostMsg.textContent='🟢 Voting started.';
-      watchAndAutoClose(); // ensure the auto-close ticker runs
-    };
-
-    $('btnExtend').onclick = async ()=>{
-      await getEventId(); if(!eventId) return alert('No event selected');
-      const ev = await db.collection('events').doc(eventId).get();
-      const d = ev.data()||{};
-      const currentEnd = d.voteClosesAt?.toMillis?.() || (d.voteClosesAt?.seconds ? d.voteClosesAt.seconds*1000 : Date.now());
-      const newEnd = new Date(currentEnd + 15*1000);
-      await db.collection('events').doc(eventId).set({
-        voteClosesAt: firebase.firestore.Timestamp.fromDate(newEnd)
-      }, { merge:true });
-      hostMsg.textContent='⏱️ Extended +15s.';
-    };
-
-    $('btnEndNow').onclick = async ()=>{
-      await getEventId(); if(!eventId) return alert('No event selected');
-      await closeVotingNow();
-    };
-
-    // Close voting: tally -> winner doc -> signal -> close flag
-    async function closeVotingNow(){
-      const evRef = db.collection('events').doc(eventId);
-      const evSnap = await evRef.get();
-      const d = evSnap.data()||{};
-      const roundId = d.roundId || d.performanceId;
-      if(!roundId){
-        await evRef.set({ isVotingOpen:false, voteClosedAt: serverTs() }, { merge:true });
-        statusBadge.textContent='Status: Voting Closed';
-        hostMsg.textContent='🛑 Closed (no roundId).';
-        return;
-      }
-
-      // Tally
-      const qs = await evRef.collection('votes').where('roundId','==',roundId).get();
-      let e=0,a=0,m=0;
-      qs.forEach(doc=>{
-        const c=(doc.data()||{}).choice;
-        if(c==='Encore!') e++;
-        else if(c==='Another Shot!') a++;
-        else if(c==='Maybe Next Time!') m++;
-      });
-
-      // Decide
-      let result='Maybe Next Time!';
-      if(e>=a && e>=m) result='Encore!';
-      else if(a>e && a>=m) result='Another Shot!';
-
-      const singerName = d.currentSingerName || '—';
-
-      // Winner doc
-      await evRef.collection('winners').add({
-        singerName, result, roundId,
-        counts: { encore:e, another:a, maybe:m },
-        decidedAt: serverTs()
-      });
-
-      // Signal for Screen splash
-      await evRef.collection('signals').doc('result').set({
-        type: result,
-        singerName,
-        at: serverTs()
-      }, { merge:true });
-
-      // Close
-      await evRef.set({ isVotingOpen:false, voteClosedAt: serverTs() }, { merge:true });
-
-      statusBadge.textContent='Status: Voting Closed';
-      hostMsg.textContent=`🏁 Result: ${result} (E:${e} A:${a} M:${m})`;
-    }
-
-    // --- Auto-close watcher (host owns the clock) ---
-    function watchAndAutoClose(){
-      if(autoTick) clearInterval(autoTick);
-      autoTick = setInterval(async ()=>{
-        await getEventId(); if(!eventId) return;
-        const ev = await db.collection('events').doc(eventId).get();
-        const d = ev.data()||{};
-        const open = !!d.isVotingOpen;
-        statusBadge.textContent = 'Status: ' + (open ? 'Voting Open' : 'Voting Closed');
-        const endMs = d.voteClosesAt?.toMillis?.() || (d.voteClosesAt?.seconds ? d.voteClosesAt.seconds*1000 : null);
-        if(endMs){
-          const ms = endMs - Date.now();
-          const s = Math.max(0, Math.ceil(ms/1000));
-          timerBadge.textContent = 'Ends in: ' + s + 's';
-          if(open && ms <= 0){
-            clearInterval(autoTick);
-            await closeVotingNow();
-            setTimeout(watchAndAutoClose, 1500); // re-arm for next round
-          }
-        }else{
-          timerBadge.textContent='Ends in: —';
-        }
-        roundBadge.textContent = 'Round: ' + (d.roundId ? d.roundId.slice(0,6)+'…' : '—');
-      }, 900);
-    }
-
-    // --- Shout-outs (banners) ---
-    async function sendBanner(text, seconds=8, tone='info'){
-      await getEventId(); if(!eventId) return alert('No event selected');
-      if(!text) return;
-      await db.collection('events').doc(eventId).collection('signals').doc('banner').set({
-        type: 'banner',
-        text, tone, durationMs: seconds*1000,
-        at: serverTs()
-      }, { merge:true });
-      hostMsg.textContent='📣 Banner sent: ' + text;
-    }
-
-    $('btnHorray').onclick    = ()=> sendBanner('Horray!', 6, 'celebrate');
-    $('btnThanks').onclick    = ()=> sendBanner('Thanks for coming out!', 8, 'thanks');
-    $('btnSendKj').onclick    = ()=> sendBanner(($('kjInfo').value||'').trim(), 12, 'info');
-    $('btnShow8').onclick     = ()=> sendBanner(($('customMsg').value||'').trim(), 8, 'info');
-    $('btnShow15').onclick    = ()=> sendBanner(($('customMsg').value||'').trim(), 15, 'info');
-
-    // Boot
-    (async function boot(){
-      await getEventId();
-      if(!eventId){ hostMsg.textContent='Select an event in app/state.currentEventId.'; }
-      watchAndAutoClose();
-    })();
-
-    // Expose for debugging (optional)
-    window.hostControls = {
-      startVoting: ()=>$('btnStart').click(),
-      extendVoting: ()=>$('btnExtend').click(),
-      closeVotingNow,
-      sendBanner
-    };
-  </script>
-
-  <!-- File: index_host.html | Earn Your Encore Karaoke (Host controls with Shout-Out buttons) -->
+function parseErr(e){
+  try{
+    const j = JSON.parse(e.message);
+    return j.error || e.message;
+  }catch{ return e.message; }
+}
+</script>
 </body>
 </html>
