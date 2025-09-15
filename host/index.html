@@ -41,7 +41,7 @@
 </style>
 
 <div class="wrap">
-  <!-- LEFT: Rotation + Links + (Enable Sound) -->
+  <!-- LEFT -->
   <div class="side">
     <div class="card">
       <h1>Rotation</h1>
@@ -60,7 +60,7 @@
     </div>
   </div>
 
-  <!-- RIGHT: Event + Show Control -->
+  <!-- RIGHT -->
   <div class="stack">
     <details id="eventBox" class="card" open>
       <summary><h1 style="display:inline">Event / KJ Setup</h1> <span id="eventSavedMsg" class="micro" style="margin-left:8px"></span></summary>
@@ -68,11 +68,11 @@
         <div class="row">
           <div style="flex:1">
             <label>Venue (internal)</label>
-            <input id="venue" type="text" placeholder="Eagles-Kalispell" autocomplete="off" spellcheck="false">
+            <input id="venue" type="text" placeholder="venue - city" autocomplete="off" spellcheck="false">
           </div>
           <div style="flex:1">
             <label>Public Venue Name (Screen)</label>
-            <input id="venuePublic" type="text" placeholder="the Eagles!" autocomplete="off" spellcheck="false">
+            <input id="venuePublic" type="text" placeholder="the Venue!" autocomplete="off" spellcheck="false">
           </div>
           <div style="width:200px">
             <label>Date</label>
@@ -81,8 +81,12 @@
         </div>
         <div class="row">
           <div style="flex:1">
-            <label>KJ Company / Host</label>
-            <input id="kj" type="text" placeholder="Awesome KJ Co." autocomplete="off" spellcheck="false">
+            <label>KJ Company</label>
+            <input id="kj" type="text" placeholder="Karaoke Company" autocomplete="off" spellcheck="false">
+          </div>
+          <div style="flex:1">
+            <label>Karaoke Host Name</label>
+            <input id="hostName" type="text" placeholder="Your name (e.g., Angel)" autocomplete="off" spellcheck="false">
           </div>
           <div style="width:200px">
             <label>Event PIN</label>
@@ -156,7 +160,7 @@ const VOTE_URL = '/assets/vote.php';
 let state=null, poll=null;
 const $=s=>document.querySelector(s);
 
-const venue=$('#venue'), venuePublic=$('#venuePublic'), eventDate=$('#eventDate'), kj=$('#kj'), pin=$('#pin');
+const venue=$('#venue'), venuePublic=$('#venuePublic'), eventDate=$('#eventDate'), kj=$('#kj'), hostName=$('#hostName'), pin=$('#pin');
 const singerName=$('#singerName'), songArtist=$('#songArtist');
 const singerList=$('#singerList');
 const currentName=$('#currentName'), currentSongArtist=$('#currentSongArtist');
@@ -168,7 +172,7 @@ async function fetchState(){
   const r=await fetch(GET_URL,{cache:'no-store'});
   state=await r.json();
   // backfill
-  state.event   ||= {venue:'',venuePublic:'',date:new Date().toISOString().slice(0,10),kj:'',pin:'',locked:false};
+  state.event   ||= {venue:'',venuePublic:'',date:new Date().toISOString().slice(0,10),kj:'',hostName:'',pin:'',locked:false};
   state.singers ||= [];
   state.current ||= {id:null,name:'',songArtist:''};
   state.voting  ||= {open:false,endsAt:0,extendCount:0,counts:{encore:0,another:0,maybe:0},lastResult:null,voters:{}};
@@ -183,13 +187,14 @@ async function postState(){
 function render(){
   if(!state) return;
 
-  // Event fields (don’t overwrite while typing)
+  // Event fields (safe reflect; will NOT erase because we mirror live via input handlers)
   if(document.activeElement!==venue)        venue.value = state.event.venue||'';
   if(document.activeElement!==venuePublic)  venuePublic.value = state.event.venuePublic||'';
   if(document.activeElement!==eventDate)    eventDate.value = state.event.date||new Date().toISOString().slice(0,10);
   if(document.activeElement!==kj)           kj.value = state.event.kj||'';
+  if(document.activeElement!==hostName)     hostName.value = state.event.hostName||'';
   if(document.activeElement!==pin)          pin.value = state.event.pin||'';
-  [venue,venuePublic,eventDate,kj,pin].forEach(el=>el.disabled=state.event.locked);
+  [venue,venuePublic,eventDate,kj,hostName,pin].forEach(el=>el.disabled=state.event.locked);
 
   // Rotation
   singerList.innerHTML='';
@@ -224,29 +229,33 @@ function announce(w){ if(!w){ resultTag.textContent='—'; resultTag.className='
   else { resultTag.textContent='Maybe Next Time'; resultTag.className='resultTag r-maybe'; }
 }
 
+/* ---------- LIVE INPUT BINDINGS (fixes “text vanishes”) ---------- */
+function bindLive(el, key){
+  el.addEventListener('input', ()=>{ if(!state?.event) return; state.event[key]=el.value; });
+}
+bindLive(venue,       'venue');
+bindLive(venuePublic, 'venuePublic');
+bindLive(eventDate,   'date');
+bindLive(kj,          'kj');
+bindLive(hostName,    'hostName');
+bindLive(pin,         'pin');
+
 /* ---------- Event actions ---------- */
 $('#saveEvent').onclick = async ()=>{
-  state.event.venue=venue.value.trim();
-  state.event.venuePublic=venuePublic.value.trim();
-  state.event.date=eventDate.value||new Date().toISOString().slice(0,10);
-  state.event.kj=kj.value.trim();
-  state.event.pin=pin.value.trim();
+  // state.event already mirrors inputs; just persist
   await postState();
   const m=document.getElementById('eventSavedMsg'); m.textContent='Saved!'; setTimeout(()=>m.textContent='',1400);
 };
-
 $('#lockEvent').onclick = async ()=>{
-  // Toggle lock and collapse only when locking
   state.event.locked = !state.event.locked;
   await postState();
-  if(state.event.locked) eventBox.open=false;
+  if(state.event.locked) document.getElementById('eventBox').open=false;
 };
-
 $('#resetEvent').onclick = async ()=>{
   if(state.event.locked){ alert('Unlock to reset.'); return;}
   if(!confirm('Reset this event? This clears singers & votes.')) return;
   state={ serverUpdatedAt: Date.now()/1000|0,
-    event:{venue:'',venuePublic:'',date:new Date().toISOString().slice(0,10),kj:'',pin:'',locked:false},
+    event:{venue:'',venuePublic:'',date:new Date().toISOString().slice(0,10),kj:'',hostName:'',pin:'',locked:false},
     singers:[], current:{id:null,name:'',songArtist:''},
     voting:{open:false,endsAt:0,extendCount:0,counts:{encore:0,another:0,maybe:0},lastResult:null,voters:{}},
     winners:{encore:[], another:[]}
@@ -272,7 +281,7 @@ $('#startVote').onclick = async ()=>{
   state.voting={ open:true, endsAt:Date.now()+30000, extendCount:0,
     counts:{encore:0,another:0,maybe:0}, lastResult:null, voters:{} };
   await postState();
-  audio.playLoop(); // sound during voting
+  audio.playLoop();
 };
 $('#extendVote').onclick = async ()=>{ if(!state.voting.open) return; state.voting.endsAt+=15000; state.voting.extendCount++; await postState(); };
 $('#endVote').onclick = async ()=>{ await concludeVoting(); };
@@ -313,7 +322,7 @@ async function concludeVoting(){
     state.winners[winner]=state.winners[winner].slice(0,50);
   }
   await postState(); announce(winner);
-  audio.stopLoop(); audio.endChime(); // sound end
+  audio.stopLoop(); audio.endChime();
 }
 
 /* ---------- Loop ---------- */
@@ -349,25 +358,10 @@ const audio=(function(){
     o.connect(g).connect(ctx.destination);
     o.start(); o.stop(ctx.currentTime+dur);
   }
-  function playLoop(){
-    if(!ensure()) return;
-    stopLoop();
-    // gentle tick every ~1s during open voting
-    loopTimer = setInterval(()=> beep(880, 0.06, 0.04), 1000);
-  }
+  function playLoop(){ if(!ensure()) return; stopLoop(); loopTimer=setInterval(()=>beep(880,0.06,0.04), 1000); }
   function stopLoop(){ if(loopTimer){ clearInterval(loopTimer); loopTimer=null; } }
-  function endChime(){
-    if(!ensure()) return;
-    // tiny triad: C5-E5-G5
-    beep(523.25,0.09,0.07);
-    setTimeout(()=>beep(659.25,0.09,0.07),110);
-    setTimeout(()=>beep(783.99,0.12,0.07),220);
-  }
-  document.getElementById('enableSound').addEventListener('click', ()=>{
-    if(ensure()){ // warm-up beeps
-      beep(660,0.06,0.05); setTimeout(()=>beep(880,0.06,0.05),120);
-    } else { alert('Could not enable audio.'); }
-  });
+  function endChime(){ if(!ensure()) return; beep(523.25,0.09,0.07); setTimeout(()=>beep(659.25,0.09,0.07),110); setTimeout(()=>beep(783.99,0.12,0.07),220); }
+  document.getElementById('enableSound').addEventListener('click', ()=>{ if(ensure()){ beep(660,0.06,0.05); setTimeout(()=>beep(880,0.06,0.05),120);} else { alert('Could not enable audio.'); }});
   setStatus();
   return { playLoop, stopLoop, endChime };
 })();
