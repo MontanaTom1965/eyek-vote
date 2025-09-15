@@ -1,16 +1,8 @@
 {
-  "event": {
-    "venue": "",
-    "kj": "",
-    "locked": false
-  },
-  "singers": [],
-  "currentIndex": -1,
-  "voting": {
-    "state": "idle",
-    "endsAt": 0,
-    "counts": { "encore": 0, "another": 0, "maybe": 0 }
-  },
-  "soundsEnabled": false,
-  "lastChange": 0
+  "event": { "venue": "", "kj": "", "locked": false },
+  "currentSinger": { "id": "", "name": "", "songArtist": "" },
+  "queue": [],
+  "voting": { "isOpen": false, "endsAt": 0, "encore": 0, "another": 0, "maybe": 0 },
+  "lastResult": "",
+  "version": 0
 }
