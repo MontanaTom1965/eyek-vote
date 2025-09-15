@@ -13,10 +13,9 @@ flock($fp, LOCK_EX);
 rewind($fp);
 $cur = stream_get_contents($fp);
 $state = $cur ? json_decode($cur, true) : [];
-if (!is_array($state)) $state = [];
 
-// Preserve voters if client forgot to send it
-if (!isset($incoming['voting']['voters']) && isset($state['voting']['voters'])) {
+// Preserve voters if the client forgot to include it
+if (isset($state['voting']['voters']) && !isset($incoming['voting']['voters'])) {
   $incoming['voting']['voters'] = $state['voting']['voters'];
 }
 
