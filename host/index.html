@@ -9,6 +9,7 @@
   :root { --purple:#2F0658; --bg:var(--purple); --card:#12192a; --soft:#1b2540; --txt:#eaf2ff; --muted:#a9b6d9; --green:#25d366; --yellow:#f6c945; --red:#ff5e6c; --cyan:#3ad4ff; --accent:#7aa2ff }
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--txt);font:15px/1.45 system-ui,Segoe UI,Roboto,Helvetica,Arial}
+  form{margin:0} /* help some autofill engines */
   .wrap{display:grid;grid-template-columns:320px 1fr;gap:16px;padding:16px}
   .card{background:linear-gradient(180deg,var(--card),#0f1526);border:1px solid #243459;border-radius:14px;padding:14px;box-shadow:0 6px 26px rgba(0,0,0,.35)}
   h1{margin:0 0 8px;font-size:20px}
@@ -16,6 +17,7 @@
   label{font-size:12px;color:var(--muted);display:block;margin:8px 0 4px}
   input,button,select{font:inherit}
   input[type=text],input[type=date],input[type=password],input[type=email]{width:100%;padding:10px;border-radius:10px;border:1px solid #2b3c62;background:#0d1428;color:var(--txt)}
+  input[disabled]{opacity:.7}
   .row{display:flex;gap:10px;align-items:center}
   .btn{border:0;border-radius:12px;padding:10px 14px;background:var(--soft);color:var(--txt);cursor:pointer}
   .btn.primary{background:var(--accent)} .btn.good{background:var(--green);color:#03140b} .btn.warn{background:var(--yellow);color:#2a2105} .btn.bad{background:var(--red)} .btn.ghost{background:transparent;border:1px solid #2b3c62}
@@ -47,7 +49,7 @@
 </style>
 </head>
 <body>
-<div class="wrap">
+<div class="wrap" autocomplete="off">
   <!-- LEFT: Rotation + Sound + Links -->
   <div class="side">
     <div class="card">
@@ -84,9 +86,13 @@
       <div class="stack" style="padding-top:10px">
         <div class="row">
           <div style="flex:1">
-            <label>Venue</label>
-            <input list="venues" id="venue" type="text" placeholder="Venue name">
+            <label>Venue (internal name)</label>
+            <input list="venues" id="venue" type="text" placeholder="Eagles-Kalispell" autocomplete="off" autocapitalize="words" spellcheck="false">
             <datalist id="venues"></datalist>
+          </div>
+          <div style="flex:1">
+            <label>Public Venue Name (shown on Screen)</label>
+            <input id="venuePublic" type="text" placeholder="the Eagles!" autocomplete="off" autocapitalize="words" spellcheck="false">
           </div>
           <div style="width:200px">
             <label>Date</label>
@@ -96,12 +102,12 @@
         <div class="row">
           <div style="flex:1">
             <label>KJ Company / Host</label>
-            <input list="kjs" id="kj" type="text" placeholder="KJ company or name">
+            <input list="kjs" id="kj" type="text" placeholder="Awesome KJ Co." autocomplete="off" autocapitalize="words" spellcheck="false">
             <datalist id="kjs"></datalist>
           </div>
           <div style="width:200px">
             <label>Event PIN</label>
-            <input id="pin" type="password" placeholder="4–8 digits (for voters)">
+            <input id="pin" type="password" placeholder="4–8 digits" autocomplete="off" inputmode="numeric">
           </div>
         </div>
         <div class="row">
@@ -118,8 +124,8 @@
       <!-- Add Singer (top) -->
       <div class="sectionTitle">Add Singer</div>
       <div class="row">
-        <input id="singerName" type="text" placeholder="Singer name (e.g., Lisa H.)">
-        <input id="songArtist" type="text" placeholder="(Optional) First song — artist (notes)">
+        <input id="singerName" type="text" placeholder="Singer name (e.g., Lisa H.)" autocomplete="off" autocapitalize="words" spellcheck="false">
+        <input id="songArtist" type="text" placeholder="(Optional) First song — artist (notes)" autocomplete="off" spellcheck="false" name="note_song_artist">
         <button class="btn" id="addSinger" style="white-space:nowrap">Add Singer</button>
       </div>
 
@@ -132,7 +138,7 @@
           <div style="font-size:12px;color:var(--muted)">Current Singer</div>
           <div id="currentName" style="font-weight:800;font-size:18px">—</div>
           <div style="font-size:12px;color:var(--muted)">Now Singing — Song/Artist</div>
-          <input id="currentSongArtist" type="text" placeholder="Type song — artist…" disabled>
+          <input id="currentSongArtist" type="text" placeholder="Type song — artist…" disabled autocomplete="off" spellcheck="false" name="now_singing">
         </div>
         <div style="text-align:right">
           <div style="font-size:12px;color:var(--muted)">Timer</div>
@@ -145,7 +151,7 @@
         <div class="bubble b-red" id="c_maybe">0</div>
         <div id="resultTag" class="resultTag">—</div>
       </div>
-      <div class="grid3" style="margin-top:10px">
+      <div class="grid3" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:10px">
         <button class="btn good" id="startVote">Start (30s)</button>
         <button class="btn warn" id="extendVote">Extend (+15s)</button>
         <button class="btn bad" id="endVote">End</button>
@@ -155,7 +161,7 @@
 
       <div>
         <div class="sectionTitle">Host Vote</div>
-        <div class="grid3">
+        <div class="grid3" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
           <button class="btn good" id="hv_encore">Encore!</button>
           <button class="btn warn" id="hv_another">Another Shot!</button>
           <button class="btn bad" id="hv_maybe">Maybe Next Time</button>
@@ -177,8 +183,8 @@
 
     <div id="loginPane" class="stack">
       <div class="row">
-        <input id="loginEmail" type="email" placeholder="host@yourkj.com" autocomplete="username">
-        <input id="loginPass" type="password" placeholder="Password" autocomplete="current-password">
+        <input id="loginEmail" type="email" placeholder="host@yourkj.com" autocomplete="username" name="login_email">
+        <input id="loginPass" type="password" placeholder="Password" autocomplete="current-password" name="login_password">
       </div>
       <div class="row"><button class="btn primary" id="loginBtn" type="button">Enter Host Panel</button></div>
       <div id="loginErr" class="err"></div>
@@ -186,12 +192,12 @@
 
     <div id="registerPane" class="stack" style="display:none">
       <div class="row">
-        <input id="regName" type="text" placeholder="Name (optional)">
-        <input id="regEmail" type="email" placeholder="host@yourkj.com" autocomplete="username">
+        <input id="regName" type="text" placeholder="Name (optional)" autocomplete="name">
+        <input id="regEmail" type="email" placeholder="host@yourkj.com" autocomplete="username" name="register_email">
       </div>
       <div class="row">
-        <input id="regPass" type="password" placeholder="Create password" autocomplete="new-password">
-        <input id="regPass2" type="password" placeholder="Confirm password" autocomplete="new-password">
+        <input id="regPass" type="password" placeholder="Create password" autocomplete="new-password" name="register_password">
+        <input id="regPass2" type="password" placeholder="Confirm password" autocomplete="new-password" name="register_password_confirm">
       </div>
       <div class="row"><button class="btn primary" id="registerBtn" type="button">Create Account</button></div>
       <div id="regErr" class="err"></div>
@@ -213,7 +219,7 @@ let state = null; let tickTimer = null; let allowSound=false; let authed=false;
 const $ = s=>document.querySelector(s);
 const singerList = $('#singerList');
 const venuesDL=$('#venues'), kjsDL=$('#kjs');
-const venue=$('#venue'), eventDate=$('#eventDate'), kj=$('#kj'), pin=$('#pin');
+const venue=$('#venue'), venuePublic=$('#venuePublic'), eventDate=$('#eventDate'), kj=$('#kj'), pin=$('#pin');
 const singerName=$('#singerName'), songArtist=$('#songArtist');
 const currentName=$('#currentName'), currentSongArtist=$('#currentSongArtist');
 const timerEl=$('#timer');
@@ -243,6 +249,14 @@ function salt(){ return Array.from(crypto.getRandomValues(new Uint8Array(12))).m
 $('#registerBtn').addEventListener('click', async ()=>{ const name=$('#regName').value.trim(); const email=$('#regEmail').value.trim().toLowerCase(); const p1=$('#regPass').value, p2=$('#regPass2').value; if(!email||!p1||!p2){ $('#regErr').textContent='Fill email and both password fields.'; return;} if(p1!==p2){ $('#regErr').textContent='Passwords do not match.'; return;} let hosts=getHosts(); if(hosts.find(h=>h.email===email)){ $('#regErr').textContent='Email already registered on this device.'; return;} const s=salt(); const h=await sha256(s+p1); hosts.push({email,name,salt:s,hash:h}); saveHosts(hosts); setSession({email,name}); authed=true; hideGate(); });
 $('#loginBtn').addEventListener('click', async ()=>{ const email=$('#loginEmail').value.trim().toLowerCase(); const pass=$('#loginPass').value; const u=getHosts().find(h=>h.email===email); if(!u){ $('#loginErr').textContent='No account found on this device.'; return;} const h=await sha256(u.salt+pass); if(h!==u.hash){ $('#loginErr').textContent='Incorrect password.'; return;} setSession({email:u.email,name:u.name||''}); authed=true; hideGate(); });
 
+// ======= Draft handling (prevents disappearing text before Save) =======
+let draft = null; try{ draft = JSON.parse(localStorage.getItem('eyek_event_draft')||'null'); }catch{ draft=null }
+function setDraftField(key,val){ draft = draft || {}; draft[key]=val; localStorage.setItem('eyek_event_draft', JSON.stringify(draft)); }
+function clearDraft(){ draft=null; localStorage.removeItem('eyek_event_draft'); }
+[venue, venuePublic, eventDate, kj, pin].forEach(el=>{
+  el.addEventListener('input', ()=>{ if(state?.event?.locked) return; setDraftField(el.id, el.value); });
+});
+
 // ======= Helpers =======
 function debounce(fn,ms){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms) } }
 function rememberValue(key,val){ if(!val) return; const raw=localStorage.getItem(key); const list=raw?JSON.parse(raw):[]; if(!list.includes(val)) list.unshift(val); localStorage.setItem(key, JSON.stringify(list.slice(0,20))); }
@@ -251,10 +265,21 @@ function fmt(ms){ const s=Math.ceil(ms/1000); const m=Math.floor(s/60), r=s%60; 
 function announce(w){ if(!w){ resultTag.textContent='—'; resultTag.className='resultTag'; return;} if(w==='encore'){ resultTag.textContent='Encore!'; resultTag.className='resultTag r-encore'; play('encore'); } else if(w==='another'){ resultTag.textContent='Another Shot!'; resultTag.className='resultTag r-another'; play('another'); } else { resultTag.textContent='Maybe Next Time'; resultTag.className='resultTag r-maybe'; play('maybe'); } }
 
 // ======= Event Actions =======
-$('#saveEvent').addEventListener('click', async ()=>{ state.event.venue=venue.value.trim(); state.event.date=eventDate.value||new Date().toISOString().slice(0,10); state.event.kj=kj.value.trim(); state.event.pin=pin.value.trim(); await postState(); rememberValue('eyek_venues', state.event.venue); rememberValue('eyek_kjs', state.event.kj); const m=$('#eventSavedMsg'); m.textContent='Saved!'; setTimeout(()=>m.textContent='',1400); });
+$('#saveEvent').addEventListener('click', async ()=>{ // merge draft into state, then save
+  state.event.venue = (draft?.venue ?? venue.value).trim();
+  state.event.venuePublic = (draft?.venuePublic ?? venuePublic.value).trim();
+  state.event.date = (draft?.eventDate ?? eventDate.value) || new Date().toISOString().slice(0,10);
+  state.event.kj = (draft?.kj ?? kj.value).trim();
+  state.event.pin = (draft?.pin ?? pin.value).trim();
+  await postState();
+  rememberValue('eyek_venues', state.event.venue);
+  rememberValue('eyek_kjs', state.event.kj);
+  clearDraft();
+  const m=$('#eventSavedMsg'); m.textContent='Saved!'; setTimeout(()=>m.textContent='',1400);
+});
 $('#lockEvent').addEventListener('click', async ()=>{ state.event.locked=!state.event.locked; await postState(); renderLockUI(); });
-$('#resetEvent').addEventListener('click', async ()=>{ if(state.event.locked){ alert('Unlock to reset.'); return;} if(!confirm('Reset this event? This clears singers & votes.')) return; state={ serverUpdatedAt: Date.now()/1000|0, event:{venue:'',date:new Date().toISOString().slice(0,10),kj:'',pin:'',locked:false}, singers:[], current:{id:null,name:'',songArtist:''}, voting:{open:false,endsAt:0,extendCount:0,counts:{encore:0,another:0,maybe:0}, lastResult:null} }; await postState(); });
-function renderLockUI(){ const btn=$('#lockEvent'); if(state.event.locked){ btn.textContent='Unlock'; eventBox.open=false; $('#resetEvent').disabled=true; venue.disabled=kj.disabled=eventDate.disabled=pin.disabled=true; } else { btn.textContent='Lock'; $('#resetEvent').disabled=false; venue.disabled=kj.disabled=eventDate.disabled=pin.disabled=false; } }
+$('#resetEvent').addEventListener('click', async ()=>{ if(state.event.locked){ alert('Unlock to reset.'); return;} if(!confirm('Reset this event? This clears singers & votes.')) return; state={ serverUpdatedAt: Date.now()/1000|0, event:{venue:'',venuePublic:'',date:new Date().toISOString().slice(0,10),kj:'',pin:'',locked:false}, singers:[], current:{id:null,name:'',songArtist:''}, voting:{open:false,endsAt:0,extendCount:0,counts:{encore:0,another:0,maybe:0}, lastResult:null} }; clearDraft(); await postState(); });
+function renderLockUI(){ const btn=$('#lockEvent'); if(state.event.locked){ btn.textContent='Unlock'; eventBox.open=false; $('#resetEvent').disabled=true; [venue,venuePublic,eventDate,kj,pin].forEach(el=>el.disabled=true); } else { btn.textContent='Lock'; $('#resetEvent').disabled=false; [venue,venuePublic,eventDate,kj,pin].forEach(el=>el.disabled=false); } }
 
 // ======= Singer Actions =======
 $('#addSinger').addEventListener('click', async ()=>{ const name=singerName.value.trim(); const firstNote=songArtist.value.trim(); if(!name){ alert('Enter a singer name.'); return;} const id='s_'+Math.random().toString(36).slice(2,9); state.singers.push({id,name,_color:''}); if(!state.current.id){ state.current={id,name,songArtist:''}; } await postState(); singerName.value=''; songArtist.value=''; });
@@ -275,18 +300,26 @@ async function addHostVote(kind){ if(!state.voting.open) return; state.voting.co
 
 // ======= Fetch / Render =======
 async function fetchState(){ const r=await fetch(GET_URL,{cache:'no-store'}); state=await r.json(); // backfill
-  state.event=state.event||{venue:'',date:new Date().toISOString().slice(0,10),kj:'',pin:'',locked:false};
+  state.event=state.event||{venue:'',venuePublic:'',date:new Date().toISOString().slice(0,10),kj:'',pin:'',locked:false};
   state.current=state.current||{id:null,name:'',songArtist:''};
   state.voting=state.voting||{open:false,endsAt:0,extendCount:0,counts:{encore:0,another:0,maybe:0},lastResult:null};
   state.singers=state.singers||[]; render(); }
 async function postState(){ await fetch(POST_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(state)}); await fetchState(); }
 
 function render(){
-  // Do not stomp while typing
-  if(document.activeElement!==venue) venue.value=state.event.venue||'';
-  if(document.activeElement!==eventDate) eventDate.value=state.event.date||new Date().toISOString().slice(0,10);
-  if(document.activeElement!==kj) kj.value=state.event.kj||'';
-  if(document.activeElement!==pin) pin.value=state.event.pin||'';
+  // Prefer draft (unsaved) values while editing and while unlocked
+  const useDraft = !state.event.locked && draft;
+  const vVenue = useDraft && 'venue' in draft ? draft.venue : state.event.venue;
+  const vVenuePublic = useDraft && 'venuePublic' in draft ? draft.venuePublic : (state.event.venuePublic||'');
+  const vDate = useDraft && 'eventDate' in draft ? draft.eventDate : (state.event.date||new Date().toISOString().slice(0,10));
+  const vKj = useDraft && 'kj' in draft ? draft.kj : state.event.kj;
+  const vPin = useDraft && 'pin' in draft ? draft.pin : state.event.pin;
+
+  if(document.activeElement!==venue) venue.value = vVenue||'';
+  if(document.activeElement!==venuePublic) venuePublic.value = vVenuePublic||'';
+  if(document.activeElement!==eventDate) eventDate.value = vDate||new Date().toISOString().slice(0,10);
+  if(document.activeElement!==kj) kj.value = vKj||'';
+  if(document.activeElement!==pin) pin.value = vPin||'';
   renderLockUI();
   renderDatalist('eyek_venues', venuesDL); renderDatalist('eyek_kjs', kjsDL);
 
