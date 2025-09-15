@@ -1,60 +1,113 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>EYEK • Vote</title>
-<meta name="viewport" content="width=device-width, initial-scale=1" />
 <style>
-  :root{--bg:#0b0f1a;--card:#12192a;--txt:#eaf2ff;--muted:#a9b6d9;--green:#25d366;--yellow:#f6c945;--red:#ff5e6c}
-  *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--txt);font:600 18px/1.3 Inter,system-ui}
-  .wrap{min-height:100svh;display:grid;place-items:center;padding:24px}
-  .card{width:min(640px,92vw);background:linear-gradient(180deg,var(--card),#0f1526);border:1px solid #243459;border-radius:16px;padding:22px}
+  :root{ --purple:#2F0658; --card:#17132b; --ink:#f6f3ff; --muted:#bdb6d5; --accent:#10b981; --warn:#f59e0b; --danger:#ef4444; }
+  html,body{margin:0;height:100%;background:linear-gradient(160deg,var(--purple),#0e0b14); color:var(--ink); font:18px/1.4 system-ui,Segoe UI,Roboto}
+  .wrap{display:grid; place-items:center; min-height:100%}
+  .card{width:min(720px,92vw); background:var(--card); border:1px solid #2a2541; border-radius:16px; padding:16px}
+  h1{margin:6px 0 0; font-size:24px}
+  .big{font-size:36px; font-weight:800; margin:10px 0}
+  .row{display:flex; gap:10px; flex-wrap:wrap}
+  button{border-radius:12px; border:1px solid #2a2541; background:#211a3b; color:var(--ink); padding:12px 16px; cursor:pointer}
+  .ok{background:var(--accent); color:#04251b}
+  .warn{background:var(--warn); color:#3a2502}
+  .no{background:var(--danger); color:#3d0a0a}
+  .pill{display:inline-block; padding:6px 10px; border-radius:999px; border:1px solid #3a315e; background:#140f25; font-size:13px}
   .muted{color:var(--muted)}
-  .big{font-size:30px}
-  .grid{display:grid;gap:12px;margin-top:16px}
-  .btn{padding:14px;border-radius:14px;border:0;color:#06130c;font-weight:800;cursor:pointer}
-  .g{background:var(--green)} .y{background:var(--yellow)} .r{background:var(--red); color:#2a0b10}
-  .small{font-size:12px;color:var(--muted);margin-top:8px}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <div class="card">
-    <div class="muted">Now Voting For</div>
-    <div id="singer" class="big">—</div>
-    <div id="song" class="muted" style="margin-top:4px">—</div>
-
-    <div class="grid">
-      <button class="btn g" onclick="vote('encore')">Encore!</button>
-      <button class="btn y" onclick="vote('another')">Another Shot!</button>
-      <button class="btn r" onclick="vote('maybe')">Maybe Next Time</button>
-    </div>
-    <div id="msg" class="small"></div>
+<div class="wrap"><div class="card">
+  <h1>Voting for</h1>
+  <div class="big" id="s">—</div>
+  <div class="pill muted" id="statusPill">Waiting…</div>
+  <div class="row" style="margin-top:12px">
+    <button class="ok"   id="vE">Encore!</button>
+    <button class="warn" id="vA">Another Shot!</button>
+    <button class="no"   id="vM">Maybe Next Time</button>
   </div>
-</div>
+  <div style="margin-top:10px" class="muted" id="msg"></div>
+</div></div>
 
 <script>
-const GET_URL = '/assets/get_state.php';
-const POST_URL = '/assets/state.php';
+const BASE = location.origin + '/assets';
+const STATE_URL = BASE + '/status.json';
+const SAVE_URL  = BASE + '/save.php';
+const TOKEN = 'CHANGE_ME_LONG_RANDOM_TOKEN'; // <- same token
+const sEl = document.getElementById('s');
+const statusPill = document.getElementById('statusPill');
+const vE=document.getElementById('vE'), vA=document.getElementById('vA'), vM=document.getElementById('vM');
+const msg=document.getElementById('msg');
 
-let state=null;
+let S=null; let votedKey=null;
 
-async function load(){
-  const r=await fetch(GET_URL,{cache:'no-store'});
-  state=await r.json();
-  document.getElementById('singer').textContent = state.current.name || "—";
-  document.getElementById('song').textContent = state.current.songArtist || "—";
+function now(){return Math.floor(Date.now()/1000)}
+function votedKeyFor(S){
+  const ev = (S.event.venue||'') + '|' + (S.event.kj||'');
+  const idx = S.currentIndex|0;
+  return `eyek_voted_${ev}_${idx}`;
 }
-async function vote(kind){
-  const msg=document.getElementById('msg');
-  await load();
-  if (!state.voting.open){ msg.textContent="Voting is closed."; return; }
-  state.voting.counts[kind] = (state.voting.counts[kind]||0)+1;
-  await fetch(POST_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(state)});
-  msg.textContent="Thanks for voting!";
+function setBtnsEnabled(on){
+  [vE,vA,vM].forEach(b=>b.disabled=!on);
 }
-setInterval(load, 1500);
-load();
+
+async function load(){ return await fetch(STATE_URL+'?t='+Date.now()).then(r=>r.json()) }
+async function save(next){
+  const r = await fetch(SAVE_URL, {method:'POST', headers:{'Content-Type':'application/json','X-Auth':TOKEN}, body:JSON.stringify(next)});
+  const j = await r.json(); if(!j.ok) throw new Error(j.error||'save failed'); S=next;
+}
+
+function render(){
+  const cur = (S.currentIndex>=0 && S.singers[S.currentIndex]) ? S.singers[S.currentIndex] : null;
+  sEl.textContent = cur ? cur.name : '—';
+
+  if (S.voting.state==='open'){
+    statusPill.textContent = 'Voting Open';
+    statusPill.style.background='#14231d';
+    setBtnsEnabled(true);
+    votedKey = votedKeyFor(S);
+    if (localStorage.getItem(votedKey)) {
+      setBtnsEnabled(false);
+      msg.textContent = 'Thanks, your vote has been counted.';
+    } else {
+      msg.textContent = '';
+    }
+  } else if (S.voting.state==='closed'){
+    statusPill.textContent = 'Voting Closed';
+    statusPill.style.background='#2a1722';
+    setBtnsEnabled(false);
+  } else {
+    statusPill.textContent = 'Not Voting';
+    statusPill.style.background='#141127';
+    setBtnsEnabled(false);
+  }
+}
+
+async function sendVote(which){
+  if (S.voting.state!=='open') return;
+  const key = votedKeyFor(S);
+  if (localStorage.getItem(key)) { msg.textContent='You already voted for this singer.'; return; }
+  const next = structuredClone(S);
+  if (which==='encore') next.voting.counts.encore++;
+  if (which==='another') next.voting.counts.another++;
+  if (which==='maybe')   next.voting.counts.maybe++;
+  await save(next);
+  localStorage.setItem(key,'1');
+  render();
+  msg.textContent='Thanks, your vote has been counted.';
+}
+
+vE.onclick = ()=>sendVote('encore');
+vA.onclick = ()=>sendVote('another');
+vM.onclick = ()=>sendVote('maybe');
+
+async function tick(){
+  try{ S = await load(); render(); }catch(e){}
+}
+tick(); setInterval(tick, 1000);
 </script>
 </body>
 </html>
