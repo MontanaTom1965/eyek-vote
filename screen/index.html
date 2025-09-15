@@ -1,175 +1,203 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
 <title>EYEK • Screen</title>
-<meta name="viewport" content="width=device-width, initial-scale=1" />
 <style>
-  :root{
-    --bg:#04060b; --text:#eaf2ff; --muted:#9db2d1;
-    --green:#26e28b; --yellow:#ffd24d; --red:#ff5a6b; --brand:#66aaff;
-  }
-  *{box-sizing:border-box;font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial}
-  html,body{height:100%}
-  body{margin:0;background:radial-gradient(1200px 600px at 50% -200px,#0d1b35,#04060b);color:var(--text)}
-  .center{display:flex;align-items:center;justify-content:center;height:100%;}
-  .col{display:flex;flex-direction:column;gap:18px;align-items:center;justify-content:center;text-align:center}
-  h1{font-size:60px;margin:0}
-  h2{font-size:28px;margin:0;color:var(--muted)}
-  .card{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:20px;padding:24px 32px;backdrop-filter: blur(6px)}
-  .stacks{display:flex;gap:28px;margin-top:12px}
-  .stack{min-width:220px}
-  .stack h3{margin:6px 0 10px 0}
-  .count{font-size:48px;font-weight:800}
-  .balls{height:200px;border:1px dashed rgba(255,255,255,0.15);border-radius:12px;position:relative;overflow:hidden}
-  .ball{width:22px;height:22px;border-radius:50%;position:absolute;bottom:-24px;left:50%;transform:translateX(-50%);animation: rise 1.6s ease-out forwards}
-  .ball.green{background:var(--green)} .ball.yellow{background:var(--yellow)} .ball.red{background:var(--red)}
-  @keyframes rise{ 0%{bottom:-24px;opacity:0} 10%{opacity:1} 100%{bottom:180px;opacity:1}}
-  .timer{font-size:90px;font-weight:900;letter-spacing:1px}
-  .banner{font-size:72px;font-weight:1000;padding:24px 36px;border-radius:18px}
-  .banner.encore{background:linear-gradient(45deg,#13ef96,#7bffec); color:#021b12; box-shadow:0 0 80px #13ef9699}
-  .banner.another{background:linear-gradient(45deg,#ffd24d,#fff2b0); color:#231a00; box-shadow:0 0 80px #ffd24d99}
-  .banner.nexttime{background:linear-gradient(45deg,#ff5a6b,#ffc0c7); color:#290006; box-shadow:0 0 80px #ff5a6b99}
-  .mini{color:var(--muted);font-size:14px}
+  :root{--bg:#030915;--ink:#e9f2ff;--sub:#a5b8df;--green:#33e27b;--yellow:#ffd166;--red:#ff6b6b;}
+  html,body{margin:0;height:100%;background:radial-gradient(1200px 600px at 50% 10%,#0f2046 0%,#030915 60%);color:var(--ink);font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;overflow:hidden}
+  .wrap{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%}
+  h1{font-size:64px;margin:0 0 10px;letter-spacing:.5px}
+  h2{font-size:28px;margin:6px 0;color:var(--sub)}
+  .ticker{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);font-size:14px;color:#7ea2ff;opacity:.7;animation:pulse 3s infinite}
+  @keyframes pulse{0%{opacity:.5}50%{opacity:.9}100%{opacity:.5}}
+  .countdown{font-size:92px;font-weight:800;letter-spacing:1px}
+  .stacks{display:flex;gap:60px;margin-top:24px}
+  .stack{display:flex;flex-direction:column;align-items:center;gap:12px}
+  .balls{display:flex;align-items:flex-end;gap:6px;min-height:220px}
+  .ball{width:22px;height:22px;border-radius:50%;animation:bounce 1.2s infinite}
+  .ball.green{background:var(--green)}
+  .ball.yellow{background:var(--yellow)}
+  .ball.red{background:var(--red)}
+  @keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+  .score{font-size:28px;color:#cfe0ff}
+  .result{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.35);backdrop-filter:blur(6px)}
+  .result.show{display:flex}
+  .banner{padding:28px 48px;border-radius:18px;font-size:72px;font-weight:900;box-shadow:0 12px 40px rgba(0,0,0,.45)}
+  .banner.encore{background:linear-gradient(90deg,#1eea66,#39ffa0);color:#022b14}
+  .banner.another{background:linear-gradient(90deg,#ffe08a,#ffd166);color:#3b2b00}
+  .banner.maybe{background:linear-gradient(90deg,#ffa3a3,#ff6b6b);color:#3b0000}
+  canvas#confetti{position:absolute;inset:0;pointer-events:none}
 </style>
 </head>
 <body>
-<div class="center">
-  <div class="col">
-    <div id="welcome" class="card">
-      <h2 id="vk">Welcome to</h2>
-      <h1 id="venue">—</h1>
-      <h2 id="kj">with KJ —</h2>
-      <div class="mini">Waiting for host to select a singer…</div>
-    </div>
-
-    <div id="nowVoting" class="card" style="display:none;max-width:1200px">
-      <h2>Now Voting For</h2>
-      <h1 id="singerName">—</h1>
-      <div class="timer" id="timer">30</div>
+<canvas id="confetti"></canvas>
+<div class="wrap">
+  <div id="main">
+    <h1 id="headline">Welcome</h1>
+    <h2 id="subline">Waiting for host…</h2>
+    <div id="voteBlock" style="display:none; align-items:center; flex-direction:column;">
+      <div class="countdown" id="countdown">30</div>
       <div class="stacks">
         <div class="stack">
-          <h3>Encore!</h3>
-          <div class="count" id="enc">0</div>
-          <div class="balls" id="encBalls"></div>
+          <div class="score" id="scoreEncore">0</div>
+          <div class="balls" id="ballsEncore"></div>
+          <div>Encore!</div>
         </div>
         <div class="stack">
-          <h3>Another Shot!</h3>
-          <div class="count" id="ano">0</div>
-          <div class="balls" id="anoBalls"></div>
+          <div class="score" id="scoreAnother">0</div>
+          <div class="balls" id="ballsAnother"></div>
+          <div>Another Shot!</div>
         </div>
         <div class="stack">
-          <h3>Maybe Next Time</h3>
-          <div class="count" id="nxt">0</div>
-          <div class="balls" id="nxtBalls"></div>
+          <div class="score" id="scoreMaybe">0</div>
+          <div class="balls" id="ballsMaybe"></div>
+          <div>Maybe Next Time</div>
         </div>
       </div>
     </div>
-
-    <div id="result" style="display:none">
-      <div id="resultBanner" class="banner">—</div>
-      <div class="mini">Showing board next…</div>
-    </div>
-
-    <audio id="audOpen" src="/assets/voting_open.mp3" preload="auto"></audio>
-    <audio id="audOver" src="/assets/voting_over.mp3" preload="auto"></audio>
-    <audio id="audEncore" src="/assets/encore.mp3" preload="auto"></audio>
-    <audio id="audLoser" src="/assets/loser.wav" preload="auto"></audio>
+  </div>
+  <div class="ticker">Earn Your Encore Karaoke • vote.earnyourencorekaraoke.com</div>
+  <div class="result" id="result">
+    <div class="banner" id="resultBanner">Encore!</div>
   </div>
 </div>
 
+<audio id="sndOpen"   src="/assets/quiz-countdown.mp3" preload="auto"></audio>
+<audio id="sndOver"   src="/assets/end of voting.wav" preload="auto"></audio>
+<audio id="sndEncore" src="/assets/you_win_001.mp3" preload="auto"></audio>
+<audio id="sndMaybe"  src="/assets/loser.wav" preload="auto"></audio>
+<!-- (Add a sound for Another Shot later if you want) -->
+
 <script>
-const API = '/assets/state.php';
-let STATE=null, POLL, lastCounts={encore:0, another:0, nexttime:0}, lastOpen=false, showingResult=false;
+const API='/assets/state.php';
+let STATE=null, poll=null, tick=null, lastIsOpen=false, lastResultShownAt=0;
 
-function $(id){return document.getElementById(id)}
-function show(id){$(id).style.display='block'}
-function hide(id){$(id).style.display='none'}
-
-async function fetchState(){
-  const r = await fetch(API+'?action=get',{cache:'no-store'});
-  STATE = await r.json();
+const $=s=>document.querySelector(s);
+function apiGet(){
+  const u=new URL(API,location.origin);u.searchParams.set('action','get');
+  return fetch(u,{cache:'no-store'}).then(r=>r.json());
 }
-function addBalls(which, n) {
-  const map = {encore:'encBalls', another:'anoBalls', nexttime:'nxtBalls'};
-  const cls = {encore:'green', another:'yellow', nexttime:'red'};
-  const box = $(map[which]);
-  for(let i=0;i<n;i++){
-    const b=document.createElement('div');
-    b.className='ball '+cls[which];
-    b.style.left = (10 + Math.random()*80)+'%';
-    box.appendChild(b);
-    setTimeout(()=>{ if(b.parentNode) b.parentNode.removeChild(b); }, 1800);
+function ms(){return Date.now();}
+
+// Confetti (simple)
+const cf = document.getElementById('confetti'); const ctx = cf.getContext('2d');
+let confetti = [];
+function resize(){cf.width=innerWidth; cf.height=innerHeight}
+addEventListener('resize', resize); resize();
+function burst(color){
+  for(let i=0;i<150;i++){
+    confetti.push({x:cf.width/2,y:cf.height/2,dx:(Math.random()-0.5)*6,dy:(Math.random()-1.2)*6,sz:2+Math.random()*4,life:80+Math.random()*60,color});
   }
 }
+function confettiLoop(){
+  ctx.clearRect(0,0,cf.width,cf.height);
+  for (const c of confetti){
+    c.x+=c.dx; c.y+=c.dy; c.dy+=0.08; c.life--;
+    ctx.fillStyle=c.color; ctx.fillRect(c.x,c.y,c.sz,c.sz);
+  }
+  confetti = confetti.filter(c=>c.life>0 && c.y<cf.height+20);
+  requestAnimationFrame(confettiLoop);
+}
+confettiLoop();
+
 function render(){
-  const s=STATE||{};
-  $('venue').textContent = s.venue || '—';
-  $('kj').textContent = 'with KJ ' + (s.kj || '—');
+  if(!STATE) return;
+  const cur=STATE.current||{name:'',song:''};
+  const ev=STATE.event||{venue:'',kj:''};
+  const voting=STATE.voting||{isOpen:false,endsAt:0};
+  const v=STATE.votes||{encore:0,another:0,maybe:0};
 
-  const cur = (s.singers||[]).find(x=>x.id===s.currentSingerId);
-
-  if (s.voting?.open && cur && !showingResult) {
-    hide('welcome'); hide('result'); show('nowVoting');
-    $('singerName').textContent = cur.name;
-
-    // play open sound once on transition
-    if (!lastOpen) $('audOpen').play().catch(()=>{});
-    lastOpen = true;
-
-    // counts
-    const e = s.voting.encore||0, a=s.voting.another||0, n=s.voting.nexttime||0;
-    $('enc').textContent=e; $('ano').textContent=a; $('nxt').textContent=n;
-
-    if (e>lastCounts.encore) addBalls('encore', e-lastCounts.encore);
-    if (a>lastCounts.another) addBalls('another', a-lastCounts.another);
-    if (n>lastCounts.nexttime) addBalls('nexttime', n-lastCounts.nexttime);
-    lastCounts={encore:e, another:a, nexttime:n};
-
-    const left = Math.max(0,(s.voting.endsAt||0)-Date.now());
-    $('timer').textContent = Math.ceil(left/1000);
-
-  } else if (!s.voting?.open && s.lastResult && !showingResult) {
-    // voting just ended -> show result banner briefly
-    lastOpen=false;
-    $('audOver').play().catch(()=>{});
-    showingResult=true;
-    hide('welcome'); hide('nowVoting'); show('result');
-    const mapText = {encore:'Encore!', another:'Another Shot!', nexttime:'Maybe Next Time'};
-    const mapCls  = {encore:'encore', another:'another', nexttime:'nexttime'};
-    const res = s.lastResult.result;
-    const banner = $('resultBanner');
-    banner.className = 'banner ' + mapCls[res];
-    banner.textContent = mapText[res];
-
-    if (res==='encore') $('audEncore').play().catch(()=>{});
-    if (res==='nexttime') $('audLoser').play().catch(()=>{});
-
-    // after ~15s go to board for ~15s, then back to welcome
-    setTimeout(()=>{ window.location.href='/board/'; }, 15000);
-    setTimeout(()=>{ showingResult=false; }, 30000);
-
+  // headline/sub
+  if (voting.isOpen){
+    $('#headline').textContent = `Now Voting: ${cur.name||'—'}`;
+    $('#subline').textContent  = `${cur.song||''} • ${ev.venue||''} — ${ev.kj||''}`;
+  } else if (cur.name){
+    $('#headline').textContent = `Up Now: ${cur.name}`;
+    $('#subline').textContent  = `${cur.song||''} • ${ev.venue||''} — ${ev.kj||''}`;
   } else {
-    lastOpen=false;
-    hide('nowVoting'); hide('result'); show('welcome');
-    const next = (s.singers||[]).find(x=>x.status==='queued');
-    $('vk').textContent = next ? 'Next up:' : 'Welcome to';
-    $('venue').textContent = next ? next.name : (s.venue || '—');
+    $('#headline').textContent = ev.venue ? `Welcome to ${ev.venue}` : 'Welcome';
+    $('#subline').textContent  = ev.kj ? `Your KJ tonight: ${ev.kj}` : 'Waiting for host…';
+  }
+
+  // vote UI
+  $('#voteBlock').style.display = voting.isOpen ? 'flex' : 'none';
+  if (voting.isOpen){
+    const remain = Math.max(0, voting.endsAt - Date.now());
+    const s = Math.ceil(remain/1000);
+    $('#countdown').textContent = s;
+
+    $('#scoreEncore').textContent=v.encore;
+    $('#scoreAnother').textContent=v.another;
+    $('#scoreMaybe').textContent=v.maybe;
+
+    // draw balls (cap visible to ~50 for performance)
+    function drawBalls(el, count, cls){
+      el.innerHTML='';
+      const n = Math.min(count, 50);
+      for (let i=0;i<n;i++){
+        const b=document.createElement('div');
+        b.className='ball '+cls;
+        b.style.animationDelay=(Math.random()*1).toFixed(2)+'s';
+        el.appendChild(b);
+      }
+    }
+    drawBalls($('#ballsEncore'), v.encore, 'green');
+    drawBalls($('#ballsAnother'), v.another, 'yellow');
+    drawBalls($('#ballsMaybe'), v.maybe, 'red');
+  }
+
+  // sounds: start/stop windows
+  if (voting.isOpen && !lastIsOpen){
+    document.getElementById('sndOpen').play().catch(()=>{});
+  }
+  if (!voting.isOpen && lastIsOpen){
+    document.getElementById('sndOver').play().catch(()=>{});
+  }
+  lastIsOpen = voting.isOpen;
+
+  // show result banner after close
+  if (!voting.isOpen && STATE.lastResult && (ms()-lastResultShownAt>500)){
+    const b = $('#resultBanner');
+    $('#result').classList.add('show');
+    b.className='banner '+STATE.lastResult;
+    b.textContent = STATE.lastResult==='encore' ? 'Encore!' :
+                    STATE.lastResult==='another'? 'Another Shot!' : 'Maybe Next Time';
+    // sound & confetti
+    if (STATE.lastResult==='encore'){ document.getElementById('sndEncore').play().catch(()=>{}); burst('#2ef07a'); }
+    else if (STATE.lastResult==='maybe'){ document.getElementById('sndMaybe').play().catch(()=>{}); }
+    else { burst('#ffd166'); }
+    lastResultShownAt = ms();
+    // auto hide after 15s
+    setTimeout(()=>$('#result').classList.remove('show'), 15000);
   }
 }
+// gentle movement to avoid TV sleep
+setInterval(()=>{document.body.style.backgroundPosition=`${(Date.now()/40)%200}px ${(Date.now()/60)%200}px`;}, 2000);
 
-async function loop(){
-  await fetchState();
+function tickLoop(){
+  if (!STATE?.voting?.isOpen) return;
+  const remain = STATE.voting.endsAt - Date.now();
+  if (remain<=0){
+    // wait for host close; we just stop countdown
+    return;
+  }
   render();
 }
+function startPoll(){
+  clearInterval(poll);
+  poll = setInterval(async ()=>{
+    const r = await apiGet();
+    if (r.ok){ STATE=r.state; render(); }
+  }, 1000);
+}
 
-// keep screen awake if supported
-(async ()=>{
-  try{
-    if ('wakeLock' in navigator) { await navigator.wakeLock.request('screen'); }
-  }catch(e){}
-  await loop();
-  POLL=setInterval(loop, 2000);
+(async function init(){
+  const r=await apiGet(); if (r.ok){ STATE=r.state; render(); }
+  startPoll();
+  clearInterval(tick);
+  tick=setInterval(tickLoop, 250);
 })();
 </script>
 </body>
