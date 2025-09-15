@@ -20,10 +20,8 @@ if (!$state) { flock($fp, LOCK_UN); fclose($fp); http_response_code(409); echo '
 
 $v =& $state['voting'];
 $c =& $state['current'];
-
 if (empty($v['open'])) { flock($fp, LOCK_UN); fclose($fp); http_response_code(409); echo '{"error":"voting_closed"}'; exit; }
 
-// Per-device per singer+song key
 $songKey = strtolower(trim(($c['id']??'').'|'.($c['songArtist']??'')));
 $devKey  = $songKey.'|'.$deviceId;
 
