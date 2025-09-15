@@ -4,8 +4,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <style>
   :root{--purple:#2F0658;--card:#151429;--soft:#1f2040;--txt:#eef2ff;--muted:#aab2d6;--green:#25d366;--yellow:#f6c945;--red:#ff5e6c;--accent:#7aa2ff}
-  *{box-sizing:border-box}
-  body{margin:0;background:var(--purple);color:var(--txt);font:15px/1.45 system-ui,Segoe UI,Roboto,Helvetica,Arial}
+  *{box-sizing:border-box} body{margin:0;background:var(--purple);color:var(--txt);font:15px/1.45 system-ui,Segoe UI,Roboto,Helvetica,Arial}
   .wrap{display:grid;grid-template-columns:320px 1fr;gap:16px;padding:16px}
   .card{background:linear-gradient(180deg,var(--card),#0e0e22);border:1px solid #2a2f56;border-radius:14px;padding:14px;box-shadow:0 6px 26px rgba(0,0,0,.35)}
   h1{margin:0 0 8px;font-size:20px} h2{margin:0 0 10px;font-size:16px;color:var(--muted)}
@@ -141,10 +140,12 @@
 </div>
 
 <script>
+/* ---------- Endpoints ---------- */
 const GET_URL  = '/assets/get_state.php';
 const POST_URL = '/assets/state.php';
 const VOTE_URL = '/assets/vote.php';
 
+/* ---------- State & DOM ---------- */
 let state=null, poll=null;
 const $=s=>document.querySelector(s);
 
@@ -153,12 +154,28 @@ const singerName=$('#singerName'), songArtist=$('#songArtist');
 const singerList=$('#singerList');
 const currentName=$('#currentName'), currentSongArtist=$('#currentSongArtist');
 const timerEl=$('#timer'), cE=$('#c_encore'), cA=$('#c_another'), cM=$('#c_maybe'), resultTag=$('#resultTag');
+const eventBox=$('#eventBox');
 
-async function fetchState(){ const r=await fetch(GET_URL,{cache:'no-store'}); state=await r.json(); }
-async function postState(){ await fetch(POST_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(state)}); await fetchState(); }
+/* ---------- Server I/O ---------- */
+async function fetchState(){
+  const r=await fetch(GET_URL,{cache:'no-store'});
+  state=await r.json();
+  // backfill
+  state.event   ||= {venue:'',venuePublic:'',date:new Date().toISOString().slice(0,10),kj:'',pin:'',locked:false};
+  state.singers ||= [];
+  state.current ||= {id:null,name:'',songArtist:''};
+  state.voting  ||= {open:false,endsAt:0,extendCount:0,counts:{encore:0,another:0,maybe:0},lastResult:null,voters:{}};
+  state.winners ||= {encore:[],another:[]};
+}
+async function postState(){
+  await fetch(POST_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(state)});
+  await fetchState();
+}
 
+/* ---------- Render ---------- */
 function render(){
   if(!state) return;
+
   // Event fields (don’t overwrite while typing)
   if(document.activeElement!==venue)        venue.value = state.event.venue||'';
   if(document.activeElement!==venuePublic)  venuePublic.value = state.event.venuePublic||'';
@@ -200,6 +217,7 @@ function announce(w){ if(!w){ resultTag.textContent='—'; resultTag.className='
   else { resultTag.textContent='Maybe Next Time'; resultTag.className='resultTag r-maybe'; }
 }
 
+/* ---------- Event actions ---------- */
 $('#saveEvent').onclick = async ()=>{
   state.event.venue=venue.value.trim();
   state.event.venuePublic=venuePublic.value.trim();
@@ -209,7 +227,14 @@ $('#saveEvent').onclick = async ()=>{
   await postState();
   const m=document.getElementById('eventSavedMsg'); m.textContent='Saved!'; setTimeout(()=>m.textContent='',1400);
 };
-$('#lockEvent').onclick = async ()=>{ state.event.locked=!state.event.locked; await postState(); if(state.event.locked) document.getElementById('eventBox').open=false; };
+
+$('#lockEvent').onclick = async ()=>{
+  // Toggle lock and collapse only when locking
+  state.event.locked = !state.event.locked;
+  await postState();
+  if(state.event.locked) eventBox.open=false;
+};
+
 $('#resetEvent').onclick = async ()=>{
   if(state.event.locked){ alert('Unlock to reset.'); return;}
   if(!confirm('Reset this event? This clears singers & votes.')) return;
@@ -222,6 +247,7 @@ $('#resetEvent').onclick = async ()=>{
   await postState();
 };
 
+/* ---------- Singer actions ---------- */
 $('#addSinger').onclick = async ()=>{
   const name=singerName.value.trim(); if(!name){ alert('Enter a singer name.'); return;}
   const id='s_'+Math.random().toString(36).slice(2,9);
@@ -233,6 +259,7 @@ $('#addSinger').onclick = async ()=>{
 function setCurrent(id){ const s=state.singers.find(x=>x.id===id); if(!s) return; state.current={id:s.id,name:s.name,songArtist:state.current.songArtist||''}; postState(); }
 function removeSinger(id){ state.singers=state.singers.filter(x=>x.id!==id); if(state.current.id===id){ state.current={id:null,name:'',songArtist:''}; } postState(); }
 
+/* ---------- Voting ---------- */
 $('#startVote').onclick = async ()=>{
   if(!state.current.id){ alert('Set a current singer first.'); return; }
   state.voting={ open:true, endsAt:Date.now()+30000, extendCount:0,
@@ -242,10 +269,11 @@ $('#startVote').onclick = async ()=>{
 $('#extendVote').onclick = async ()=>{ if(!state.voting.open) return; state.voting.endsAt+=15000; state.voting.extendCount++; await postState(); };
 $('#endVote').onclick = async ()=>{ await concludeVoting(); };
 
+/* ---------- Host votes via server (enforces one-per-device) ---------- */
 function deviceId(){ let id=localStorage.getItem('eyek_device_id'); if(!id){ id=crypto.randomUUID(); localStorage.setItem('eyek_device_id', id);} return id; }
 async function hostVote(kind){
   if(!state?.voting?.open) return;
-  const res=await fetch('/assets/vote.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({choice:kind, deviceId:deviceId()})});
+  const res=await fetch(VOTE_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({choice:kind, deviceId:deviceId()})});
   await fetchState(); render();
   if(!res.ok){ const e=await res.json().catch(()=>({error:'vote_failed'})); if(e.error==='already_voted'){ alert('Only one vote per device per singer/song on this device.'); } }
 }
@@ -253,8 +281,10 @@ document.getElementById('hv_encore').onclick = ()=>hostVote('encore');
 document.getElementById('hv_another').onclick = ()=>hostVote('another');
 document.getElementById('hv_maybe').onclick  = ()=>hostVote('maybe');
 
+/* ---------- Now Singing ---------- */
 currentSongArtist.addEventListener('input', async ()=>{ if(!state.current.id) return; state.current.songArtist=currentSongArtist.value.trim(); await postState(); });
 
+/* ---------- Vote conclusion ---------- */
 async function concludeVoting(){
   if(!state.voting.open){ announce(state.voting.lastResult); return; }
   state.voting.open=false; state.voting.endsAt=0;
@@ -277,9 +307,18 @@ async function concludeVoting(){
   await postState(); announce(winner);
 }
 
-function loop(){ if(poll) clearInterval(poll);
-  poll=setInterval(async ()=>{ if(state?.voting?.open && Date.now()>=state.voting.endsAt){ await concludeVoting(); } else { await fetchState(); render(); } }, 800);
+/* ---------- Loop ---------- */
+function loop(){
+  if(poll) clearInterval(poll);
+  poll=setInterval(async ()=>{
+    if(state?.voting?.open && Date.now()>=state.voting.endsAt){
+      await concludeVoting();
+    } else {
+      await fetchState(); render();
+    }
+  }, 800);
 }
 
+/* ---------- Boot ---------- */
 (async function init(){ await fetchState(); render(); loop(); })();
 </script>
