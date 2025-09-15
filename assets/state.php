@@ -19,11 +19,11 @@ if (isset($state['voting']['voters']) && !isset($incoming['voting']['voters'])) 
   $incoming['voting']['voters'] = $state['voting']['voters'];
 }
 
-// Ensure 'saved' structure
+// Ensure saved lists exist
 if (!isset($incoming['saved'])) $incoming['saved'] = ["venues"=>[], "kjs"=>[]];
 if (!isset($state['saved']))    $state['saved']    = ["venues"=>[], "kjs"=>[]];
 
-// Normalize PIN: digits only (host & vote use same rule)
+// Normalize PIN to digits only
 if (isset($incoming['event']['pin'])) {
   $incoming['event']['pin'] = preg_replace('/\D+/', '', (string)$incoming['event']['pin']);
 }
