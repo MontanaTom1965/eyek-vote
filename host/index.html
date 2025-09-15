@@ -1,418 +1,270 @@
 <!doctype html>
-<html lang="en">
+<html>
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>EYEK • Host</title>
-<link rel="icon" href="/assets/icon.png" />
-<style>
-  :root{
-    --bg:#0b0f1a; --card:#121a2a; --muted:#90a4ae; --text:#e6f0ff; --brand:#23c7a2;
-    --ok:#22c55e; --warn:#f59e0b; --err:#ef4444; --pill:#1f2937; --pill2:#0f172a;
-  }
-  *{box-sizing:border-box}
-  html,body{height:100%}
-  body{margin:0;background:linear-gradient(135deg,#0b0f1a,#12203a);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif}
-  .wrap{display:grid;grid-template-columns:340px 1fr;gap:16px;max-width:1400px;margin:0 auto;padding:16px}
-  @media (max-width:950px){ .wrap{grid-template-columns:1fr} }
-  .card{background:rgba(255,255,255,.06);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.08);border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
-  .p{padding:16px}
-  h1{font-size:20px;margin:0 0 12px 0}
-  h2{font-size:16px;margin:0 0 8px 0;color:#cdd9e5}
-  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-  .stack{display:grid;gap:10px}
-  input,select,button,textarea{font:inherit}
-  input,select,textarea{width:100%;padding:10px 12px;border-radius:10px;border:1px solid #263143;background:#0f172a;color:var(--text);outline:none}
-  input:focus,textarea:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.25)}
-  button{padding:10px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.14);background:#1f2937;color:#fff;cursor:pointer}
-  button.primary{background:linear-gradient(135deg,#2dd4bf,#22c55e);border:none;color:#06201a}
-  button.warning{background:#3b2a05;border-color:#8b5d0a;color:#fbbf24}
-  button.ghost{background:#0b1220;color:#cbd5e1;border:1px dashed #334155}
-  button:disabled{opacity:.6;cursor:not-allowed}
-  .toolbar{display:flex;gap:8px;flex-wrap:wrap}
-  .pill{background:var(--pill);border:1px solid #2b3547;color:#d1d5db;padding:8px 10px;border-radius:999px}
-  .status{display:flex;align-items:center;gap:8px}
-  .dot{width:10px;height:10px;border-radius:50%}
-  .dot.green{background:var(--ok)} .dot.yellow{background:var(--warn)} .dot.red{background:var(--err)}
-  .side{display:grid;gap:12px}
-  .singer{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px;border-radius:12px;background:#0f172a;border:1px solid #1f2a3d}
-  .singer .meta{display:grid}
-  .singer .name{font-weight:600}
-  .singer .song{font-size:12px;color:var(--muted)}
-  .badge{padding:2px 8px;border-radius:999px;font-size:12px;border:1px solid #2b3547;background:#0b1220}
-  .badge.green{border-color:#065f46;background:#064e3b;color:#34d399}
-  .badge.yellow{border-color:#6b4f07;background:#473507;color:#fbbf24}
-  .badge.red{border-color:#7f1d1d;background:#3b0d0d;color:#f87171}
-  .x{background:#2b3547;border:none;border-radius:8px;cursor:pointer;color:#d1d5db;padding:6px 8px}
-  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-  .muted{color:var(--muted);font-size:12px}
-  details{background:#0f172a;border:1px solid #203049;border-radius:12px;padding:10px}
-  summary{cursor:pointer;color:#cdd9e5;margin:-10px;padding:10px}
-  .footnote{opacity:.8;font-size:12px;margin-top:8px}
-</style>
+  <meta charset="utf-8"/>
+  <title>EYEK • Host</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <style>
+    body{font-family:system-ui,Segoe UI,Arial,sans-serif;background:#0a0c10;color:#e6eef8;margin:0}
+    header{display:flex;gap:12px;align-items:center;padding:12px 16px;background:#121621;border-bottom:1px solid #1d2433}
+    .wrap{display:grid;grid-template-columns:320px 1fr;gap:16px;padding:16px}
+    aside{background:#0f1320;border:1px solid #1d2433;border-radius:12px;padding:12px;max-height:calc(100dvh - 110px);overflow:auto}
+    main{background:#0f1320;border:1px solid #1d2433;border-radius:12px;padding:16px}
+    h2{margin:8px 0 12px;font-size:18px}
+    .row{display:flex;gap:10px;align-items:center;margin:8px 0}
+    input,button{font-size:16px}
+    input[type="text"],input[type="number"]{background:#0b0f1a;border:1px solid #23304a;color:#e6eef8;border-radius:8px;padding:10px}
+    button{background:#1e2a44;color:#e6eef8;border:1px solid #35476a;border-radius:10px;padding:10px 14px;cursor:pointer}
+    button:hover{background:#263659}
+    .danger{background:#3a1620;border-color:#6b2336}
+    .success{background:#16351f;border-color:#2e6b42}
+    details{background:#0b1020;border:1px solid #1d2433;border-radius:10px;padding:10px;margin-bottom:12px}
+    summary{cursor:pointer;font-weight:600}
+    .pill{display:inline-flex;gap:6px;align-items:center;border:1px solid #2a3550;background:#11182a;border-radius:999px;padding:6px 10px;font-size:13px}
+    .list{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+    .item{display:flex;align-items:center;justify-content:space-between;background:#0b0f1a;border:1px solid #1f2a44;border-radius:10px;padding:8px 10px}
+    .dot{width:10px;height:10px;border-radius:50%}
+    .dot.green{background:#1dd05d}.dot.yellow{background:#f9d64a}.dot.gray{background:#6b7a96}.dot.red{background:#ff5d7a}
+    .small{font-size:12px;color:#9fb0cf}
+    .flex{display:flex;gap:8px;align-items:center}
+    .grow{flex:1}
+    .right{margin-left:auto}
+    .muted{opacity:.8}
+    .stack{display:grid;gap:8px}
+    .section{border-top:1px dashed #23304a;margin-top:12px;padding-top:12px}
+  </style>
 </head>
 <body>
+<header>
+  <div class="pill">Host Console</div>
+  <div id="eventBadge" class="pill"></div>
+  <div id="lockBadge" class="pill"></div>
+  <div class="right small" id="statusLine">loading…</div>
+</header>
+
 <div class="wrap">
-  <!-- LEFT: rotation / singers -->
-  <aside class="card p side" id="left">
-    <h1>Rotation</h1>
-
-    <div class="stack" id="rotationList"></div>
-
-    <details id="addBox">
-      <summary>➕ Add Singer</summary>
-      <div class="stack" style="margin-top:8px">
-        <input id="singerName" placeholder="Singer name" autocomplete="off" />
-        <div class="grid2">
-          <input id="songTitle" placeholder="Song title" autocomplete="off" />
-          <input id="songArtist" placeholder="Artist" autocomplete="off" />
-        </div>
-        <button class="primary" id="addSingerBtn">Add to rotation</button>
-      </div>
-    </details>
-
-    <div class="footnote muted">Tip: click a singer to set as “Now Singing”.</div>
+  <aside>
+    <h2>Rotation</h2>
+    <div class="small muted">Click ▶ to set “Current”. Red trash removes. Green/yellow dots show last result.</div>
+    <div id="singerList" class="list"></div>
   </aside>
 
-  <!-- RIGHT: event controls -->
-  <main class="card p">
-    <div class="row" style="justify-content:space-between; margin-bottom:8px">
-      <h1>Host Console</h1>
-      <div class="status">
-        <span class="pill" id="lockPill">Event: <strong id="lockStateTxt">Unlocked</strong></span>
-        <span class="pill" id="timerPill">Timer: <strong id="timerTxt">Idle</strong></span>
-      </div>
-    </div>
-
-    <!-- Event / KJ block -->
-    <details id="eventDetails" open>
-      <summary>Event • KJ • PIN</summary>
-      <div class="stack" style="margin-top:8px">
-        <div class="grid2">
-          <div>
-            <div class="row" style="justify-content:space-between">
-              <label class="muted">Venue</label>
-              <select id="recentVenues" style="max-width:180px"></select>
-            </div>
-            <input id="venue" list="venueList" placeholder="Venue name" autocomplete="off" />
-            <datalist id="venueList"></datalist>
-          </div>
-          <div>
-            <div class="row" style="justify-content:space-between">
-              <label class="muted">KJ</label>
-              <select id="recentKJs" style="max-width:180px"></select>
-            </div>
-            <input id="kj" list="kjList" placeholder="KJ name" autocomplete="off" />
-            <datalist id="kjList"></datalist>
-          </div>
+  <main>
+    <details id="eventPanel">
+      <summary>Event • Venue & KJ & PIN (save together)</summary>
+      <div class="stack section">
+        <div class="row">
+          <input class="grow" id="venue" placeholder="Venue name"/>
+          <input class="grow" id="kj" placeholder="KJ name"/>
+          <input style="width:140px" id="pin" type="number" placeholder="PIN (digits)"/>
         </div>
-        <div class="grid2">
-          <input id="pin" inputmode="numeric" pattern="[0-9]*" placeholder="Tonight’s PIN (4–6 digits)" />
-          <div class="toolbar">
-            <button id="lockBtn">🔒 Lock</button>
-            <button class="warning" id="resetBtn">Reset Event</button>
-          </div>
+        <div class="row">
+          <button id="saveEvent" class="success">Save Event / KJ / PIN</button>
+          <button id="toggleLock">Lock</button>
+          <button id="resetEvent" class="danger">Reset Event</button>
         </div>
       </div>
     </details>
 
-    <!-- Now singing -->
-    <div class="card p" style="margin-top:12px">
-      <h2>Now Singing</h2>
-      <div class="row" style="gap:12px;align-items:flex-end;flex-wrap:wrap">
-        <input id="nowName" placeholder="Name" />
-        <input id="nowSong" placeholder="Song" />
-        <input id="nowArtist" placeholder="Artist" />
-        <button class="primary" id="saveNowBtn">Set as Current</button>
+    <section class="section">
+      <h2>Add Singer</h2>
+      <div class="row">
+        <input class="grow" id="singer" placeholder="Singer"/>
+        <input class="grow" id="songArtist" placeholder="Song / Artist"/>
+        <button id="addSinger">Add</button>
       </div>
-      <div class="muted" id="nowHint" style="margin-top:6px"></div>
-    </div>
+    </section>
 
-    <!-- Voting -->
-    <div class="card p" style="margin-top:12px">
-      <h2>Voting</h2>
-      <div class="toolbar" style="margin-bottom:8px">
-        <button id="startVoteBtn" class="primary">▶️ Start (30s)</button>
-        <button id="extendBtn" class="ghost">➕ Extend 15s</button>
-        <button id="stopVoteBtn" class="ghost">⏹ Stop</button>
+    <section class="section">
+      <h2>Current & Voting</h2>
+      <div class="row">
+        <div id="nowPlaying" class="pill">No singer set</div>
+        <div id="voteClock" class="pill">Timer: --</div>
+        <button id="startVote" class="success">Start 30s Vote</button>
+        <button id="extendVote">Extend +15s</button>
+        <button id="endVote" class="danger">End Vote</button>
       </div>
-      <div class="toolbar">
-        <button id="btnEncore" class="primary">✅ Mark ENCORE!</button>
-        <button id="btnAnother" class="">🔁 Another Shot</button>
-        <button id="btnMaybe" class="">❌ Maybe Next Time</button>
+      <div class="row">
+        <span class="small muted">Host Vote:</span>
+        <button data-mark="Encore" class="markBtn success">Encore!</button>
+        <button data-mark="Another Shot" class="markBtn">Another Shot!</button>
+        <button data-mark="Maybe Next Time" class="markBtn danger">Maybe Next Time!</button>
       </div>
-      <div class="muted" style="margin-top:8px">
-        Screen reacts automatically to the outcome (sound + splash + confetti). Voting countdown pushes live to the Screen.
-      </div>
-    </div>
+    </section>
   </main>
 </div>
 
 <script>
-/* =========================
-   Tiny shared state system
-   ========================= */
-const LS_KEY = 'eyek_state_v1';
-const RECENTS_KEY = 'eyek_recents_v1';
-const bc = ('BroadcastChannel' in self) ? new BroadcastChannel('eyek_bus') : null;
+const STORE_URL = '/assets/status.json';
+const SAVE_URL  = '/assets/save.php';
+let cache = null;
+let typing = {}; // prevent wiping fields while typing
+let clockTimer = null;
 
-const defaultState = () => ({
-  locked:false,
-  event:{ venue:'', kj:'', pin:'' },
-  current:{ name:'', song:'', artist:'' },
-  rotation:[], // {id, name, song, artist, status:'pending|encore|another|maybe'}
-  voting:{ active:false, endAt:0, extended:false }
+const qs = sel => document.querySelector(sel);
+const elVenue = qs('#venue'), elKJ = qs('#kj'), elPIN = qs('#pin');
+const elSaveEvent = qs('#saveEvent'), elToggleLock = qs('#toggleLock'), elReset = qs('#resetEvent');
+const elSinger = qs('#singer'), elSongArtist = qs('#songArtist'), elAdd = qs('#addSinger');
+const elList = qs('#singerList'), elNow = qs('#nowPlaying'), elClock = qs('#voteClock');
+const elStart = qs('#startVote'), elExtend = qs('#extendVote'), elEnd = qs('#endVote');
+const statusLine = qs('#statusLine'), lockBadge = qs('#lockBadge'), eventBadge = qs('#eventBadge');
+
+['#venue','#kj','#pin','#singer','#songArtist'].forEach(sel=>{
+  qs(sel).addEventListener('input', ()=> typing[sel]=true);
 });
 
-let state = loadState();
-let typingGuard = new Set(); // fields currently being edited (prevents overwrites)
-
-function loadState(){
-  try{ return JSON.parse(localStorage.getItem(LS_KEY)) ?? defaultState(); }
-  catch{ return defaultState(); }
+// Fetch state
+async function load() {
+  const res = await fetch(STORE_URL + '?_=' + Date.now());
+  cache = await res.json();
+  render();
 }
-function saveState(push=true){
-  localStorage.setItem(LS_KEY, JSON.stringify(state));
-  if (bc && push) bc.postMessage({type:'state', state});
-}
-window.addEventListener('storage', (e)=> {
-  if (e.key === LS_KEY){
-    state = JSON.parse(e.newValue || 'null') || defaultState();
-    render();
-  }
-});
-if (bc){
-  bc.onmessage = (ev)=> {
-    if (ev.data?.type==='state'){ state = ev.data.state; render(); }
-  };
-}
+function dot(color){ return `<span class="dot ${color}"></span>`; }
 
-/* =========================
-   Recents (venues, KJs)
-   ========================= */
-let recents = (()=> { try{return JSON.parse(localStorage.getItem(RECENTS_KEY))||{venues:[],kjs:[]}}catch{return {venues:[],kjs:[]}} })();
-function remember(listName, value){
-  if (!value) return;
-  const arr = recents[listName];
-  const i = arr.indexOf(value);
-  if (i>=0) arr.splice(i,1);
-  arr.unshift(value);
-  while(arr.length>12) arr.pop();
-  localStorage.setItem(RECENTS_KEY, JSON.stringify(recents));
-  renderRecents();
-}
-function renderRecents(){
-  venueList.innerHTML = recents.venues.map(v=>`<option value="${escapeHTML(v)}">`).join('');
-  kjList.innerHTML    = recents.kjs.map(v=>`<option value="${escapeHTML(v)}">`).join('');
-  recentVenues.innerHTML = `<option value="">Recent Venues…</option>` + recents.venues.map(v=>`<option>${escapeHTML(v)}</option>`).join('');
-  recentKJs.innerHTML    = `<option value="">Recent KJs…</option>`    + recents.kjs.map(v=>`<option>${escapeHTML(v)}</option>`).join('');
-}
-function escapeHTML(s){return s.replace(/[&<>"']/g,m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m]))}
+function render(){
+  // badges
+  eventBadge.textContent = (cache.event.venue||'(set venue)') + ' • ' + (cache.event.kj||'(set KJ)');
+  lockBadge.innerHTML = (cache.event.locked ? dot('green')+' Locked' : dot('yellow')+' Unlocked');
 
-/* =========================
-   UI wiring helpers
-   ========================= */
-function bindInput(el, path, opts={}){
-  const parts = path.split('.');
-  const getRef = ()=> parts.slice(0,-1).reduce((o,k)=>o[k], state);
-  const key = parts[parts.length-1];
+  // form (respect typing)
+  if (!typing['#venue']) elVenue.value = cache.event.venue || '';
+  if (!typing['#kj']) elKJ.value = cache.event.kj || '';
+  if (!typing['#pin']) elPIN.value = cache.event.pin || '';
 
-  el.addEventListener('focus', ()=> typingGuard.add(el.id));
-  el.addEventListener('blur',  ()=> { typingGuard.delete(el.id); apply(el.value); });
-
-  el.addEventListener('input', ()=> {
-    if (state.locked && opts.lockSensitive) { el.value = getRef()[key]; return; }
-    if (opts.live){ apply(el.value); }
-  });
-
-  function apply(v){
-    const ref = getRef();
-    if (ref[key] === v) return;
-    ref[key] = v;
-    if (opts.remember) remember(opts.remember, v);
-    saveState(true);
-    renderHeaderBits();
-  }
-}
-
-function renderHeaderBits(){
-  lockStateTxt.textContent = state.locked ? 'Locked' : 'Unlocked';
-  lockPill.style.background = state.locked ? '#132915' : '#1f2937';
-  lockPill.style.border = state.locked ? '1px solid #1f6d3a' : '1px solid rgba(255,255,255,.14)';
-  timerTxt.textContent = state.voting.active ? countdownText() : 'Idle';
-}
-
-function countdownText(){
-  const t = Math.max(0, state.voting.endAt - Date.now());
-  const s = Math.ceil(t/1000);
-  return s+'s';
-}
-
-/* =========================
-   Render rotation
-   ========================= */
-function renderRotation(){
-  rotationList.innerHTML = '';
-  state.rotation.forEach(item=>{
+  // rotation
+  elList.innerHTML = '';
+  (cache.singers||[]).forEach((s, idx)=>{
+    const color = s.last === 'Encore' ? 'green' : s.last === 'Another Shot' ? 'yellow' : s.last === 'Maybe Next Time' ? 'red' : 'gray';
     const row = document.createElement('div');
-    row.className = 'singer';
-    row.dataset.id = item.id;
-
-    const color = item.status==='encore' ? 'green' : item.status==='another' ? 'yellow' :
-                  item.status==='maybe' ? 'red' : null;
-
+    row.className = 'item';
     row.innerHTML = `
-      <div class="meta">
-        <div class="name">${escapeHTML(item.name)} ${color?`<span class="badge ${color}">${item.status}</span>`:''}</div>
-        <div class="song">${escapeHTML(item.song||'')} ${item.artist?`• ${escapeHTML(item.artist)}`:''}</div>
+      <div class="flex">
+        <span class="dot ${color}"></span>
+        <strong>${s.name}</strong>
+        <span class="small muted">&nbsp;${s.songArtist ? '• '+escapeHtml(s.songArtist): ''}</span>
       </div>
-      <div class="row">
-        <button class="x" title="Set as Now Singing">▶️</button>
-        <button class="x" title="Remove">✖</button>
+      <div class="flex">
+        <button data-act="play" data-idx="${idx}">▶</button>
+        <button data-act="rm" data-idx="${idx}" class="danger">🗑</button>
       </div>
     `;
-    const [btnPlay, btnX] = row.querySelectorAll('button');
-
-    btnPlay.onclick = ()=>{
-      state.current = { name:item.name, song:item.song||'', artist:item.artist||'' };
-      saveState();
-      renderNow();
-    };
-    btnX.onclick = ()=>{
-      state.rotation = state.rotation.filter(s=>s.id!==item.id);
-      saveState();
-      renderRotation();
-    };
-
-    row.onclick = (e)=>{ if(e.target.tagName==='BUTTON') return; btnPlay.click(); };
-    rotationList.appendChild(row);
+    row.addEventListener('click', (e)=>{
+      const act = e.target.getAttribute('data-act');
+      const i = +e.target.getAttribute('data-idx');
+      if (act === 'rm') removeSinger(i);
+      if (act === 'play') setCurrent(i);
+    });
+    elList.appendChild(row);
   });
-}
 
-function renderNow(){
-  nowName.value = state.current.name;
-  nowSong.value = state.current.song;
-  nowArtist.value = state.current.artist;
-  nowHint.textContent = state.current.name ? `Current: ${state.current.name} — ${state.current.song||''}${state.current.artist?(' • '+state.current.artist):''}` : 'No singer selected.';
-}
-
-/* =========================
-   Voting timer tick
-   ========================= */
-setInterval(()=>{
-  if (state.voting.active){
-    if (Date.now() >= state.voting.endAt){
-      state.voting.active=false;
-      saveState();
-    }
-    timerTxt.textContent = countdownText();
+  // current
+  if (cache.current && cache.current.singer) {
+    elNow.textContent = `${cache.current.singer} — ${cache.current.songArtist||''}`.trim();
   } else {
-    timerTxt.textContent = 'Idle';
+    elNow.textContent = 'No singer set';
   }
-}, 250);
 
-/* =========================
-   Buttons & controls
-   ========================= */
-lockBtn.onclick = ()=>{
-  state.locked = !state.locked;
-  saveState();
-  renderHeaderBits();
-  lockBtn.textContent = state.locked ? '🔓 Unlock' : '🔒 Lock';
-};
+  // clock
+  tickClock();
 
-resetBtn.onclick = ()=>{
-  if (!confirm('Reset this event? This clears venue/KJ/PIN, current singer, timer, and rotation.')) return;
-  state = defaultState();
-  saveState();
-  renderAll();
-};
+  statusLine.textContent = 'Updated: ' + new Date(cache.lastChange*1000).toLocaleTimeString();
+}
 
-addSingerBtn.onclick = ()=>{
-  const name = singerName.value.trim();
-  if (!name) return singerName.focus();
-  const song = songTitle.value.trim();
-  const artist = songArtist.value.trim();
-  state.rotation.push({ id:crypto.randomUUID(), name, song, artist, status:'pending' });
-  singerName.value = songTitle.value = songArtist.value = '';
-  saveState();
-  renderRotation();
-};
-
-saveNowBtn.onclick = ()=>{
-  state.current = { name: nowName.value.trim(), song: nowSong.value.trim(), artist: nowArtist.value.trim() };
-  saveState();
-  renderNow();
-};
-
-startVoteBtn.onclick = ()=>{
-  state.voting.active = true;
-  state.voting.extended = false;
-  state.voting.endAt = Date.now() + 30000;
-  saveState();
-};
-extendBtn.onclick = ()=>{
-  if (!state.voting.active || state.voting.extended) return;
-  state.voting.extended = true;
-  state.voting.endAt += 15000;
-  saveState();
-};
-stopVoteBtn.onclick = ()=>{
-  state.voting.active = false;
-  saveState();
-};
-
-btnEncore.onclick = ()=> setOutcome('encore');
-btnAnother.onclick = ()=> setOutcome('another');
-btnMaybe.onclick = ()=> setOutcome('maybe');
-
-function setOutcome(kind){
-  // stamp result on current and also on the rotation entry if present
-  const cur = state.current;
-  if (cur?.name){
-    const entry = state.rotation.find(s=>s.name===cur.name && s.song===cur.song && s.artist===cur.artist);
-    if (entry) entry.status = kind;
+function tickClock(){
+  if (clockTimer) clearInterval(clockTimer);
+  function draw(){
+    const now = Date.now();
+    const end = (cache.current?.voteEndsAt || 0) * 1000;
+    if (!end || end < now) { elClock.textContent = 'Timer: --'; return; }
+    const sec = Math.max(0, Math.ceil((end - now)/1000));
+    elClock.textContent = `Timer: ${sec}s`;
   }
-  // also store transient lastOutcome for the screen animation
-  state.lastOutcome = { kind, at: Date.now(), who: cur };
-  // stop the timer if running
-  state.voting.active = false;
-  saveState();
-  renderRotation();
+  draw();
+  clockTimer = setInterval(draw, 500);
 }
 
-/* =========================
-   Fix “typing clears itself”
-   ========================= */
-function safeSet(el, value){
-  if (typingGuard.has(el.id)) return; // don't overwrite while user typing
-  if (el.value !== value) el.value = value;
+async function save(patch){
+  const payload = { pin: (qs('#pin').value||cache.event.pin||'').toString(), data: patch };
+  const res = await fetch(SAVE_URL, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+  const out = await res.json();
+  if (!out.ok){ alert('Save failed: ' + (out.error||'unknown')); return; }
+  cache = out.updated;
+  typing = {};
+  render();
 }
 
-/* =========================
-   Render & init
-   ========================= */
-function render(){
-  // event fields
-  safeSet(venue, state.event.venue || '');
-  safeSet(kj,    state.event.kj    || '');
-  safeSet(pin,   state.event.pin   || '');
-  renderHeaderBits();
-  renderRotation();
-  renderNow();
-  lockBtn.textContent = state.locked ? '🔓 Unlock' : '🔒 Lock';
+function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m])); }
+
+// actions
+elSaveEvent.onclick = () => {
+  save({ event:{
+    venue: elVenue.value.trim(),
+    kj: elKJ.value.trim(),
+    pin: elPIN.value.trim(),
+  }});
+};
+elToggleLock.onclick = () => save({ event:{ locked: !cache.event.locked }});
+elReset.onclick = () => {
+  if (!confirm('Reset this event? This clears venue/KJ/PIN, roster, current, and results.')) return;
+  save({
+    event:{ venue:'', kj:'', pin:'', locked:false, startedAt: 0 },
+    current:{ singer:'', songArtist:'', status:'idle', voteEndsAt:0 },
+    singers:[],
+    results:[]
+  });
+};
+elAdd.onclick = () => {
+  const name = elSinger.value.trim();
+  const sa = elSongArtist.value.trim();
+  if (!name) return;
+  const singers = (cache.singers||[]).slice();
+  singers.push({ name, songArtist: sa, last:'' });
+  elSinger.value = ''; elSongArtist.value = '';
+  save({ singers });
+};
+async function removeSinger(i){
+  const singers = (cache.singers||[]).slice();
+  singers.splice(i,1);
+  await save({ singers });
 }
-function renderAll(){ renderRecents(); render(); }
+async function setCurrent(i){
+  const s = (cache.singers||[])[i];
+  if (!s) return;
+  await save({ current:{ singer: s.name, songArtist: s.songArtist||'', status:'waiting', voteEndsAt: 0 }});
+}
+elStart.onclick = () => {
+  const until = Math.floor(Date.now()/1000) + 30;
+  save({ current:{ voteEndsAt: until, status:'voting' }});
+};
+elExtend.onclick = () => {
+  const now = Math.floor(Date.now()/1000);
+  const base = cache.current.voteEndsAt>now ? cache.current.voteEndsAt : now;
+  save({ current:{ voteEndsAt: base + 15, status:'voting' }});
+};
+elEnd.onclick = () => save({ current:{ voteEndsAt: 0, status:'waiting' }});
 
-// Bind inputs (live when unlocked)
-bindInput(venue, 'event.venue', {live:true, lockSensitive:true, remember:'venues'});
-bindInput(kj,    'event.kj',    {live:true, lockSensitive:true, remember:'kjs'});
-bindInput(pin,   'event.pin',   {live:true, lockSensitive:true});
+document.querySelectorAll('.markBtn').forEach(btn=>{
+  btn.onclick = async ()=>{
+    const mark = btn.getAttribute('data-mark'); // Encore | Another Shot | Maybe Next Time
+    const current = cache.current||{};
+    if (!current.singer) return alert('No current singer set.');
+    // update singer last result & optionally remove if Maybe Next Time
+    const singers = (cache.singers||[]).map(s=>{
+      if (s.name === current.singer) return {...s, last: mark };
+      return s;
+    }).filter(s => !(mark==='Maybe Next Time' && s.name===current.singer));
+    const results = (cache.results||[]).slice();
+    results.unshift({ ts: Date.now(), singer: current.singer, result: mark });
+    const nextCurrent = { singer: current.singer, songArtist: current.songArtist||'', status: mark, voteEndsAt:0 };
+    await save({ singers, results, current: nextCurrent });
+  };
+});
 
-recentVenues.onchange = ()=> { if (recentVenues.value){ venue.value = recentVenues.value; venue.dispatchEvent(new Event('input')); } };
-recentKJs.onchange    = ()=> { if (recentKJs.value){ kj.value    = recentKJs.value;    kj.dispatchEvent(new Event('input')); } };
+// Poll updates (so multiple host tabs stay in sync)
+setInterval(load, 3000);
 
-renderAll();
+// initial
+load();
 </script>
 </body>
 </html>
