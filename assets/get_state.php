@@ -12,6 +12,7 @@ if (!file_exists($DATA)) {
       "venuePublic" => "",
       "date" => date('Y-m-d'),
       "kj" => "",
+      "hostName" => "",
       "pin" => "",
       "locked" => false
     ],
