@@ -1,114 +1,176 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <title>EYEK • Screen</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <style>
-    html,body{height:100%;margin:0;background:#06080f;color:#e6eef8;font-family:system-ui,Segoe UI,Arial,sans-serif;overflow:hidden}
-    .wrap{display:grid;grid-template-rows:auto 1fr auto;height:100%}
-    header{display:flex;justify-content:space-between;align-items:center;padding:18px 24px;background:#0b1020;border-bottom:1px solid #151c2e}
-    .big{font-size:72px;font-weight:800;text-align:center;margin:40px 20px}
-    .mid{font-size:28px;text-align:center;opacity:.9}
-    footer{padding:12px 18px;text-align:center;color:#9fb0cf}
-    .pulse{animation:pulse 2s infinite}
-    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.75}}
-    .confetti{position:fixed;left:0;top:0;width:100%;height:100%;pointer-events:none}
-  </style>
+<meta charset="utf-8" />
+<title>EYEK • Screen</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  :root{
+    --bg:#04060b; --text:#eaf2ff; --muted:#9db2d1;
+    --green:#26e28b; --yellow:#ffd24d; --red:#ff5a6b; --brand:#66aaff;
+  }
+  *{box-sizing:border-box;font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial}
+  html,body{height:100%}
+  body{margin:0;background:radial-gradient(1200px 600px at 50% -200px,#0d1b35,#04060b);color:var(--text)}
+  .center{display:flex;align-items:center;justify-content:center;height:100%;}
+  .col{display:flex;flex-direction:column;gap:18px;align-items:center;justify-content:center;text-align:center}
+  h1{font-size:60px;margin:0}
+  h2{font-size:28px;margin:0;color:var(--muted)}
+  .card{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:20px;padding:24px 32px;backdrop-filter: blur(6px)}
+  .stacks{display:flex;gap:28px;margin-top:12px}
+  .stack{min-width:220px}
+  .stack h3{margin:6px 0 10px 0}
+  .count{font-size:48px;font-weight:800}
+  .balls{height:200px;border:1px dashed rgba(255,255,255,0.15);border-radius:12px;position:relative;overflow:hidden}
+  .ball{width:22px;height:22px;border-radius:50%;position:absolute;bottom:-24px;left:50%;transform:translateX(-50%);animation: rise 1.6s ease-out forwards}
+  .ball.green{background:var(--green)} .ball.yellow{background:var(--yellow)} .ball.red{background:var(--red)}
+  @keyframes rise{ 0%{bottom:-24px;opacity:0} 10%{opacity:1} 100%{bottom:180px;opacity:1}}
+  .timer{font-size:90px;font-weight:900;letter-spacing:1px}
+  .banner{font-size:72px;font-weight:1000;padding:24px 36px;border-radius:18px}
+  .banner.encore{background:linear-gradient(45deg,#13ef96,#7bffec); color:#021b12; box-shadow:0 0 80px #13ef9699}
+  .banner.another{background:linear-gradient(45deg,#ffd24d,#fff2b0); color:#231a00; box-shadow:0 0 80px #ffd24d99}
+  .banner.nexttime{background:linear-gradient(45deg,#ff5a6b,#ffc0c7); color:#290006; box-shadow:0 0 80px #ff5a6b99}
+  .mini{color:var(--muted);font-size:14px}
+</style>
 </head>
 <body>
-<div class="wrap">
-  <header>
-    <div id="venue">Venue</div>
-    <div id="kj">KJ</div>
-  </header>
-  <main>
-    <div id="headline" class="big pulse">Welcome!</div>
-    <div id="sub" class="mid">Get ready to vote</div>
-    <canvas id="confetti" class="confetti"></canvas>
-    <audio id="sfxWin" src="/assets/you_win_001.mp3" preload="auto"></audio>
-    <audio id="sfxShot" src="/assets/quiz-countdown.mp3" preload="auto"></audio>
-    <audio id="sfxLose" src="/assets/sad_horn.mp3" preload="auto"></audio>
-  </main>
-  <footer>Earn Your Encore Karaoke</footer>
+<div class="center">
+  <div class="col">
+    <div id="welcome" class="card">
+      <h2 id="vk">Welcome to</h2>
+      <h1 id="venue">—</h1>
+      <h2 id="kj">with KJ —</h2>
+      <div class="mini">Waiting for host to select a singer…</div>
+    </div>
+
+    <div id="nowVoting" class="card" style="display:none;max-width:1200px">
+      <h2>Now Voting For</h2>
+      <h1 id="singerName">—</h1>
+      <div class="timer" id="timer">30</div>
+      <div class="stacks">
+        <div class="stack">
+          <h3>Encore!</h3>
+          <div class="count" id="enc">0</div>
+          <div class="balls" id="encBalls"></div>
+        </div>
+        <div class="stack">
+          <h3>Another Shot!</h3>
+          <div class="count" id="ano">0</div>
+          <div class="balls" id="anoBalls"></div>
+        </div>
+        <div class="stack">
+          <h3>Maybe Next Time</h3>
+          <div class="count" id="nxt">0</div>
+          <div class="balls" id="nxtBalls"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="result" style="display:none">
+      <div id="resultBanner" class="banner">—</div>
+      <div class="mini">Showing board next…</div>
+    </div>
+
+    <audio id="audOpen" src="/assets/voting_open.mp3" preload="auto"></audio>
+    <audio id="audOver" src="/assets/voting_over.mp3" preload="auto"></audio>
+    <audio id="audEncore" src="/assets/encore.mp3" preload="auto"></audio>
+    <audio id="audLoser" src="/assets/loser.wav" preload="auto"></audio>
+  </div>
 </div>
+
 <script>
-const URL='/assets/status.json';
-let lastStatus='', rafId=0;
+const API = '/assets/state.php';
+let STATE=null, POLL, lastCounts={encore:0, another:0, nexttime:0}, lastOpen=false, showingResult=false;
 
-const elVenue = document.getElementById('venue');
-const elKJ = document.getElementById('kj');
-const elHead = document.getElementById('headline');
-const elSub = document.getElementById('sub');
+function $(id){return document.getElementById(id)}
+function show(id){$(id).style.display='block'}
+function hide(id){$(id).style.display='none'}
 
-const sfxWin  = document.getElementById('sfxWin');
-const sfxShot = document.getElementById('sfxShot');
-const sfxLose = document.getElementById('sfxLose');
-
-async function load(){
-  const r = await fetch(URL+'?_=' + Date.now());
-  const j = await r.json();
-  elVenue.textContent = j.event.venue || 'Venue';
-  elKJ.textContent = 'KJ: ' + (j.event.kj||'');
-  const cur = j.current||{};
-  const state = cur.status||'idle';
-
-  if (state==='voting'){
-    elHead.textContent = (cur.singer? cur.singer : 'Get Ready') + (cur.songArtist ? ' — ' + cur.songArtist : '');
-    elSub.textContent = 'Voting in progress…';
-  } else if (state==='Encore'){
-    elHead.textContent = 'ENCORE!';
-    elSub.textContent = (cur.singer||'') + ' got the Encore!';
-    playWin();
-  } else if (state==='Another Shot'){
-    elHead.textContent = 'Another Shot!';
-    elSub.textContent = (cur.singer||'') + ' gets another chance!';
-    playShot();
-  } else if (state==='Maybe Next Time'){
-    elHead.textContent = 'Maybe Next Time…';
-    elSub.textContent = (cur.singer||'') + ' will be back!';
-    playLose();
-  } else if (state==='waiting' && cur.singer){
-    elHead.textContent = cur.singer + (cur.songArtist ? ' — ' + cur.songArtist : '');
-    elSub.textContent = 'Get ready to vote…';
-  } else {
-    elHead.textContent = 'Welcome!';
-    elSub.textContent = 'Get ready to vote';
+async function fetchState(){
+  const r = await fetch(API+'?action=get',{cache:'no-store'});
+  STATE = await r.json();
+}
+function addBalls(which, n) {
+  const map = {encore:'encBalls', another:'anoBalls', nexttime:'nxtBalls'};
+  const cls = {encore:'green', another:'yellow', nexttime:'red'};
+  const box = $(map[which]);
+  for(let i=0;i<n;i++){
+    const b=document.createElement('div');
+    b.className='ball '+cls[which];
+    b.style.left = (10 + Math.random()*80)+'%';
+    box.appendChild(b);
+    setTimeout(()=>{ if(b.parentNode) b.parentNode.removeChild(b); }, 1800);
   }
+}
+function render(){
+  const s=STATE||{};
+  $('venue').textContent = s.venue || '—';
+  $('kj').textContent = 'with KJ ' + (s.kj || '—');
 
-  // tiny drift to avoid TV sleep
-  document.body.style.transform = `translateY(${Math.sin(Date.now()/20000)*2}px)`;
+  const cur = (s.singers||[]).find(x=>x.id===s.currentSingerId);
 
-  lastStatus = state;
+  if (s.voting?.open && cur && !showingResult) {
+    hide('welcome'); hide('result'); show('nowVoting');
+    $('singerName').textContent = cur.name;
+
+    // play open sound once on transition
+    if (!lastOpen) $('audOpen').play().catch(()=>{});
+    lastOpen = true;
+
+    // counts
+    const e = s.voting.encore||0, a=s.voting.another||0, n=s.voting.nexttime||0;
+    $('enc').textContent=e; $('ano').textContent=a; $('nxt').textContent=n;
+
+    if (e>lastCounts.encore) addBalls('encore', e-lastCounts.encore);
+    if (a>lastCounts.another) addBalls('another', a-lastCounts.another);
+    if (n>lastCounts.nexttime) addBalls('nexttime', n-lastCounts.nexttime);
+    lastCounts={encore:e, another:a, nexttime:n};
+
+    const left = Math.max(0,(s.voting.endsAt||0)-Date.now());
+    $('timer').textContent = Math.ceil(left/1000);
+
+  } else if (!s.voting?.open && s.lastResult && !showingResult) {
+    // voting just ended -> show result banner briefly
+    lastOpen=false;
+    $('audOver').play().catch(()=>{});
+    showingResult=true;
+    hide('welcome'); hide('nowVoting'); show('result');
+    const mapText = {encore:'Encore!', another:'Another Shot!', nexttime:'Maybe Next Time'};
+    const mapCls  = {encore:'encore', another:'another', nexttime:'nexttime'};
+    const res = s.lastResult.result;
+    const banner = $('resultBanner');
+    banner.className = 'banner ' + mapCls[res];
+    banner.textContent = mapText[res];
+
+    if (res==='encore') $('audEncore').play().catch(()=>{});
+    if (res==='nexttime') $('audLoser').play().catch(()=>{});
+
+    // after ~15s go to board for ~15s, then back to welcome
+    setTimeout(()=>{ window.location.href='/board/'; }, 15000);
+    setTimeout(()=>{ showingResult=false; }, 30000);
+
+  } else {
+    lastOpen=false;
+    hide('nowVoting'); hide('result'); show('welcome');
+    const next = (s.singers||[]).find(x=>x.status==='queued');
+    $('vk').textContent = next ? 'Next up:' : 'Welcome to';
+    $('venue').textContent = next ? next.name : (s.venue || '—');
+  }
 }
 
-function playWin(){ if (lastStatus!=='Encore'){ boom(); sfxWin.currentTime=0; sfxWin.play().catch(()=>{});} }
-function playShot(){ if (lastStatus!=='Another Shot'){ sfxShot.currentTime=0; sfxShot.play().catch(()=>{});} }
-function playLose(){ if (lastStatus!=='Maybe Next Time'){ sfxLose.currentTime=0; sfxLose.play().catch(()=>{});} }
-
-// simple confetti
-function boom(){
-  const c = document.getElementById('confetti');
-  const ctx = c.getContext('2d');
-  c.width = innerWidth; c.height= innerHeight;
-  let parts = Array.from({length:160},()=>({
-    x: Math.random()*c.width, y: -20 - Math.random()*200, vy: 2+Math.random()*4, vx: -2+Math.random()*4, s: 2+Math.random()*4
-  }));
-  cancelAnimationFrame(rafId);
-  (function frame(){
-    ctx.clearRect(0,0,c.width,c.height);
-    parts.forEach(p=>{
-      ctx.fillStyle = ['#1dd05d','#f9d64a','#5bc0ff','#ff5d7a'][p.s%4|0];
-      ctx.fillRect(p.x,p.y,p.s,p.s*0.6);
-      p.x += p.vx; p.y += p.vy; p.vy *= 0.99;
-    });
-    rafId = requestAnimationFrame(frame);
-    setTimeout(()=>cancelAnimationFrame(rafId), 2000);
-  })();
+async function loop(){
+  await fetchState();
+  render();
 }
 
-setInterval(load, 2000);
-load();
+// keep screen awake if supported
+(async ()=>{
+  try{
+    if ('wakeLock' in navigator) { await navigator.wakeLock.request('screen'); }
+  }catch(e){}
+  await loop();
+  POLL=setInterval(loop, 2000);
+})();
 </script>
 </body>
 </html>
