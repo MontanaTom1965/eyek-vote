@@ -1,176 +1,49 @@
 <!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>EYEK • Screen</title>
+<meta charset="utf-8"><title>Encore! • Screen</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-  :root{ --purple:#2F0658; --bg:#0e0b14; --ink:#f6f3ff; --muted:#bdb6d5; --accent:#10b981; --warn:#f59e0b; --danger:#ef4444; }
-  html,body{margin:0;height:100%;background:radial-gradient(1200px 600px at 50% 0%, #1f1740, var(--purple) 40%, #0e0b14 80%); color:var(--ink); font:20px/1.4 system-ui,Segoe UI,Roboto;}
-  .wrap{display:grid;place-items:center;min-height:100%}
-  .panel{max-width:1100px; width:92%; text-align:center; padding:24px}
-  h1{font-size:44px;margin:8px 0 4px}
-  .sub{color:var(--muted); margin-bottom:12px}
-  .big{font-size:72px; font-weight:800; letter-spacing:.5px; margin:12px 0}
-  .pill{display:inline-block; padding:10px 16px; border-radius:999px; border:1px solid rgba(255,255,255,.15); background:rgba(0,0,0,.25)}
-  .row{display:flex; gap:14px; justify-content:center; align-items:flex-end; flex-wrap:wrap}
-  .stack{display:flex; flex-direction:column; align-items:center; gap:10px; min-width:160px}
-  .count{font-size:40px; font-weight:800}
-  .balls{display:flex; gap:6px; min-height:40px; flex-wrap:wrap; justify-content:center}
-  .ball{width:16px; height:16px; border-radius:50%; animation: pop .25s ease; opacity:.9}
-  .ball.g{background:var(--accent)}
-  .ball.y{background:var(--warn)}
-  .ball.r{background:var(--danger)}
-  @keyframes pop { from{transform:scale(.2); opacity:0} to{transform:scale(1); opacity:.9} }
-  .timer{font-size:56px; font-weight:800; letter-spacing:1px}
-  .banner{margin-top:20px; font-size:64px; font-weight:900; padding:18px 26px; border-radius:18px; display:inline-block; animation: flash 1s ease infinite alternate}
-  .enc{background:rgba(16,185,129,.2); color:#b7ffdf; border:2px solid #0c7a58}
-  .sho{background:rgba(245,158,11,.2); color:#ffe9ba; border:2px solid #8a5f05}
-  .nope{background:rgba(239,68,68,.2); color:#ffd0d0; border:2px solid #9b1c1c}
-  @keyframes flash {from{filter:saturate(.9) brightness(.9)} to{filter:saturate(1.2) brightness(1.1)}}
+  body{margin:0;background:#0f1526;color:#eaf2ff;font:20px system-ui}
+  .wrap{display:grid;place-items:center;min-height:100svh;text-align:center;padding:4vmin}
+  .title{font-size:6vmin;margin:0 0 2vmin}
+  .venue{font-size:3vmin;color:#9db3ff;margin:0 0 4vmin}
+  .now{font-size:4vmin;margin:0}
+  .song{font-size:3vmin;color:#b9c6ff;margin:1vmin 0 5vmin}
+  .row{display:flex;gap:2vmin;justify-content:center}
+  .chip{padding:1vmin 2vmin;border-radius:12px;border:1px solid #2b3c62;background:#0d1428}
+  .enc{color:#25d366}.ano{color:#f6c945}.may{color:#ff5e6c}
+  .timer{font-size:8vmin;font-weight:800;margin:2vmin 0}
+  .badge{display:inline-block;padding:.5vmin 1.5vmin;border:1px solid #2b3c62;border-radius:999px;background:#0d1428}
 </style>
-</head>
-<body>
-<div class="wrap"><div class="panel">
-  <div id="welcome">
-    <h1>Welcome to <span id="venueName">—</span></h1>
-    <div class="sub">Hosted by <span id="kjName">—</span></div>
+<div class="wrap">
+  <h1 class="title">Encore! Voting</h1>
+  <div id="venue" class="venue">—</div>
+  <div class="now">Now Singing: <b id="who">—</b></div>
+  <div id="song" class="song">—</div>
+  <div id="timer" class="timer">00:00</div>
+  <div class="row">
+    <div class="chip enc">Encore: <b id="cE">0</b></div>
+    <div class="chip ano">Another Shot: <b id="cA">0</b></div>
+    <div class="chip may">Maybe Next Time: <b id="cM">0</b></div>
   </div>
-
-  <div id="nowPlaying" style="display:none">
-    <div class="pill">Now Playing</div>
-    <div class="big" id="nowSinger">—</div>
-    <div class="sub" id="nowNotes"></div>
-  </div>
-
-  <div id="nowVoting" style="display:none">
-    <div class="pill">Now Voting For</div>
-    <div class="big" id="voteSinger">—</div>
-    <div class="row" style="margin-top:16px">
-      <div class="stack">
-        <div>Encore!</div>
-        <div class="count" id="ce">0</div>
-        <div class="balls" id="be"></div>
-      </div>
-      <div class="stack">
-        <div>Another Shot!</div>
-        <div class="count" id="ca">0</div>
-        <div class="balls" id="ba"></div>
-      </div>
-      <div class="stack">
-        <div>Maybe Next Time</div>
-        <div class="count" id="cm">0</div>
-        <div class="balls" id="bm"></div>
-      </div>
-    </div>
-    <div class="timer" id="t"></div>
-  </div>
-
-  <div id="result" style="display:none">
-    <div class="banner" id="rb">—</div>
-  </div>
-</div></div>
-
-<!-- Audio -->
-<audio id="sndOpen"   src="https://vote.earnyourencorekaraoke.com/assets/voting_open.mp3" preload="auto"></audio>
-<audio id="sndOver"   src="https://vote.earnyourencorekaraoke.com/assets/voting_over.mp3" preload="auto"></audio>
-<audio id="sndEncore" src="https://vote.earnyourencorekaraoke.com/assets/encore.mp3" preload="auto"></audio>
-<audio id="sndNope"   src="https://vote.earnyourencorekaraoke.com/assets/loser.wav" preload="auto"></audio>
-
+  <div style="margin-top:3vmin"><span id="status" class="badge">Waiting…</span></div>
+</div>
 <script>
-const BASE = location.origin + '/assets';
-const STATE_URL = BASE + '/status.json';
-let S=null, lastState='', lastEnds=0;
-
-const qs = s=>document.querySelector(s);
-const venueName=qs('#venueName'), kjName=qs('#kjName');
-const welcome=qs('#welcome'), nowPlaying=qs('#nowPlaying'), nowVoting=qs('#nowVoting'), result=qs('#result');
-const nowSinger=qs('#nowSinger'), nowNotes=qs('#nowNotes');
-const voteSinger=qs('#voteSinger');
-const ce=qs('#ce'), ca=qs('#ca'), cm=qs('#cm');
-const be=qs('#be'), ba=qs('#ba'), bm=qs('#bm');
-const timerEl=qs('#t'); const rb=qs('#rb');
-
-const sndOpen = qs('#sndOpen'), sndOver=qs('#sndOver'), sndEncore=qs('#sndEncore'), sndNope=qs('#sndNope');
-
-function now(){ return Math.floor(Date.now()/1000) }
-function pickResult(c){ const e=c.encore|0, a=c.another|0, m=c.maybe|0; if(e===0&&a===0&&m===0)return null; if(e>=a&&e>=m)return'enc'; if(a>=e&&a>=m)return'sho'; return'nope'; }
-
-function addBalls(el, count, klass){
-  const have = el.children.length;
-  for(let i=have;i<count;i++){
-    const b=document.createElement('div'); b.className='ball '+klass; el.appendChild(b);
-  }
-  // (don’t shrink; we only grow)
-}
-
-function render(){
-  venueName.textContent = S.event.venue||'—';
-  kjName.textContent = S.event.kj||'—';
-
-  // sections
-  const hasCurrent = S.currentIndex>=0 && S.singers[S.currentIndex];
-  const st = S.voting.state;
-
-  welcome.style.display = hasCurrent ? 'none':'block';
-  nowPlaying.style.display = (hasCurrent && st!=='open' && st!=='closed') ? 'block':'none';
-  nowVoting.style.display = (st==='open') ? 'block':'none';
-  result.style.display    = (st==='closed') ? 'block':'none';
-
-  if (hasCurrent){
-    const sg = S.singers[S.currentIndex];
-    nowSinger.textContent = sg.name;
-    nowNotes.textContent  = sg.notes||'';
-    voteSinger.textContent= sg.name;
-  }
-
-  // voting visuals
-  ce.textContent = S.voting.counts.encore|0;
-  ca.textContent = S.voting.counts.another|0;
-  cm.textContent = S.voting.counts.maybe|0;
-
-  addBalls(be, S.voting.counts.encore|0, 'g');
-  addBalls(ba, S.voting.counts.another|0,'y');
-  addBalls(bm, S.voting.counts.maybe|0,  'r');
-
-  if (st==='open' && S.voting.endsAt>now()){
-    timerEl.textContent = (S.voting.endsAt-now())+'s';
-  } else if (st==='open'){
-    timerEl.textContent = '0s';
-  }
-
-  if (st==='closed'){
-    const res = pickResult(S.voting.counts);
-    if (res==='enc'){ rb.className='banner enc'; rb.textContent='Encore!';}
-    else if (res==='sho'){ rb.className='banner sho'; rb.textContent='Another Shot!';}
-    else { rb.className='banner nope'; rb.textContent='Maybe Next Time';}
-  }
-}
-
+const GET_URL='/assets/get_state.php';
+const $=s=>document.querySelector(s);
+function fmt(ms){ const s=Math.ceil(ms/1000); const m=Math.floor(s/60), r=s%60; return `${String(m).padStart(2,'0')}:${String(r).padStart(2,'0')}` }
+let state=null;
 async function tick(){
-  try{
-    const j = await fetch(STATE_URL+'?t='+Date.now()).then(r=>r.json());
-    const prev = S;
-    S=j; render();
-
-    // sound cues: rely on host toggle (shared flag)
-    const soundsOn = !!S.soundsEnabled;
-
-    // transitions (open/close)
-    if (prev){
-      if (prev.voting.state!=='open' && S.voting.state==='open'){ if (soundsOn){ try{sndOpen.currentTime=0; sndOpen.play()}catch{}} }
-      if (prev.voting.state!=='closed' && S.voting.state==='closed'){
-        if (soundsOn){ try{sndOver.currentTime=0; sndOver.play()}catch{} }
-        const res = pickResult(S.voting.counts);
-        if (soundsOn){
-          if (res==='enc'){ try{sndEncore.currentTime=0; sndEncore.play()}catch{} }
-          else if (res==='nope'){ try{sndNope.currentTime=0; sndNope.play()}catch{} }
-        }
-      }
-    }
-  }catch(e){}
+  const r=await fetch(GET_URL,{cache:'no-store'}); state=await r.json();
+  $('#venue').textContent = state.event?.venuePublic || state.event?.venue || '—';
+  $('#who').textContent   = state.current?.name || '—';
+  $('#song').textContent  = state.current?.songArtist || '—';
+  const open = !!state.voting?.open;
+  $('#cE').textContent = state.voting?.counts?.encore  ?? 0;
+  $('#cA').textContent = state.voting?.counts?.another ?? 0;
+  $('#cM').textContent = state.voting?.counts?.maybe   ?? 0;
+  $('#status').textContent = open ? 'Voting OPEN' :
+    (state.voting?.lastResult ? (state.voting.lastResult==='encore'?'Winner: Encore!':state.voting.lastResult==='another'?'Winner: Another Shot!':'Winner: Maybe Next Time') : 'Waiting…');
+  if(open){ const ms=Math.max(0,(state.voting.endsAt||0)-Date.now()); $('#timer').textContent=fmt(ms); } else { $('#timer').textContent='00:00'; }
 }
-render();
-setInterval(tick, 1000);
+setInterval(tick, 800); tick();
 </script>
-</body>
-</html>
