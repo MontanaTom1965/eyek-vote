@@ -2,532 +2,446 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>EYEK • Host</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#0c0c12;
-    --panel:#12121b;
-    --panel-2:#171728;
-    --accent:#2F0658;           /* your purple */
-    --accent-2:#7a2fd1;
-    --text:#f7f7fb;
-    --muted:#9aa1b6;
-    --ok:#20c997;
-    --warn:#ffd24d;
-    --err:#ff6b6b;
-    --card:#11111a;
-    --line:#23233a;
-    --chip:#1b1b2c;
+    --purple:#2F0658; /* your purple */
+    --bg:#0e0b14;
+    --card:#151225;
+    --muted:#8d86a5;
+    --accent:#10b981; /* green */
+    --warn:#f59e0b;   /* yellow */
+    --danger:#ef4444; /* red */
+    --ink:#e6e1f5;
   }
-  *{box-sizing:border-box}
-  body{
-    margin:0;
-    background: radial-gradient(1200px 800px at 10% -10%, #1a0d2c 0%, transparent 60%),
-                radial-gradient(1200px 800px at 110% 0%, #130d2c 0%, transparent 55%),
-                var(--bg);
-    color:var(--text);
-    font-family:Montserrat, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
-  }
-  a{color:inherit}
-  .wrap{display:grid; grid-template-columns: 290px 1fr; gap:18px; padding:18px; max-width:1400px; margin:0 auto;}
-  .sidebar{background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:14px; position:sticky; top:12px; height:calc(100dvh - 24px); overflow:auto;}
-  .main{display:grid; gap:18px;}
-  .card{background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:16px;}
-  .card h2{font-size:18px; margin:0 0 10px; letter-spacing:.2px}
-  .row{display:flex; gap:12px; align-items:center; flex-wrap:wrap}
-  .grid-2{display:grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap:14px}
-  .label{font-size:12px; color:var(--muted); margin-bottom:6px}
-  input[type="text"], input[type="number"]{
-    width:100%; background:var(--card); color:var(--text);
-    border:1px solid var(--line); border-radius:10px; padding:10px 12px; outline:none;
-  }
-  input:focus{border-color:var(--accent-2); box-shadow:0 0 0 2px #2f065855}
-  .btn{
-    background:linear-gradient(180deg, var(--accent), #220443);
-    padding:10px 14px; border-radius:12px; border:1px solid #3e1781;
-    color:#f5eaff; font-weight:700; letter-spacing:.2px; cursor:pointer;
-  }
-  .btn.secondary{background:var(--chip); border-color:var(--line); color:#e8e8ff}
-  .btn.ghost{background:transparent; border:1px solid var(--line); color:#dcdcf3}
-  .btn.warn{background:linear-gradient(180deg, #76510b, #4d3708); border-color:#8b680f}
-  .btn.ok{background:linear-gradient(180deg, #0b6d4d, #084c37); border-color:#12996e}
-  .section-title{display:flex; gap:8px; align-items:center; justify-content:space-between; margin-bottom:8px}
-  .chip{display:inline-flex; align-items:center; gap:8px; padding:6px 10px; border-radius:999px; background:var(--chip); color:#eaeaff; border:1px solid var(--line); font-size:12px}
-  .switch{display:flex; align-items:center; gap:10px}
-  .switch input{appearance:none; width:44px; height:24px; background:#3b3b56; border-radius:999px; position:relative; outline:none; cursor:pointer}
-  .switch input:checked{background:#3e1781}
-  .switch input:before{content:""; width:18px; height:18px; border-radius:50%; background:#fff; position:absolute; top:3px; left:3px; transition:.2s}
-  .switch input:checked:before{left:23px}
-  .singers{display:flex; flex-direction:column; gap:8px}
-  .singer{
-    display:grid; grid-template-columns: 20px 1fr auto; gap:10px; align-items:center;
-    padding:10px; border:1px solid var(--line); border-radius:12px; background:var(--panel-2);
-  }
-  .bullet{width:10px; height:10px; border-radius:50%}
-  .bullet.green{background:var(--ok)}
-  .bullet.yellow{background:var(--warn)}
-  .singer-name{font-weight:700}
-  .singer-actions{display:flex; gap:8px}
-  .collapsible{border-radius:14px; overflow:hidden; border:1px solid var(--line)}
-  .collapsible summary{
-    list-style:none; cursor:pointer; padding:14px 16px; background:linear-gradient(180deg, #1a1430, #121226);
-    border-bottom:1px solid var(--line); font-weight:700; display:flex; justify-content:space-between; align-items:center;
-  }
-  .collapsible summary::marker{display:none}
-  .collapsible .content{padding:16px; background:var(--panel)}
-  .bar{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
-  .timer{font-size:28px; font-weight:800; letter-spacing:.5px}
-  .readout{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
-  .readout .box{
-    background:var(--card); border:1px solid var(--line); border-radius:12px; padding:10px 12px; min-width:120px; text-align:center;
-  }
+  html,body{margin:0;height:100%;background:linear-gradient(160deg,var(--purple) 0%, #1a1330 40%, #0e0b14 100%); color:var(--ink); font:16px/1.4 system-ui,Segoe UI,Roboto,Helvetica,Arial;}
+  .wrap{display:grid; grid-template-columns: 320px 1fr; gap:16px; padding:16px; min-height:100%;}
+  .card{background:var(--card); border:1px solid #2a2541; border-radius:16px; padding:14px; box-shadow:0 6px 24px rgba(0,0,0,.35)}
+  h1{margin:0 0 6px; font-size:20px}
+  h2{margin:12px 0 8px; font-size:16px; color:#cfc7e8}
+  .row{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+  input,select,button{border-radius:10px; border:1px solid #2e2748; background:#1b1630; color:var(--ink); padding:10px 12px; outline:none}
+  input:disabled{opacity:.6}
+  button{cursor:pointer}
+  .btn{background:#2a2049}
+  .btn.primary{background:var(--accent); color:#062016; border-color:#0c7a58}
+  .btn.warn{background:var(--warn); color:#3a2502; border-color:#8a5f05}
+  .btn.ghost{background:transparent}
+  .btn.danger{background:var(--danger); color:#3d0a0a; border-color:#9b1c1c}
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+  .grid3{display:grid; grid-template-columns:repeat(3,1fr); gap:10px}
+  .pill{display:inline-block; padding:6px 10px; border-radius:999px; border:1px solid #3a315e; background:#140f25; font-size:13px}
+  details>summary{cursor:pointer; padding:6px 8px; background:#1d1733; border:1px solid #30284d; border-radius:10px; user-select:none}
+  details .body{margin-top:10px}
   .muted{color:var(--muted)}
+  .sidebar h2{margin-top:0}
+  .singer{display:grid; grid-template-columns: 18px 1fr auto auto; align-items:center; gap:10px; padding:8px; border-radius:12px; border:1px solid #2a2541; background:#17132b; margin-bottom:8px}
+  .dot{width:12px;height:12px;border-radius:50%}
+  .dot.gray{background:#4b4564}
+  .dot.green{background:var(--accent)}
+  .dot.yellow{background:var(--warn)}
+  .timerBox{display:flex; gap:10px; align-items:center; padding:8px 10px; border:1px dashed #3a315e; border-radius:12px; background:#141127; min-height:46px}
+  .resultChip{min-width:130px; text-align:center; font-weight:700; border-radius:999px; padding:8px 12px; border:1px solid #3a315e}
+  .enc{background:rgba(16,185,129,.2); color:#b7ffdf; border-color:#0c7a58}
+  .sho{background:rgba(245,158,11,.2); color:#ffe9ba; border-color:#8a5f05}
+  .nope{background:rgba(239,68,68,.2); color:#ffd0d0; border-color:#9b1c1c}
   .mini{font-size:12px}
-  .success{color:var(--ok)}
-  .warn-txt{color:var(--warn)}
-  .err-txt{color:var(--err)}
-  .divider{height:1px; background:var(--line); margin:8px 0}
-  @media (max-width:1100px){
-    .wrap{grid-template-columns:1fr}
-    .sidebar{position:relative; height:auto}
-  }
+  .split{display:grid; grid-template-columns: 1fr auto; gap:10px; align-items:center}
+  .stickyTop{position:sticky; top:16px}
 </style>
 </head>
 <body>
-  <div class="wrap">
-    <!-- LEFT: Singer queue -->
-    <aside class="sidebar">
-      <div class="section-title">
-        <h2 style="margin:0">Singers</h2>
-        <span class="chip">Queue</span>
+<div class="wrap">
+  <!-- Sidebar -->
+  <aside class="card sidebar stickyTop">
+    <h1>Singers</h1>
+    <div id="singerList"></div>
+  </aside>
+
+  <!-- Main -->
+  <main class="card">
+    <div class="split">
+      <h1>Host Console</h1>
+      <label class="row mini"><input type="checkbox" id="soundsEnabled"> Enable Sounds</label>
+    </div>
+
+    <!-- Event Setup (collapsible) -->
+    <details id="eventDetails" open>
+      <summary><strong>Event Setup</strong> <span class="muted mini">(venue & KJ)</span></summary>
+      <div class="body">
+        <div class="grid2">
+          <div>
+            <label class="mini muted">Venue</label>
+            <div class="row">
+              <select id="venueSaved"></select>
+              <input id="venue" placeholder="Venue name">
+            </div>
+          </div>
+          <div>
+            <label class="mini muted">KJ</label>
+            <div class="row">
+              <select id="kjSaved"></select>
+              <input id="kj" placeholder="KJ name">
+            </div>
+          </div>
+        </div>
+        <div class="row" style="margin-top:10px">
+          <button class="btn" id="lockBtn">Lock Info</button>
+          <button class="btn primary" id="saveEventBtn">Save</button>
+          <button class="btn danger" id="resetEventBtn" title="Wipe current event data">Reset Event</button>
+        </div>
+        <div class="mini muted" id="eventStatus" style="margin-top:6px"></div>
       </div>
+    </details>
 
-      <div id="singers" class="singers"></div>
+    <!-- Singer section -->
+    <h2>Singer</h2>
+    <div class="grid2">
+      <input id="singerName" placeholder="Singer name">
+      <input id="songArtist" placeholder="Song / Artist (optional)">
+    </div>
+    <div class="row" style="margin-top:8px">
+      <button class="btn primary" id="addSingerBtn">Add Singer</button>
+    </div>
 
-      <div class="divider"></div>
-
-      <div class="label">Add singer (name only)</div>
+    <!-- Current & Voting -->
+    <h2 style="margin-top:16px">Current & Voting</h2>
+    <div class="card" style="background:#100c1e;border-color:#2a2541">
       <div class="row">
-        <input id="newSingerName" type="text" placeholder="Singer name…" />
-        <button class="btn secondary" id="addSingerBtn">Add Singer</button>
+        <div class="pill" id="currentSingerPill">No singer selected</div>
       </div>
-
-      <p class="mini muted" style="margin-top:10px">
-        • Bullet left of name: <span class="success">green</span>=Encore! indicator, <span class="warn-txt">yellow</span>=Another Shot! indicator (visual only).<br/>
-        • Use <b>Set</b> to make them current. <b>Remove</b> deletes from the queue.
-      </p>
-    </aside>
-
-    <!-- RIGHT: Main panels -->
-    <main class="main">
-
-      <!-- Top bar -->
-      <div class="row" style="justify-content:space-between">
-        <div class="row">
-          <span class="chip">Host Console</span>
-          <a class="chip" href="/screen/" target="_blank">Open Screen</a>
-          <a class="chip" href="/vote/" target="_blank">Open Voter Page</a>
-          <a class="chip" href="/board/" target="_blank">Open Board</a>
+      <div class="row" style="margin-top:10px">
+        <div class="timerBox" id="timerBox">
+          <div><strong>Timer:</strong> <span id="timerText" class="pill">--</span></div>
+          <div class="pill">Encore: <span id="cEncore">0</span></div>
+          <div class="pill">Another: <span id="cAnother">0</span></div>
+          <div class="pill">Maybe: <span id="cMaybe">0</span></div>
         </div>
-        <label class="switch">
-          <input type="checkbox" id="soundToggle">
-          <span class="mini">Enable sound</span>
-        </label>
+        <div class="resultChip" id="resultChip">—</div>
       </div>
+      <div class="row" style="margin-top:10px">
+        <button class="btn primary" id="startVoteBtn">Start 30s Vote</button>
+        <button class="btn warn" id="extendBtn">+15s</button>
+        <button class="btn danger" id="endVoteBtn">End Now</button>
+      </div>
+      <h2 style="margin-top:16px">Host Vote</h2>
+      <div class="row">
+        <button class="btn" id="hostVoteEncore">Encore!</button>
+        <button class="btn" id="hostVoteAnother">Another Shot!</button>
+        <button class="btn" id="hostVoteMaybe">Maybe Next Time</button>
+      </div>
+    </div>
+  </main>
+</div>
 
-      <!-- Collapsible: Event Setup -->
-      <details id="eventSetup" class="collapsible" open>
-        <summary>
-          <span>Event Setup</span>
-          <span class="mini muted">click to collapse</span>
-        </summary>
-        <div class="content">
-          <div class="grid-2">
-            <div>
-              <div class="label">Venue</div>
-              <input id="venue" type="text" placeholder="Venue name…" />
-            </div>
-            <div>
-              <div class="label">KJ / Host</div>
-              <input id="kj" type="text" placeholder="KJ name…" />
-            </div>
-          </div>
-          <div class="row" style="margin-top:12px; justify-content:flex-end">
-            <button class="btn" id="saveEventBtn">Save Event</button>
-          </div>
-        </div>
-      </details>
-
-      <!-- Singer Section -->
-      <section class="card">
-        <div class="section-title">
-          <h2>Singer</h2>
-          <span class="chip">Current & Add</span>
-        </div>
-
-        <div class="grid-2">
-          <div>
-            <div class="label">Singer</div>
-            <input id="currentSingerName" type="text" placeholder="(Set from sidebar or type here…)" />
-          </div>
-          <div>
-            <div class="label">Song / Artist</div>
-            <input id="currentSong" type="text" placeholder="e.g., “Tennessee Whiskey – Chris Stapleton”" />
-          </div>
-        </div>
-
-        <div class="row" style="margin-top:12px; justify-content:flex-end">
-          <button class="btn secondary" id="clearCurrentBtn">Clear Current</button>
-          <button class="btn ok" id="pushCurrentToQueueBtn">Add to Queue</button>
-          <button class="btn" id="setCurrentBtn">Set As Current</button>
-        </div>
-      </section>
-
-      <!-- Voting Section -->
-      <section class="card">
-        <div class="section-title">
-          <h2>Voting</h2>
-          <span class="chip">Control</span>
-        </div>
-
-        <div class="row" style="justify-content:space-between; align-items:center">
-          <div class="readout">
-            <div class="box">
-              <div class="mini muted">Timer</div>
-              <div class="timer" id="timer">00:30</div>
-            </div>
-            <div class="box">
-              <div class="mini muted">Votes</div>
-              <div id="voteCounts">Encore 0 • Shot 0 • Next 0</div>
-            </div>
-            <div class="box" id="voteResultBox" style="display:none">
-              <div class="mini muted">Result</div>
-              <div id="voteResultText" style="font-weight:800">—</div>
-            </div>
-          </div>
-
-          <div class="bar">
-            <button class="btn" id="startVoteBtn">Start (30s)</button>
-            <button class="btn secondary" id="extendVoteBtn">+15s</button>
-            <button class="btn warn" id="endVoteBtn">End Now</button>
-            <button class="btn ghost" id="resetVoteBtn">Reset</button>
-          </div>
-        </div>
-
-        <div class="divider"></div>
-
-        <div class="section-title" style="margin-top:6px">
-          <h2>Host Vote</h2>
-          <span class="chip">Optional</span>
-        </div>
-
-        <div class="row">
-          <button class="btn ok" id="hostEncoreBtn">Encore!</button>
-          <button class="btn" style="background:linear-gradient(180deg,#6f5c1b,#4b3f13);border-color:#9a8227" id="hostShotBtn">Another Shot!</button>
-          <button class="btn" style="background:linear-gradient(180deg,#5e1f1f,#3f1515);border-color:#8a2f2f" id="hostNextBtn">Maybe Next Time</button>
-        </div>
-
-      </section>
-
-      <!-- Footer tools -->
-      <section class="card">
-        <div class="section-title">
-          <h2>Tools</h2>
-          <span class="chip">Maintenance</span>
-        </div>
-        <div class="row">
-          <button class="btn warn" id="resetEventBtn">Reset Event (venue, KJ, queue, tallies)</button>
-        </div>
-      </section>
-    </main>
-  </div>
+<!-- Audio -->
+<audio id="sndOpen"   src="https://vote.earnyourencorekaraoke.com/assets/voting_open.mp3" preload="auto"></audio>
+<audio id="sndOver"   src="https://vote.earnyourencorekaraoke.com/assets/voting_over.mp3" preload="auto"></audio>
+<audio id="sndEncore" src="https://vote.earnyourencorekaraoke.com/assets/encore.mp3" preload="auto"></audio>
+<audio id="sndNope"   src="https://vote.earnyourencorekaraoke.com/assets/loser.wav" preload="auto"></audio>
 
 <script>
-/* ---------- State (localStorage-first; your screen/vote pages can keep polling your shared JSON if you have that wired) ---------- */
-const LS_KEY = "eyek_state_v3";
-const el = id => document.getElementById(id);
+/*** CONFIG ***/
+const BASE = location.origin + '/assets';
+const STATE_URL = BASE + '/status.json';
+const SAVE_URL  = BASE + '/save.php';
+const TOKEN = 'CHANGE_ME_LONG_RANDOM_TOKEN'; // <- must match save.php
 
-const state = {
-  venue: "",
-  kj: "",
-  current: { singer:"", song:"" },
-  queue: [], // [{id, name, color:'green'|'yellow'}]
-  voting: {
-    open:false,
-    // seconds remaining on timer
-    remaining: 30,
-    // tallies
-    encore:0, shot:0, next:0,
-    ended:false, result:null  // "Encore" | "Another Shot" | "Maybe Next Time" | null
-  },
-  soundEnabled:false
+/*** ELEMENTS ***/
+const venueEl = document.getElementById('venue');
+const venueSavedEl = document.getElementById('venueSaved');
+const kjEl = document.getElementById('kj');
+const kjSavedEl = document.getElementById('kjSaved');
+const saveEventBtn = document.getElementById('saveEventBtn');
+const lockBtn = document.getElementById('lockBtn');
+const resetEventBtn = document.getElementById('resetEventBtn');
+const eventStatus = document.getElementById('eventStatus');
+
+const singerList = document.getElementById('singerList');
+const singerNameEl = document.getElementById('singerName');
+const songArtistEl = document.getElementById('songArtist');
+const addSingerBtn = document.getElementById('addSingerBtn');
+
+const currentSingerPill = document.getElementById('currentSingerPill');
+const timerText = document.getElementById('timerText');
+const cEncore = document.getElementById('cEncore');
+const cAnother = document.getElementById('cAnother');
+const cMaybe = document.getElementById('cMaybe');
+const startVoteBtn = document.getElementById('startVoteBtn');
+const extendBtn = document.getElementById('extendBtn');
+const endVoteBtn = document.getElementById('endVoteBtn');
+const resultChip = document.getElementById('resultChip');
+
+const soundsEnabledEl = document.getElementById('soundsEnabled');
+const sndOpen = document.getElementById('sndOpen');
+const sndOver = document.getElementById('sndOver');
+const sndEncore = document.getElementById('sndEncore');
+const sndNope = document.getElementById('sndNope');
+
+/*** STATE ***/
+let S = null;
+let tickHandle=null;
+let lastSeenEnds=0;
+
+/*** UTIL ***/
+const ls = {
+  get(k,def){ try{ return JSON.parse(localStorage.getItem(k)) ?? def }catch{ return def } },
+  set(k,v){ localStorage.setItem(k,JSON.stringify(v)) }
+};
+function now(){ return Math.floor(Date.now()/1000) }
+async function load(){ const r=await fetch(STATE_URL+'?t='+Date.now()); return await r.json(); }
+async function save(next){
+  next.lastChange = Date.now();
+  const r = await fetch(SAVE_URL, {
+    method:'POST',
+    headers:{'Content-Type':'application/json','X-Auth':TOKEN},
+    body: JSON.stringify(next)
+  });
+  const j = await r.json();
+  if(!j.ok) throw new Error(j.error||'save failed');
+  S = next;
+  render();
+}
+function fmtSec(s){ return `${s}s`; }
+function pickResult(counts){
+  const e = counts.encore|0, a = counts.another|0, m = counts.maybe|0;
+  if (e===0 && a===0 && m===0) return null;
+  if (e>=a && e>=m) return 'enc';
+  if (a>=e && a>=m) return 'sho';
+  return 'nope';
+}
+
+/*** SAVED VENUES/KJs ***/
+function loadSavedLists(){
+  const venues = ls.get('eyek_venues',[]);
+  const kjs    = ls.get('eyek_kjs',[]);
+  fillSelect(venueSavedEl, venues);
+  fillSelect(kjSavedEl, kjs);
+}
+function fillSelect(sel, arr){
+  sel.innerHTML = '<option value="">(saved)</option>' + arr.map(v=>`<option>${v}</option>`).join('');
+}
+function addToSaved(listKey, value){
+  if(!value) return;
+  const arr = ls.get(listKey,[]);
+  if(!arr.includes(value)) { arr.push(value); ls.set(listKey,arr); }
+}
+
+/*** RENDER ***/
+function render(){
+  // Event widgets
+  venueEl.value = S.event.venue || '';
+  kjEl.value = S.event.kj || '';
+  const locked = !!S.event.locked;
+  venueEl.disabled = kjEl.disabled = locked;
+  saveEventBtn.disabled = false;
+  lockBtn.textContent = locked ? 'Unlock Info' : 'Lock Info';
+  eventStatus.textContent = `Event: ${S.event.venue||'—'} • KJ: ${S.event.kj||'—'} • ${locked?'Locked':'Unlocked'}`;
+
+  // Singers list (sidebar)
+  singerList.innerHTML = '';
+  S.singers.forEach((sg, idx)=>{
+    const row = document.createElement('div');
+    row.className='singer';
+
+    const dot = document.createElement('div');
+    dot.className='dot gray';
+    row.appendChild(dot);
+
+    const name = document.createElement('div');
+    name.textContent = sg.name;
+    row.appendChild(name);
+
+    const setBtn = document.createElement('button');
+    setBtn.className='btn mini'; setBtn.textContent='Set';
+    setBtn.onclick = ()=> setCurrent(idx);
+    row.appendChild(setBtn);
+
+    const delBtn = document.createElement('button');
+    delBtn.className='btn danger mini'; delBtn.textContent='Remove';
+    delBtn.onclick = ()=> removeSinger(idx);
+    row.appendChild(delBtn);
+
+    singerList.appendChild(row);
+  });
+
+  // Current singer pill
+  if (S.currentIndex>=0 && S.singers[S.currentIndex]) {
+    const sg = S.singers[S.currentIndex];
+    const notes = sg.notes ? ` • ${sg.notes}` : '';
+    currentSingerPill.textContent = `Now: ${sg.name}${notes}`;
+  } else {
+    currentSingerPill.textContent = 'No singer selected';
+  }
+
+  // Voting counters
+  cEncore.textContent = S.voting.counts.encore|0;
+  cAnother.textContent= S.voting.counts.another|0;
+  cMaybe.textContent  = S.voting.counts.maybe|0;
+
+  // Timer + result chip
+  const t = now();
+  if (S.voting.state==='open' && S.voting.endsAt>t) {
+    timerText.textContent = fmtSec(S.voting.endsAt - t);
+    resultChip.textContent = '…';
+    resultChip.className = 'resultChip';
+  } else if (S.voting.state==='open' && S.voting.endsAt<=t){
+    // grace: mark as closed on next poll to avoid instant flip if offline
+    timerText.textContent = '0s';
+    resultChip.textContent = '…';
+    resultChip.className = 'resultChip';
+  } else if (S.voting.state==='closed') {
+    timerText.textContent = '--';
+    const res = pickResult(S.voting.counts);
+    if (res==='enc'){ resultChip.textContent='Encore!'; resultChip.className='resultChip enc';}
+    else if (res==='sho'){ resultChip.textContent='Another Shot!'; resultChip.className='resultChip sho';}
+    else { resultChip.textContent='Maybe Next Time'; resultChip.className='resultChip nope';}
+  } else {
+    timerText.textContent='--';
+    resultChip.textContent='—';
+    resultChip.className='resultChip';
+  }
+
+  // sounds toggle
+  soundsEnabledEl.checked = !!S.soundsEnabled;
+}
+
+/*** ACTIONS ***/
+function assertCurrent(){ if(!(S.currentIndex>=0 && S.singers[S.currentIndex])){ alert('Set a current singer first.'); throw 0; } }
+
+async function setCurrent(idx){
+  const next = structuredClone(S);
+  next.currentIndex = idx;
+  await save(next);
+}
+
+async function removeSinger(idx){
+  const next = structuredClone(S);
+  next.singers.splice(idx,1);
+  if (next.currentIndex===idx) next.currentIndex=-1;
+  else if (next.currentIndex>idx) next.currentIndex--;
+  await save(next);
+}
+
+async function addSinger(){
+  const name = singerNameEl.value.trim();
+  if (!name) return;
+  const notes = songArtistEl.value.trim();
+  const next = structuredClone(S);
+  next.singers.push({name, notes});
+  singerNameEl.value=''; songArtistEl.value='';
+  await save(next);
+}
+
+async function startVote(){
+  assertCurrent();
+  const next = structuredClone(S);
+  next.voting.state='open';
+  next.voting.endsAt = now()+30;
+  next.voting.counts = {encore:0, another:0, maybe:0};
+  await save(next);
+  playIf(sndOpen);
+}
+
+async function extendVote(){
+  if (S.voting.state!=='open') return;
+  const next = structuredClone(S);
+  next.voting.endsAt += 15;
+  await save(next);
+}
+
+async function endVote(){
+  if (S.voting.state==='closed') return;
+  const next = structuredClone(S);
+  next.voting.state='closed';
+  // decide result -> screen will animate; we just show chip; sound on screen too
+  await save(next);
+  playIf(sndOver);
+}
+
+async function hostVote(which){
+  // host vote just increments tallies if voting open
+  if (S.voting.state!=='open') return;
+  const next = structuredClone(S);
+  if (which==='encore') next.voting.counts.encore++;
+  if (which==='another') next.voting.counts.another++;
+  if (which==='maybe') next.voting.counts.maybe++;
+  await save(next);
+}
+
+async function saveEvent(){
+  const next = structuredClone(S);
+  next.event.venue = venueEl.value.trim();
+  next.event.kj    = kjEl.value.trim();
+  addToSaved('eyek_venues', next.event.venue);
+  addToSaved('eyek_kjs', next.event.kj);
+  await save(next);
+  loadSavedLists();
+}
+
+async function toggleLock(){
+  const next = structuredClone(S);
+  next.event.locked = !next.event.locked;
+  await save(next);
+}
+
+async function resetEvent(){
+  if (!confirm('Reset current event? This clears singers, current, and tallies.')) return;
+  const next = structuredClone(S);
+  next.singers = [];
+  next.currentIndex = -1;
+  next.voting = {state:'idle', endsAt:0, counts:{encore:0, another:0, maybe:0}};
+  await save(next);
+}
+
+/*** SOUND ***/
+function playIf(a){ if (S.soundsEnabled) { a.currentTime=0; a.play().catch(()=>{}); } }
+
+/*** WIRING ***/
+addSingerBtn.onclick = addSinger;
+startVoteBtn.onclick = startVote;
+extendBtn.onclick = extendVote;
+endVoteBtn.onclick = endVote;
+saveEventBtn.onclick = saveEvent;
+lockBtn.onclick = toggleLock;
+resetEventBtn.onclick = resetEvent;
+
+document.getElementById('hostVoteEncore').onclick = ()=>hostVote('encore');
+document.getElementById('hostVoteAnother').onclick= ()=>hostVote('another');
+document.getElementById('hostVoteMaybe').onclick  = ()=>hostVote('maybe');
+
+venueSavedEl.onchange = ()=>{ if(venueSavedEl.value) venueEl.value = venueSavedEl.value; };
+kjSavedEl.onchange    = ()=>{ if(kjSavedEl.value) kjEl.value = kjSavedEl.value; };
+soundsEnabledEl.onchange = async ()=>{
+  const next = structuredClone(S);
+  next.soundsEnabled = soundsEnabledEl.checked;
+  await save(next);
 };
 
-function load(){
+/*** POLL LOOP ***/
+async function tick(){
   try{
-    const raw = localStorage.getItem(LS_KEY);
-    if(!raw) return;
-    const s = JSON.parse(raw);
-    Object.assign(state, s);
-  }catch(_){}
-}
-function save(){
-  localStorage.setItem(LS_KEY, JSON.stringify(state));
-}
-
-/* ---------- Render helpers ---------- */
-function renderEvent(){
-  el("venue").value = state.venue || "";
-  el("kj").value    = state.kj || "";
-}
-
-function renderCurrent(){
-  el("currentSingerName").value = state.current.singer || "";
-  el("currentSong").value       = state.current.song || "";
-}
-
-function bullet(color){
-  const span = document.createElement("span");
-  span.className = "bullet " + (color || "green");
-  return span;
-}
-
-function singerRow(item){
-  const row = document.createElement("div");
-  row.className = "singer";
-  row.dataset.id = item.id;
-
-  const b = bullet(item.color || "green");
-  const name = document.createElement("div");
-  name.className = "singer-name";
-  name.textContent = item.name;
-
-  const actions = document.createElement("div");
-  actions.className = "singer-actions";
-
-  const setBtn = document.createElement("button");
-  setBtn.className = "btn secondary";
-  setBtn.textContent = "Set";
-  setBtn.onclick = () => {
-    state.current.singer = item.name;
-    renderCurrent();
-    save();
-    // optional: broadcastCurrent();
-  };
-
-  const remBtn = document.createElement("button");
-  remBtn.className = "btn ghost";
-  remBtn.textContent = "Remove";
-  remBtn.onclick = () => {
-    state.queue = state.queue.filter(q => q.id !== item.id);
-    renderQueue();
-    save();
-  };
-
-  actions.append(setBtn, remBtn);
-  row.append(b, name, actions);
-  return row;
-}
-
-function renderQueue(){
-  const box = el("singers");
-  box.innerHTML = "";
-  if(!state.queue.length){
-    const p = document.createElement("p");
-    p.className = "mini muted";
-    p.textContent = "No singers yet. Add one below.";
-    box.append(p);
-    return;
-  }
-  state.queue.forEach(item => box.append(singerRow(item)));
-}
-
-function renderVoting(){
-  // timer
-  const m = Math.floor(state.voting.remaining/60).toString().padStart(2,"0");
-  const s = (state.voting.remaining%60).toString().padStart(2,"0");
-  el("timer").textContent = `${m}:${s}`;
-
-  // tallies
-  el("voteCounts").textContent = `Encore ${state.voting.encore} • Shot ${state.voting.shot} • Next ${state.voting.next}`;
-
-  // result box
-  if(state.voting.ended && state.voting.result){
-    el("voteResultBox").style.display = "";
-    el("voteResultText").textContent = state.voting.result;
-    el("voteResultText").style.color =
-      state.voting.result === "Encore!" ? "var(--ok)" :
-      state.voting.result === "Another Shot!" ? "var(--warn)" :
-      "var(--err)";
-  }else{
-    el("voteResultBox").style.display = "none";
-    el("voteResultText").textContent = "—";
-  }
-
-  // buttons enabling
-  el("startVoteBtn").disabled = state.voting.open;
-  el("extendVoteBtn").disabled = !state.voting.open;
-  el("endVoteBtn").disabled = !state.voting.open;
-}
-
-function renderSound(){
-  el("soundToggle").checked = !!state.soundEnabled;
-}
-
-/* ---------- Timer + voting logic (host vote buttons just add to tallies; they NEVER auto-end voting) ---------- */
-let timerHandle = null;
-
-function startVoting(){
-  state.voting.open = true;
-  state.voting.ended = false;
-  state.voting.result = null;
-  state.voting.remaining = 30;
-  renderVoting(); save();
-  tick();
-  playIfEnabled('/assets/voting_open.mp3');
-}
-
-function extendVoting(){
-  if(!state.voting.open) return;
-  state.voting.remaining += 15;
-  renderVoting(); save();
-}
-
-function endVoting(){
-  if(!state.voting.open) return;
-  state.voting.open = false;
-  state.voting.ended = true;
-  // Decide winner
-  const {encore, shot, next} = state.voting;
-  let result = "Encore!";
-  if(shot >= encore && shot >= next) result = "Another Shot!";
-  if(next >  encore && next >= shot) result = "Maybe Next Time!";
-  state.voting.result = result;
-  renderVoting(); save();
-
-  // Sounds when voting over and result
-  playIfEnabled('/assets/voting_over.mp3');
-  setTimeout(()=> {
-    if(result === "Encore!") playIfEnabled('/assets/encore.mp3');
-    else if(result === "Maybe Next Time!") playIfEnabled('/assets/loser.wav');
-    // (You said you’ll add a sound later for “Another Shot!”)
-  }, 600);
-}
-
-function resetVoting(){
-  state.voting = {open:false, remaining:30, encore:0, shot:0, next:0, ended:false, result:null};
-  clearInterval(timerHandle); timerHandle=null;
-  renderVoting(); save();
-}
-
-function tick(){
-  clearInterval(timerHandle);
-  timerHandle = setInterval(()=>{
-    if(!state.voting.open) { clearInterval(timerHandle); timerHandle=null; return; }
-    if(state.voting.remaining <= 0){
-      clearInterval(timerHandle); timerHandle=null;
-      endVoting();
-      return;
+    const j = await load();
+    S = j;
+    // auto close if time elapsed but state still 'open'
+    if (S.voting.state==='open' && S.voting.endsAt<=now()){
+      const next = structuredClone(S);
+      next.voting.state='closed';
+      await save(next);
+      // play on host too
+      playIf(sndOver);
+      const res = pickResult(next.voting.counts);
+      if (res==='enc') playIf(sndEncore);
+      else if (res==='nope') playIf(sndNope);
+    } else {
+      render();
     }
-    state.voting.remaining -= 1;
-    renderVoting(); save();
-  }, 1000);
+  }catch(e){}
 }
-
-/* ---------- Sound ---------- */
-let audioCache = {};
-function playIfEnabled(src){
-  if(!state.soundEnabled) return;
-  if(!audioCache[src]){
-    const a = new Audio(src);
-    audioCache[src] = a;
-  }
-  audioCache[src].currentTime = 0;
-  audioCache[src].play().catch(()=>{ /* ignore autoplay issues if toggle wasn’t clicked */ });
-}
-
-/* ---------- Event handlers ---------- */
-function wire(){
-  // Event setup save
-  el("saveEventBtn").onclick = () => {
-    state.venue = el("venue").value.trim();
-    state.kj    = el("kj").value.trim();
-    save(); renderEvent();
-    // collapse after save
-    el("eventSetup").open = false;
-  };
-
-  // Add singer (sidebar)
-  el("addSingerBtn").onclick = () => {
-    const name = el("newSingerName").value.trim();
-    if(!name) return;
-    state.queue.push({ id:crypto.randomUUID(), name, color:"green" });
-    el("newSingerName").value = "";
-    renderQueue(); save();
-  };
-
-  // Current singer controls
-  el("setCurrentBtn").onclick = () => {
-    state.current.singer = el("currentSingerName").value.trim();
-    state.current.song   = el("currentSong").value.trim();
-    save(); renderCurrent();
-  };
-  el("pushCurrentToQueueBtn").onclick = () => {
-    const name = el("currentSingerName").value.trim();
-    if(!name) return;
-    state.queue.push({ id:crypto.randomUUID(), name, color:"green" });
-    renderQueue(); save();
-  };
-  el("clearCurrentBtn").onclick = () => {
-    state.current = {singer:"", song:""}; save(); renderCurrent();
-  };
-
-  // Voting control
-  el("startVoteBtn").onclick  = startVoting;
-  el("extendVoteBtn").onclick = extendVoting;
-  el("endVoteBtn").onclick    = endVoting;
-  el("resetVoteBtn").onclick  = resetVoting;
-
-  // Host vote (adds to tallies only; does NOT auto-end)
-  el("hostEncoreBtn").onclick = () => { state.voting.encore++; renderVoting(); save(); };
-  el("hostShotBtn").onclick   = () => { state.voting.shot++;   renderVoting(); save(); };
-  el("hostNextBtn").onclick   = () => { state.voting.next++;   renderVoting(); save(); };
-
-  // Reset event
-  el("resetEventBtn").onclick = () => {
-    if(!confirm("Reset entire event (venue, KJ, queue, current, votes)?")) return;
-    state.venue=""; state.kj="";
-    state.current = {singer:"", song:""};
-    state.queue = [];
-    resetVoting();
-    save(); renderEvent(); renderCurrent(); renderQueue();
-    el("eventSetup").open = true;
-  };
-
-  // Sound toggle
-  el("soundToggle").onchange = (e)=> {
-    state.soundEnabled = !!e.target.checked; save();
-    // Try to unlock autoplay policies by playing a tiny blip (muted) after user gesture
-    if(state.soundEnabled){
-      const test = new Audio('/assets/voting_open.mp3');
-      test.volume = 0.0;
-      test.play().catch(()=>{});
-      setTimeout(()=>{ test.pause(); }, 200);
-    }
-  };
-}
-
-/* ---------- Init ---------- */
-load();
-wire();
-renderEvent();
-renderCurrent();
-renderQueue();
-renderVoting();
-renderSound();
+loadSavedLists();
+tick();
+tickHandle = setInterval(tick, 1000);
 </script>
 </body>
 </html>
