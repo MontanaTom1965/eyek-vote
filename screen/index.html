@@ -1,139 +1,114 @@
 <!doctype html>
-<html lang="en">
+<html>
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>EYEK • Screen</title>
-<style>
-  :root{ --bg:#050910; --brand:#23c7a2; --text:#e6f0ff; --muted:#9fb3c8; --encore:#22c55e; --another:#f59e0b; --maybe:#ef4444 }
-  html,body{height:100%}
-  body{margin:0;background:radial-gradient(1200px 600px at 50% -10%, #1a2a42, #050910);color:var(--text);font-family:Inter,system-ui,Segoe UI,Roboto,Arial}
-  .stage{height:100%;display:grid;place-items:center;padding:24px}
-  .card{width:min(1100px,95vw);border-radius:28px;padding:34px 28px;background:rgba(0,0,0,.28);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.09);box-shadow:0 20px 60px rgba(0,0,0,.35)}
-  .row{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
-  .venue{font-size:22px;color:var(--muted)}
-  .kj{font-size:18px;color:#bcd2e6}
-  .now{margin:20px 0 10px 0}
-  .name{font-size:60px;line-height:1.05;font-weight:800;letter-spacing:.5px;text-shadow:0 4px 16px rgba(0,0,0,.35)}
-  .song{font-size:26px;color:#d1e3f7}
-  .timer{font-size:80px;font-weight:900;letter-spacing:2px;margin:10px 0;opacity:.9}
-  .hint{font-size:18px;color:var(--muted)}
-  .banner{margin-top:18px;border-radius:18px;padding:18px 20px;font-size:46px;font-weight:900;text-align:center}
-  .banner.encore{background:linear-gradient(135deg,#0f3,#093);color:#042;box-shadow:0 0 60px rgba(34,197,94,.35) inset, 0 18px 60px rgba(0,0,0,.4)}
-  .banner.another{background:linear-gradient(135deg,#f9b522,#915f06);color:#2a1800;box-shadow:0 0 60px rgba(245,158,11,.35) inset, 0 18px 60px rgba(0,0,0,.4)}
-  .banner.maybe{background:linear-gradient(135deg,#ff6b6b,#7f1d1d);color:#2b0c0c;box-shadow:0 0 60px rgba(239,68,68,.35) inset, 0 18px 60px rgba(0,0,0,.4)}
-  .pulse{animation:pulse 1.8s ease-in-out infinite}
-  @keyframes pulse {0%,100%{transform:scale(1)}50%{transform:scale(1.03)}}
-  /* confetti */
-  .confetti{position:fixed;inset:0;pointer-events:none;overflow:hidden}
-  .piece{position:absolute;top:-10vh;width:8px;height:14px;opacity:.9;animation:fall 3.2s linear forwards;}
-  @keyframes fall{to{transform:translateY(120vh) rotate(720deg)}}
-  /* gentle keep-alive shimmer */
-  .shimmer{background:linear-gradient(90deg,transparent,rgba(255,255,255,.06),transparent);background-size:200% 100%;animation:shimmer 18s linear infinite}
-  @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
-</style>
+  <meta charset="utf-8"/>
+  <title>EYEK • Screen</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <style>
+    html,body{height:100%;margin:0;background:#06080f;color:#e6eef8;font-family:system-ui,Segoe UI,Arial,sans-serif;overflow:hidden}
+    .wrap{display:grid;grid-template-rows:auto 1fr auto;height:100%}
+    header{display:flex;justify-content:space-between;align-items:center;padding:18px 24px;background:#0b1020;border-bottom:1px solid #151c2e}
+    .big{font-size:72px;font-weight:800;text-align:center;margin:40px 20px}
+    .mid{font-size:28px;text-align:center;opacity:.9}
+    footer{padding:12px 18px;text-align:center;color:#9fb0cf}
+    .pulse{animation:pulse 2s infinite}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.75}}
+    .confetti{position:fixed;left:0;top:0;width:100%;height:100%;pointer-events:none}
+  </style>
 </head>
 <body>
-<div class="stage">
-  <div class="card shimmer">
-    <div class="row">
-      <div class="venue" id="venueTxt">Welcome to …</div>
-      <div class="kj" id="kjTxt">Hosted by …</div>
-    </div>
-    <div class="now">
-      <div class="name" id="nameTxt">Waiting for next singer…</div>
-      <div class="song" id="songTxt"></div>
-    </div>
-    <div class="timer" id="timer">--</div>
-    <div class="hint">Get ready to vote: <strong>ENCORE!</strong> • <strong>Another Shot</strong> • <strong>Maybe Next Time</strong></div>
-    <div class="banner" id="banner" style="display:none"></div>
-  </div>
+<div class="wrap">
+  <header>
+    <div id="venue">Venue</div>
+    <div id="kj">KJ</div>
+  </header>
+  <main>
+    <div id="headline" class="big pulse">Welcome!</div>
+    <div id="sub" class="mid">Get ready to vote</div>
+    <canvas id="confetti" class="confetti"></canvas>
+    <audio id="sfxWin" src="/assets/you_win_001.mp3" preload="auto"></audio>
+    <audio id="sfxShot" src="/assets/quiz-countdown.mp3" preload="auto"></audio>
+    <audio id="sfxLose" src="/assets/sad_horn.mp3" preload="auto"></audio>
+  </main>
+  <footer>Earn Your Encore Karaoke</footer>
 </div>
-<div class="confetti" id="confetti"></div>
-
-<audio id="sfxEncore" src="/assets/you_win_001.mp3" preload="auto"></audio>
-<audio id="sfxAnother" src="/assets/end%20of%20voting.wav" preload="auto"></audio>
-<audio id="sfxMaybe" src="/assets/sad_horn.mp3" preload="auto"></audio>
-
 <script>
-const LS_KEY='eyek_state_v1';
-const bc=('BroadcastChannel' in self)?new BroadcastChannel('eyek_bus'):null;
+const URL='/assets/status.json';
+let lastStatus='', rafId=0;
 
-let state = load();
-function load(){ try{ return JSON.parse(localStorage.getItem(LS_KEY))||{} }catch{ return {} } }
+const elVenue = document.getElementById('venue');
+const elKJ = document.getElementById('kj');
+const elHead = document.getElementById('headline');
+const elSub = document.getElementById('sub');
 
-function render(){
-  venueTxt.textContent = state?.event?.venue ? `Welcome to ${state.event.venue}` : 'Welcome!';
-  kjTxt.textContent    = state?.event?.kj ? `KJ: ${state.event.kj}` : 'KJ: —';
+const sfxWin  = document.getElementById('sfxWin');
+const sfxShot = document.getElementById('sfxShot');
+const sfxLose = document.getElementById('sfxLose');
 
-  const cur = state?.current||{};
-  nameTxt.textContent = cur.name || 'Waiting for next singer…';
-  songTxt.textContent = (cur.song||cur.artist) ? `${cur.song||''}${cur.artist?` • ${cur.artist}`:''}` : '';
+async function load(){
+  const r = await fetch(URL+'?_=' + Date.now());
+  const j = await r.json();
+  elVenue.textContent = j.event.venue || 'Venue';
+  elKJ.textContent = 'KJ: ' + (j.event.kj||'');
+  const cur = j.current||{};
+  const state = cur.status||'idle';
 
-  // timer
-  if (state?.voting?.active){
-    const remain = Math.max(0, state.voting.endAt - Date.now());
-    const s = Math.ceil(remain/1000);
-    timer.textContent = s+'s';
+  if (state==='voting'){
+    elHead.textContent = (cur.singer? cur.singer : 'Get Ready') + (cur.songArtist ? ' — ' + cur.songArtist : '');
+    elSub.textContent = 'Voting in progress…';
+  } else if (state==='Encore'){
+    elHead.textContent = 'ENCORE!';
+    elSub.textContent = (cur.singer||'') + ' got the Encore!';
+    playWin();
+  } else if (state==='Another Shot'){
+    elHead.textContent = 'Another Shot!';
+    elSub.textContent = (cur.singer||'') + ' gets another chance!';
+    playShot();
+  } else if (state==='Maybe Next Time'){
+    elHead.textContent = 'Maybe Next Time…';
+    elSub.textContent = (cur.singer||'') + ' will be back!';
+    playLose();
+  } else if (state==='waiting' && cur.singer){
+    elHead.textContent = cur.singer + (cur.songArtist ? ' — ' + cur.songArtist : '');
+    elSub.textContent = 'Get ready to vote…';
   } else {
-    timer.textContent = '--';
+    elHead.textContent = 'Welcome!';
+    elSub.textContent = 'Get ready to vote';
   }
-}
-render();
 
-setInterval(()=>{
-  state = load();
-  render();
-}, 300); // light poll so TVs keep “active”
+  // tiny drift to avoid TV sleep
+  document.body.style.transform = `translateY(${Math.sin(Date.now()/20000)*2}px)`;
 
-if (bc){
-  bc.onmessage = (ev)=>{
-    if (ev.data?.type==='state'){
-      state = ev.data.state;
-      localStorage.setItem(LS_KEY, JSON.stringify(state));
-      render();
-      if (state.lastOutcome && Date.now()-state.lastOutcome.at<1500){
-        fireOutcome(state.lastOutcome.kind);
-      }
-    }
-  }
+  lastStatus = state;
 }
 
-// Outcome splash + sfx + confetti
-function fireOutcome(kind){
-  const b=banner;
-  b.style.display='block';
-  b.className='banner '+kind+' pulse';
-  b.textContent = (kind==='encore'?'ENCORE! 🎉':kind==='another'?'Another Shot! 🔁':'Maybe Next Time 😬');
-  playSfx(kind);
-  confettiBurst(kind);
-  setTimeout(()=>{ b.style.display='none'; }, 3500);
+function playWin(){ if (lastStatus!=='Encore'){ boom(); sfxWin.currentTime=0; sfxWin.play().catch(()=>{});} }
+function playShot(){ if (lastStatus!=='Another Shot'){ sfxShot.currentTime=0; sfxShot.play().catch(()=>{});} }
+function playLose(){ if (lastStatus!=='Maybe Next Time'){ sfxLose.currentTime=0; sfxLose.play().catch(()=>{});} }
+
+// simple confetti
+function boom(){
+  const c = document.getElementById('confetti');
+  const ctx = c.getContext('2d');
+  c.width = innerWidth; c.height= innerHeight;
+  let parts = Array.from({length:160},()=>({
+    x: Math.random()*c.width, y: -20 - Math.random()*200, vy: 2+Math.random()*4, vx: -2+Math.random()*4, s: 2+Math.random()*4
+  }));
+  cancelAnimationFrame(rafId);
+  (function frame(){
+    ctx.clearRect(0,0,c.width,c.height);
+    parts.forEach(p=>{
+      ctx.fillStyle = ['#1dd05d','#f9d64a','#5bc0ff','#ff5d7a'][p.s%4|0];
+      ctx.fillRect(p.x,p.y,p.s,p.s*0.6);
+      p.x += p.vx; p.y += p.vy; p.vy *= 0.99;
+    });
+    rafId = requestAnimationFrame(frame);
+    setTimeout(()=>cancelAnimationFrame(rafId), 2000);
+  })();
 }
 
-function playSfx(kind){
-  try{
-    if (kind==='encore') sfxEncore.currentTime=0, sfxEncore.play();
-    else if (kind==='another') sfxAnother.currentTime=0, sfxAnother.play();
-    else sfxMaybe.currentTime=0, sfxMaybe.play();
-  }catch{}
-}
-
-function confettiBurst(kind){
-  const colors = kind==='encore' ? ['#34d399','#22c55e','#bbf7d0']
-               : kind==='another'? ['#fbbf24','#fde68a','#f59e0b']
-               : ['#fecaca','#f87171','#ef4444'];
-  const container = confetti;
-  for (let i=0;i<80;i++){
-    const d = document.createElement('div');
-    d.className='piece';
-    d.style.left = Math.random()*100+'%';
-    d.style.background = colors[i%colors.length];
-    d.style.animationDelay = (Math.random()*0.6)+'s';
-    d.style.transform = `translateY(-10vh) rotate(${Math.random()*360}deg)`;
-    container.appendChild(d);
-    setTimeout(()=>d.remove(), 4000);
-  }
-}
+setInterval(load, 2000);
+load();
 </script>
 </body>
 </html>
