@@ -1,67 +1,52 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>EYEK • Board</title>
 <style>
-  :root{--bg:#060c1a;--ink:#e9f1ff;--sub:#a6b8dc;--green:#33e27b;--yellow:#ffd166;--red:#ff6b6b;}
-  html,body{margin:0;height:100%;background:linear-gradient(180deg,#0e1a36,#060c1a);color:var(--ink);font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif}
-  .wrap{padding:28px;max-width:1100px;margin:0 auto}
-  h1{margin:0 0 10px;font-size:42px}
-  h2{margin:18px 0 8px;font-size:22px;color:var(--sub)}
-  .pill{display:inline-block;padding:4px 10px;border-radius:999px;background:#13224a;color:#bed0ff;font-size:12px;margin-left:8px}
-  .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
-  .card{background:#0f1930;border-radius:14px;padding:16px;box-shadow:0 8px 24px rgba(0,0,0,.25)}
-  ul{margin:8px 0 0 18px;line-height:1.8}
-  .res{font-weight:800}
-  .enc{color:var(--green)} .ano{color:#f6c04d} .may{color:#ff8484}
+  body{margin:0; font-family:system-ui, Arial, sans-serif; background:#060a12; color:#e8f0ff}
+  .wrap{max-width:900px; margin:30px auto; padding:0 16px}
+  h1{margin:0 0 12px}
+  .muted{color:#95a6c1}
+  .row{display:flex; align-items:center; justify-content:space-between; padding:10px 12px; border-bottom:1px solid #111827}
+  .name{font-weight:800}
+  .dots{display:flex; gap:8px}
+  .dot{width:10px;height:10px;border-radius:50%}
+  .green{background:#22c55e}.yellow{background:#facc15}.red{background:#ef4444}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <h1>Earn Your Encore Karaoke <span id="vInfo" class="pill"></span></h1>
-  <div class="grid">
-    <div class="card">
-      <h2>Up Now</h2>
-      <div id="now">—</div>
-      <div id="song" style="color:var(--sub)"></div>
-    </div>
-    <div class="card">
-      <h2>Last Result</h2>
-      <div id="last">—</div>
-    </div>
-  </div>
-  <div class="card" style="margin-top:18px">
-    <h2>Queue</h2>
-    <ul id="queue"></ul>
-  </div>
+  <h1>Rotation</h1>
+  <div class="muted" id="hdr">—</div>
+  <div id="list"></div>
 </div>
-
 <script>
-const API='/assets/state.php';
-function apiGet(){const u=new URL(API,location.origin);u.searchParams.set('action','get');return fetch(u,{cache:'no-store'}).then(r=>r.json())}
-function render(s){
-  const ev=s.event||{venue:'',kj:''};
-  document.getElementById('vInfo').textContent = ev.venue ? `${ev.venue} • KJ ${ev.kj||''}` : (ev.kj?`KJ ${ev.kj}`:'');
-  const cur=s.current||{name:'',song:''};
-  document.getElementById('now').textContent = cur.name||'—';
-  document.getElementById('song').textContent= cur.song||'';
-
-  const q=document.getElementById('queue'); q.innerHTML='';
-  (s.queue||[]).forEach(x=>{ const li=document.createElement('li'); li.textContent=x.name; q.appendChild(li); });
-
-  const last=s.lastResult;
-  const lastEl=document.getElementById('last');
-  if (!last) lastEl.textContent='—';
-  else {
-    lastEl.innerHTML = last==='encore' ? '<span class="res enc">Encore!</span>' :
-                       last==='another'? '<span class="res ano">Another Shot!</span>' :
-                                         '<span class="res may">Maybe Next Time</span>';
-  }
+const API='/assets/api.php';
+function row(name, tally, isCurrent){
+  const div=document.createElement('div'); div.className='row';
+  div.innerHTML=`
+    <div class="name">${isCurrent?'▶ ':''}${name}</div>
+    <div class="dots" title="Encore / Another / Maybe">
+      <span class="dot green"  style="opacity:${tally.encore?1:.25}"></span>
+      <span class="dot yellow" style="opacity:${tally.another?1:.25}"></span>
+      <span class="dot red"    style="opacity:${tally.maybe?1:.25}"></span>
+    </div>`;
+  return div;
 }
-setInterval(async ()=>{ const r=await apiGet(); if(r.ok) render(r.state); }, 1500);
-(async ()=>{ const r=await apiGet(); if(r.ok) render(r.state); })();
+async function refresh(){
+  const r = await fetch(API+'?cmd=get&ts='+Date.now(),{cache:'no-store'}); const j=await r.json();
+  if(!j.ok) return;
+  const st=j.state;
+  document.getElementById('hdr').textContent = `${st.event.venue||''} • ${st.event.kj||''}`;
+  const list=document.getElementById('list'); list.innerHTML='';
+  st.singers.forEach(s=>{
+    list.appendChild(row(s.name, s.tally, st.currentSingerId===s.id));
+  });
+}
+refresh();
+setInterval(refresh, 3000);
 </script>
 </body>
 </html>
