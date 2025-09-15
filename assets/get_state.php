@@ -4,8 +4,8 @@ header('Cache-Control: no-store');
 
 $DATA = __DIR__ . '/state.json';
 
-if (!file_exists($DATA)) {
-  $state = [
+function default_state() {
+  return [
     "serverUpdatedAt" => time(),
     "event" => [
       "venue" => "",
@@ -16,16 +16,24 @@ if (!file_exists($DATA)) {
       "pin" => "",
       "locked" => false
     ],
+    "saved" => [
+      "venues" => [],
+      "kjs" => []
+    ],
     "singers" => [],
     "current" => ["id"=>null,"name"=>"","songArtist"=>""],
     "voting" => [
       "open" => false, "endsAt" => 0, "extendCount" => 0,
       "counts" => ["encore"=>0,"another"=>0,"maybe"=>0],
       "lastResult" => null,
-      "voters" => []   // server-side one-vote-per-device-per-singer+song
+      "voters" => []
     ],
     "winners" => ["encore"=>[], "another"=>[]]
   ];
+}
+
+if (!file_exists($DATA)) {
+  $state = default_state();
   file_put_contents($DATA, json_encode($state, JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES));
   echo json_encode($state);
   exit;
@@ -37,4 +45,7 @@ $json = stream_get_contents($fp);
 flock($fp, LOCK_UN);
 fclose($fp);
 
-echo $json ?: '{}';
+$state = $json ? json_decode($json, true) : default_state();
+if (!isset($state['saved'])) $state['saved'] = ["venues"=>[], "kjs"=>[]];
+
+echo json_encode($state, JSON_UNESCAPED_SLASHES);
