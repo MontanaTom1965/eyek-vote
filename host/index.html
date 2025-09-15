@@ -22,7 +22,7 @@
   h2{margin:0 0 10px;font-size:16px;color:var(--muted)}
   label{font-size:12px;color:var(--muted);display:block;margin:8px 0 4px}
   input,button,select{font:inherit}
-  input[type=text], input[type=date], input[type=password]{width:100%;padding:10px;border-radius:10px;border:1px solid #2b3c62;background:#0d1428;color:var(--txt)}
+  input[type=text], input[type=date], input[type=password], input[type=email]{width:100%;padding:10px;border-radius:10px;border:1px solid #2b3c62;background:#0d1428;color:var(--txt)}
   .row{display:flex;gap:10px;align-items:center}
   .row > *{flex:1}
   .btn{border:0;border-radius:12px;padding:10px 14px;background:var(--soft);color:var(--txt);cursor:pointer}
@@ -66,9 +66,13 @@
   .links a{color:var(--cyan);text-decoration:none}
   .links a:hover{text-decoration:underline}
 
-  /* Login overlay */
-  .gate{position:fixed;inset:0;background:rgba(14,8,22,.8);backdrop-filter:blur(5px);display:grid;place-items:center;z-index:99}
-  .gate .panel{width:min(560px,92vw)}
+  /* Login/Registration overlay */
+  .gate{position:fixed;inset:0;background:rgba(14,8,22,.85);backdrop-filter:blur(6px);display:grid;place-items:center;z-index:99}
+  .gate .panel{width:min(720px,92vw)}
+  .tabs{display:flex;gap:8px;margin-bottom:10px}
+  .tab{padding:8px 12px;border-radius:10px;border:1px solid #2b3c62;cursor:pointer}
+  .tab.active{background:#203153}
+  .err{color:#ff8b8b;font-size:12px}
 </style>
 </head>
 <body>
@@ -198,24 +202,59 @@
   </div>
 </div>
 
-<!-- Login Gate -->
-<div id="gate" class="gate" hidden>
+<!-- Login / Registration Gate -->
+<div id="gate" class="gate">
   <div class="panel card">
-    <h1>Host Login</h1>
-    <div class="grid2">
-      <div>
-        <label>Host Email</label>
-        <input id="hostEmail" type="text" placeholder="you@example.com">
-      </div>
-      <div>
-        <label>Event PIN (set in Event Setup)</label>
-        <input id="hostPin" type="password" placeholder="Enter PIN to unlock controls">
-      </div>
+    <h1>Host Access</h1>
+    <div class="tabs">
+      <button id="tabLogin" class="tab active" type="button">Login</button>
+      <button id="tabRegister" class="tab" type="button">Register</button>
     </div>
-    <div class="row" style="margin-top:10px">
-      <button class="btn primary" id="loginBtn">Enter Host Panel</button>
+
+    <div id="loginPane" class="stack">
+      <div class="grid2">
+        <div>
+          <label>Email</label>
+          <input id="loginEmail" type="email" placeholder="host@yourkj.com" autocomplete="username">
+        </div>
+        <div>
+          <label>Password</label>
+          <input id="loginPass" type="password" placeholder="••••••••" autocomplete="current-password">
+        </div>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button class="btn primary" id="loginBtn" type="button">Enter Host Panel</button>
+      </div>
+      <div id="loginErr" class="err"></div>
     </div>
-    <div class="help">Lightweight gate for the laptop host. Not a secure auth system—okay for demo/show use.</div>
+
+    <div id="registerPane" class="stack" style="display:none">
+      <div class="grid2">
+        <div>
+          <label>Name (optional)</label>
+          <input id="regName" type="text" placeholder="Jane from Awesome KJ Co.">
+        </div>
+        <div>
+          <label>Email</label>
+          <input id="regEmail" type="email" placeholder="host@yourkj.com" autocomplete="username">
+        </div>
+      </div>
+      <div class="grid2">
+        <div>
+          <label>Password</label>
+          <input id="regPass" type="password" placeholder="Create a password" autocomplete="new-password">
+        </div>
+        <div>
+          <label>Confirm Password</label>
+          <input id="regPass2" type="password" placeholder="Repeat password" autocomplete="new-password">
+        </div>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button class="btn primary" id="registerBtn" type="button">Create Account</button>
+      </div>
+      <div id="regErr" class="err"></div>
+      <div class="help">This lightweight demo stores hosts in the local browser only (per laptop). For production, wire this to your backend.</div>
+    </div>
   </div>
 </div>
 
@@ -230,7 +269,7 @@ const POLL_MS = 1200;
 state = {
   serverUpdatedAt: <epoch>,
   event: { venue:"", date:"YYYY-MM-DD", kj:"", pin:"", locked:false },
-  singers: [{id,name,status:'new'|'encore'|'another'}],
+  singers: [{id,name,_color:''|'green'|'yellow'}],
   current: { id:null, name:"", songArtist:"" },
   voting: { open:false, endsAt:0, extendCount:0, counts:{encore:0,another:0,maybe:0}, lastResult:null }
 }
@@ -261,9 +300,23 @@ const cMaybe = $('#c_maybe');
 const resultTag = $('#resultTag');
 const eventBox = $('#eventBox');
 const gate = $('#gate');
-const hostEmail = $('#hostEmail');
-const hostPin = $('#hostPin');
 
+// Gate elements
+const tabLogin = $('#tabLogin');
+const tabRegister = $('#tabRegister');
+const loginPane = $('#loginPane');
+const registerPane = $('#registerPane');
+const loginEmail = $('#loginEmail');
+const loginPass = $('#loginPass');
+const loginBtn = $('#loginBtn');
+const loginErr = $('#loginErr');
+const regName = $('#regName');
+const regEmail = $('#regEmail');
+const regPass = $('#regPass');
+const regPass2 = $('#regPass2');
+const registerBtn = $('#registerBtn');
+
+// Sounds
 const sfx = {
   open: $('#sfx_open'),
   over: $('#sfx_over'),
@@ -283,20 +336,70 @@ $('#soundToggle').addEventListener('change', e=>{
   if(allowSound) play('open'); // unlock audio
 });
 
-// ======= Login Gate (lightweight) =======
-function showGate(){ gate.hidden = false; }
-function hideGate(){ gate.hidden = true; }
+// ======= Lightweight Host Auth (browser-local) =======
+const HOSTS_KEY = 'eyek_hosts'; // array of {email, name, salt, hash}
+const SESSION_KEY = 'eyek_host_session'; // {email, name}
 
-$('#loginBtn').addEventListener('click', ()=>{
-  const email = hostEmail.value.trim();
-  const pinTry = hostPin.value.trim();
-  // allow if no pin set yet OR pin matches
-  const setPin = (state?.event?.pin || '').trim();
-  if(!email){ alert('Enter your host email.'); return; }
-  if(setPin && pinTry !== setPin){ alert('PIN does not match the event PIN.'); return; }
-  authed = true;
-  localStorage.setItem('eyek_host_email', email);
-  hideGate();
+function getHosts(){
+  try { return JSON.parse(localStorage.getItem(HOSTS_KEY) || '[]'); } catch { return []; }
+}
+function saveHosts(list){ localStorage.setItem(HOSTS_KEY, JSON.stringify(list)); }
+function setSession(sess){ localStorage.setItem(SESSION_KEY, JSON.stringify(sess)); }
+function getSession(){ try { return JSON.parse(localStorage.getItem(SESSION_KEY)||'null'); } catch { return null; } }
+function clearSession(){ localStorage.removeItem(SESSION_KEY); }
+
+function showGate(){ gate.style.display = 'grid'; }
+function hideGate(){ gate.style.display = 'none'; }
+
+function switchTab(which){
+  if(which==='login'){
+    tabLogin.classList.add('active'); tabRegister.classList.remove('active');
+    loginPane.style.display='grid'; registerPane.style.display='none';
+  } else {
+    tabRegister.classList.add('active'); tabLogin.classList.remove('active');
+    registerPane.style.display='grid'; loginPane.style.display='none';
+  }
+  loginErr.textContent = ''; $('#regErr').textContent='';
+}
+
+tabLogin.addEventListener('click', ()=>switchTab('login'));
+tabRegister.addEventListener('click', ()=>switchTab('register'));
+
+// crypto helpers
+async function sha256(str){
+  const enc = new TextEncoder().encode(str);
+  const buf = await crypto.subtle.digest('SHA-256', enc);
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+function makeSalt(){ return Array.from(crypto.getRandomValues(new Uint8Array(12))).map(b=>b.toString(16).padStart(2,'0')).join(''); }
+
+registerBtn.addEventListener('click', async ()=>{
+  const name = regName.value.trim();
+  const email = regEmail.value.trim().toLowerCase();
+  const p1 = regPass.value; const p2 = regPass2.value;
+  if(!email || !p1 || !p2){ $('#regErr').textContent = 'Fill email and both password fields.'; return; }
+  if(p1 !== p2){ $('#regErr').textContent = 'Passwords do not match.'; return; }
+  let hosts = getHosts();
+  if(hosts.find(h=>h.email===email)){ $('#regErr').textContent = 'That email is already registered on this device.'; return; }
+  const salt = makeSalt();
+  const hash = await sha256(salt + p1);
+  hosts.push({email, name, salt, hash});
+  saveHosts(hosts);
+  // Auto-login
+  setSession({email, name});
+  authed = true; hideGate();
+});
+
+loginBtn.addEventListener('click', async ()=>{
+  const email = loginEmail.value.trim().toLowerCase();
+  const pass = loginPass.value;
+  const hosts = getHosts();
+  const u = hosts.find(h=>h.email===email);
+  if(!u){ loginErr.textContent = 'No account found for that email on this device.'; return; }
+  const given = await sha256(u.salt + pass);
+  if(given !== u.hash){ loginErr.textContent = 'Incorrect password.'; return; }
+  setSession({email, name:u.name||''});
+  authed = true; hideGate();
 });
 
 // ======= Event Actions =======
@@ -311,7 +414,7 @@ $('#saveEvent').addEventListener('click', async ()=>{
   flashSaved('eventSavedMsg','Saved!');
 });
 
-$('#lockEvent').addEventListener('click', async (e)=>{
+$('#lockEvent').addEventListener('click', async ()=>{
   state.event.locked = !state.event.locked;
   await postState();
   renderLockUI();
@@ -325,11 +428,7 @@ $('#resetEvent').addEventListener('click', async ()=>{
     event: {venue:"", date:new Date().toISOString().slice(0,10), kj:"", pin:"", locked:false},
     singers: [],
     current: {id:null,name:"",songArtist:""},
-    voting: {
-      open:false, endsAt:0, extendCount:0,
-      counts:{encore:0,another:0,maybe:0},
-      lastResult:null
-    }
+    voting: { open:false, endsAt:0, extendCount:0, counts:{encore:0,another:0,maybe:0}, lastResult:null }
   };
   await postState();
 });
@@ -354,11 +453,8 @@ $('#addSinger').addEventListener('click', async ()=>{
   const song = songArtist.value.trim();
   if(!name){ alert('Enter a singer name.'); return; }
   const id = 's_'+Math.random().toString(36).slice(2,9);
-  state.singers.push({id, name, status:'new'});
-  // if none set, set current immediately but keep their next song in current field
-  if(!state.current.id){
-    state.current = {id, name, songArtist: song};
-  }
+  state.singers.push({id, name, _color:''});
+  if(!state.current.id){ state.current = {id, name, songArtist: song}; }
   await postState();
   singerName.value = ""; songArtist.value="";
 });
@@ -366,7 +462,6 @@ $('#addSinger').addEventListener('click', async ()=>{
 function setCurrent(id){
   const s = state.singers.find(x=>x.id===id);
   if(!s) return;
-  // advance rotation: mark their next song from input box for record
   state.current = {id:s.id, name:s.name, songArtist: currentSongArtist.value.trim()};
   currentSongArtist.value = '';
   postState();
@@ -374,9 +469,7 @@ function setCurrent(id){
 
 function removeSinger(id){
   state.singers = state.singers.filter(x=>x.id!==id);
-  if(state.current.id===id){
-    state.current = {id:null,name:"",songArtist:""};
-  }
+  if(state.current.id===id){ state.current = {id:null,name:"",songArtist:""}; }
   postState();
 }
 
@@ -400,18 +493,11 @@ $('#extendVote').addEventListener('click', async ()=>{
   await postState();
 });
 
-$('#endVote').addEventListener('click', async ()=>{
-  await concludeVoting();
-});
+$('#endVote').addEventListener('click', async ()=>{ await concludeVoting(); });
 
 async function concludeVoting(){
-  if(!state.voting.open){
-    // already ended: re-announce last result if exists
-    announce(state.voting.lastResult);
-    return;
-  }
-  state.voting.open = false;
-  state.voting.endsAt = 0;
+  if(!state.voting.open){ announce(state.voting.lastResult); return; }
+  state.voting.open = false; state.voting.endsAt = 0;
   const {encore, another, maybe} = state.voting.counts;
   let winner = 'maybe';
   if (encore>=another && encore>=maybe) winner = 'encore';
@@ -423,23 +509,18 @@ async function concludeVoting(){
   const cur = state.singers.find(s=>s.id===state.current.id);
   if(cur){
     if(winner==='maybe'){
-      // remove from rotation
-      state.singers = state.singers.filter(s=>s.id!==cur.id);
-      // keep current shown until you set someone else
+      state.singers = state.singers.filter(s=>s.id!==cur.id); // out of rotation
     } else {
-      cur.status = (winner==='encore' ? 'green' : 'yellow');
-      // normalize to semantic statuses for sidebar coloring
-      if(cur.status==='green') cur._color='green';
-      if(cur.status==='yellow') cur._color='yellow';
+      cur._color = (winner==='encore' ? 'green' : 'yellow');
     }
   }
 
   await postState();
   play('over');
-  setTimeout(()=>announce(winner), 200);
+  setTimeout(()=>announce(winner), 150);
 }
 
-// Host vote buttons (add to totals only)
+// Host vote buttons
 $('#hv_encore').addEventListener('click', ()=> addVote('encore'));
 $('#hv_another').addEventListener('click', ()=> addVote('another'));
 $('#hv_maybe').addEventListener('click', ()=> addVote('maybe'));
@@ -454,7 +535,6 @@ async function addVote(kind){
 async function fetchState(){
   const r = await fetch(GET_URL, {cache:'no-store'});
   state = await r.json();
-  // backfill shape if older file exists on server
   state.event = state.event || {venue:"", date:new Date().toISOString().slice(0,10), kj:"", pin:"", locked:false};
   state.current = state.current || {id:null,name:"",songArtist:""};
   state.voting = state.voting || {open:false, endsAt:0, extendCount:0, counts:{encore:0,another:0,maybe:0}, lastResult:null};
@@ -463,11 +543,7 @@ async function fetchState(){
 }
 
 async function postState(){
-  await fetch(POST_URL, {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify(state)
-  });
+  await fetch(POST_URL, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(state) });
   await fetchState();
 }
 
@@ -488,29 +564,18 @@ function render(){
   state.singers.forEach(s=>{
     const div = document.createElement('div');
     div.className="pill";
-    const dot = document.createElement('div');
-    dot.className = 'dot ' + (s._color||''); // ''|green|yellow
-    const left = document.createElement('div');
-    left.className='name';
-    left.textContent = s.name;
-    const right = document.createElement('div');
-    right.className="minirow";
-    const setBtn = document.createElement('button');
-    setBtn.className="btn"; setBtn.textContent = "Set";
-    setBtn.onclick = ()=>setCurrent(s.id);
-    const rmBtn = document.createElement('button');
-    rmBtn.className="btn ghost"; rmBtn.textContent="Remove";
-    rmBtn.onclick = ()=>removeSinger(s.id);
+    const dot = document.createElement('div'); dot.className = 'dot ' + (s._color||'');
+    const left = document.createElement('div'); left.className='name'; left.textContent = s.name;
+    const right = document.createElement('div'); right.className="minirow";
+    const setBtn = document.createElement('button'); setBtn.className="btn"; setBtn.textContent = "Set"; setBtn.onclick = ()=>setCurrent(s.id);
+    const rmBtn = document.createElement('button'); rmBtn.className="btn ghost"; rmBtn.textContent="Remove"; rmBtn.onclick = ()=>removeSinger(s.id);
     right.appendChild(setBtn); right.appendChild(rmBtn);
-
-    div.appendChild(dot);
-    div.appendChild(left);
-    div.appendChild(right);
+    div.appendChild(dot); div.appendChild(left); div.appendChild(right);
     singerList.appendChild(div);
   });
 
   // current & counts
-  currentName.textContent = state.current.name || "—";
+  document.getElementById('currentName').textContent = state.current.name || "—";
   cEncore.textContent = state.voting.counts.encore || 0;
   cAnother.textContent = state.voting.counts.another || 0;
   cMaybe.textContent = state.voting.counts.maybe || 0;
@@ -534,54 +599,27 @@ function announce(w){
   else { resultTag.textContent="Maybe Next Time"; resultTag.className="resultTag r-maybe"; play('maybe'); }
 }
 
-function fmt(ms){
-  const s = Math.ceil(ms/1000);
-  const m = Math.floor(s/60);
-  const r = s%60;
-  return `${String(m).padStart(2,'0')}:${String(r).padStart(2,'0')}`;
-}
+function fmt(ms){ const s=Math.ceil(ms/1000); const m=Math.floor(s/60), r=s%60; return `${String(m).padStart(2,'0')}:${String(r).padStart(2,'0')}`; }
 
-function flashSaved(id,msg){
-  const el = document.getElementById(id);
-  el.textContent = msg;
-  setTimeout(()=>el.textContent="",1400);
-}
+function flashSaved(id,msg){ const el=document.getElementById(id); el.textContent=msg; setTimeout(()=>el.textContent="",1400); }
 
-function rememberValue(key, value){
-  if(!value) return;
-  const raw = localStorage.getItem(key);
-  const list = raw ? JSON.parse(raw) : [];
-  if(!list.includes(value)) list.unshift(value);
-  localStorage.setItem(key, JSON.stringify(list.slice(0,20)));
-}
-function renderDatalist(key, dl){
-  const raw = localStorage.getItem(key);
-  const list = raw ? JSON.parse(raw) : [];
-  dl.innerHTML = list.map(v=>`<option value="${v}"></option>`).join('');
-}
+function rememberValue(key, value){ if(!value) return; const raw=localStorage.getItem(key); const list=raw?JSON.parse(raw):[]; if(!list.includes(value)) list.unshift(value); localStorage.setItem(key, JSON.stringify(list.slice(0,20))); }
+function renderDatalist(key, dl){ const raw=localStorage.getItem(key); const list=raw?JSON.parse(raw):[]; dl.innerHTML=list.map(v=>`<option value="${v}"></option>`).join(''); }
 
 async function loop(){
   await fetchState();
   if (tickTimer) clearInterval(tickTimer);
   tickTimer = setInterval(async ()=>{
-    // auto-end if timer hits
-    if (state?.voting?.open && Date.now() >= state.voting.endsAt){
-      await concludeVoting();
-    } else {
-      await fetchState();
-    }
+    if (state?.voting?.open && Date.now() >= state.voting.endsAt){ await concludeVoting(); }
+    else { await fetchState(); }
   }, POLL_MS);
 }
 
 // Boot
 (function init(){
-  // default date
   eventDate.value = new Date().toISOString().slice(0,10);
-  // restore email
-  const em = localStorage.getItem('eyek_host_email')||'';
-  if(em) hostEmail.value = em;
-  // simple gate behavior: show until user enters with (matching) PIN (if set)
-  showGate();
+  const sess = getSession();
+  if(sess){ authed = true; hideGate(); } else { showGate(); }
   loop();
 })();
 </script>
