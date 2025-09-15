@@ -6,105 +6,311 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <link rel="icon" href="/assets/icon.png" />
 <style>
-  :root {
-    --purple:#2F0658;
-    --bg: var(--purple);
-    --card:#12192a; --soft:#1b2540;
-    --txt:#eaf2ff; --muted:#a9b6d9;
-    --green:#25d366; --yellow:#f6c945; --red:#ff5e6c; --cyan:#3ad4ff; --accent:#7aa2ff;
-  }
-  body{margin:0;background:var(--bg);color:var(--txt);font:15px/1.45 system-ui}
+  :root { --purple:#2F0658; --bg:var(--purple); --card:#12192a; --soft:#1b2540; --txt:#eaf2ff; --muted:#a9b6d9; --green:#25d366; --yellow:#f6c945; --red:#ff5e6c; --cyan:#3ad4ff; --accent:#7aa2ff }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);font:15px/1.45 system-ui,Segoe UI,Roboto,Helvetica,Arial}
   .wrap{display:grid;grid-template-columns:320px 1fr;gap:16px;padding:16px}
   .card{background:linear-gradient(180deg,var(--card),#0f1526);border:1px solid #243459;border-radius:14px;padding:14px;box-shadow:0 6px 26px rgba(0,0,0,.35)}
   h1{margin:0 0 8px;font-size:20px}
   h2{margin:0 0 10px;font-size:16px;color:var(--muted)}
-  input,button{font:inherit}
-  input[type=text], input[type=date], input[type=password], input[type=email]{width:100%;padding:10px;border-radius:10px;border:1px solid #2b3c62;background:#0d1428;color:var(--txt)}
+  label{font-size:12px;color:var(--muted);display:block;margin:8px 0 4px}
+  input,button,select{font:inherit}
+  input[type=text],input[type=date],input[type=password],input[type=email]{width:100%;padding:10px;border-radius:10px;border:1px solid #2b3c62;background:#0d1428;color:var(--txt)}
   .row{display:flex;gap:10px;align-items:center}
   .btn{border:0;border-radius:12px;padding:10px 14px;background:var(--soft);color:var(--txt);cursor:pointer}
-  .btn.primary{background:var(--accent)}
-  .btn.good{background:var(--green);color:#03140b}
-  .btn.warn{background:var(--yellow);color:#2a2105}
-  .btn.bad{background:var(--red)}
+  .btn.primary{background:var(--accent)} .btn.good{background:var(--green);color:#03140b} .btn.warn{background:var(--yellow);color:#2a2105} .btn.bad{background:var(--red)} .btn.ghost{background:transparent;border:1px solid #2b3c62}
   .stack{display:grid;gap:12px}
   .side{display:grid;gap:12px}
   .list{display:grid;gap:8px;max-height:62vh;overflow:auto;padding-right:6px}
   .pill{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;background:#0d1428;border:1px solid #203153;border-radius:12px;padding:8px 10px}
   .dot{width:10px;height:10px;border-radius:50%;background:#6f7a98;border:1px solid #5b678a}
-  .dot.green{background:var(--green);border-color:#2b8f57}
-  .dot.yellow{background:var(--yellow);border-color:#9c7b1d}
-  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+  .dot.green{background:var(--green);border-color:#2b8f57} .dot.yellow{background:var(--yellow);border-color:#9c7b1d}
+  .sectionTitle{font-size:14px;font-weight:800;color:#cfe0ff;margin:4px 0 10px}
   .timer{font-size:34px;font-weight:800}
+  .counts{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .bubble{min-width:64px;text-align:center;padding:8px 10px;border-radius:12px;font-weight:700}
+  .b-green{background:rgba(37,211,102,.15);border:1px solid rgba(37,211,102,.35);color:var(--green)}
+  .b-yellow{background:rgba(246,201,69,.15);border:1px solid rgba(246,201,69,.35);color:var(--yellow)}
+  .b-red{background:rgba(255,94,108,.15);border:1px solid rgba(255,94,108,.35);color:var(--red)}
   .resultTag{padding:8px 12px;border-radius:999px;border:1px solid #2b3c62;background:#0d1428;min-width:160px;text-align:center;font-weight:700}
-  .r-encore{color:var(--green)}.r-another{color:var(--yellow)}.r-maybe{color:var(--red)}
+  .r-encore{color:var(--green)} .r-another{color:var(--yellow)} .r-maybe{color:var(--red)}
+  .bar{height:1px;background:#203153;margin:10px 0}
+  details{border:1px solid #243459;border-radius:12px}
+  details[open] summary{border-bottom:1px solid #243459}
+  summary{list-style:none;cursor:pointer;padding:10px 14px;background:#0f1526;border-radius:12px}
+  summary::-webkit-details-marker{display:none}
+  .links a{color:var(--cyan);text-decoration:none} .links a:hover{text-decoration:underline}
+  /* Gate */
+  .gate{position:fixed;inset:0;background:rgba(14,8,22,.85);backdrop-filter:blur(6px);display:grid;place-items:center;z-index:99}
+  .gate .panel{width:min(720px,92vw)} .tabs{display:flex;gap:8px;margin-bottom:10px} .tab{padding:8px 12px;border-radius:10px;border:1px solid #2b3c62;cursor:pointer} .tab.active{background:#203153}
+  .err{color:#ff8b8b;font-size:12px}
 </style>
 </head>
 <body>
 <div class="wrap">
+  <!-- LEFT: Rotation + Sound + Links -->
   <div class="side">
     <div class="card">
       <h1>Rotation</h1>
+      <div class="sectionTitle" style="margin-top:0">Indicators</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:-6px">• gray=new • green=Encore • yellow=Another Shot</div>
       <div id="singerList" class="list"></div>
     </div>
-  </div>
-  <div class="stack">
-    <details class="card" open>
-      <summary><h1>Event / KJ Setup</h1></summary>
+    <div class="card">
+      <h2>Sound</h2>
+      <label style="display:flex;align-items:center;gap:8px"><input id="soundToggle" type="checkbox"> Enable sound effects</label>
+      <div style="font-size:12px;color:var(--muted)">Toggle on once to allow audio in browser.</div>
+      <audio id="sfx_open" src="/assets/voting_open.mp3" preload="auto"></audio>
+      <audio id="sfx_over" src="/assets/voting_over.mp3" preload="auto"></audio>
+      <audio id="sfx_encore" src="/assets/encore.mp3" preload="auto"></audio>
+      <audio id="sfx_maybe" src="/assets/loser.wav" preload="auto"></audio>
+      <audio id="sfx_another" src="/assets/another_shot.mp3" preload="auto"></audio>
+    </div>
+    <div class="card links">
+      <h2>Quick Links</h2>
       <div class="stack">
-        <div class="grid2">
-          <input id="venue" type="text" placeholder="Venue name">
-          <input id="eventDate" type="date">
+        <a target="_blank" href="/host/index.html">Open Host</a>
+        <a target="_blank" href="/screen/index.html">Open Screen</a>
+        <a target="_blank" href="/vote/index.html">Open Vote</a>
+        <a target="_blank" href="/board/index.html">Open Board</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: Event + Show Control -->
+  <div class="stack">
+    <details id="eventBox" class="card" open>
+      <summary><h1 style="display:inline">Event / KJ Setup</h1> <span id="eventSavedMsg" style="font-size:12px;color:var(--muted);margin-left:8px"></span></summary>
+      <div class="stack" style="padding-top:10px">
+        <div class="row">
+          <div style="flex:1">
+            <label>Venue</label>
+            <input list="venues" id="venue" type="text" placeholder="Venue name">
+            <datalist id="venues"></datalist>
+          </div>
+          <div style="width:200px">
+            <label>Date</label>
+            <input id="eventDate" type="date">
+          </div>
         </div>
-        <div class="grid2">
-          <input id="kj" type="text" placeholder="KJ company or name">
-          <input id="pin" type="password" placeholder="Event PIN">
+        <div class="row">
+          <div style="flex:1">
+            <label>KJ Company / Host</label>
+            <input list="kjs" id="kj" type="text" placeholder="KJ company or name">
+            <datalist id="kjs"></datalist>
+          </div>
+          <div style="width:200px">
+            <label>Event PIN</label>
+            <input id="pin" type="password" placeholder="4–8 digits (for voters)">
+          </div>
         </div>
         <div class="row">
           <button class="btn primary" id="saveEvent">Save</button>
-          <button class="btn" id="lockEvent">Lock</button>
+          <button class="btn ghost" id="lockEvent">Lock</button>
           <button class="btn" id="resetEvent">Reset</button>
         </div>
+        <div style="font-size:12px;color:var(--muted)">Lock prevents edits & collapses this section. Reset clears singers & votes (only when unlocked).</div>
       </div>
     </details>
+
     <div class="card">
       <h1>Show Control</h1>
-      <div class="stack">
-        <div>
-          <div class="row">
-            <input id="singerName" type="text" placeholder="Singer name">
-            <input id="songArtist" type="text" placeholder="Song — Artist">
-          </div>
-          <button class="btn" id="addSinger">Add Singer</button>
+      <!-- Add Singer (top) -->
+      <div class="sectionTitle">Add Singer</div>
+      <div class="row">
+        <input id="singerName" type="text" placeholder="Singer name (e.g., Lisa H.)">
+        <input id="songArtist" type="text" placeholder="(Optional) First song — artist (notes)">
+        <button class="btn" id="addSinger" style="white-space:nowrap">Add Singer</button>
+      </div>
+
+      <div class="bar"></div>
+
+      <!-- Current & Voting (stacked BELOW) -->
+      <div class="sectionTitle">Current & Voting</div>
+      <div class="row">
+        <div style="flex:1">
+          <div style="font-size:12px;color:var(--muted)">Current Singer</div>
+          <div id="currentName" style="font-weight:800;font-size:18px">—</div>
+          <div style="font-size:12px;color:var(--muted)">Now Singing — Song/Artist</div>
+          <input id="currentSongArtist" type="text" placeholder="Type song — artist…" disabled>
         </div>
-        <div>
-          <h2>Current Singer</h2>
-          <div id="currentName">—</div>
-          <input id="currentSongArtist" type="text" placeholder="Next song/artist (for record)">
-          <div class="row">
-            <div class="timer" id="timer">00:00</div>
-            <div id="resultTag" class="resultTag">—</div>
-          </div>
-          <div class="grid3">
-            <button class="btn good" id="startVote">Start (30s)</button>
-            <button class="btn warn" id="extendVote">Extend (+15s)</button>
-            <button class="btn bad" id="endVote">End</button>
-          </div>
+        <div style="text-align:right">
+          <div style="font-size:12px;color:var(--muted)">Timer</div>
+          <div id="timer" class="timer">00:00</div>
         </div>
+      </div>
+      <div class="counts" style="margin-top:6px">
+        <div class="bubble b-green" id="c_encore">0</div>
+        <div class="bubble b-yellow" id="c_another">0</div>
+        <div class="bubble b-red" id="c_maybe">0</div>
+        <div id="resultTag" class="resultTag">—</div>
+      </div>
+      <div class="grid3" style="margin-top:10px">
+        <button class="btn good" id="startVote">Start (30s)</button>
+        <button class="btn warn" id="extendVote">Extend (+15s)</button>
+        <button class="btn bad" id="endVote">End</button>
+      </div>
+
+      <div class="bar"></div>
+
+      <div>
+        <div class="sectionTitle">Host Vote</div>
+        <div class="grid3">
+          <button class="btn good" id="hv_encore">Encore!</button>
+          <button class="btn warn" id="hv_another">Another Shot!</button>
+          <button class="btn bad" id="hv_maybe">Maybe Next Time</button>
+        </div>
+        <div style="font-size:12px;color:var(--muted);margin-top:6px">Host vote adds to totals only; results are decided when the timer ends or you press <b>End</b>.</div>
       </div>
     </div>
   </div>
 </div>
+
+<!-- Login / Registration Gate -->
+<div id="gate" class="gate">
+  <div class="panel card">
+    <h1>Host Access</h1>
+    <div class="tabs">
+      <button id="tabLogin" class="tab active" type="button">Login</button>
+      <button id="tabRegister" class="tab" type="button">Register</button>
+    </div>
+
+    <div id="loginPane" class="stack">
+      <div class="row">
+        <input id="loginEmail" type="email" placeholder="host@yourkj.com" autocomplete="username">
+        <input id="loginPass" type="password" placeholder="Password" autocomplete="current-password">
+      </div>
+      <div class="row"><button class="btn primary" id="loginBtn" type="button">Enter Host Panel</button></div>
+      <div id="loginErr" class="err"></div>
+    </div>
+
+    <div id="registerPane" class="stack" style="display:none">
+      <div class="row">
+        <input id="regName" type="text" placeholder="Name (optional)">
+        <input id="regEmail" type="email" placeholder="host@yourkj.com" autocomplete="username">
+      </div>
+      <div class="row">
+        <input id="regPass" type="password" placeholder="Create password" autocomplete="new-password">
+        <input id="regPass2" type="password" placeholder="Confirm password" autocomplete="new-password">
+      </div>
+      <div class="row"><button class="btn primary" id="registerBtn" type="button">Create Account</button></div>
+      <div id="regErr" class="err"></div>
+      <div style="font-size:12px;color:var(--muted)">Demo-only: credentials are stored in this browser. For production, connect to your backend.</div>
+    </div>
+  </div>
+</div>
+
 <script>
-let state={event:{},singers:[],current:{},voting:{counts:{}}};
+// ======= Endpoints =======
+const GET_URL = '/assets/get_state.php';
+const POST_URL = '/assets/state.php';
+const POLL_MS = 1200;
+
+// ======= State =======
+let state = null; let tickTimer = null; let allowSound=false; let authed=false;
+
+// ======= DOM =======
+const $ = s=>document.querySelector(s);
+const singerList = $('#singerList');
+const venuesDL=$('#venues'), kjsDL=$('#kjs');
+const venue=$('#venue'), eventDate=$('#eventDate'), kj=$('#kj'), pin=$('#pin');
+const singerName=$('#singerName'), songArtist=$('#songArtist');
+const currentName=$('#currentName'), currentSongArtist=$('#currentSongArtist');
+const timerEl=$('#timer');
+const cE=$('#c_encore'), cA=$('#c_another'), cM=$('#c_maybe');
+const resultTag=$('#resultTag');
+const eventBox=$('#eventBox');
+
+// Sounds
+const sfx={open:$('#sfx_open'), over:$('#sfx_over'), encore:$('#sfx_encore'), another:$('#sfx_another'), maybe:$('#sfx_maybe')};
+function play(k){ if(!allowSound) return; const a=sfx[k]; if(a){ a.currentTime=0; a.play().catch(()=>{}); }}
+$('#soundToggle').addEventListener('change', e=>{ allowSound=e.target.checked; if(allowSound) play('open'); });
+
+// ======= Gate (local-only demo auth) =======
+const HOSTS_KEY='eyek_hosts', SESSION_KEY='eyek_host_session';
+function getHosts(){ try{return JSON.parse(localStorage.getItem(HOSTS_KEY)||'[]');}catch{return[]} }
+function saveHosts(x){ localStorage.setItem(HOSTS_KEY, JSON.stringify(x)); }
+function setSession(s){ localStorage.setItem(SESSION_KEY, JSON.stringify(s)); }
+function getSession(){ try{return JSON.parse(localStorage.getItem(SESSION_KEY)||'null');}catch{return null} }
+function showGate(){ $('#gate').style.display='grid'; }
+function hideGate(){ $('#gate').style.display='none'; }
+const tabLogin=$('#tabLogin'), tabRegister=$('#tabRegister');
+const loginPane=$('#loginPane'), registerPane=$('#registerPane');
+function switchTab(w){ if(w==='login'){tabLogin.classList.add('active');tabRegister.classList.remove('active');loginPane.style.display='grid';registerPane.style.display='none';} else {tabRegister.classList.add('active');tabLogin.classList.remove('active');registerPane.style.display='grid';loginPane.style.display='none';} $('#loginErr').textContent=''; $('#regErr').textContent='' }
+['click'].forEach(ev=>{ tabLogin.addEventListener(ev,()=>switchTab('login')); tabRegister.addEventListener(ev,()=>switchTab('register')); });
+async function sha256(str){ const enc=new TextEncoder().encode(str); const buf=await crypto.subtle.digest('SHA-256', enc); return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('') }
+function salt(){ return Array.from(crypto.getRandomValues(new Uint8Array(12))).map(b=>b.toString(16).padStart(2,'0')).join('') }
+$('#registerBtn').addEventListener('click', async ()=>{ const name=$('#regName').value.trim(); const email=$('#regEmail').value.trim().toLowerCase(); const p1=$('#regPass').value, p2=$('#regPass2').value; if(!email||!p1||!p2){ $('#regErr').textContent='Fill email and both password fields.'; return;} if(p1!==p2){ $('#regErr').textContent='Passwords do not match.'; return;} let hosts=getHosts(); if(hosts.find(h=>h.email===email)){ $('#regErr').textContent='Email already registered on this device.'; return;} const s=salt(); const h=await sha256(s+p1); hosts.push({email,name,salt:s,hash:h}); saveHosts(hosts); setSession({email,name}); authed=true; hideGate(); });
+$('#loginBtn').addEventListener('click', async ()=>{ const email=$('#loginEmail').value.trim().toLowerCase(); const pass=$('#loginPass').value; const u=getHosts().find(h=>h.email===email); if(!u){ $('#loginErr').textContent='No account found on this device.'; return;} const h=await sha256(u.salt+pass); if(h!==u.hash){ $('#loginErr').textContent='Incorrect password.'; return;} setSession({email:u.email,name:u.name||''}); authed=true; hideGate(); });
+
+// ======= Helpers =======
+function debounce(fn,ms){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms) } }
+function rememberValue(key,val){ if(!val) return; const raw=localStorage.getItem(key); const list=raw?JSON.parse(raw):[]; if(!list.includes(val)) list.unshift(val); localStorage.setItem(key, JSON.stringify(list.slice(0,20))); }
+function renderDatalist(key, dl){ const raw=localStorage.getItem(key); const list=raw?JSON.parse(raw):[]; dl.innerHTML=list.map(v=>`<option value="${v}"></option>`).join(''); }
+function fmt(ms){ const s=Math.ceil(ms/1000); const m=Math.floor(s/60), r=s%60; return `${String(m).padStart(2,'0')}:${String(r).padStart(2,'0')}` }
+function announce(w){ if(!w){ resultTag.textContent='—'; resultTag.className='resultTag'; return;} if(w==='encore'){ resultTag.textContent='Encore!'; resultTag.className='resultTag r-encore'; play('encore'); } else if(w==='another'){ resultTag.textContent='Another Shot!'; resultTag.className='resultTag r-another'; play('another'); } else { resultTag.textContent='Maybe Next Time'; resultTag.className='resultTag r-maybe'; play('maybe'); } }
+
+// ======= Event Actions =======
+$('#saveEvent').addEventListener('click', async ()=>{ state.event.venue=venue.value.trim(); state.event.date=eventDate.value||new Date().toISOString().slice(0,10); state.event.kj=kj.value.trim(); state.event.pin=pin.value.trim(); await postState(); rememberValue('eyek_venues', state.event.venue); rememberValue('eyek_kjs', state.event.kj); const m=$('#eventSavedMsg'); m.textContent='Saved!'; setTimeout(()=>m.textContent='',1400); });
+$('#lockEvent').addEventListener('click', async ()=>{ state.event.locked=!state.event.locked; await postState(); renderLockUI(); });
+$('#resetEvent').addEventListener('click', async ()=>{ if(state.event.locked){ alert('Unlock to reset.'); return;} if(!confirm('Reset this event? This clears singers & votes.')) return; state={ serverUpdatedAt: Date.now()/1000|0, event:{venue:'',date:new Date().toISOString().slice(0,10),kj:'',pin:'',locked:false}, singers:[], current:{id:null,name:'',songArtist:''}, voting:{open:false,endsAt:0,extendCount:0,counts:{encore:0,another:0,maybe:0}, lastResult:null} }; await postState(); });
+function renderLockUI(){ const btn=$('#lockEvent'); if(state.event.locked){ btn.textContent='Unlock'; eventBox.open=false; $('#resetEvent').disabled=true; venue.disabled=kj.disabled=eventDate.disabled=pin.disabled=true; } else { btn.textContent='Lock'; $('#resetEvent').disabled=false; venue.disabled=kj.disabled=eventDate.disabled=pin.disabled=false; } }
+
+// ======= Singer Actions =======
+$('#addSinger').addEventListener('click', async ()=>{ const name=singerName.value.trim(); const firstNote=songArtist.value.trim(); if(!name){ alert('Enter a singer name.'); return;} const id='s_'+Math.random().toString(36).slice(2,9); state.singers.push({id,name,_color:''}); if(!state.current.id){ state.current={id,name,songArtist:''}; } await postState(); singerName.value=''; songArtist.value=''; });
+function setCurrent(id){ const s=state.singers.find(x=>x.id===id); if(!s) return; state.current={id:s.id,name:s.name,songArtist:state.current.songArtist||''}; postState(); }
+function removeSinger(id){ state.singers=state.singers.filter(x=>x.id!==id); if(state.current.id===id){ state.current={id:null,name:'',songArtist:''}; } postState(); }
+
+// ======= Voting =======
+$('#startVote').addEventListener('click', async ()=>{ if(!state.current.id){ alert('Set a current singer first.'); return;} state.voting.open=true; state.voting.endsAt=Date.now()+30000; state.voting.extendCount=0; state.voting.counts={encore:0,another:0,maybe:0}; state.voting.lastResult=null; await postState(); play('open'); });
+$('#extendVote').addEventListener('click', async ()=>{ if(!state.voting.open) return; state.voting.endsAt+=15000; state.voting.extendCount++; await postState(); });
+$('#endVote').addEventListener('click', async ()=>{ await concludeVoting(); });
+async function concludeVoting(){ if(!state.voting.open){ announce(state.voting.lastResult); return;} state.voting.open=false; state.voting.endsAt=0; const {encore,another,maybe}=state.voting.counts; let winner='maybe'; if(encore>=another && encore>=maybe) winner='encore'; else if(another>=encore && another>=maybe) winner='another'; else winner='maybe'; state.voting.lastResult=winner; const cur=state.singers.find(s=>s.id===state.current.id); if(cur){ if(winner==='maybe'){ state.singers=state.singers.filter(s=>s.id!==cur.id); } else { cur._color=(winner==='encore'?'green':'yellow'); } } await postState(); play('over'); setTimeout(()=>announce(winner),150); }
+
+// Host Vote buttons
+$('#hv_encore').addEventListener('click', ()=> addHostVote('encore'));
+$('#hv_another').addEventListener('click', ()=> addHostVote('another'));
+$('#hv_maybe').addEventListener('click', ()=> addHostVote('maybe'));
+async function addHostVote(kind){ if(!state.voting.open) return; state.voting.counts[kind]=(state.voting.counts[kind]||0)+1; await postState(); }
+
+// ======= Fetch / Render =======
+async function fetchState(){ const r=await fetch(GET_URL,{cache:'no-store'}); state=await r.json(); // backfill
+  state.event=state.event||{venue:'',date:new Date().toISOString().slice(0,10),kj:'',pin:'',locked:false};
+  state.current=state.current||{id:null,name:'',songArtist:''};
+  state.voting=state.voting||{open:false,endsAt:0,extendCount:0,counts:{encore:0,another:0,maybe:0},lastResult:null};
+  state.singers=state.singers||[]; render(); }
+async function postState(){ await fetch(POST_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(state)}); await fetchState(); }
+
 function render(){
-  const list=document.getElementById('singerList');list.innerHTML='';
-  state.singers.forEach(s=>{const div=document.createElement('div');div.className='pill';const dot=document.createElement('div');dot.className='dot '+(s._color||'');div.appendChild(dot);const span=document.createElement('div');span.textContent=s.name;div.appendChild(span);const btn=document.createElement('button');btn.textContent='Set';btn.onclick=()=>setCurrent(s.id);div.appendChild(btn);list.appendChild(div)});
-  document.getElementById('currentName').textContent=state.current.name||'—';
+  // Do not stomp while typing
+  if(document.activeElement!==venue) venue.value=state.event.venue||'';
+  if(document.activeElement!==eventDate) eventDate.value=state.event.date||new Date().toISOString().slice(0,10);
+  if(document.activeElement!==kj) kj.value=state.event.kj||'';
+  if(document.activeElement!==pin) pin.value=state.event.pin||'';
+  renderLockUI();
+  renderDatalist('eyek_venues', venuesDL); renderDatalist('eyek_kjs', kjsDL);
+
+  // Rotation list
+  singerList.innerHTML='';
+  state.singers.forEach(s=>{ const div=document.createElement('div'); div.className='pill'; const dot=document.createElement('div'); dot.className='dot '+(s._color||''); const name=document.createElement('div'); name.textContent=s.name; name.style.fontWeight='600'; name.style.overflow='hidden'; name.style.textOverflow='ellipsis'; name.style.whiteSpace='nowrap'; const actions=document.createElement('div'); actions.style.display='flex'; actions.style.gap='6px'; const setBtn=document.createElement('button'); setBtn.className='btn'; setBtn.textContent='Set'; setBtn.onclick=()=>setCurrent(s.id); const rmBtn=document.createElement('button'); rmBtn.className='btn ghost'; rmBtn.textContent='Remove'; rmBtn.onclick=()=>removeSinger(s.id); actions.appendChild(setBtn); actions.appendChild(rmBtn); div.appendChild(dot); div.appendChild(name); div.appendChild(actions); singerList.appendChild(div); });
+
+  // Current & counts
+  currentName.textContent=state.current.name||'—';
+  currentSongArtist.disabled=!state.current.id;
+  if(document.activeElement!==currentSongArtist){ currentSongArtist.value=state.current.songArtist||''; }
+  cE.textContent=state.voting.counts.encore||0; cA.textContent=state.voting.counts.another||0; cM.textContent=state.voting.counts.maybe||0;
+
+  // Timer & result
+  if(state.voting.open){ const ms=Math.max(0, state.voting.endsAt-Date.now()); timerEl.textContent=fmt(ms); resultTag.textContent='Voting…'; resultTag.className='resultTag'; } else { timerEl.textContent='00:00'; announce(state.voting.lastResult); }
 }
-function setCurrent(id){const s=state.singers.find(x=>x.id===id);if(s){state.current={id:s.id,name:s.name,songArtist:''};render();}}
-function addSinger(){const n=document.getElementById('singerName').value.trim();if(!n)return;const id='s'+Math.random().toString(36).slice(2,9);state.singers.push({id,name:n});render();}
-document.getElementById('addSinger').onclick=addSinger;
+
+// Debounced Now Singing updates
+currentSongArtist.addEventListener('input', debounce(async ()=>{ if(!state.current.id) return; state.current.songArtist=currentSongArtist.value.trim(); await postState(); }, 400));
+
+async function loop(){ await fetchState(); if(tickTimer) clearInterval(tickTimer); tickTimer=setInterval(async ()=>{ if(state?.voting?.open && Date.now()>=state.voting.endsAt){ await concludeVoting(); } else { await fetchState(); } }, POLL_MS); }
+
+// Boot
+(function init(){ eventDate.value=new Date().toISOString().slice(0,10); const sess=getSession(); if(sess){ authed=true; hideGate(); } else { showGate(); } loop(); })();
 </script>
 </body>
 </html>
