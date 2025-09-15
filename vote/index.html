@@ -1,66 +1,75 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
 <title>EYEK • Vote</title>
-<meta name="viewport" content="width=device-width, initial-scale=1" />
 <style>
-  :root{--bg:#0b0f17;--text:#eaf2ff;--muted:#9db2d1;--green:#26e28b;--yellow:#ffd24d;--red:#ff5a6b;}
-  *{box-sizing:border-box;font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial}
-  body{margin:0;background:var(--bg);color:var(--text);display:flex;align-items:center;justify-content:center;min-height:100vh}
-  .card{background:#121826;border:1px solid #22314f;border-radius:16px;padding:20px;max-width:520px;width:100%;text-align:center}
-  h1{margin:8px 0 4px 0}
-  .muted{color:var(--muted)}
-  .btn{display:block;width:100%;padding:14px 16px;margin:10px 0;border:none;border-radius:12px;font-size:18px;cursor:pointer}
-  .green{background:var(--green);color:#012a19}
-  .yellow{background:var(--yellow);color:#332500}
-  .red{background:var(--red);color:#33040a}
-  .disabled{opacity:0.5;pointer-events:none}
+  :root{--bg:#0b1022;--ink:#e8f0ff;--sub:#a2b4da;--green:#33e27b;--yellow:#ffd166;--red:#ff6b6b;}
+  html,body{margin:0;height:100%;background:radial-gradient(1000px 500px at 50% 15%,#192b58 0%,#0b1022 60%);color:var(--ink);font-family:system-ui,Inter,Segoe UI,Roboto,Arial,sans-serif}
+  .wrap{min-height:100%;display:flex;align-items:center;justify-content:center;padding:24px}
+  .card{background:#0f1930;border-radius:16px;padding:20px;max-width:720px;width:100%;box-shadow:0 10px 28px rgba(0,0,0,.35)}
+  h1{margin:0 0 8px;font-size:26px}
+  .muted{color:var(--sub)}
+  .row{display:flex;gap:10px;margin-top:14px}
+  .btn{flex:1;padding:14px;border-radius:14px;border:none;cursor:pointer;font-weight:700;font-size:18px}
+  .enc{background:linear-gradient(90deg,#21e064,#39ffa0);color:#03150c}
+  .ano{background:linear-gradient(90deg,#ffe08a,#ffd166);color:#321f00}
+  .may{background:linear-gradient(90deg,#ff9b9b,#ff6b6b);color:#330000}
+  .badge{display:inline-block;background:#13224a;color:#bed0ff;padding:4px 10px;border-radius:999px;font-size:12px;margin-left:6px}
 </style>
 </head>
 <body>
+<div class="wrap">
   <div class="card">
-    <div class="muted" id="venueLine">—</div>
-    <h1 id="title">Voting Closed</h1>
-    <div class="muted" id="countdown">—</div>
-    <button class="btn green"  id="b1" onclick="vote('encore')">Encore!</button>
-    <button class="btn yellow" id="b2" onclick="vote('another')">Another Shot!</button>
-    <button class="btn red"    id="b3" onclick="vote('nexttime')">Maybe Next Time</button>
+    <h1>Vote for <span id="who">—</span> <span class="badge" id="status">Closed</span></h1>
+    <div class="muted" id="song"></div>
+    <div class="row">
+      <button class="btn enc" id="btnE">Encore!</button>
+      <button class="btn ano" id="btnA">Another Shot!</button>
+      <button class="btn may" id="btnM">Maybe Next Time</button>
+    </div>
+    <div class="muted" style="margin-top:10px">Your vote is anonymous. Thank you!</div>
   </div>
+</div>
 
 <script>
 const API='/assets/state.php';
-let STATE=null, POLL;
+let OPEN=false;
 
-function $(id){return document.getElementById(id)}
-
-async function fetchState(){
-  const r = await fetch(API+'?action=get',{cache:'no-store'});
-  STATE = await r.json();
-  render();
+function apiGet(){
+  const u=new URL(API,location.origin); u.searchParams.set('action','get');
+  return fetch(u,{cache:'no-store'}).then(r=>r.json());
 }
-function render(){
-  $('venueLine').textContent = (STATE.venue||'') + (STATE.kj?(' • KJ '+STATE.kj):'');
-  const cur = (STATE.singers||[]).find(x=>x.id===STATE.currentSingerId);
-  const open = !!(STATE.voting&&STATE.voting.open);
-  $('title').textContent = open && cur? ('Now Voting: '+cur.name) : 'Voting Closed';
-  const left = open? Math.max(0,(STATE.voting.endsAt||0) - Date.now()) : 0;
-  $('countdown').textContent = open? (Math.ceil(left/1000)+'s left') : 'Wait for host…';
-  ['b1','b2','b3'].forEach(id=> $(id).classList.toggle('disabled', !open));
+async function vote(choice){
+  if (!OPEN) { alert('Voting is closed right now.'); return; }
+  const u=new URL(API,location.origin); u.searchParams.set('action','vote'); u.searchParams.set('choice',choice);
+  const r = await fetch(u, {method:'POST'});
+  const j = await r.json();
+  if (!j.ok) alert(j.error||'Failed');
 }
 
-async function vote(type){
-  if (!STATE?.voting?.open) return;
-  const fd = new FormData();
-  fd.append('action','vote');
-  fd.append('type', type);
-  const r = await fetch(API,{method:'POST',body:fd});
-  if(r.ok){ ['b1','b2','b3'].forEach(id=>$(id).classList.add('disabled')); }
+function render(s){
+  const cur=s.current||{name:'',song:''};
+  const v=s.voting||{isOpen:false, endsAt:0};
+  document.getElementById('who').textContent = cur.name||'—';
+  document.getElementById('song').textContent= cur.song||'';
+  OPEN = !!v.isOpen;
+  document.getElementById('status').textContent = OPEN ? 'Open' : 'Closed';
+  document.getElementById('btnE').disabled = !OPEN;
+  document.getElementById('btnA').disabled = !OPEN;
+  document.getElementById('btnM').disabled = !OPEN;
 }
+setInterval(async ()=>{
+  const r=await apiGet(); if (r.ok) render(r.state);
+}, 1200);
 
-(async ()=>{
-  await fetchState();
-  POLL=setInterval(fetchState, 2000);
+document.getElementById('btnE').onclick = ()=>vote('encore');
+document.getElementById('btnA').onclick = ()=>vote('another');
+document.getElementById('btnM').onclick = ()=>vote('maybe');
+
+(async function init(){
+  const r=await apiGet(); if (r.ok) render(r.state);
 })();
 </script>
 </body>
