@@ -4,491 +4,93 @@
 <meta charset="utf-8" />
 <title>EYEK • Host</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="icon" href="/assets/icon.png" />
 <style>
-  :root { --purple:#2F0658; --bg:var(--purple); --card:#12192a; --soft:#1b2540; --txt:#eaf2ff; --muted:#a9b6d9; --green:#25d366; --yellow:#f6c945; --red:#ff5e6c; --cyan:#3ad4ff; --accent:#7aa2ff }
-  *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--txt);font:15px/1.45 system-ui,Segoe UI,Roboto,Helvetica,Arial}
-  form{margin:0} /* help some autofill engines */
-  .wrap{display:grid;grid-template-columns:320px 1fr;gap:16px;padding:16px}
-  .card{background:linear-gradient(180deg,var(--card),#0f1526);border:1px solid #243459;border-radius:14px;padding:14px;box-shadow:0 6px 26px rgba(0,0,0,.35)}
-  h1{margin:0 0 8px;font-size:20px}
-  h2{margin:0 0 10px;font-size:16px;color:var(--muted)}
-  label{font-size:12px;color:var(--muted);display:block;margin:8px 0 4px}
-  input,button,select{font:inherit}
-  input[type=text],input[type=date],input[type=password],input[type=email]{width:100%;padding:10px;border-radius:10px;border:1px solid #2b3c62;background:#0d1428;color:var(--txt)}
-  input[disabled]{opacity:.7}
-  .row{display:flex;gap:10px;align-items:center}
-  .btn{border:0;border-radius:12px;padding:10px 14px;background:var(--soft);color:var(--txt);cursor:pointer;transition:transform .04s ease, filter .12s ease}
-  .btn:hover{filter:brightness(1.15)}
-  .btn:active{transform:translateY(1px)}
-  .btn.primary{background:var(--accent)} .btn.good{background:var(--green);color:#03140b} .btn.warn{background:var(--yellow);color:#2a2105} .btn.bad{background:var(--red)} .btn.ghost{background:transparent;border:1px solid #2b3c62}
-  .stack{display:grid;gap:12px}
-  .side{display:grid;gap:12px}
-  .list{display:grid;gap:8px;max-height:62vh;overflow:auto;padding-right:6px}
-  .pill{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;background:#0d1428;border:1px solid #203153;border-radius:12px;padding:8px 10px}
-  .dot{width:10px;height:10px;border-radius:50%;background:#6f7a98;border:1px solid #5b678a}
-  .dot.green{background:var(--green);border-color:#2b8f57} .dot.yellow{background:var(--yellow);border-color:#9c7b1d}
-  .sectionTitle{font-size:14px;font-weight:800;color:#cfe0ff;margin:4px 0 10px}
-  .timer{font-size:34px;font-weight:800}
-  .counts{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-  .bubble{min-width:64px;text-align:center;padding:8px 10px;border-radius:12px;font-weight:700}
-  .b-green{background:rgba(37,211,102,.15);border:1px solid rgba(37,211,102,.35);color:var(--green)}
-  .b-yellow{background:rgba(246,201,69,.15);border:1px solid rgba(246,201,69,.35);color:var(--yellow)}
-  .b-red{background:rgba(255,94,108,.15);border:1px solid rgba(255,94,108,.35);color:var(--red)}
-  .resultTag{padding:8px 12px;border-radius:999px;border:1px solid #2b3c62;background:#0d1428;min-width:160px;text-align:center;font-weight:700}
-  .r-encore{color:var(--green)} .r-another{color:var(--yellow)} .r-maybe{color:var(--red)}
-  .bar{height:1px;background:#203153;margin:10px 0}
-  details{border:1px solid #243459;border-radius:12px}
-  details[open] summary{border-bottom:1px solid #243459}
-  summary{list-style:none;cursor:pointer;padding:10px 14px;background:#0f1526;border-radius:12px}
-  summary::-webkit-details-marker{display:none}
-  .links a{color:var(--cyan);text-decoration:none} .links a:hover{text-decoration:underline}
-  /* Gate */
-  .gate{position:fixed;inset:0;background:rgba(14,8,22,.92);backdrop-filter:blur(6px);display:grid;place-items:center;z-index:9999;pointer-events:auto}
-  .gate .panel{width:min(720px,92vw)} .tabs{display:flex;gap:8px;margin-bottom:10px} .tab{padding:8px 12px;border-radius:10px;border:1px solid #2b3c62;cursor:pointer} .tab.active{background:#203153}
+  body{margin:0;background:#2F0658;color:#fff;font-family:sans-serif}
+  .btn{padding:10px 14px;border-radius:8px;border:none;cursor:pointer}
+  .btn.primary{background:#7aa2ff;color:#000}
+  .btn.ghost{background:transparent;border:1px solid #ccc;color:#fff}
+  .card{background:#1b1b2e;border-radius:8px;padding:16px;margin:12px}
   .err{color:#ff8b8b;font-size:12px}
 </style>
 </head>
 <body>
-<div class="wrap" autocomplete="off">
-  <!-- LEFT: Rotation + Sound + Links -->
-  <div class="side">
-    <div class="card">
-      <h1>Rotation</h1>
-      <div class="sectionTitle" style="margin-top:0">Indicators</div>
-      <div style="font-size:12px;color:var(--muted);margin-top:-6px">• gray=new • green=Encore • yellow=Another Shot</div>
-      <div id="singerList" class="list"></div>
-    </div>
-    <div class="card">
-      <h2>Sound</h2>
-      <label style="display:flex;align-items:center;gap:8px"><input id="soundToggle" type="checkbox"> Enable sound effects</label>
-      <div style="font-size:12px;color:var(--muted)">Toggle on once to allow audio in browser.</div>
-      <audio id="sfx_open" src="/assets/voting_open.mp3" preload="auto"></audio>
-      <audio id="sfx_over" src="/assets/voting_over.mp3" preload="auto"></audio>
-      <audio id="sfx_encore" src="/assets/encore.mp3" preload="auto"></audio>
-      <audio id="sfx_maybe" src="/assets/loser.wav" preload="auto"></audio>
-      <audio id="sfx_another" src="/assets/another_shot.mp3" preload="auto"></audio>
-    </div>
-    <div class="card links">
-      <h2>Quick Links</h2>
-      <div class="stack">
-        <a target="_blank" href="/host/index.html">Open Host</a>
-        <a target="_blank" href="/screen/index.html">Open Screen</a>
-        <a target="_blank" href="/vote/index.html">Open Vote</a>
-        <a target="_blank" href="/board/index.html">Open Board</a>
-      </div>
-    </div>
-  </div>
-
-  <!-- RIGHT: Event + Show Control -->
-  <div class="stack">
-    <details id="eventBox" class="card" open>
-      <summary><h1 style="display:inline">Event / KJ Setup</h1> <span id="eventSavedMsg" style="font-size:12px;color:var(--muted);margin-left:8px"></span></summary>
-      <div class="stack" style="padding-top:10px">
-        <div class="row">
-          <div style="flex:1">
-            <label>Venue (internal name)</label>
-            <input list="venues" id="venue" type="text" placeholder="Eagles-Kalispell" autocomplete="off" autocapitalize="words" spellcheck="false">
-            <datalist id="venues"></datalist>
-          </div>
-          <div style="flex:1">
-            <label>Public Venue Name (shown on Screen)</label>
-            <input id="venuePublic" type="text" placeholder="the Eagles!" autocomplete="off" autocapitalize="words" spellcheck="false">
-          </div>
-          <div style="width:200px">
-            <label>Date</label>
-            <input id="eventDate" type="date">
-          </div>
-        </div>
-        <div class="row">
-          <div style="flex:1">
-            <label>KJ Company / Host</label>
-            <input list="kjs" id="kj" type="text" placeholder="Awesome KJ Co." autocomplete="off" autocapitalize="words" spellcheck="false">
-            <datalist id="kjs"></datalist>
-          </div>
-          <div style="width:200px">
-            <label>Event PIN</label>
-            <input id="pin" type="password" placeholder="4–8 digits" autocomplete="off" inputmode="numeric">
-          </div>
-        </div>
-        <div class="row">
-          <button class="btn primary" id="saveEvent">Save</button>
-          <button class="btn ghost" id="lockEvent">Lock</button>
-          <button class="btn" id="resetEvent">Reset</button>
-        </div>
-        <div style="font-size:12px;color:var(--muted)">Lock prevents edits & collapses this section. Reset clears singers & votes (only when unlocked).</div>
-      </div>
-    </details>
-
-    <div class="card">
-      <h1>Show Control</h1>
-      <!-- Add Singer (top) -->
-      <div class="sectionTitle">Add Singer</div>
-      <div class="row">
-        <input id="singerName" type="text" placeholder="Singer name (e.g., Lisa H.)" autocomplete="off" autocapitalize="words" spellcheck="false">
-        <input id="songArtist" type="text" placeholder="(Optional) First song — artist (notes)" autocomplete="off" spellcheck="false" name="note_song_artist">
-        <button class="btn" id="addSinger" style="white-space:nowrap">Add Singer</button>
-      </div>
-
-      <div class="bar"></div>
-
-      <!-- Current & Voting (stacked BELOW) -->
-      <div class="sectionTitle">Current & Voting</div>
-      <div class="row">
-        <div style="flex:1">
-          <div style="font-size:12px;color:var(--muted)">Current Singer</div>
-          <div id="currentName" style="font-weight:800;font-size:18px">—</div>
-          <div style="font-size:12px;color:var(--muted)">Now Singing — Song/Artist</div>
-          <input id="currentSongArtist" type="text" placeholder="Type song — artist…" disabled autocomplete="off" spellcheck="false" name="now_singing">
-        </div>
-        <div style="text-align:right">
-          <div style="font-size:12px;color:var(--muted)">Timer</div>
-          <div id="timer" class="timer">00:00</div>
-        </div>
-      </div>
-      <div class="counts" style="margin-top:6px">
-        <div class="bubble b-green" id="c_encore">0</div>
-        <div class="bubble b-yellow" id="c_another">0</div>
-        <div class="bubble b-red" id="c_maybe">0</div>
-        <div id="resultTag" class="resultTag">—</div>
-      </div>
-      <div class="grid3" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:10px">
-        <button class="btn good" id="startVote">Start (30s)</button>
-        <button class="btn warn" id="extendVote">Extend (+15s)</button>
-        <button class="btn bad" id="endVote">End</button>
-      </div>
-
-      <div class="bar"></div>
-
-      <div>
-        <div class="sectionTitle">Host Vote</div>
-        <div class="grid3" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
-          <button class="btn good" id="hv_encore">Encore!</button>
-          <button class="btn warn" id="hv_another">Another Shot!</button>
-          <button class="btn bad" id="hv_maybe">Maybe Next Time</button>
-        </div>
-        <div style="font-size:12px;color:var(--muted);margin-top:6px">Host vote adds to totals only; results are decided when the timer ends or you press <b>End</b>.</div>
-      </div>
-    </div>
+<div class="card" id="gate">
+  <h2>Host Access</h2>
+  <div id="loginPane">
+    <input id="loginEmail" type="email" placeholder="host@yourkj.com">
+    <input id="loginPass" type="password" placeholder="Password">
+    <button class="btn primary" id="loginBtn">Enter Host Panel</button>
+    <button class="btn ghost" id="demoEnter">Skip (Demo)</button>
+    <div id="loginErr" class="err"></div>
   </div>
 </div>
 
-<!-- Login / Registration Gate -->
-<div id="gate" class="gate">
-  <div class="panel card">
-    <h1>Host Access</h1>
-    <div class="tabs">
-      <button id="tabLogin" class="tab active" type="button">Login</button>
-      <button id="tabRegister" class="tab" type="button">Register</button>
-    </div>
-
-    <div id="loginPane" class="stack">
-      <div class="row">
-        <input id="loginEmail" type="email" placeholder="host@yourkj.com" autocomplete="username" name="login_email">
-        <input id="loginPass" type="password" placeholder="Password" autocomplete="current-password" name="login_password">
-      </div>
-      <div class="row">
-        <button class="btn primary" id="loginBtn" type="button">Enter Host Panel</button>
-        <button class="btn ghost" id="demoEnter" type="button">Skip (Demo)</button>
-      </div>
-      <div id="loginErr" class="err"></div>
-    </div>
-      <div class="row">
-        <button class="btn primary" id="loginBtn" type="button" onclick="handleLogin()">Enter Host Panel</button>
-        <button class="btn ghost" id="demoEnter" type="button" onclick="handleDemoEnter()">Skip (Demo)</button>
-      </div>
-      <div id="loginErr" class="err"></div>
-    </div>
-      <div class="row"><button class="btn primary" id="loginBtn" type="button">Enter Host Panel</button></div>
-      <div id="loginErr" class="err"></div>
-    </div>
-
-    <div id="registerPane" class="stack" style="display:none">
-      <div class="row">
-        <input id="regName" type="text" placeholder="Name (optional)" autocomplete="name">
-        <input id="regEmail" type="email" placeholder="host@yourkj.com" autocomplete="username" name="register_email">
-      </div>
-      <div class="row">
-        <input id="regPass" type="password" placeholder="Create password" autocomplete="new-password" name="register_password">
-        <input id="regPass2" type="password" placeholder="Confirm password" autocomplete="new-password" name="register_password_confirm">
-      </div>
-      <div class="row">
-        <button class="btn primary" id="registerBtn" type="button">Create Account</button>
-      </div>
-      <div id="regErr" class="err"></div>
-      <div style="font-size:12px;color:var(--muted)">Demo-only: credentials are stored in this browser. For production, connect to your backend.</div>
-    </div>
-      <div class="row">
-        <input id="regPass" type="password" placeholder="Create password" autocomplete="new-password" name="register_password">
-        <input id="regPass2" type="password" placeholder="Confirm password" autocomplete="new-password" name="register_password_confirm">
-      </div>
-      <div class="row">
-        <button class="btn primary" id="registerBtn" type="button" onclick="handleRegister()">Create Account</button>
-      </div>
-      <div id="regErr" class="err"></div>
-      <div style="font-size:12px;color:var(--muted)">Demo-only: credentials are stored in this browser. For production, connect to your backend.</div>
-    </div>
-      <div class="row">
-        <input id="regPass" type="password" placeholder="Create password" autocomplete="new-password" name="register_password">
-        <input id="regPass2" type="password" placeholder="Confirm password" autocomplete="new-password" name="register_password_confirm">
-      </div>
-      <div class="row"><button class="btn primary" id="registerBtn" type="button">Create Account</button></div>
-      <div id="regErr" class="err"></div>
-      <div style="font-size:12px;color:var(--muted)">Demo-only: credentials are stored in this browser. For production, connect to your backend.</div>
-    </div>
+<div id="app" style="display:none">
+  <div class="card">
+    <h2>Show Control</h2>
+    <input id="singerName" placeholder="Singer name">
+    <input id="songArtist" placeholder="Song - Artist">
+    <button class="btn primary" id="addSinger">Add Singer</button>
+    <div id="singerList"></div>
   </div>
 </div>
 
 <script>
-// ======= Endpoints =======
-const GET_URL = '/assets/get_state.php';
-const POST_URL = '/assets/state.php';
-const POLL_MS = 1200;
+function $(s){return document.querySelector(s)}
+function hideGate(){ $('#gate').style.display='none'; $('#app').style.display='block'; }
 
-// ======= State =======
-let state = null; let tickTimer = null; let allowSound=false; let authed=false;
+// Session stub
+function setSession(sess){ localStorage.setItem('eyek_host_session', JSON.stringify(sess)); }
+function getSession(){ try{return JSON.parse(localStorage.getItem('eyek_host_session'))}catch{return null} }
 
-// ======= DOM =======
-const $ = s=>document.querySelector(s);
-const singerList = $('#singerList');
-const venuesDL=$('#venues'), kjsDL=$('#kjs');
-const venue=$('#venue'), venuePublic=$('#venuePublic'), eventDate=$('#eventDate'), kj=$('#kj'), pin=$('#pin');
-const singerName=$('#singerName'), songArtist=$('#songArtist');
-const currentName=$('#currentName'), currentSongArtist=$('#currentSongArtist');
-const timerEl=$('#timer');
-const cE=$('#c_encore'), cA=$('#c_another'), cM=$('#c_maybe');
-const resultTag=$('#resultTag');
-const eventBox=$('#eventBox');
+// Auth
+$('#loginBtn').addEventListener('click', ()=>{
+  const email=$('#loginEmail').value.trim();
+  const pass=$('#loginPass').value;
+  if(!email||!pass){ $('#loginErr').textContent='Enter email and password'; return; }
+  setSession({email}); hideGate();
+});
+$('#demoEnter').addEventListener('click', ()=>{ setSession({email:'demo@local'}); hideGate(); });
 
-// Sounds
-const sfx={open:$('#sfx_open'), over:$('#sfx_over'), encore:$('#sfx_encore'), another:$('#sfx_another'), maybe:$('#sfx_maybe')};
-function play(k){ if(!allowSound) return; const a=sfx[k]; if(a){ a.currentTime=0; a.play().catch(()=>{}); }}
-$('#soundToggle').addEventListener('change', e=>{ allowSound=e.target.checked; if(allowSound) play('open'); });
-
-// ======= Gate (local-only demo auth) =======
-const HOSTS_KEY='eyek_hosts', SESSION_KEY='eyek_host_session';
-function getHosts(){ try{return JSON.parse(localStorage.getItem(HOSTS_KEY)||'[]');}catch{return[]} }
-function saveHosts(x){ localStorage.setItem(HOSTS_KEY, JSON.stringify(x)); }
-function setSession(s){ localStorage.setItem(SESSION_KEY, JSON.stringify(s)); }
-function getSession(){ try{return JSON.parse(localStorage.getItem(SESSION_KEY)||'null');}catch{return null} }
-function showGate(){ $('#gate').style.display='grid'; }
-function hideGate(){ $('#gate').style.display='none'; }
-const tabLogin=$('#tabLogin'), tabRegister=$('#tabRegister');
-const loginPane=$('#loginPane'), registerPane=$('#registerPane');
-function switchTab(w){ if(w==='login'){tabLogin.classList.add('active');tabRegister.classList.remove('active');loginPane.style.display='grid';registerPane.style.display='none';} else {tabRegister.classList.add('active');tabLogin.classList.remove('active');registerPane.style.display='grid';loginPane.style.display='none';} $('#loginErr').textContent=''; $('#regErr').textContent='' }
-['click'].forEach(ev=>{ tabLogin.addEventListener(ev,()=>switchTab('login')); tabRegister.addEventListener(ev,()=>switchTab('register')); });
-async function sha256(str){ const enc=new TextEncoder().encode(str); const buf=await crypto.subtle.digest('SHA-256', enc); return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('') }
-function salt(){ return Array.from(crypto.getRandomValues(new Uint8Array(12))).map(b=>b.toString(16).padStart(2,'0')).join('') }
-function handleRegister(){ (async ()=>{ const name=$('#regName').value.trim(); const email=$('#regEmail').value.trim().toLowerCase(); const p1=$('#regPass').value, p2=$('#regPass2').value; if(!email||!p1||!p2){ $('#regErr').textContent='Fill email and both password fields.'; return;} if(p1!==p2){ $('#regErr').textContent='Passwords do not match.'; return;} let hosts=getHosts(); if(hosts.find(h=>h.email===email)){ $('#regErr').textContent='Email already registered on this device.'; return;} const s=salt(); const h=await sha256(s+p1); hosts.push({email,name,salt:s,hash:h}); saveHosts(hosts); setSession({email,name}); authed=true; hideGate(); })().catch(err=>{ console.error(err); $('#regErr').textContent='Could not register.'; }); } const email=$('#regEmail').value.trim().toLowerCase(); const p1=$('#regPass').value, p2=$('#regPass2').value; if(!email||!p1||!p2){ $('#regErr').textContent='Fill email and both password fields.'; return;} if(p1!==p2){ $('#regErr').textContent='Passwords do not match.'; return;} let hosts=getHosts(); if(hosts.find(h=>h.email===email)){ $('#regErr').textContent='Email already registered on this device.'; return;} const s=salt(); const h=await sha256(s+p1); hosts.push({email,name,salt:s,hash:h}); saveHosts(hosts); setSession({email,name}); authed=true; hideGate(); });
-function handleLogin(){ (async ()=>{ const email=$('#loginEmail').value.trim().toLowerCase(); const pass=$('#loginPass').value; const u=getHosts().find(h=>h.email===email); if(!u){ $('#loginErr').textContent='No account found on this device.'; return;} const h=await sha256(u.salt+pass); if(h!==u.hash){ $('#loginErr').textContent='Incorrect password.'; return;} setSession({email:u.email,name:u.name||''}); authed=true; hideGate(); })().catch(err=>{ console.error(err); $('#loginErr').textContent='Could not login.'; }); }
-function handleDemoEnter(){ setSession({email:'demo@local',name:'Demo Host'}); authed=true; hideGate(); } const pass=$('#loginPass').value; const u=getHosts().find(h=>h.email===email); if(!u){ $('#loginErr').textContent='No account found on this device.'; return;} const h=await sha256(u.salt+pass); if(h!==u.hash){ $('#loginErr').textContent='Incorrect password.'; return;} setSession({email:u.email,name:u.name||''}); authed=true; hideGate(); });
-
-// ======= Draft handling (prevents disappearing text before Save) =======
-let draft = null; try{ draft = JSON.parse(localStorage.getItem('eyek_event_draft')||'null'); }catch{ draft=null }
-function setDraftField(key,val){ draft = draft || {}; draft[key]=val; localStorage.setItem('eyek_event_draft', JSON.stringify(draft)); }
-function clearDraft(){ draft=null; localStorage.removeItem('eyek_event_draft'); }
-[venue, venuePublic, eventDate, kj, pin].forEach(el=>{
-  el.addEventListener('input', ()=>{ if(state?.event?.locked) return; setDraftField(el.id, el.value); });
+// Add singer
+$('#addSinger').addEventListener('click', async ()=>{
+  try{
+    if(!state){ await fetchState(); }
+    const name = singerName.value.trim();
+    const firstNote = songArtist.value.trim();
+    if(!name){ alert('Enter a singer name.'); return; }
+    const id = 's_'+Math.random().toString(36).slice(2,9);
+    state.event = state.event || {venue:'',venuePublic:'',date:new Date().toISOString().slice(0,10),kj:'',pin:'',locked:false};
+    state.singers = state.singers || [];
+    state.current = state.current || {id:null,name:'',songArtist:''};
+    state.voting = state.voting || {open:false,endsAt:0,extendCount:0,counts:{encore:0,another:0,maybe:0}, lastResult:null};
+    state.singers.push({id, name, _color:''});
+    if(!state.current.id){ state.current = {id, name, songArtist: ''}; }
+    const btn=$('#addSinger'); const old=btn.textContent; btn.textContent='Added ✓'; btn.disabled=true;
+    await postState();
+    singerName.value=''; songArtist.value='';
+    setTimeout(()=>{ btn.textContent=old; btn.disabled=false; }, 600);
+  }catch(e){ console.error('addSinger error', e); alert('Could not add singer.'); }
+});
+  const song=$('#songArtist').value.trim();
+  if(!name) return;
+  const div=document.createElement('div');
+  div.textContent=name+(song?` — ${song}`:'');
+  $('#singerList').appendChild(div);
+  $('#singerName').value='';
+  $('#songArtist').value='';
 });
 
-// ======= Helpers =======
-function debounce(fn,ms){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms) } }
-function rememberValue(key,val){ if(!val) return; const raw=localStorage.getItem(key); const list=raw?JSON.parse(raw):[]; if(!list.includes(val)) list.unshift(val); localStorage.setItem(key, JSON.stringify(list.slice(0,20))); }
-function renderDatalist(key, dl){ const raw=localStorage.getItem(key); const list=raw?JSON.parse(raw):[]; dl.innerHTML=list.map(v=>`<option value="${v}"></option>`).join(''); }
-function fmt(ms){ const s=Math.ceil(ms/1000); const m=Math.floor(s/60), r=s%60; return `${String(m).padStart(2,'0')}:${String(r).padStart(2,'0')}` }
-function announce(w){ if(!w){ resultTag.textContent='—'; resultTag.className='resultTag'; return;} if(w==='encore'){ resultTag.textContent='Encore!'; resultTag.className='resultTag r-encore'; play('encore'); } else if(w==='another'){ resultTag.textContent='Another Shot!'; resultTag.className='resultTag r-another'; play('another'); } else { resultTag.textContent='Maybe Next Time'; resultTag.className='resultTag r-maybe'; play('maybe'); } }
-
-// ======= Event Actions =======
-$('#saveEvent').addEventListener('click', async ()=>{ // merge draft into state, then save
-  state.event.venue = (draft?.venue ?? venue.value).trim();
-  state.event.venuePublic = (draft?.venuePublic ?? venuePublic.value).trim();
-  state.event.date = (draft?.eventDate ?? eventDate.value) || new Date().toISOString().slice(0,10);
-  state.event.kj = (draft?.kj ?? kj.value).trim();
-  state.event.pin = (draft?.pin ?? pin.value).trim();
-  await postState();
-  rememberValue('eyek_venues', state.event.venue);
-  rememberValue('eyek_kjs', state.event.kj);
-  clearDraft();
-  const m=$('#eventSavedMsg'); m.textContent='Saved!'; setTimeout(()=>m.textContent='',1400);
-});
-$('#lockEvent').addEventListener('click', async ()=>{
-  state.event.locked=!state.event.locked;
-  await postState();
-  renderLockUI();
-  // Only collapse immediately when switching to locked.
-  if(state.event.locked){ eventBox.open=false; }
-}); renderLockUI(); });
-$('#resetEvent').addEventListener('click', async ()=>{ if(state.event.locked){ alert('Unlock to reset.'); return;} if(!confirm('Reset this event? This clears singers & votes.')) return; state={ serverUpdatedAt: Date.now()/1000|0, event:{venue:'',venuePublic:'',date:new Date().toISOString().slice(0,10),kj:'',pin:'',locked:false}, singers:[], current:{id:null,name:'',songArtist:''}, voting:{open:false,endsAt:0,extendCount:0,counts:{encore:0,another:0,maybe:0}, lastResult:null} }; clearDraft(); await postState(); });
-function renderLockUI(){
-  const btn=$('#lockEvent');
-  if(state.event.locked){
-    btn.textContent='Unlock';
-    $('#resetEvent').disabled=true;
-    [venue,venuePublic,eventDate,kj,pin].forEach(el=>el.disabled=true);
-    // NOTE: Do NOT force-close the <details>; respect user's manual open/close.
-  } else {
-    btn.textContent='Lock';
-    $('#resetEvent').disabled=false;
-    [venue,venuePublic,eventDate,kj,pin].forEach(el=>el.disabled=false);
-  }
-} else { btn.textContent='Lock'; $('#resetEvent').disabled=false; [venue,venuePublic,eventDate,kj,pin].forEach(el=>el.disabled=false); } }
-
-// ======= Singer Actions =======
-$('#addSinger').addEventListener('click', async ()=>{ const name=singerName.value.trim(); const firstNote=songArtist.value.trim(); if(!name){ alert('Enter a singer name.'); return;} const id='s_'+Math.random().toString(36).slice(2,9); state.singers.push({id,name,_color:''}); if(!state.current.id){ state.current={id,name,songArtist:''}; } await postState(); singerName.value=''; songArtist.value=''; });
-function setCurrent(id){ const s=state.singers.find(x=>x.id===id); if(!s) return; state.current={id:s.id,name:s.name,songArtist:state.current.songArtist||''}; postState(); }
-function removeSinger(id){ state.singers=state.singers.filter(x=>x.id!==id); if(state.current.id===id){ state.current={id:null,name:'',songArtist:''}; } postState(); }
-
-// ======= Voting =======
-$('#startVote').addEventListener('click', async ()=>{ if(!state.current.id){ alert('Set a current singer first.'); return;} state.voting.open=true; state.voting.endsAt=Date.now()+30000; state.voting.extendCount=0; state.voting.counts={encore:0,another:0,maybe:0}; state.voting.lastResult=null; await postState(); play('open'); });
-$('#extendVote').addEventListener('click', async ()=>{ if(!state.voting.open) return; state.voting.endsAt+=15000; state.voting.extendCount++; await postState(); });
-$('#endVote').addEventListener('click', async ()=>{ await concludeVoting(); });
-async function concludeVoting(){ if(!state.voting.open){ announce(state.voting.lastResult); return;} state.voting.open=false; state.voting.endsAt=0; const {encore,another,maybe}=state.voting.counts; let winner='maybe'; if(encore>=another && encore>=maybe) winner='encore'; else if(another>=encore && another>=maybe) winner='another'; else winner='maybe'; state.voting.lastResult=winner; const cur=state.singers.find(s=>s.id===state.current.id); if(cur){ if(winner==='maybe'){ state.singers=state.singers.filter(s=>s.id!==cur.id); } else { cur._color=(winner==='encore'?'green':'yellow'); } } await postState(); play('over'); setTimeout(()=>announce(winner),150); }
-
-// Host Vote buttons (one vote per device per singer+song)
-$('#hv_encore').addEventListener('click', ()=> addHostVote('encore'));
-$('#hv_another').addEventListener('click', ()=> addHostVote('another'));
-$('#hv_maybe').addEventListener('click', ()=> addHostVote('maybe'));
-
-const VOTE_MEMO_KEY='eyek_device_votes';
-function readVoteMemo(){ try{ return JSON.parse(localStorage.getItem(VOTE_MEMO_KEY)||'{}'); }catch{ return {}; } }
-function writeVoteMemo(m){ localStorage.setItem(VOTE_MEMO_KEY, JSON.stringify(m)); }
-function currentEventKey(){
-  const d = (state?.event?.date)||'';
-  const v = (state?.event?.venue)||'';
-  const p = (state?.event?.pin)||'';
-  return `${d}|${v}|${p}`;
-}
-function currentSongKey(){
-  if(!state?.current?.id) return null;
-  const id = state.current.id;
-  const song = (state.current.songArtist||'').trim().toLowerCase();
-  return `${id}|${song}`;
-}
-function hasVoted(){
-  const ek = currentEventKey(); const sk = currentSongKey(); if(!ek||!sk) return false;
-  const memo = readVoteMemo();
-  return memo[ek] && memo[ek][sk];
-}
-function markVoted(){
-  const ek = currentEventKey(); const sk = currentSongKey(); if(!ek||!sk) return;
-  const memo = readVoteMemo(); memo[ek] = memo[ek]||{}; memo[ek][sk]=true; writeVoteMemo(memo);
-}
-async function addHostVote(kind){
-  if(!state.voting.open) return;
-  if(hasVoted()) { alert('Only one vote per device per singer/song.'); return; }
-  state.voting.counts[kind] = (state.voting.counts[kind]||0)+1;
-  markVoted();
-  await postState();
-}
-
-// ======= Fetch / Render =======
-async function fetchState(){ const r=await fetch(GET_URL,{cache:'no-store'}); state=await r.json(); // backfill
-  state.event=state.event||{venue:'',venuePublic:'',date:new Date().toISOString().slice(0,10),kj:'',pin:'',locked:false};
-  state.current=state.current||{id:null,name:'',songArtist:''};
-  state.voting=state.voting||{open:false,endsAt:0,extendCount:0,counts:{encore:0,another:0,maybe:0},lastResult:null};
-  state.singers=state.singers||[]; render(); }
-async function postState(){ await fetch(POST_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(state)}); await fetchState(); }
-
-function render(){
-  // Prefer draft (unsaved) values while editing and while unlocked
-  const useDraft = !state.event.locked && draft;
-  const vVenue = useDraft && 'venue' in draft ? draft.venue : state.event.venue;
-  const vVenuePublic = useDraft && 'venuePublic' in draft ? draft.venuePublic : (state.event.venuePublic||'');
-  const vDate = useDraft && 'eventDate' in draft ? draft.eventDate : (state.event.date||new Date().toISOString().slice(0,10));
-  const vKj = useDraft && 'kj' in draft ? draft.kj : state.event.kj;
-  const vPin = useDraft && 'pin' in draft ? draft.pin : state.event.pin;
-
-  if(document.activeElement!==venue) venue.value = vVenue||'';
-  if(document.activeElement!==venuePublic) venuePublic.value = vVenuePublic||'';
-  if(document.activeElement!==eventDate) eventDate.value = vDate||new Date().toISOString().slice(0,10);
-  if(document.activeElement!==kj) kj.value = vKj||'';
-  if(document.activeElement!==pin) pin.value = vPin||'';
-  renderLockUI();
-  renderDatalist('eyek_venues', venuesDL); renderDatalist('eyek_kjs', kjsDL);
-
-  // Rotation list
-  singerList.innerHTML='';
-  state.singers.forEach(s=>{ const div=document.createElement('div'); div.className='pill'; const dot=document.createElement('div'); dot.className='dot '+(s._color||''); const name=document.createElement('div'); name.textContent=s.name; name.style.fontWeight='600'; name.style.overflow='hidden'; name.style.textOverflow='ellipsis'; name.style.whiteSpace='nowrap'; const actions=document.createElement('div'); actions.style.display='flex'; actions.style.gap='6px'; const setBtn=document.createElement('button'); setBtn.className='btn'; setBtn.textContent='Set'; setBtn.onclick=()=>setCurrent(s.id); const rmBtn=document.createElement('button'); rmBtn.className='btn ghost'; rmBtn.textContent='Remove'; rmBtn.onclick=()=>removeSinger(s.id); actions.appendChild(setBtn); actions.appendChild(rmBtn); div.appendChild(dot); div.appendChild(name); div.appendChild(actions); singerList.appendChild(div); });
-
-  // Current & counts
-  currentName.textContent=state.current.name||'—';
-  currentSongArtist.disabled=!state.current.id;
-  if(document.activeElement!==currentSongArtist){ currentSongArtist.value=state.current.songArtist||''; }
-  cE.textContent=state.voting.counts.encore||0; cA.textContent=state.voting.counts.another||0; cM.textContent=state.voting.counts.maybe||0;
-
-  // Timer & result
-  if(state.voting.open){ const ms=Math.max(0, state.voting.endsAt-Date.now()); timerEl.textContent=fmt(ms); resultTag.textContent='Voting…'; resultTag.className='resultTag'; } else { timerEl.textContent='00:00'; announce(state.voting.lastResult); }
-}
-
-// Debounced Now Singing updates
-currentSongArtist.addEventListener('input', debounce(async ()=>{
-  if(!state.current.id) return;
-  state.current.songArtist=currentSongArtist.value.trim();
-  // Changing song creates a new unique vote key; no need to clear memo explicitly.
-  await postState();
-}, 400)); await postState(); }, 400));
-
-async function loop(){ await fetchState(); if(tickTimer) clearInterval(tickTimer); tickTimer=setInterval(async ()=>{ if(state?.voting?.open && Date.now()>=state.voting.endsAt){ await concludeVoting(); } else { await fetchState(); } }, POLL_MS); }
-
-// Boot
-(function init(){ eventDate.value=new Date().toISOString().slice(0,10); const sess=getSession(); if(sess){ authed=true; hideGate(); } else { showGate(); } loop(); })();
+// Auto login if session exists
+if(getSession()){ hideGate(); }
 </script>
-<script id="auth_failsafe">
-// Failsafe binder: ensures gate buttons always work
+<script id="ops_failsafe2">
+// Ensure only one Skip button and visible clickability
 (function(){
-  function $(s){return document.querySelector(s)}
-  function safe(fn){try{fn()}catch(e){console.error('auth_failsafe',e)}}
-  function hideGate(){ const g=$('#gate'); if(g){ g.style.display='none'; g.setAttribute('inert',''); }}
-  function setSession(sess){ try{ localStorage.setItem('eyek_host_session', JSON.stringify(sess)); }catch(e){} }
-  // Attach listeners if not already
-  safe(()=>{
-    const loginBtn=$('#loginBtn');
-    if(loginBtn && !loginBtn._bound){
-      loginBtn.addEventListener('click', async ()=>{
-        const email=($('#loginEmail')||{}).value?.trim()?.toLowerCase()||'';
-        const pass=($('#loginPass')||{}).value||'';
-        const hosts=JSON.parse(localStorage.getItem('eyek_hosts')||'[]');
-        const u=hosts.find(h=>h.email===email);
-        if(!u){ const e=$('#loginErr'); if(e) e.textContent='No account found on this device.'; return; }
-        const enc=new TextEncoder().encode(u.salt+pass);
-        const buf=await crypto.subtle.digest('SHA-256', enc);
-        const hex=Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
-        if(hex!==u.hash){ const e=$('#loginErr'); if(e) e.textContent='Incorrect password.'; return; }
-        setSession({email:u.email,name:u.name||''}); hideGate();
-      });
-      loginBtn._bound=true;
-    }
-  });
-  safe(()=>{
-    const demo=$('#demoEnter');
-    if(demo && !demo._bound){
-      demo.addEventListener('click', ()=>{ setSession({email:'demo@local',name:'Demo Host'}); hideGate(); });
-      demo._bound=true;
-    }
-  });
-  safe(()=>{
-    const reg=$('#registerBtn');
-    if(reg && !reg._bound){
-      reg.addEventListener('click', async ()=>{
-        const name=($('#regName')||{}).value||'';
-        const email=($('#regEmail')||{}).value?.trim()?.toLowerCase()||'';
-        const p1=($('#regPass')||{}).value||'';
-        const p2=($('#regPass2')||{}).value||'';
-        const err=$('#regErr'); if(!email||!p1||!p2){ if(err) err.textContent='Fill email and both password fields.'; return; }
-        if(p1!==p2){ if(err) err.textContent='Passwords do not match.'; return; }
-        const hosts=JSON.parse(localStorage.getItem('eyek_hosts')||'[]');
-        if(hosts.find(h=>h.email===email)){ if(err) err.textContent='Email already registered on this device.'; return; }
-        const salt=Array.from(crypto.getRandomValues(new Uint8Array(12))).map(b=>b.toString(16).padStart(2,'0')).join('');
-        const enc=new TextEncoder().encode(salt+p1);
-        const buf=await crypto.subtle.digest('SHA-256', enc);
-        const hash=Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
-        hosts.push({email,name,salt,hash}); localStorage.setItem('eyek_hosts', JSON.stringify(hosts));
-        setSession({email,name}); hideGate();
-      });
-      reg._bound=true;
-    }
-  });
+  try{
+    const skips=document.querySelectorAll('#demoEnter');
+    if(skips.length>1){ for(let i=1;i<skips.length;i++){ skips[i].remove(); } }
+  }catch(e){ console.error('ops_failsafe2', e); }
 })();
 </script>
 </body>
