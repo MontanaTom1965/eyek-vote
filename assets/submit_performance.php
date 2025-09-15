@@ -5,7 +5,6 @@ header('Cache-Control: no-store');
 $DATA = __DIR__ . '/state.json';
 $CSV  = __DIR__ . '/performances.csv';
 
-// Read current state for context
 $state = [];
 if (file_exists($DATA)) {
   $state = json_decode(file_get_contents($DATA), true);
