@@ -1,447 +1,194 @@
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>EYEK • Host</title>
-<style>
-  :root{
-    --purple:#2F0658; /* your purple */
-    --bg:#0e0b14;
-    --card:#151225;
-    --muted:#8d86a5;
-    --accent:#10b981; /* green */
-    --warn:#f59e0b;   /* yellow */
-    --danger:#ef4444; /* red */
-    --ink:#e6e1f5;
-  }
-  html,body{margin:0;height:100%;background:linear-gradient(160deg,var(--purple) 0%, #1a1330 40%, #0e0b14 100%); color:var(--ink); font:16px/1.4 system-ui,Segoe UI,Roboto,Helvetica,Arial;}
-  .wrap{display:grid; grid-template-columns: 320px 1fr; gap:16px; padding:16px; min-height:100%;}
-  .card{background:var(--card); border:1px solid #2a2541; border-radius:16px; padding:14px; box-shadow:0 6px 24px rgba(0,0,0,.35)}
-  h1{margin:0 0 6px; font-size:20px}
-  h2{margin:12px 0 8px; font-size:16px; color:#cfc7e8}
-  .row{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
-  input,select,button{border-radius:10px; border:1px solid #2e2748; background:#1b1630; color:var(--ink); padding:10px 12px; outline:none}
-  input:disabled{opacity:.6}
-  button{cursor:pointer}
-  .btn{background:#2a2049}
-  .btn.primary{background:var(--accent); color:#062016; border-color:#0c7a58}
-  .btn.warn{background:var(--warn); color:#3a2502; border-color:#8a5f05}
-  .btn.ghost{background:transparent}
-  .btn.danger{background:var(--danger); color:#3d0a0a; border-color:#9b1c1c}
-  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:10px}
-  .grid3{display:grid; grid-template-columns:repeat(3,1fr); gap:10px}
-  .pill{display:inline-block; padding:6px 10px; border-radius:999px; border:1px solid #3a315e; background:#140f25; font-size:13px}
-  details>summary{cursor:pointer; padding:6px 8px; background:#1d1733; border:1px solid #30284d; border-radius:10px; user-select:none}
-  details .body{margin-top:10px}
-  .muted{color:var(--muted)}
-  .sidebar h2{margin-top:0}
-  .singer{display:grid; grid-template-columns: 18px 1fr auto auto; align-items:center; gap:10px; padding:8px; border-radius:12px; border:1px solid #2a2541; background:#17132b; margin-bottom:8px}
-  .dot{width:12px;height:12px;border-radius:50%}
-  .dot.gray{background:#4b4564}
-  .dot.green{background:var(--accent)}
-  .dot.yellow{background:var(--warn)}
-  .timerBox{display:flex; gap:10px; align-items:center; padding:8px 10px; border:1px dashed #3a315e; border-radius:12px; background:#141127; min-height:46px}
-  .resultChip{min-width:130px; text-align:center; font-weight:700; border-radius:999px; padding:8px 12px; border:1px solid #3a315e}
-  .enc{background:rgba(16,185,129,.2); color:#b7ffdf; border-color:#0c7a58}
-  .sho{background:rgba(245,158,11,.2); color:#ffe9ba; border-color:#8a5f05}
-  .nope{background:rgba(239,68,68,.2); color:#ffd0d0; border-color:#9b1c1c}
-  .mini{font-size:12px}
-  .split{display:grid; grid-template-columns: 1fr auto; gap:10px; align-items:center}
-  .stickyTop{position:sticky; top:16px}
-</style>
-</head>
-<body>
-<div class="wrap">
-  <!-- Sidebar -->
-  <aside class="card sidebar stickyTop">
-    <h1>Singers</h1>
-    <div id="singerList"></div>
-  </aside>
-
-  <!-- Main -->
-  <main class="card">
-    <div class="split">
-      <h1>Host Console</h1>
-      <label class="row mini"><input type="checkbox" id="soundsEnabled"> Enable Sounds</label>
-    </div>
-
-    <!-- Event Setup (collapsible) -->
-    <details id="eventDetails" open>
-      <summary><strong>Event Setup</strong> <span class="muted mini">(venue & KJ)</span></summary>
-      <div class="body">
-        <div class="grid2">
-          <div>
-            <label class="mini muted">Venue</label>
-            <div class="row">
-              <select id="venueSaved"></select>
-              <input id="venue" placeholder="Venue name">
-            </div>
-          </div>
-          <div>
-            <label class="mini muted">KJ</label>
-            <div class="row">
-              <select id="kjSaved"></select>
-              <input id="kj" placeholder="KJ name">
-            </div>
-          </div>
-        </div>
-        <div class="row" style="margin-top:10px">
-          <button class="btn" id="lockBtn">Lock Info</button>
-          <button class="btn primary" id="saveEventBtn">Save</button>
-          <button class="btn danger" id="resetEventBtn" title="Wipe current event data">Reset Event</button>
-        </div>
-        <div class="mini muted" id="eventStatus" style="margin-top:6px"></div>
-      </div>
-    </details>
-
-    <!-- Singer section -->
-    <h2>Singer</h2>
-    <div class="grid2">
-      <input id="singerName" placeholder="Singer name">
-      <input id="songArtist" placeholder="Song / Artist (optional)">
-    </div>
-    <div class="row" style="margin-top:8px">
-      <button class="btn primary" id="addSingerBtn">Add Singer</button>
-    </div>
-
-    <!-- Current & Voting -->
-    <h2 style="margin-top:16px">Current & Voting</h2>
-    <div class="card" style="background:#100c1e;border-color:#2a2541">
-      <div class="row">
-        <div class="pill" id="currentSingerPill">No singer selected</div>
-      </div>
-      <div class="row" style="margin-top:10px">
-        <div class="timerBox" id="timerBox">
-          <div><strong>Timer:</strong> <span id="timerText" class="pill">--</span></div>
-          <div class="pill">Encore: <span id="cEncore">0</span></div>
-          <div class="pill">Another: <span id="cAnother">0</span></div>
-          <div class="pill">Maybe: <span id="cMaybe">0</span></div>
-        </div>
-        <div class="resultChip" id="resultChip">—</div>
-      </div>
-      <div class="row" style="margin-top:10px">
-        <button class="btn primary" id="startVoteBtn">Start 30s Vote</button>
-        <button class="btn warn" id="extendBtn">+15s</button>
-        <button class="btn danger" id="endVoteBtn">End Now</button>
-      </div>
-      <h2 style="margin-top:16px">Host Vote</h2>
-      <div class="row">
-        <button class="btn" id="hostVoteEncore">Encore!</button>
-        <button class="btn" id="hostVoteAnother">Another Shot!</button>
-        <button class="btn" id="hostVoteMaybe">Maybe Next Time</button>
-      </div>
-    </div>
-  </main>
-</div>
-
-<!-- Audio -->
-<audio id="sndOpen"   src="https://vote.earnyourencorekaraoke.com/assets/voting_open.mp3" preload="auto"></audio>
-<audio id="sndOver"   src="https://vote.earnyourencorekaraoke.com/assets/voting_over.mp3" preload="auto"></audio>
-<audio id="sndEncore" src="https://vote.earnyourencorekaraoke.com/assets/encore.mp3" preload="auto"></audio>
-<audio id="sndNope"   src="https://vote.earnyourencorekaraoke.com/assets/loser.wav" preload="auto"></audio>
-
 <script>
-/*** CONFIG ***/
-const BASE = location.origin + '/assets';
-const STATE_URL = BASE + '/status.json';
-const SAVE_URL  = BASE + '/save.php';
-const TOKEN = 'CHANGE_ME_LONG_RANDOM_TOKEN'; // <- must match save.php
+(() => {
+  // ===== Elements =====
+  const els = {
+    venue: document.getElementById('venue'),
+    kj: document.getElementById('kj'),
+    singer: document.getElementById('singerName'),
+    song: document.getElementById('songArtist'),
+    saveEventBtn: document.getElementById('saveEventBtn'),
+    lockBtn: document.getElementById('lockBtn'),
+    addSingerBtn: document.getElementById('addSingerBtn'),
+    singersList: document.getElementById('singersList'),
+    startBtn: document.getElementById('startVotingBtn'),
+    extendBtn: document.getElementById('extendVotingBtn'),
+    endBtn: document.getElementById('endVotingBtn'),
+    // add whatever else you already have by id here if needed…
+  };
 
-/*** ELEMENTS ***/
-const venueEl = document.getElementById('venue');
-const venueSavedEl = document.getElementById('venueSaved');
-const kjEl = document.getElementById('kj');
-const kjSavedEl = document.getElementById('kjSaved');
-const saveEventBtn = document.getElementById('saveEventBtn');
-const lockBtn = document.getElementById('lockBtn');
-const resetEventBtn = document.getElementById('resetEventBtn');
-const eventStatus = document.getElementById('eventStatus');
+  // Track which inputs are being edited so polling won't overwrite them
+  const editing = { venue:false, kj:false, singer:false, song:false };
 
-const singerList = document.getElementById('singerList');
-const singerNameEl = document.getElementById('singerName');
-const songArtistEl = document.getElementById('songArtist');
-const addSingerBtn = document.getElementById('addSingerBtn');
-
-const currentSingerPill = document.getElementById('currentSingerPill');
-const timerText = document.getElementById('timerText');
-const cEncore = document.getElementById('cEncore');
-const cAnother = document.getElementById('cAnother');
-const cMaybe = document.getElementById('cMaybe');
-const startVoteBtn = document.getElementById('startVoteBtn');
-const extendBtn = document.getElementById('extendBtn');
-const endVoteBtn = document.getElementById('endVoteBtn');
-const resultChip = document.getElementById('resultChip');
-
-const soundsEnabledEl = document.getElementById('soundsEnabled');
-const sndOpen = document.getElementById('sndOpen');
-const sndOver = document.getElementById('sndOver');
-const sndEncore = document.getElementById('sndEncore');
-const sndNope = document.getElementById('sndNope');
-
-/*** STATE ***/
-let S = null;
-let tickHandle=null;
-let lastSeenEnds=0;
-
-/*** UTIL ***/
-const ls = {
-  get(k,def){ try{ return JSON.parse(localStorage.getItem(k)) ?? def }catch{ return def } },
-  set(k,v){ localStorage.setItem(k,JSON.stringify(v)) }
-};
-function now(){ return Math.floor(Date.now()/1000) }
-async function load(){ const r=await fetch(STATE_URL+'?t='+Date.now()); return await r.json(); }
-async function save(next){
-  next.lastChange = Date.now();
-  const r = await fetch(SAVE_URL, {
-    method:'POST',
-    headers:{'Content-Type':'application/json','X-Auth':TOKEN},
-    body: JSON.stringify(next)
-  });
-  const j = await r.json();
-  if(!j.ok) throw new Error(j.error||'save failed');
-  S = next;
-  render();
-}
-function fmtSec(s){ return `${s}s`; }
-function pickResult(counts){
-  const e = counts.encore|0, a = counts.another|0, m = counts.maybe|0;
-  if (e===0 && a===0 && m===0) return null;
-  if (e>=a && e>=m) return 'enc';
-  if (a>=e && a>=m) return 'sho';
-  return 'nope';
-}
-
-/*** SAVED VENUES/KJs ***/
-function loadSavedLists(){
-  const venues = ls.get('eyek_venues',[]);
-  const kjs    = ls.get('eyek_kjs',[]);
-  fillSelect(venueSavedEl, venues);
-  fillSelect(kjSavedEl, kjs);
-}
-function fillSelect(sel, arr){
-  sel.innerHTML = '<option value="">(saved)</option>' + arr.map(v=>`<option>${v}</option>`).join('');
-}
-function addToSaved(listKey, value){
-  if(!value) return;
-  const arr = ls.get(listKey,[]);
-  if(!arr.includes(value)) { arr.push(value); ls.set(listKey,arr); }
-}
-
-/*** RENDER ***/
-function render(){
-  // Event widgets
-  venueEl.value = S.event.venue || '';
-  kjEl.value = S.event.kj || '';
-  const locked = !!S.event.locked;
-  venueEl.disabled = kjEl.disabled = locked;
-  saveEventBtn.disabled = false;
-  lockBtn.textContent = locked ? 'Unlock Info' : 'Lock Info';
-  eventStatus.textContent = `Event: ${S.event.venue||'—'} • KJ: ${S.event.kj||'—'} • ${locked?'Locked':'Unlocked'}`;
-
-  // Singers list (sidebar)
-  singerList.innerHTML = '';
-  S.singers.forEach((sg, idx)=>{
-    const row = document.createElement('div');
-    row.className='singer';
-
-    const dot = document.createElement('div');
-    dot.className='dot gray';
-    row.appendChild(dot);
-
-    const name = document.createElement('div');
-    name.textContent = sg.name;
-    row.appendChild(name);
-
-    const setBtn = document.createElement('button');
-    setBtn.className='btn mini'; setBtn.textContent='Set';
-    setBtn.onclick = ()=> setCurrent(idx);
-    row.appendChild(setBtn);
-
-    const delBtn = document.createElement('button');
-    delBtn.className='btn danger mini'; delBtn.textContent='Remove';
-    delBtn.onclick = ()=> removeSinger(idx);
-    row.appendChild(delBtn);
-
-    singerList.appendChild(row);
-  });
-
-  // Current singer pill
-  if (S.currentIndex>=0 && S.singers[S.currentIndex]) {
-    const sg = S.singers[S.currentIndex];
-    const notes = sg.notes ? ` • ${sg.notes}` : '';
-    currentSingerPill.textContent = `Now: ${sg.name}${notes}`;
-  } else {
-    currentSingerPill.textContent = 'No singer selected';
+  // Simple debounce
+  function debounce(fn, ms=300) {
+    let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
   }
 
-  // Voting counters
-  cEncore.textContent = S.voting.counts.encore|0;
-  cAnother.textContent= S.voting.counts.another|0;
-  cMaybe.textContent  = S.voting.counts.maybe|0;
-
-  // Timer + result chip
-  const t = now();
-  if (S.voting.state==='open' && S.voting.endsAt>t) {
-    timerText.textContent = fmtSec(S.voting.endsAt - t);
-    resultChip.textContent = '…';
-    resultChip.className = 'resultChip';
-  } else if (S.voting.state==='open' && S.voting.endsAt<=t){
-    // grace: mark as closed on next poll to avoid instant flip if offline
-    timerText.textContent = '0s';
-    resultChip.textContent = '…';
-    resultChip.className = 'resultChip';
-  } else if (S.voting.state==='closed') {
-    timerText.textContent = '--';
-    const res = pickResult(S.voting.counts);
-    if (res==='enc'){ resultChip.textContent='Encore!'; resultChip.className='resultChip enc';}
-    else if (res==='sho'){ resultChip.textContent='Another Shot!'; resultChip.className='resultChip sho';}
-    else { resultChip.textContent='Maybe Next Time'; resultChip.className='resultChip nope';}
-  } else {
-    timerText.textContent='--';
-    resultChip.textContent='—';
-    resultChip.className='resultChip';
+  // Attach edit guards
+  for (const [key, el] of Object.entries(els)) {
+    if (!el || !['venue','kj','singer','song'].includes(key)) continue;
+    el.addEventListener('focus', () => { editing[key] = true; });
+    el.addEventListener('blur',  () => { editing[key] = false; });
+    // Optional: live-validate or preview without saving
+    el.addEventListener('input', debounce(() => {
+      // no-op; keep for future live UI changes if wanted
+    }, 200));
   }
 
-  // sounds toggle
-  soundsEnabledEl.checked = !!S.soundsEnabled;
-}
+  // ===== State & persistence =====
+  let state = {
+    event: { venue:'', kj:'', locked:false },
+    current: { singer:'', song:'' },
+    voting: { isOpen:false, endsAt:0, encore:0, shot:0, maybe:0 },
+    singers: [] // [{name:'…'}]
+  };
 
-/*** ACTIONS ***/
-function assertCurrent(){ if(!(S.currentIndex>=0 && S.singers[S.currentIndex])){ alert('Set a current singer first.'); throw 0; } }
+  const STATUS_URL = '/assets/status.json'; // your existing path
 
-async function setCurrent(idx){
-  const next = structuredClone(S);
-  next.currentIndex = idx;
-  await save(next);
-}
+  // Apply server state to form, but don't touch focused fields
+  function applyStateToForm(s) {
+    if (!editing.venue) els.venue && (els.venue.value = s.event?.venue || '');
+    if (!editing.kj)    els.kj    && (els.kj.value    = s.event?.kj    || '');
+    if (!editing.singer) els.singer && (els.singer.value = s.current?.singer || '');
+    if (!editing.song)   els.song   && (els.song.value   = s.current?.song   || '');
 
-async function removeSinger(idx){
-  const next = structuredClone(S);
-  next.singers.splice(idx,1);
-  if (next.currentIndex===idx) next.currentIndex=-1;
-  else if (next.currentIndex>idx) next.currentIndex--;
-  await save(next);
-}
+    // Lock button label
+    if (els.lockBtn) els.lockBtn.textContent = s.event?.locked ? 'Unlock Event' : 'Lock Event';
 
-async function addSinger(){
-  const name = singerNameEl.value.trim();
-  if (!name) return;
-  const notes = songArtistEl.value.trim();
-  const next = structuredClone(S);
-  next.singers.push({name, notes});
-  singerNameEl.value=''; songArtistEl.value='';
-  await save(next);
-}
-
-async function startVote(){
-  assertCurrent();
-  const next = structuredClone(S);
-  next.voting.state='open';
-  next.voting.endsAt = now()+30;
-  next.voting.counts = {encore:0, another:0, maybe:0};
-  await save(next);
-  playIf(sndOpen);
-}
-
-async function extendVote(){
-  if (S.voting.state!=='open') return;
-  const next = structuredClone(S);
-  next.voting.endsAt += 15;
-  await save(next);
-}
-
-async function endVote(){
-  if (S.voting.state==='closed') return;
-  const next = structuredClone(S);
-  next.voting.state='closed';
-  // decide result -> screen will animate; we just show chip; sound on screen too
-  await save(next);
-  playIf(sndOver);
-}
-
-async function hostVote(which){
-  // host vote just increments tallies if voting open
-  if (S.voting.state!=='open') return;
-  const next = structuredClone(S);
-  if (which==='encore') next.voting.counts.encore++;
-  if (which==='another') next.voting.counts.another++;
-  if (which==='maybe') next.voting.counts.maybe++;
-  await save(next);
-}
-
-async function saveEvent(){
-  const next = structuredClone(S);
-  next.event.venue = venueEl.value.trim();
-  next.event.kj    = kjEl.value.trim();
-  addToSaved('eyek_venues', next.event.venue);
-  addToSaved('eyek_kjs', next.event.kj);
-  await save(next);
-  loadSavedLists();
-}
-
-async function toggleLock(){
-  const next = structuredClone(S);
-  next.event.locked = !next.event.locked;
-  await save(next);
-}
-
-async function resetEvent(){
-  if (!confirm('Reset current event? This clears singers, current, and tallies.')) return;
-  const next = structuredClone(S);
-  next.singers = [];
-  next.currentIndex = -1;
-  next.voting = {state:'idle', endsAt:0, counts:{encore:0, another:0, maybe:0}};
-  await save(next);
-}
-
-/*** SOUND ***/
-function playIf(a){ if (S.soundsEnabled) { a.currentTime=0; a.play().catch(()=>{}); } }
-
-/*** WIRING ***/
-addSingerBtn.onclick = addSinger;
-startVoteBtn.onclick = startVote;
-extendBtn.onclick = extendVote;
-endVoteBtn.onclick = endVote;
-saveEventBtn.onclick = saveEvent;
-lockBtn.onclick = toggleLock;
-resetEventBtn.onclick = resetEvent;
-
-document.getElementById('hostVoteEncore').onclick = ()=>hostVote('encore');
-document.getElementById('hostVoteAnother').onclick= ()=>hostVote('another');
-document.getElementById('hostVoteMaybe').onclick  = ()=>hostVote('maybe');
-
-venueSavedEl.onchange = ()=>{ if(venueSavedEl.value) venueEl.value = venueSavedEl.value; };
-kjSavedEl.onchange    = ()=>{ if(kjSavedEl.value) kjEl.value = kjSavedEl.value; };
-soundsEnabledEl.onchange = async ()=>{
-  const next = structuredClone(S);
-  next.soundsEnabled = soundsEnabledEl.checked;
-  await save(next);
-};
-
-/*** POLL LOOP ***/
-async function tick(){
-  try{
-    const j = await load();
-    S = j;
-    // auto close if time elapsed but state still 'open'
-    if (S.voting.state==='open' && S.voting.endsAt<=now()){
-      const next = structuredClone(S);
-      next.voting.state='closed';
-      await save(next);
-      // play on host too
-      playIf(sndOver);
-      const res = pickResult(next.voting.counts);
-      if (res==='enc') playIf(sndEncore);
-      else if (res==='nope') playIf(sndNope);
-    } else {
-      render();
+    // Sidebar singers
+    if (els.singersList && Array.isArray(s.singers)) {
+      els.singersList.innerHTML = '';
+      s.singers.forEach((row, idx) => {
+        const li = document.createElement('li');
+        li.className = 'singer-row';
+        li.innerHTML = `
+          <span class="dot ${row.lastResult || ''}"></span>
+          <span class="name">${row.name}</span>
+          <span class="actions">
+            <button class="set" data-idx="${idx}" aria-label="Set current">Set</button>
+            <button class="remove" data-idx="${idx}" aria-label="Remove">🗑</button>
+          </span>`;
+        els.singersList.appendChild(li);
+      });
     }
-  }catch(e){}
-}
-loadSavedLists();
-tick();
-tickHandle = setInterval(tick, 1000);
+  }
+
+  // Fetch latest status (with cache-buster)
+  async function fetchStatus() {
+    try {
+      const r = await fetch(`${STATUS_URL}?ts=${Date.now()}`);
+      if (!r.ok) return;
+      const newState = await r.json();
+      state = newState;
+      applyStateToForm(state);
+    } catch (_) { /* ignore network blips */ }
+  }
+
+  // Save (POST) state to server endpoint (you already have whatever writes status.json)
+  const saveState = debounce(async () => {
+    try {
+      await fetch('/assets/save_state.php', { // keep your existing endpoint
+        method: 'POST',
+        headers: { 'Content-Type':'application/json' },
+        body: JSON.stringify(state)
+      });
+    } catch (_) {}
+  }, 250);
+
+  // Wire up buttons to state changes
+  if (els.saveEventBtn) {
+    els.saveEventBtn.addEventListener('click', () => {
+      state.event.venue = els.venue?.value?.trim() || '';
+      state.event.kj    = els.kj?.value?.trim()    || '';
+      saveState();
+    });
+  }
+  if (els.lockBtn) {
+    els.lockBtn.addEventListener('click', () => {
+      state.event.locked = !state.event.locked;
+      applyStateToForm(state); // update label instantly
+      saveState();
+    });
+  }
+  if (els.addSingerBtn) {
+    els.addSingerBtn.addEventListener('click', () => {
+      const name = (els.singer?.value || '').trim();
+      const song = (els.song?.value   || '').trim();
+      if (!name) return;
+      state.singers.push({ name, lastResult: '' });
+      // Do not jam song into sidebar; song stays in main section only
+      saveState();
+      // keep inputs for convenience, or clear if you prefer:
+      // els.singer.value=''; els.song.value='';
+    });
+  }
+
+  // Sidebar actions (Set current / Remove)
+  document.addEventListener('click', (e) => {
+    const setBtn = e.target.closest('button.set');
+    const rmBtn  = e.target.closest('button.remove');
+    if (setBtn) {
+      const idx = +setBtn.dataset.idx;
+      const row = state.singers[idx];
+      if (row) {
+        state.current.singer = row.name;
+        // keep current song text area as typed; don't overwrite here
+        saveState();
+      }
+    } else if (rmBtn) {
+      const idx = +rmBtn.dataset.idx;
+      state.singers.splice(idx, 1);
+      saveState();
+      applyStateToForm(state);
+    }
+  });
+
+  // Voting controls: start / extend / end (just touching state; your existing PHP/JS tallies should read this)
+  if (els.startBtn) {
+    els.startBtn.addEventListener('click', () => {
+      const now = Date.now();
+      state.voting.isOpen = true;
+      state.voting.endsAt = now + 30_000; // 30s
+      // don't reset counts here if you want to carry host vote immediately
+      saveState();
+    });
+  }
+  if (els.extendBtn) {
+    els.extendBtn.addEventListener('click', () => {
+      if (state.voting.isOpen) {
+        state.voting.endsAt += 15_000; // +15s
+        saveState();
+      }
+    });
+  }
+  if (els.endBtn) {
+    els.endBtn.addEventListener('click', () => {
+      state.voting.isOpen = false;
+      state.voting.endsAt = Date.now();
+      saveState();
+    });
+  }
+
+  // Host votes increment tallies (do not announce winners here)
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-host-vote]');
+    if (!btn) return;
+    const v = btn.getAttribute('data-host-vote'); // 'encore' | 'shot' | 'maybe'
+    if (v && state.voting.isOpen) {
+      state.voting[v] = (state.voting[v] || 0) + 1;
+      saveState();
+    }
+  });
+
+  // Poll server state periodically but DO NOT clobber focused inputs
+  fetchStatus();                     // initial
+  const poll = setInterval(fetchStatus, 2000); // every 2s
+
+  // Optional: beforeunload to reduce chance of losing in-flight edits
+  window.addEventListener('beforeunload', () => {
+    // Try a last quick sync
+    saveState.flush?.(); // if using a fancier debounce; harmless otherwise
+    clearInterval(poll);
+  });
+})();
 </script>
-</body>
-</html>
