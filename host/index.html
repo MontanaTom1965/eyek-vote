@@ -156,10 +156,18 @@ const GET_URL  = '/assets/get_state.php';
 const POST_URL = '/assets/state.php';
 const VOTE_URL = '/assets/vote.php';
 
+/* ---------- Utils ---------- */
+function debounce(fn, wait=300){
+  let t; return (...args)=>{ clearTimeout(t); t = setTimeout(()=>fn(...args), wait); };
+}
+
 /* ---------- State & DOM ---------- */
 let state=null, poll=null;
-const $=s=>document.querySelector(s);
+let suppressEventRenderUntil = 0;
+function suppressEventRender(ms=1000){ suppressEventRenderUntil = Date.now() + ms; }
+function mayRenderEventInputs(){ return Date.now() > suppressEventRenderUntil; }
 
+const $=s=>document.querySelector(s);
 const venue=$('#venue'), venuePublic=$('#venuePublic'), eventDate=$('#eventDate'), kj=$('#kj'), hostName=$('#hostName'), pin=$('#pin');
 const singerName=$('#singerName'), songArtist=$('#songArtist');
 const singerList=$('#singerList');
@@ -182,18 +190,23 @@ async function postState(){
   await fetch(POST_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(state)});
   await fetchState();
 }
+const postStateDebounced = debounce(async ()=>{
+  await fetch(POST_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(state)});
+  await fetchState(); render();
+}, 300);
 
 /* ---------- Render ---------- */
 function render(){
   if(!state) return;
 
-  // Event fields (safe reflect; will NOT erase because we mirror live via input handlers)
-  if(document.activeElement!==venue)        venue.value = state.event.venue||'';
-  if(document.activeElement!==venuePublic)  venuePublic.value = state.event.venuePublic||'';
-  if(document.activeElement!==eventDate)    eventDate.value = state.event.date||new Date().toISOString().slice(0,10);
-  if(document.activeElement!==kj)           kj.value = state.event.kj||'';
-  if(document.activeElement!==hostName)     hostName.value = state.event.hostName||'';
-  if(document.activeElement!==pin)          pin.value = state.event.pin||'';
+  // Event fields: reflect only when not actively editing or in suppression window
+  const canPaint = mayRenderEventInputs();
+  if (canPaint && document.activeElement !== venue)        venue.value       = state.event.venue || '';
+  if (canPaint && document.activeElement !== venuePublic)  venuePublic.value = state.event.venuePublic || '';
+  if (canPaint && document.activeElement !== eventDate)    eventDate.value   = state.event.date || new Date().toISOString().slice(0,10);
+  if (canPaint && document.activeElement !== kj)           kj.value          = state.event.kj || '';
+  if (canPaint && document.activeElement !== hostName)     hostName.value    = state.event.hostName || '';
+  if (canPaint && document.activeElement !== pin)          pin.value         = state.event.pin || '';
   [venue,venuePublic,eventDate,kj,hostName,pin].forEach(el=>el.disabled=state.event.locked);
 
   // Rotation
@@ -229,9 +242,14 @@ function announce(w){ if(!w){ resultTag.textContent='—'; resultTag.className='
   else { resultTag.textContent='Maybe Next Time'; resultTag.className='resultTag r-maybe'; }
 }
 
-/* ---------- LIVE INPUT BINDINGS (fixes “text vanishes”) ---------- */
+/* ---------- LIVE INPUT BINDINGS (autosave + suppression) ---------- */
 function bindLive(el, key){
-  el.addEventListener('input', ()=>{ if(!state?.event) return; state.event[key]=el.value; });
+  el.addEventListener('input', ()=>{
+    if(!state?.event) return;
+    state.event[key] = el.value;   // update in-memory immediately
+    suppressEventRender(1000);     // prevent repaint clobber briefly
+    postStateDebounced();          // autosave shortly
+  });
 }
 bindLive(venue,       'venue');
 bindLive(venuePublic, 'venuePublic');
@@ -242,9 +260,8 @@ bindLive(pin,         'pin');
 
 /* ---------- Event actions ---------- */
 $('#saveEvent').onclick = async ()=>{
-  // state.event already mirrors inputs; just persist
-  await postState();
-  const m=document.getElementById('eventSavedMsg'); m.textContent='Saved!'; setTimeout(()=>m.textContent='',1400);
+  await postState(); const m=document.getElementById('eventSavedMsg');
+  m.textContent='Saved!'; setTimeout(()=>m.textContent='',1400);
 };
 $('#lockEvent').onclick = async ()=>{
   state.event.locked = !state.event.locked;
@@ -286,7 +303,7 @@ $('#startVote').onclick = async ()=>{
 $('#extendVote').onclick = async ()=>{ if(!state.voting.open) return; state.voting.endsAt+=15000; state.voting.extendCount++; await postState(); };
 $('#endVote').onclick = async ()=>{ await concludeVoting(); };
 
-/* ---------- Host votes via server (enforces one-per-device) ---------- */
+/* ---------- Host votes via server ---------- */
 function deviceId(){ let id=localStorage.getItem('eyek_device_id'); if(!id){ id=crypto.randomUUID(); localStorage.setItem('eyek_device_id', id);} return id; }
 async function hostVote(kind){
   if(!state?.voting?.open) return;
