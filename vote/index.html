@@ -15,7 +15,7 @@
   <h1>Encore! Vote</h1>
   <div id="join">
     <p class="mini">Enter the event PIN from the screen:</p>
-    <div class="row"><input id="pin" placeholder="PIN"><button class="btn" id="joinBtn">Join</button></div>
+    <div class="row"><input id="pin" placeholder="PIN" inputmode="numeric"><button class="btn" id="joinBtn">Join</button></div>
     <div id="err" class="mini" style="color:#ff9a9a"></div>
   </div>
   <div id="panel" style="display:none">
@@ -33,13 +33,23 @@
 <script>
 const GET_URL='/assets/get_state.php', VOTE_URL='/assets/vote.php';
 const $=s=>document.querySelector(s);
+const digitsOnly = s => (s||'').replace(/\D+/g,'');
 let state=null, poll=null, eventPin=null;
-function deviceId(){ let id=localStorage.getItem('eyek_device_id'); if(!id){ id=crypto.randomUUID(); localStorage.setItem('eyek_device_id', id);} return id; }
+
 async function fetchState(){ const r=await fetch(GET_URL,{cache:'no-store'}); state=await r.json(); }
 function render(){
   if(!state) return;
-  if(!eventPin){ $('#join').style.display='block'; $('#panel').style.display='none'; return; }
-  if(state.event.pin !== eventPin){ $('#err').textContent='Wrong PIN for this event.'; $('#join').style.display='block'; $('#panel').style.display='none'; return; }
+  if(!eventPin){
+    $('#join').style.display='block'; $('#panel').style.display='none';
+    $('#err').textContent = (state.event?.pin||'')==='' ? 'Host has no PIN set (join disabled until a PIN is set).' : '';
+    return;
+  }
+  const pinHost = digitsOnly(state.event.pin||'');
+  if(digitsOnly(eventPin)!==pinHost){
+    $('#err').textContent='Wrong PIN for this event.';
+    $('#join').style.display='block'; $('#panel').style.display='none';
+    return;
+  }
   $('#join').style.display='none'; $('#panel').style.display='block';
   $('#singer').textContent = state.current?.name || '—';
   $('#song').textContent   = state.current?.songArtist || '—';
@@ -54,9 +64,12 @@ async function vote(kind){
   await fetchState(); render();
   if(!res.ok){ const e=await res.json().catch(()=>({error:'vote_failed'})); if(e.error==='already_voted'){ alert('You already voted for this singer/song on this device.'); } }
 }
-$('#joinBtn').onclick = ()=>{ eventPin = $('#pin').value.trim(); render(); }
+function deviceId(){ let id=localStorage.getItem('eyek_device_id'); if(!id){ id=crypto.randomUUID(); localStorage.setItem('eyek_device_id', id);} return id; }
+
+$('#joinBtn').onclick = ()=>{ eventPin = digitsOnly($('#pin').value.trim()); render(); }
 $('#v_encore').onclick = ()=> vote('encore');
 $('#v_another').onclick = ()=> vote('another');
 $('#v_maybe').onclick  = ()=> vote('maybe');
-(async function init(){ await fetchState(); render(); poll=setInterval(async ()=>{ await fetchState(); render(); }, 1000); })();
+
+(async function init(){ await fetchState(); render(); poll=setInterval(async ()=>{ await fetchState(); render(); }, 900); })();
 </script>
