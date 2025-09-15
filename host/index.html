@@ -93,5 +93,20 @@ if(getSession()){ hideGate(); }
   }catch(e){ console.error('ops_failsafe2', e); }
 })();
 </script>
+<script>
+// Ensure Skip Demo always works
+(function(){
+  var btn=document.getElementById('demoEnter');
+  if(btn && !btn._bound){
+    btn.addEventListener('click', function(){
+      try{ localStorage.setItem('eyek_host_session', JSON.stringify({email:'demo@local', name:'Demo Host'})); }catch(e){}
+      authed=true;
+      var g=document.getElementById('gate');
+      if(g){ g.style.display='none'; g.setAttribute('inert',''); }
+    });
+    btn._bound=true;
+  }
+})();
+</script>
 </body>
 </html>
