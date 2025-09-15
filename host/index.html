@@ -1,477 +1,440 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>EYEK — Host</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
-  <style>
-    :root{
-      --bg:#0b0b14;
-      --panel:#131323;
-      --panel-2:#191933;
-      --accent:#2F0658;   /* your purple */
-      --brand:#11D67F;    /* EYEK green */
-      --text:#EAF2FF;
-      --muted:#9aa4c3;
-      --warn:#FFC107;
-      --danger:#FF4B4B;
-      --ok:#22C55E;
-      --shadow:0 10px 30px rgba(0,0,0,.35);
-      --radius:16px;
-    }
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{
-      margin:0;
-      font-family:Poppins, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji","Segoe UI Emoji";
-      color:var(--text);
-      background: radial-gradient(1200px 1200px at 10% -5%, rgba(47,6,88,.35), transparent 50%) , var(--bg);
-    }
-    .wrap{
-      display:grid;
-      grid-template-columns: 320px 1fr;
-      gap:22px;
-      padding:22px;
-      min-height:100%;
-    }
-    .panel{
-      background:linear-gradient(180deg, var(--panel), var(--panel-2));
-      border:1px solid rgba(255,255,255,.06);
-      border-radius:var(--radius);
-      box-shadow:var(--shadow);
-      padding:18px;
-    }
-    h1,h2,h3{margin:0 0 12px}
-    h1{font-size:22px; font-weight:700; letter-spacing:.4px}
-    h2{font-size:16px; font-weight:700; color:#cfe1ff}
-    h3{font-size:14px; font-weight:700; color:#cfe1ff}
-    .sub{color:var(--muted); font-size:12px; margin-top:-6px; margin-bottom:10px}
-    .row{display:flex; gap:10px; align-items:center}
-    .col{display:flex; flex-direction:column; gap:10px}
-    .grid-2{display:grid; grid-template-columns: 1fr 1fr; gap:10px}
-    .grid-3{display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px}
-
-    input,button,select{
-      font:inherit; color:inherit
-    }
-    input,select,textarea{
-      background:#0d0d1b;
-      border:1px solid rgba(255,255,255,.08);
-      border-radius:12px;
-      padding:10px 12px;
-      color:var(--text);
-      outline:none;
-    }
-    input::placeholder{color:#7b84a6}
-    button{
-      border:0; border-radius:14px; padding:10px 14px; cursor:pointer;
-      background:linear-gradient(180deg, #1d1d38, #171732);
-      border:1px solid rgba(255,255,255,.08);
-      transition:transform .04s ease, filter .15s ease;
-    }
-    button:hover{filter:brightness(1.08)}
-    button:active{transform:translateY(1px)}
-    .primary{
-      background:linear-gradient(180deg, #33e697, #0fb86e);
-      color:#0b1a14; font-weight:700;
-      border:0;
-    }
-    .accent{
-      background:linear-gradient(180deg, #4f0c90, #2F0658); border:0;
-    }
-    .danger{
-      background:linear-gradient(180deg, #ff6d6d, #FF4B4B); border:0; color:#fff; font-weight:700;
-    }
-    .muted{color:var(--muted)}
-    .pill{
-      display:inline-flex; align-items:center; gap:8px;
-      padding:6px 10px; border-radius:999px; font-size:12px;
-      background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.08)
-    }
-    .list{display:flex; flex-direction:column; gap:10px}
-    .item{
-      display:flex; align-items:center; justify-content:space-between; gap:10px;
-      background:#0d0d1b; border:1px solid rgba(255,255,255,.08);
-      border-radius:12px; padding:12px;
-    }
-    .dot{width:10px; height:10px; border-radius:50%}
-    .dot.green{background:#22C55E}
-    .dot.yellow{background:#FFC107}
-    .actions{display:flex; gap:8px}
-    details{border-radius:12px; overflow:hidden; border:1px solid rgba(255,255,255,.08)}
-    summary{
-      list-style:none; cursor:pointer; padding:12px 14px; background:#0f0f21; font-weight:700
-    }
-    summary::-webkit-details-marker{display:none}
-    .box{padding:14px; background:#0b0b18}
-    .split{
-      display:grid; grid-template-columns: 1.2fr .8fr; gap:12px;
-    }
-    .kpi{
-      display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:8px;
-    }
-    .kpi .card{
-      background:#0d0d1b; border:1px solid rgba(255,255,255,.08); border-radius:12px; padding:10px
-    }
-    .resultBadge{
-      min-height:44px; display:flex; align-items:center; justify-content:center; font-weight:800; letter-spacing:.3px;
-      border-radius:12px; border:1px solid rgba(255,255,255,.08)
-    }
-    .bg-win{background:rgba(34,197,94,.15); color:#22C55E}
-    .bg-try{background:rgba(255,193,7,.15); color:#FFC107}
-    .bg-nope{background:rgba(255,75,75,.15); color:#FF6D6D}
-    .footerNote{font-size:11px; color:var(--muted); opacity:.9}
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>EYEK • Host</title>
+<link rel="icon" href="/assets/icon.png" />
+<style>
+  :root{
+    --bg:#0b0b16;           /* dark indigo */
+    --card:#16162a;
+    --accent:#2F0658;       /* your purple */
+    --accent-2:#8a2be2;     /* bright accent for focus */
+    --text:#f4f4ff;
+    --muted:#9aa0b4;
+    --ok:#2ecc71;           /* green */
+    --warn:#f1c40f;         /* yellow */
+    --bad:#e74c3c;          /* red */
+    --btn:#22223b;
+    --btn-h:#2a2a4e;
+    --shadow:0 10px 25px rgba(0,0,0,.35);
+    --radius:20px;
+  }
+  html,body{height:100%;}
+  body{
+    margin:0;background:linear-gradient(135deg,var(--bg),#120921 40%, var(--accent) 110%);
+    color:var(--text); font:400 16px/1.5 system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+  }
+  a{color:#c3a9ff;text-decoration:none}
+  header{
+    display:flex;align-items:center;justify-content:space-between;gap:16px;
+    padding:16px 20px;border-bottom:1px solid rgba(255,255,255,.08);
+    background:rgba(0,0,0,.25);backdrop-filter: blur(6px);
+    position:sticky;top:0;z-index:10;
+  }
+  .nav{display:flex;gap:12px;flex-wrap:wrap}
+  .nav a{
+    padding:8px 12px;background:var(--btn);border-radius:999px;border:1px solid rgba(255,255,255,.08);
+  }
+  .wrap{display:grid;grid-template-columns:300px 1fr;gap:18px; padding:18px; max-width:1400px; margin:0 auto;}
+  .card{
+    background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.01));
+    border:1px solid rgba(255,255,255,.08);
+    border-radius:var(--radius); box-shadow:var(--shadow); padding:16px;
+  }
+  h2{margin:0 0 10px 0;font-size:18px; letter-spacing:.3px}
+  .muted{color:var(--muted)}
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+  .row{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+  input,select{
+    background:#0f0f21;color:var(--text); border:1px solid rgba(255,255,255,.12);
+    border-radius:12px; padding:10px 12px; outline:none; width:100%;
+  }
+  input:focus,select:focus{border-color:var(--accent-2)}
+  button{
+    background:var(--btn); color:var(--text); border:1px solid rgba(255,255,255,.12);
+    border-radius:12px; padding:10px 14px; cursor:pointer;
+  }
+  button:hover{background:var(--btn-h)}
+  .primary{ background: radial-gradient(100% 100% at 50% 0%, #5b2a9e, #2F0658 70%); border-color:#6a35ba }
+  .danger{ background:linear-gradient(180deg,#5e1d1d,#3b1111); border-color:#7a2c2c }
+  .ok{ background:linear-gradient(180deg,#194d2e,#0e2f1c); border-color:#2b8f57 }
+  .warn{ background:linear-gradient(180deg,#5c4a10,#3a2f0a); border-color:#b08a12 }
+  .side{display:flex;flex-direction:column; gap:12px}
+  .list{ display:flex; flex-direction:column; gap:8px; max-height:60vh; overflow:auto; padding-right:4px}
+  .singer{
+    display:grid; grid-template-columns:20px 1fr auto auto; gap:8px; align-items:center;
+    background:rgba(0,0,0,.25); border:1px solid rgba(255,255,255,.08); border-radius:12px; padding:8px;
+  }
+  .dot{ width:10px; height:10px; border-radius:999px; background:#3a3a52; }
+  .dot.ok{ background:var(--ok)}
+  .dot.warn{ background:var(--warn)}
+  details{border-radius:12px; overflow:hidden; border:1px solid rgba(255,255,255,.08)}
+  summary{
+    cursor:pointer; list-style:none; padding:12px 14px; background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02));
+    font-weight:600;
+  }
+  summary::-webkit-details-marker{display:none}
+  .section{padding:14px}
+  .cols-3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px}
+  .panel{background:rgba(0,0,0,.2); border:1px solid rgba(255,255,255,.08); border-radius:12px; padding:12px}
+  .timer{font-size:38px; font-weight:800; letter-spacing:1px}
+  .counts{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+  .pill{padding:6px 10px; border-radius:999px; border:1px solid rgba(255,255,255,.14); background:rgba(0,0,0,.25)}
+  .resultBox{min-height:44px; display:flex; align-items:center; justify-content:center; font-weight:800; border-radius:12px; border:1px solid rgba(255,255,255,.14)}
+  .resultBox.encore{background:rgba(46,204,113,.15); border-color:rgba(46,204,113,.45)}
+  .resultBox.another{background:rgba(241,196,15,.15); border-color:rgba(241,196,15,.45)}
+  .resultBox.maybe{background:rgba(231,76,60,.15); border-color:rgba(231,76,60,.45)}
+  .footnote{font-size:12px;color:var(--muted)}
+</style>
 </head>
 <body>
+  <header>
+    <div class="row">
+      <strong>EYEK • Host</strong>
+    </div>
+    <nav class="nav">
+      <a href="/">Home</a>
+      <a href="/host/">Host</a>
+      <a href="/screen/" target="_blank">Screen</a>
+      <a href="/vote/" target="_blank">Vote</a>
+      <a href="/board/" target="_blank">Board</a>
+    </nav>
+  </header>
+
   <div class="wrap">
-    <!-- Sidebar: Singer list -->
-    <aside class="panel">
-      <h1 style="display:flex; align-items:center; gap:10px;">
-        <span class="pill" title="Host Console">Host</span>
-        <span style="font-weight:800; letter-spacing:.3px">EYEK</span>
-      </h1>
-      <div class="sub">Singers (tap “Set” to make current)</div>
-      <div id="singerList" class="list" aria-live="polite"></div>
-      <div style="margin-top:12px" class="footerNote">
-        Tip: This page autosaves locally and won’t wipe your typing.
+    <!-- LEFT: Queue -->
+    <aside class="side">
+      <div class="card">
+        <h2>Singers</h2>
+        <div class="footnote">Click “Set” to make someone current. “Remove” deletes from list.</div>
+        <div id="queueList" class="list"></div>
+      </div>
+
+      <div class="card">
+        <h2>Add Singer</h2>
+        <div class="grid2">
+          <input id="newSinger" placeholder="Singer name" />
+          <input id="newSong" placeholder="Song • Artist (optional)" />
+        </div>
+        <div class="row" style="margin-top:10px">
+          <button class="primary" id="btnAddSinger">Add to List</button>
+        </div>
       </div>
     </aside>
 
-    <!-- Main content -->
-    <main class="panel">
-      <!-- Event Setup (collapsible) -->
-      <details id="eventDetails" open>
+    <!-- RIGHT: Controls -->
+    <main class="side">
+      <details id="eventSect" class="card" open>
         <summary>Event Setup</summary>
-        <div class="box">
-          <div class="grid-3">
-            <div class="col">
-              <label for="venue">Venue</label>
-              <input id="venue" placeholder="e.g., The Neon Cactus" autocomplete="off">
+        <div class="section">
+          <div class="grid2">
+            <div>
+              <label class="footnote">Venue</label>
+              <input id="venue" placeholder="Venue" list="venuesList" />
+              <datalist id="venuesList"></datalist>
             </div>
-            <div class="col">
-              <label for="kj">KJ</label>
-              <input id="kj" placeholder="e.g., Tom" autocomplete="off">
-            </div>
-            <div class="col">
-              <label for="pin">PIN (optional for voters)</label>
-              <input id="pin" placeholder="4–6 digits" autocomplete="off">
+            <div>
+              <label class="footnote">KJ / Company</label>
+              <input id="kj" placeholder="KJ / Company" list="kjsList" />
+              <datalist id="kjsList"></datalist>
             </div>
           </div>
-          <div class="row" style="margin-top:10px; gap:10px;">
-            <button id="saveEvent" class="primary">Save Event</button>
-            <button id="resetEvent" class="danger">Reset Event</button>
-            <button id="toggleEvent" class="accent"><span id="lockLabel">Lock</span> Event</button>
-            <span class="pill muted" id="eventState">Unlocked</span>
+          <div class="row" style="margin-top:10px">
+            <label class="row"><input type="checkbox" id="lockEvent" /> Lock after save</label>
+            <button id="btnSaveEvent" class="primary">Save Event</button>
+            <button id="btnResetEvent" class="danger">Reset Event</button>
           </div>
         </div>
       </details>
 
-      <!-- Singer section -->
-      <section style="margin-top:16px">
+      <div class="card">
         <h2>Singer</h2>
-        <div class="grid-3">
-          <input id="singerName" placeholder="Singer name" autocomplete="off">
-          <input id="songArtist" placeholder="Song / Artist" autocomplete="off">
-          <button id="addSinger" class="primary">Add Singer</button>
+        <div class="grid2">
+          <input id="currSingerName" placeholder="Current singer" />
+          <input id="currSong" placeholder="Song • Artist (optional)" />
         </div>
-      </section>
+        <div class="row" style="margin-top:10px">
+          <button id="btnSetCurrent" class="ok">Set Current</button>
+          <button id="btnEnableSounds" class="warn">Enable Sounds</button>
+        </div>
+      </div>
 
-      <!-- Current & Voting -->
-      <section style="margin-top:16px">
-        <h2>Current & Voting</h2>
-        <div class="split">
-          <div class="col">
-            <div class="kpi">
-              <div class="card"><div class="muted">Current Singer</div><div id="kpiSinger" style="font-weight:700">—</div></div>
-              <div class="card"><div class="muted">Song / Artist</div><div id="kpiSong" style="font-weight:700">—</div></div>
-              <div class="card"><div class="muted">Timer</div><div id="kpiTimer" style="font-weight:700">00:30</div></div>
+      <div class="card">
+        <h2>Voting</h2>
+        <div class="grid2" style="align-items:stretch">
+          <div class="panel">
+            <div class="footnote">Timer</div>
+            <div id="timer" class="timer">00:00</div>
+            <div class="counts" style="margin-top:8px">
+              <span class="pill">Encore: <b id="cEncore">0</b></span>
+              <span class="pill">Another: <b id="cAnother">0</b></span>
+              <span class="pill">Maybe: <b id="cMaybe">0</b></span>
             </div>
-            <div class="row" style="margin-top:10px; gap:10px;">
-              <button id="startVote" class="primary">Start 30s Vote</button>
-              <button id="extendVote" class="accent">+15s</button>
-              <button id="endVote" class="danger">End Now</button>
-              <label class="row" style="gap:6px; margin-left:auto">
-                <input id="enableSound" type="checkbox">
-                <span class="muted">Enable sounds</span>
-              </label>
-            </div>
-            <div class="row" style="margin-top:10px; gap:10px">
-              <audio id="soundStart" src="/assets/voting_open.mp3" preload="auto"></audio>
-              <audio id="soundOver"  src="/assets/voting_over.mp3" preload="auto"></audio>
-              <audio id="soundEncore" src="/assets/encore.mp3" preload="auto"></audio>
-              <audio id="soundLose"   src="/assets/loser.wav" preload="auto"></audio>
+            <div class="row" style="margin-top:10px">
+              <button id="btnStart" class="primary">Start (30s)</button>
+              <button id="btnExtend" class="warn">Extend (+15s)</button>
+              <button id="btnEnd" class="danger">End Now</button>
             </div>
           </div>
-          <div class="col">
-            <div class="box" style="border:1px solid rgba(255,255,255,.06); border-radius:12px">
-              <h3>Votes</h3>
-              <div class="grid-3" style="margin-top:6px">
-                <div class="card"><div class="muted">Encore!</div><div id="vEncore" style="font-weight:800; font-size:20px">0</div></div>
-                <div class="card"><div class="muted">Another Shot!</div><div id="vAnother" style="font-weight:800; font-size:20px">0</div></div>
-                <div class="card"><div class="muted">Maybe Next Time</div><div id="vMaybe" style="font-weight:800; font-size:20px">0</div></div>
-              </div>
-              <div style="margin-top:10px" id="resultBadge" class="resultBadge"></div>
+          <div class="panel">
+            <div class="footnote">Result</div>
+            <div id="resultBox" class="resultBox muted">—</div>
+            <div class="footnote" style="margin-top:8px">
+              Result appears automatically after voting ends.
             </div>
           </div>
         </div>
-      </section>
+      </div>
 
-      <!-- Host Vote -->
-      <section style="margin-top:16px">
+      <div class="card">
         <h2>Host Vote</h2>
-        <div class="row" style="gap:10px">
-          <button class="primary" data-hostvote="encore">Encore!</button>
-          <button class="accent"  data-hostvote="another">Another Shot!</button>
-          <button class="danger"  data-hostvote="maybe">Maybe Next Time</button>
+        <div class="row">
+          <button class="ok" id="hvEncore">Encore!</button>
+          <button class="warn" id="hvAnother">Another Shot!</button>
+          <button class="danger" id="hvMaybe">Maybe Next Time</button>
         </div>
-        <div class="sub">Host vote adds to totals; the winner is decided only when the timer ends.</div>
-      </section>
+        <div class="footnote" style="margin-top:8px">
+          Host vote counts toward the totals while voting is open. Winner is decided only when the window closes.
+        </div>
+      </div>
     </main>
   </div>
 
-  <script>
-    // ---- Utility: safe JSON load from /assets/status.json (won’t crash page) ----
-    async function loadStatus() {
-      try {
-        const r = await fetch('/assets/status.json?ts=' + Date.now(), {cache:'no-store'});
-        if (!r.ok) throw new Error('status.json not found');
-        const t = await r.text();
-        try { return JSON.parse(t); }
-        catch(e){ console.warn('Bad JSON in status.json — defaulting', e); return null; }
-      } catch(e){
-        console.warn('status.json missing — defaulting', e);
-        return null;
-      }
-    }
+<script>
+const API = '/assets/api.php';
+let soundsOn = false;
+const S = {
+  open: new Audio('/assets/voting_open.mp3'),
+  over: new Audio('/assets/voting_over.mp3')
+};
+function safePlay(a){ if(!soundsOn) return; a.currentTime=0; a.play().catch(()=>{}); }
 
-    // We cannot write to /assets/status.json from the browser on static hosting.
-    // For now, mirror state to localStorage for crash-proof UI (so page never blanks),
-    // and (optionally) POST to a lightweight endpoint later if/when we add one.
-    const LS_KEY = 'eyek_host_state_v1';
-    const $ = sel => document.querySelector(sel);
-    const state = {
-      locked:false,
-      venue:'', kj:'', pin:'',
-      singers:[],            // [{name, track}]
-      current:null,          // {name, track} or null
-      voting:false,
-      endsAt:0,
-      encore:0, another:0, maybe:0,
-      result:null,           // 'encore'|'another'|'maybe'|null
-      sound:false
+const els = {
+  venuesList: document.getElementById('venuesList'),
+  kjsList: document.getElementById('kjsList'),
+  venue: document.getElementById('venue'),
+  kj: document.getElementById('kj'),
+  lockEvent: document.getElementById('lockEvent'),
+  btnSaveEvent: document.getElementById('btnSaveEvent'),
+  btnResetEvent: document.getElementById('btnResetEvent'),
+  btnEnableSounds: document.getElementById('btnEnableSounds'),
+  newSinger: document.getElementById('newSinger'),
+  newSong: document.getElementById('newSong'),
+  btnAddSinger: document.getElementById('btnAddSinger'),
+  queueList: document.getElementById('queueList'),
+  currSingerName: document.getElementById('currSingerName'),
+  currSong: document.getElementById('currSong'),
+  btnSetCurrent: document.getElementById('btnSetCurrent'),
+  timer: document.getElementById('timer'),
+  cEncore: document.getElementById('cEncore'),
+  cAnother: document.getElementById('cAnother'),
+  cMaybe: document.getElementById('cMaybe'),
+  btnStart: document.getElementById('btnStart'),
+  btnExtend: document.getElementById('btnExtend'),
+  btnEnd: document.getElementById('btnEnd'),
+  resultBox: document.getElementById('resultBox'),
+};
+
+const LS_VENUES = 'eyek_venues';
+const LS_KJS = 'eyek_kjs';
+
+let state = null;      // server state
+let tickInt = null;
+
+function loadLocalLists() {
+  const venues = JSON.parse(localStorage.getItem(LS_VENUES)||'[]');
+  const kjs = JSON.parse(localStorage.getItem(LS_KJS)||'[]');
+  els.venuesList.innerHTML = venues.map(v=>`<option value="${escapeHtml(v)}">`).join('');
+  els.kjsList.innerHTML = kjs.map(v=>`<option value="${escapeHtml(v)}">`).join('');
+}
+function saveLocalLists(venue,kj){
+  if(venue){
+    const v = new Set(JSON.parse(localStorage.getItem(LS_VENUES)||'[]')); v.add(venue);
+    localStorage.setItem(LS_VENUES, JSON.stringify([...v].slice(-50)));
+  }
+  if(kj){
+    const k = new Set(JSON.parse(localStorage.getItem(LS_KJS)||'[]')); k.add(kj);
+    localStorage.setItem(LS_KJS, JSON.stringify([...k].slice(-50)));
+  }
+  loadLocalLists();
+}
+
+function escapeHtml(s){return (s||'').replace(/[&<>"']/g,m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m]))}
+
+async function fetchState(){
+  const res = await fetch(API); return res.json();
+}
+async function post(payload){
+  const res = await fetch(API,{method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+  return res.json();
+}
+
+function renderQueue(){
+  const q = state.queue||[];
+  els.queueList.innerHTML = q.map(s => `
+    <div class="singer" data-id="${s.id}">
+      <span class="dot"></span>
+      <div>${escapeHtml(s.name)}</div>
+      <button class="ok act-set" title="Set current">Set</button>
+      <button class="danger act-del" title="Remove">Remove</button>
+    </div>
+  `).join('');
+  els.queueList.querySelectorAll('.act-set').forEach(btn=>{
+    btn.onclick = async (e)=>{
+      const id = e.currentTarget.closest('.singer').dataset.id;
+      const s = (state.queue||[]).find(x=>x.id===id);
+      if(!s) return;
+      await post({action:'set_current', singer:{id:s.id, name:s.name, songArtist:''}});
+      state.currentSinger = {id:s.id, name:s.name, songArtist:''};
+      els.currSingerName.value = s.name;
+      els.currSong.value = '';
+      // keep in queue (or remove? you can decide) — we’ll keep them for now
     };
+  });
+  els.queueList.querySelectorAll('.act-del').forEach(btn=>{
+    btn.onclick = async (e)=>{
+      const id = e.currentTarget.closest('.singer').dataset.id;
+      const q2 = (state.queue||[]).filter(x=>x.id!==id);
+      const r = await post({action:'set_queue', queue:q2});
+      state.queue = r.queue;
+      renderQueue();
+    };
+  });
+}
 
-    function saveLocal(){
-      try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch(e){}
-    }
-    function loadLocal(){
-      try {
-        const s = localStorage.getItem(LS_KEY);
-        if (s) Object.assign(state, JSON.parse(s));
-      } catch(e){}
-    }
+function renderVoting(){
+  const v = state.voting||{};
+  els.cEncore.textContent = v.encore||0;
+  els.cAnother.textContent = v.another||0;
+  els.cMaybe.textContent = v.maybe||0;
 
-    // ---- Renderers ----
-    function renderEvent(){
-      $('#venue').value = state.venue || '';
-      $('#kj').value    = state.kj || '';
-      $('#pin').value   = state.pin || '';
-      $('#eventState').textContent = state.locked ? 'Locked' : 'Unlocked';
-      $('#lockLabel').textContent = state.locked ? 'Unlock' : 'Lock';
-    }
+  let rem = 0;
+  if (v.isOpen && v.endsAt) rem = Math.max(0, v.endsAt - Math.floor(Date.now()/1000));
+  els.timer.textContent = secs(rem);
+  if (!v.isOpen && rem===0) {
+    // show result if we have one
+    const r = state.lastResult||"";
+    const rb = els.resultBox;
+    rb.className = 'resultBox ' + (r||'');
+    rb.textContent = r ? (r==='encore'?'Encore!': r==='another'?'Another Shot!':'Maybe Next Time') : '—';
+  }
+}
 
-    function renderSingers(){
-      const box = $('#singerList');
-      box.innerHTML = '';
-      state.singers.forEach((s, i)=>{
-        const div = document.createElement('div');
-        div.className='item';
-        const left = document.createElement('div');
-        left.className='row';
-        const dot = document.createElement('span');
-        dot.className='dot ' + (state.current && state.current.name===s.name ? 'green' : 'yellow');
-        const name = document.createElement('div');
-        name.textContent = s.name;
-        name.style.fontWeight='700';
-        left.append(dot,name);
-        const actions = document.createElement('div');
-        actions.className='actions';
-        const setBtn = document.createElement('button');
-        setBtn.textContent='Set';
-        setBtn.className='primary';
-        setBtn.onclick=()=>{
-          state.current = {name:s.name, track:s.track||''};
-          state.voting=false; state.endsAt=0;
-          state.encore=state.another=state.maybe=0;
-          state.result=null;
-          saveLocal(); renderAll();
-        };
-        const rmBtn = document.createElement('button');
-        rmBtn.textContent='Remove';
-        rmBtn.className='danger';
-        rmBtn.onclick=()=>{
-          state.singers.splice(i,1);
-          if (state.current && state.current.name===s.name) state.current=null;
-          saveLocal(); renderAll();
-        };
-        actions.append(setBtn, rmBtn);
-        div.append(left, actions);
-        box.append(div);
-      });
-    }
+function secs(s){
+  const m = Math.floor(s/60), ss=("0"+(s%60)).slice(-2);
+  return `${("0"+m).slice(-2)}:${ss}`;
+}
 
-    function renderKPI(){
-      $('#kpiSinger').textContent = state.current?.name || '—';
-      $('#kpiSong').textContent   = state.current?.track || '—';
-      // timer
-      if (state.voting && state.endsAt>0){
-        const remain = Math.max(0, Math.floor((state.endsAt - Date.now())/1000));
-        const m = String(Math.floor(remain/60)).padStart(2,'0');
-        const s = String(remain%60).padStart(2,'0');
-        $('#kpiTimer').textContent = `${m}:${s}`;
-      } else {
-        $('#kpiTimer').textContent = '00:30';
-      }
-    }
+async function loadAndRender(){
+  state = await fetchState();
+  // fill event fields (respect lock)
+  els.venue.value = state.event?.venue || '';
+  els.kj.value = state.event?.kj || '';
+  els.lockEvent.checked = !!state.event?.locked;
+  if (state.event?.locked) {
+    els.venue.disabled = true; els.kj.disabled = true; els.lockEvent.disabled = true;
+  } else {
+    els.venue.disabled = false; els.kj.disabled = false; els.lockEvent.disabled = false;
+  }
 
-    function renderVotes(){
-      $('#vEncore').textContent = state.encore;
-      '#vAnother'; $('#vAnother').textContent = state.another;
-      '#vMaybe';   $('#vMaybe').textContent   = state.maybe;
+  // current singer into inputs
+  els.currSingerName.value = state.currentSinger?.name || '';
+  els.currSong.value = state.currentSinger?.songArtist || '';
 
-      const badge = $('#resultBadge');
-      badge.className = 'resultBadge';
-      badge.textContent = '';
-      if (state.result){
-        if (state.result==='encore'){ badge.classList.add('bg-win');  badge.textContent='Encore!'; }
-        if (state.result==='another'){badge.classList.add('bg-try');  badge.textContent='Another Shot!';}
-        if (state.result==='maybe'){  badge.classList.add('bg-nope'); badge.textContent='Maybe Next Time';}
-      }
-    }
+  renderQueue();
+  renderVoting();
+}
 
-    function renderAll(){
-      renderEvent();
-      renderSingers();
-      renderKPI();
-      renderVotes();
-      $('#enableSound').checked = !!state.sound;
-    }
+function startTicker(){
+  if (tickInt) clearInterval(tickInt);
+  tickInt = setInterval(async ()=>{
+    try{
+      const s = await fetchState();
+      // only re-render counters/timer/result to avoid clobbering input as you type
+      state.voting = s.voting;
+      state.lastResult = s.lastResult;
+      renderVoting();
+    }catch(e){}
+  }, 1000);
+}
 
-    // ---- Safe event wiring (won’t clear inputs while typing) ----
-    function initHandlers(){
-      $('#saveEvent').onclick=()=>{
-        if (state.locked) return;
-        state.venue = $('#venue').value.trim();
-        state.kj    = $('#kj').value.trim();
-        state.pin   = $('#pin').value.trim();
-        saveLocal(); renderEvent();
-      };
-      $('#resetEvent').onclick=()=>{
-        if (!confirm('Reset event? This clears singers, votes and current singer.')) return;
-        state.singers=[]; state.current=null;
-        state.encore=state.another=state.maybe=0;
-        state.voting=false; state.endsAt=0; state.result=null;
-        saveLocal(); renderAll();
-      };
-      $('#toggleEvent').onclick=()=>{
-        state.locked=!state.locked;
-        saveLocal(); renderEvent();
-      };
-      $('#addSinger').onclick=()=>{
-        const name = $('#singerName').value.trim();
-        const track = $('#songArtist').value.trim();
-        if (!name) return;
-        state.singers.push({name, track});
-        $('#singerName').value=''; $('#songArtist').value='';
-        saveLocal(); renderSingers();
-      };
+// ————— EVENTS —————
+els.btnEnableSounds.onclick = ()=>{ soundsOn = true; els.btnEnableSounds.textContent = 'Sounds Enabled'; };
 
-      // Voting
-      const play = (id)=>{ if(!state.sound) return; const a=$(id); a && a.play().catch(()=>{}); };
-      $('#enableSound').onchange=(e)=>{ state.sound = e.target.checked; saveLocal(); };
+els.btnSaveEvent.onclick = async ()=>{
+  const evt = {
+    venue: els.venue.value.trim(),
+    kj: els.kj.value.trim(),
+    locked: els.lockEvent.checked
+  };
+  saveLocalLists(evt.venue, evt.kj);
+  state.event = evt;
+  const r = await post({action:'event', event:evt});
+  if (evt.locked) document.getElementById('eventSect').open = false;
+};
 
-      $('#startVote').onclick=()=>{
-        if (!state.current) { alert('Set the current singer first.'); return; }
-        state.encore=state.another=state.maybe=0;
-        state.result=null;
-        state.voting=true;
-        state.endsAt=Date.now() + 30*1000;
-        saveLocal(); renderAll();
-        play('#soundStart');
-      };
-      $('#extendVote').onclick=()=>{
-        if (!state.voting) return;
-        state.endsAt += 15*1000;
-        saveLocal(); renderKPI();
-      };
-      $('#endVote').onclick=()=>{
-        if (!state.voting) return finishVote();
-      };
+els.btnResetEvent.onclick = async ()=>{
+  // wipe singers and voting too
+  state = {
+    event: {venue:'', kj:'', locked:false},
+    currentSinger: {id:'', name:'', songArtist:''},
+    queue: [],
+    voting: {isOpen:false, endsAt:0, encore:0, another:0, maybe:0},
+    lastResult: "", version: 0
+  };
+  await post({action:'save_state', state});
+  await loadAndRender();
+  document.getElementById('eventSect').open = true;
+};
 
-      // Host vote buttons
-      document.querySelectorAll('[data-hostvote]').forEach(btn=>{
-        btn.onclick=()=>{
-          if (!state.voting) return;
-          const v = btn.getAttribute('data-hostvote');
-          if (v==='encore') state.encore++;
-          if (v==='another') state.another++;
-          if (v==='maybe') state.maybe++;
-          saveLocal(); renderVotes();
-        };
-      });
+els.btnAddSinger.onclick = async ()=>{
+  const name = els.newSinger.value.trim();
+  const song = els.newSong.value.trim();
+  if(!name) return;
+  const id = 's_'+Math.random().toString(36).slice(2,9);
+  const q = state.queue || [];
+  q.push({id, name});
+  state.queue = q;
+  await post({action:'set_queue', queue:q});
+  // if you want to copy new singer into "current" inputs automatically, comment next two lines
+  els.newSinger.value = ''; els.newSong.value = '';
+  renderQueue();
+};
 
-      // Timer tick
-      setInterval(()=>{
-        if (state.voting && state.endsAt>0 && Date.now()>=state.endsAt){
-          finishVote();
-        }
-        renderKPI();
-      }, 250);
-    }
+els.btnSetCurrent.onclick = async ()=>{
+  const s = {
+    id: state.currentSinger?.id || ('s_'+Math.random().toString(36).slice(2,9)),
+    name: els.currSingerName.value.trim(),
+    songArtist: els.currSong.value.trim()
+  };
+  await post({action:'set_current', singer:s});
+  state.currentSinger = s;
+};
 
-    function finishVote(){
-      state.voting=false;
-      // decide winner
-      const {encore, another, maybe} = state;
-      const max = Math.max(encore, another, maybe);
-      let r = null;
-      if (max===0){ r='maybe'; } // no votes -> treat as Maybe Next Time
-      else if (encore===max && encore!==another && encore!==maybe) r='encore';
-      else if (another===max && another!==encore && another!==maybe) r='another';
-      else if (maybe===max && maybe!==encore && maybe!==another) r='maybe';
-      else {
-        // tie-breaker: prefer Another Shot over Maybe, and Encore over all if included
-        if (encore===max) r='encore';
-        else if (another===max) r='another';
-        else r='maybe';
-      }
-      state.result = r;
-      saveLocal(); renderVotes();
+els.btnStart.onclick = async ()=>{
+  const r = await post({action:'voting', cmd:'start', seconds:30});
+  state = r.state; renderVoting(); safePlay(S.open);
+};
 
-      // sounds
-      const play = (id)=>{ if(!state.sound) return; const a=$(id); a && a.play().catch(()=>{}); };
-      if (r==='encore') play('#soundEncore');
-      else if (r==='maybe') play('#soundLose');
-      else play('#soundOver');
-    }
+els.btnExtend.onclick = async ()=>{
+  const r = await post({action:'voting', cmd:'extend', seconds:15});
+  state = r.state; renderVoting();
+};
 
-    (async function boot(){
-      // Don’t crash if remote JSON missing/bad
-      const remote = await loadStatus();
-      loadLocal();
-      // Prefer local (so we keep user’s typing), hydrate only missing parts from remote
-      if (remote && typeof remote==='object'){
-        // Only merge harmless fields to avoid wiping local typing
-        state.singers = Array.isArray(remote.singers) ? remote.singers : state.singers;
-        state.current = remote.current ?? state.current;
-      }
-      renderAll();
-      initHandlers();
-    })();
-  </script>
+els.btnEnd.onclick = async ()=>{
+  const r = await post({action:'voting', cmd:'end'});
+  state = r.state; renderVoting(); safePlay(S.over);
+};
+
+document.getElementById('hvEncore').onclick = ()=> post({action:'vote', choice:'encore'}).then(loadAndRender);
+document.getElementById('hvAnother').onclick = ()=> post({action:'vote', choice:'another'}).then(loadAndRender);
+document.getElementById('hvMaybe').onclick = ()=> post({action:'vote', choice:'maybe'}).then(loadAndRender);
+
+// init
+loadLocalLists();
+loadAndRender().then(startTicker);
+</script>
 </body>
 </html>
