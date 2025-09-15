@@ -1,51 +1,57 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <title>EYEK • Board</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <style>
-    body{margin:0;font-family:system-ui,Segoe UI,Arial,sans-serif;background:#0a0c12;color:#e6eef8}
-    .wrap{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:16px}
-    .card{background:#0f1422;border:1px solid #1d263b;border-radius:14px;padding:14px}
-    h2{margin:6px 0 10px}
-    .row{display:flex;justify-content:space-between;padding:8px;border-bottom:1px solid #1b2437}
-    .dot{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:8px}
-    .green{background:#1dd05d}.yellow{background:#f9d64a}.red{background:#ff5d7a}.gray{background:#6b7a96}
-    .muted{color:#9fb0cf}
-  </style>
+<meta charset="utf-8" />
+<title>EYEK • Board</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  :root{--bg:#0a0e16;--text:#eaf2ff;--muted:#9db2d1;--green:#26e28b;--yellow:#ffd24d;--red:#ff5a6b;--border:#1c2b48}
+  *{box-sizing:border-box;font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial}
+  body{margin:0;background:var(--bg);color:var(--text);padding:20px}
+  h1{margin:0 0 10px 0}
+  .muted{color:var(--muted)}
+  table{width:100%;border-collapse:separate;border-spacing:0 8px}
+  th,td{padding:12px 14px;text-align:left}
+  tbody tr{background:#121826;border:1px solid var(--border)}
+  .dot{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:8px}
+  .green{background:var(--green)} .yellow{background:var(--yellow)} .red{background:var(--red)}
+</style>
 </head>
 <body>
-<div class="wrap">
-  <div class="card">
-    <h2>Rotation</h2>
-    <div id="rot"></div>
-  </div>
-  <div class="card">
-    <h2>Recent Results</h2>
-    <div id="res"></div>
-  </div>
-</div>
-<script>
-const URL='/assets/status.json';
-function colorOf(x){
-  return x==='Encore'?'green':x==='Another Shot'?'yellow':x==='Maybe Next Time'?'red':'gray';
-}
-async function tick(){
-  const r = await fetch(URL+'?_=' + Date.now());
-  const j = await r.json();
-  const rot = document.getElementById('rot');
-  rot.innerHTML = (j.singers||[]).map(s=>`
-    <div class="row"><span><span class="dot ${colorOf(s.last)}"></span>${s.name}</span><span class="muted">${s.songArtist||''}</span></div>
-  `).join('') || '<div class="muted">No singers yet</div>';
+  <h1>Encore Board</h1>
+  <div class="muted" id="line">—</div>
+  <div style="height:10px"></div>
+  <table>
+    <thead>
+      <tr><th>Singer</th><th>Last Song</th><th>Status</th></tr>
+    </thead>
+    <tbody id="rows"></tbody>
+  </table>
 
-  const res = document.getElementById('res');
-  res.innerHTML = (j.results||[]).slice(0,12).map(r=>`
-    <div class="row"><span><span class="dot ${colorOf(r.result)}"></span>${r.singer}</span><span class="muted">${r.result}</span></div>
-  `).join('') || '<div class="muted">No results yet</div>';
+<script>
+const API='/assets/state.php'; let STATE=null, POLL;
+function $(id){return document.getElementById(id)}
+async function fetchState(){
+  const r = await fetch(API+'?action=get',{cache:'no-store'});
+  STATE = await r.json();
+  render();
 }
-setInterval(tick, 3000);
-tick();
+function render(){
+  $('line').textContent = (STATE.venue||'') + (STATE.kj?(' • KJ '+STATE.kj):'');
+  const body = $('rows'); body.innerHTML='';
+  (STATE.singers||[]).forEach(s=>{
+    const tr = document.createElement('tr');
+    const status = s.status||'queued';
+    const dot = status==='encore'?'green':(status==='another'?'yellow':(status==='nexttime'?'red':''));
+    tr.innerHTML = `
+      <td>${s.name}</td>
+      <td class="muted">${s.lastSong||''}</td>
+      <td>${dot?`<span class="dot ${dot}"></span>`:''}${status}</td>
+    `;
+    body.appendChild(tr);
+  });
+}
+(async ()=>{ await fetchState(); POLL=setInterval(fetchState, 2000); })();
 </script>
 </body>
 </html>
