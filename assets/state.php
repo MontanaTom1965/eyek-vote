@@ -14,10 +14,33 @@ rewind($fp);
 $cur = stream_get_contents($fp);
 $state = $cur ? json_decode($cur, true) : [];
 
-// Preserve voters if the client forgot to include it
+// Preserve voters if client omitted
 if (isset($state['voting']['voters']) && !isset($incoming['voting']['voters'])) {
   $incoming['voting']['voters'] = $state['voting']['voters'];
 }
+
+// Ensure 'saved' structure
+if (!isset($incoming['saved'])) $incoming['saved'] = ["venues"=>[], "kjs"=>[]];
+if (!isset($state['saved']))    $state['saved']    = ["venues"=>[], "kjs"=>[]];
+
+// Normalize PIN: digits only (host & vote use same rule)
+if (isset($incoming['event']['pin'])) {
+  $incoming['event']['pin'] = preg_replace('/\D+/', '', (string)$incoming['event']['pin']);
+}
+
+// Maintain saved lists (unique, most-recent first, max 50)
+function push_unique(&$arr, $val) {
+  $val = trim((string)$val);
+  if ($val === '') return;
+  $arr = array_values(array_filter($arr, fn($x)=>strcasecmp($x,$val)!==0));
+  array_unshift($arr, $val);
+  $arr = array_slice($arr, 0, 50);
+}
+if (!isset($incoming['saved']['venues'])) $incoming['saved']['venues'] = $state['saved']['venues'] ?? [];
+if (!isset($incoming['saved']['kjs']))    $incoming['saved']['kjs']    = $state['saved']['kjs'] ?? [];
+
+if (!empty($incoming['event']['venue'])) push_unique($incoming['saved']['venues'], $incoming['event']['venue']);
+if (!empty($incoming['event']['kj']))    push_unique($incoming['saved']['kjs'],    $incoming['event']['kj']);
 
 $incoming['serverUpdatedAt'] = time();
 
