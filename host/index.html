@@ -1,270 +1,318 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <title>EYEK • Host</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <style>
-    body{font-family:system-ui,Segoe UI,Arial,sans-serif;background:#0a0c10;color:#e6eef8;margin:0}
-    header{display:flex;gap:12px;align-items:center;padding:12px 16px;background:#121621;border-bottom:1px solid #1d2433}
-    .wrap{display:grid;grid-template-columns:320px 1fr;gap:16px;padding:16px}
-    aside{background:#0f1320;border:1px solid #1d2433;border-radius:12px;padding:12px;max-height:calc(100dvh - 110px);overflow:auto}
-    main{background:#0f1320;border:1px solid #1d2433;border-radius:12px;padding:16px}
-    h2{margin:8px 0 12px;font-size:18px}
-    .row{display:flex;gap:10px;align-items:center;margin:8px 0}
-    input,button{font-size:16px}
-    input[type="text"],input[type="number"]{background:#0b0f1a;border:1px solid #23304a;color:#e6eef8;border-radius:8px;padding:10px}
-    button{background:#1e2a44;color:#e6eef8;border:1px solid #35476a;border-radius:10px;padding:10px 14px;cursor:pointer}
-    button:hover{background:#263659}
-    .danger{background:#3a1620;border-color:#6b2336}
-    .success{background:#16351f;border-color:#2e6b42}
-    details{background:#0b1020;border:1px solid #1d2433;border-radius:10px;padding:10px;margin-bottom:12px}
-    summary{cursor:pointer;font-weight:600}
-    .pill{display:inline-flex;gap:6px;align-items:center;border:1px solid #2a3550;background:#11182a;border-radius:999px;padding:6px 10px;font-size:13px}
-    .list{display:flex;flex-direction:column;gap:6px;margin-top:8px}
-    .item{display:flex;align-items:center;justify-content:space-between;background:#0b0f1a;border:1px solid #1f2a44;border-radius:10px;padding:8px 10px}
-    .dot{width:10px;height:10px;border-radius:50%}
-    .dot.green{background:#1dd05d}.dot.yellow{background:#f9d64a}.dot.gray{background:#6b7a96}.dot.red{background:#ff5d7a}
-    .small{font-size:12px;color:#9fb0cf}
-    .flex{display:flex;gap:8px;align-items:center}
-    .grow{flex:1}
-    .right{margin-left:auto}
-    .muted{opacity:.8}
-    .stack{display:grid;gap:8px}
-    .section{border-top:1px dashed #23304a;margin-top:12px;padding-top:12px}
-  </style>
+<meta charset="utf-8" />
+<title>EYEK • Host</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="icon" href="/assets/favicon.ico" />
+<style>
+  :root{
+    --bg:#0b0f17; --card:#121826; --muted:#9fb0cc; --text:#e7efff;
+    --green:#27d17f; --yellow:#ffcc33; --red:#ff5468; --brand:#5aa2ff;
+    --border:#20304a;
+  }
+  *{box-sizing:border-box;font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial}
+  body{margin:0;background:var(--bg);color:var(--text)}
+  header{display:flex;align-items:center;gap:16px;padding:16px;border-bottom:1px solid var(--border);}
+  header img{height:40px}
+  .wrap{display:grid;grid-template-columns:320px 1fr;gap:16px;padding:16px}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px}
+  h2{margin:0 0 12px 0;font-size:18px}
+  label{display:block;font-size:13px;color:var(--muted);margin:8px 0 4px}
+  input,button,select{font-size:15px}
+  input[type=text],input[type=password]{width:100%;padding:10px 12px;background:#0f1421;color:var(--text);border:1px solid var(--border);border-radius:10px}
+  .row{display:flex;gap:8px}
+  .row > *{flex:1}
+  .btn{cursor:pointer;border:none;border-radius:999px;padding:10px 14px}
+  .btn.brand{background:var(--brand);color:#00122e}
+  .btn.ghost{background:transparent;border:1px solid var(--border);color:var(--text)}
+  .btn.green{background:var(--green);color:#012a19}
+  .btn.yellow{background:var(--yellow);color:#3a2a00}
+  .btn.red{background:var(--red);color:#33040a}
+  .muted{color:var(--muted);font-size:13px}
+  .pill{display:inline-flex;gap:6px;align-items:center;border:1px solid var(--border);padding:6px 10px;border-radius:999px}
+  .dot{width:10px;height:10px;border-radius:50%}
+  .dot.green{background:var(--green)} .dot.yellow{background:var(--yellow)} .dot.red{background:var(--red)}
+  .singers{display:flex;flex-direction:column;gap:8px;max-height:60vh;overflow:auto}
+  .singer{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px;border:1px solid var(--border);border-radius:12px;background:#0e1524}
+  .singer .name{font-weight:600}
+  .singer .actions{display:flex;gap:6px}
+  details{border:1px solid var(--border);border-radius:12px;padding:8px 12px;background:#0f1421}
+  details[open]{background:#101a2f}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .big{font-size:22px;font-weight:800}
+  .spacer{height:8px}
+</style>
 </head>
 <body>
 <header>
-  <div class="pill">Host Console</div>
-  <div id="eventBadge" class="pill"></div>
-  <div id="lockBadge" class="pill"></div>
-  <div class="right small" id="statusLine">loading…</div>
+  <img src="/assets/Earn Your Encore Karaoke - Icon.png" alt="EYEK" onerror="this.style.display='none'">
+  <div>
+    <div class="big">Host Console</div>
+    <div class="muted" id="metaLine">—</div>
+  </div>
 </header>
 
 <div class="wrap">
-  <aside>
-    <h2>Rotation</h2>
-    <div class="small muted">Click ▶ to set “Current”. Red trash removes. Green/yellow dots show last result.</div>
-    <div id="singerList" class="list"></div>
-  </aside>
+  <!-- LEFT: Singer Queue -->
+  <div class="card">
+    <h2>Queue</h2>
+    <div class="singers" id="singerList"></div>
+  </div>
 
-  <main>
-    <details id="eventPanel">
-      <summary>Event • Venue & KJ & PIN (save together)</summary>
-      <div class="stack section">
-        <div class="row">
-          <input class="grow" id="venue" placeholder="Venue name"/>
-          <input class="grow" id="kj" placeholder="KJ name"/>
-          <input style="width:140px" id="pin" type="number" placeholder="PIN (digits)"/>
+  <!-- RIGHT: Controls -->
+  <div class="card">
+    <h2>Event</h2>
+
+    <details id="eventBox" open>
+      <summary><strong>Venue • KJ • PIN</strong> <span class="muted">(one Save handles all)</span></summary>
+      <div class="spacer"></div>
+      <div class="grid2">
+        <div>
+          <label>Venue</label>
+          <input type="text" id="venue" placeholder="Venue name">
         </div>
-        <div class="row">
-          <button id="saveEvent" class="success">Save Event / KJ / PIN</button>
-          <button id="toggleLock">Lock</button>
-          <button id="resetEvent" class="danger">Reset Event</button>
+        <div>
+          <label>KJ</label>
+          <input type="text" id="kj" placeholder="KJ name">
         </div>
+      </div>
+      <div class="grid2">
+        <div>
+          <label>Event PIN (enter current PIN to change settings)</label>
+          <input type="password" id="pin" placeholder="Enter current PIN to save">
+        </div>
+        <div>
+          <label>New PIN (optional)</label>
+          <input type="text" id="newPin" placeholder="Change PIN">
+        </div>
+      </div>
+      <div class="row">
+        <button class="btn brand" onclick="saveMeta()">Save</button>
+        <button class="btn ghost" id="lockBtn" onclick="toggleLock()">Lock</button>
+        <button class="btn red" onclick="resetEvent()">Reset Event</button>
+      </div>
+      <div class="muted" id="saveMsg"></div>
+    </details>
+
+    <div class="spacer"></div>
+
+    <details open>
+      <summary><strong>Add Singer</strong></summary>
+      <div class="spacer"></div>
+      <div class="row">
+        <input type="text" id="singerName" placeholder="Singer name">
+        <input type="text" id="song" placeholder="Song / Artist">
+      </div>
+      <div class="row">
+        <button class="btn brand" onclick="addSinger()">Add to Queue</button>
       </div>
     </details>
 
-    <section class="section">
-      <h2>Add Singer</h2>
-      <div class="row">
-        <input class="grow" id="singer" placeholder="Singer"/>
-        <input class="grow" id="songArtist" placeholder="Song / Artist"/>
-        <button id="addSinger">Add</button>
-      </div>
-    </section>
+    <div class="spacer"></div>
 
-    <section class="section">
+    <div class="card" style="background:#0e1524">
       <h2>Current & Voting</h2>
       <div class="row">
-        <div id="nowPlaying" class="pill">No singer set</div>
-        <div id="voteClock" class="pill">Timer: --</div>
-        <button id="startVote" class="success">Start 30s Vote</button>
-        <button id="extendVote">Extend +15s</button>
-        <button id="endVote" class="danger">End Vote</button>
+        <div class="pill"><span class="muted">Current:</span> <span id="currentName">—</span></div>
+        <div class="pill"><span class="muted">Voting:</span> <span id="voteStatus">closed</span></div>
+        <div class="pill"><span class="muted">Ends in:</span> <span id="countdown">—</span></div>
       </div>
+      <div class="spacer"></div>
       <div class="row">
-        <span class="small muted">Host Vote:</span>
-        <button data-mark="Encore" class="markBtn success">Encore!</button>
-        <button data-mark="Another Shot" class="markBtn">Another Shot!</button>
-        <button data-mark="Maybe Next Time" class="markBtn danger">Maybe Next Time!</button>
+        <button class="btn green" onclick="startVoting(30)">Start 30s</button>
+        <button class="btn yellow" onclick="extendVoting(15)">Extend +15s</button>
+        <button class="btn red" onclick="endVoting()">End Voting</button>
       </div>
-    </section>
-  </main>
+      <div class="spacer"></div>
+      <div class="row">
+        <button class="btn green" onclick="hostVote('encore')">Host Vote: Encore!</button>
+        <button class="btn yellow" onclick="hostVote('another')">Host Vote: Another Shot!</button>
+        <button class="btn red" onclick="hostVote('nexttime')">Host Vote: Maybe Next Time</button>
+      </div>
+      <div class="spacer"></div>
+      <div class="row">
+        <div class="pill"><span class="dot green"></span> <span id="encoreCnt">0</span></div>
+        <div class="pill"><span class="dot yellow"></span> <span id="anotherCnt">0</span></div>
+        <div class="pill"><span class="dot red"></span> <span id="nextCnt">0</span></div>
+      </div>
+    </div>
+
+  </div>
 </div>
 
 <script>
-const STORE_URL = '/assets/status.json';
-const SAVE_URL  = '/assets/save.php';
-let cache = null;
-let typing = {}; // prevent wiping fields while typing
-let clockTimer = null;
+const API = '/assets/state.php';
+let STATE = null;
+let POLL;
 
-const qs = sel => document.querySelector(sel);
-const elVenue = qs('#venue'), elKJ = qs('#kj'), elPIN = qs('#pin');
-const elSaveEvent = qs('#saveEvent'), elToggleLock = qs('#toggleLock'), elReset = qs('#resetEvent');
-const elSinger = qs('#singer'), elSongArtist = qs('#songArtist'), elAdd = qs('#addSinger');
-const elList = qs('#singerList'), elNow = qs('#nowPlaying'), elClock = qs('#voteClock');
-const elStart = qs('#startVote'), elExtend = qs('#extendVote'), elEnd = qs('#endVote');
-const statusLine = qs('#statusLine'), lockBadge = qs('#lockBadge'), eventBadge = qs('#eventBadge');
+function qs(id){return document.getElementById(id)}
+function toast(msg){qs('saveMsg').textContent = msg; setTimeout(()=>qs('saveMsg').textContent='',3000)}
+function fmtCountdown(ms){
+  if(ms<=0) return '0s';
+  const s = Math.ceil(ms/1000);
+  return s+'s';
+}
 
-['#venue','#kj','#pin','#singer','#songArtist'].forEach(sel=>{
-  qs(sel).addEventListener('input', ()=> typing[sel]=true);
-});
-
-// Fetch state
-async function load() {
-  const res = await fetch(STORE_URL + '?_=' + Date.now());
-  cache = await res.json();
+async function fetchState(){
+  const r = await fetch(API+'?action=get',{cache:'no-store'});
+  STATE = await r.json();
   render();
 }
-function dot(color){ return `<span class="dot ${color}"></span>`; }
-
-function render(){
-  // badges
-  eventBadge.textContent = (cache.event.venue||'(set venue)') + ' • ' + (cache.event.kj||'(set KJ)');
-  lockBadge.innerHTML = (cache.event.locked ? dot('green')+' Locked' : dot('yellow')+' Unlocked');
-
-  // form (respect typing)
-  if (!typing['#venue']) elVenue.value = cache.event.venue || '';
-  if (!typing['#kj']) elKJ.value = cache.event.kj || '';
-  if (!typing['#pin']) elPIN.value = cache.event.pin || '';
-
-  // rotation
-  elList.innerHTML = '';
-  (cache.singers||[]).forEach((s, idx)=>{
-    const color = s.last === 'Encore' ? 'green' : s.last === 'Another Shot' ? 'yellow' : s.last === 'Maybe Next Time' ? 'red' : 'gray';
-    const row = document.createElement('div');
-    row.className = 'item';
-    row.innerHTML = `
-      <div class="flex">
-        <span class="dot ${color}"></span>
-        <strong>${s.name}</strong>
-        <span class="small muted">&nbsp;${s.songArtist ? '• '+escapeHtml(s.songArtist): ''}</span>
+function renderMetaLine(){
+  const s = STATE;
+  qs('metaLine').textContent = `${s.venue || '—'} • ${s.kj || '—'}  ${s.locked?'(locked)':''}`;
+  qs('venue').value = s.venue || '';
+  qs('kj').value = s.kj || '';
+  qs('lockBtn').textContent = s.locked ? 'Unlock' : 'Lock';
+}
+function renderQueue(){
+  const box = qs('singerList');
+  box.innerHTML = '';
+  (STATE.singers||[]).forEach(s=>{
+    const div = document.createElement('div');
+    div.className = 'singer';
+    const dotColor = s.status==='encore'?'green':(s.status==='another'?'yellow':(s.status==='nexttime'?'red':''));
+    div.innerHTML = `
+      <div>
+        <div class="name">${s.name}</div>
+        <div class="muted">${s.lastSong || ''}</div>
+        ${dotColor?`<div class="row" style="margin-top:6px"><div class="pill"><span class="dot ${dotColor}"></span> ${s.status}</div></div>`:''}
       </div>
-      <div class="flex">
-        <button data-act="play" data-idx="${idx}">▶</button>
-        <button data-act="rm" data-idx="${idx}" class="danger">🗑</button>
+      <div class="actions">
+        <button class="btn ghost" onclick="setCurrent('${s.id}')">▶ Play</button>
+        <button class="btn ghost" onclick="removeSinger('${s.id}')">Remove</button>
       </div>
     `;
-    row.addEventListener('click', (e)=>{
-      const act = e.target.getAttribute('data-act');
-      const i = +e.target.getAttribute('data-idx');
-      if (act === 'rm') removeSinger(i);
-      if (act === 'play') setCurrent(i);
-    });
-    elList.appendChild(row);
+    box.appendChild(div);
   });
+}
+function renderVoting(){
+  const v = STATE.voting||{};
+  qs('encoreCnt').textContent = v.encore||0;
+  qs('anotherCnt').textContent= v.another||0;
+  qs('nextCnt').textContent   = v.nexttime||0;
+  qs('voteStatus').textContent = v.open?'open':'closed';
+  const cur = (STATE.singers||[]).find(x=>x.id===STATE.currentSingerId);
+  qs('currentName').textContent = cur?cur.name:'—';
+  const now = Date.now();
+  const msLeft = (v.endsAt||0)-now;
+  qs('countdown').textContent = v.open?fmtCountdown(msLeft):'—';
+}
+function render(){ renderMetaLine(); renderQueue(); renderVoting(); }
 
-  // current
-  if (cache.current && cache.current.singer) {
-    elNow.textContent = `${cache.current.singer} — ${cache.current.songArtist||''}`.trim();
-  } else {
-    elNow.textContent = 'No singer set';
+async function saveMeta(){
+  const fd = new FormData();
+  fd.append('action','saveMeta');
+  fd.append('venue', qs('venue').value.trim());
+  fd.append('kj', qs('kj').value.trim());
+  fd.append('pin', qs('pin').value.trim());
+  fd.append('newPin', qs('newPin').value.trim());
+  fd.append('locked', STATE.locked ? 'true' : 'false');
+  const r = await fetch(API,{method:'POST',body:fd});
+  if(!r.ok){ toast('Save failed'); return;}
+  toast('Saved');
+  await fetchState();
+}
+
+async function toggleLock(){
+  const fd = new FormData();
+  fd.append('action', STATE.locked?'unlock':'lock');
+  fd.append('pin', qs('pin').value.trim());
+  const r = await fetch(API,{method:'POST',body:fd});
+  if(!r.ok){ toast('Lock toggle failed'); return; }
+  await fetchState();
+}
+
+async function resetEvent(){
+  if(!confirm('Reset event? This clears singers and voting. PIN required.')) return;
+  const fd = new FormData();
+  fd.append('action','resetEvent');
+  fd.append('pin', qs('pin').value.trim());
+  const r = await fetch(API,{method:'POST',body:fd});
+  if(!r.ok){ toast('Reset failed'); return; }
+  await fetchState();
+}
+
+async function addSinger(){
+  const name = qs('singerName').value.trim();
+  const song = qs('song').value.trim();
+  if(!name){ toast('Singer name required'); return; }
+  const fd = new FormData();
+  fd.append('action','addSinger');
+  fd.append('pin', qs('pin').value.trim());
+  fd.append('name', name);
+  fd.append('song', song);
+  const r = await fetch(API,{method:'POST',body:fd});
+  if(!r.ok){ toast('Add failed'); return; }
+  qs('singerName').value=''; qs('song').value='';
+  await fetchState();
+}
+
+async function removeSinger(id){
+  const fd = new FormData();
+  fd.append('action','removeSinger');
+  fd.append('pin', qs('pin').value.trim());
+  fd.append('id', id);
+  await fetch(API,{method:'POST',body:fd});
+  await fetchState();
+}
+
+async function setCurrent(id){
+  const fd = new FormData();
+  fd.append('action','setCurrent');
+  fd.append('pin', qs('pin').value.trim());
+  fd.append('id', id);
+  await fetch(API,{method:'POST',body:fd});
+  await fetchState();
+}
+
+async function startVoting(sec){
+  const fd = new FormData();
+  fd.append('action','startVoting');
+  fd.append('pin', qs('pin').value.trim());
+  fd.append('seconds', String(sec||30));
+  await fetch(API,{method:'POST',body:fd});
+  await fetchState();
+}
+
+async function extendVoting(sec){
+  const fd = new FormData();
+  fd.append('action','extendVoting');
+  fd.append('pin', qs('pin').value.trim());
+  fd.append('seconds', String(sec||15));
+  await fetch(API,{method:'POST',body:fd});
+  await fetchState();
+}
+
+async function endVoting(){
+  const fd = new FormData();
+  fd.append('action','endVoting');
+  fd.append('pin', qs('pin').value.trim());
+  await fetch(API,{method:'POST',body:fd});
+  await fetchState();
+}
+
+async function hostVote(type){
+  const fd = new FormData();
+  fd.append('action','hostVote');
+  fd.append('pin', qs('pin').value.trim());
+  fd.append('type', type);
+  await fetch(API,{method:'POST',body:fd});
+  await fetchState();
+}
+
+async function loop(){
+  await fetchState();
+  if (STATE?.voting?.open) {
+    // soft live tick for countdown
+    renderVoting();
   }
-
-  // clock
-  tickClock();
-
-  statusLine.textContent = 'Updated: ' + new Date(cache.lastChange*1000).toLocaleTimeString();
 }
-
-function tickClock(){
-  if (clockTimer) clearInterval(clockTimer);
-  function draw(){
-    const now = Date.now();
-    const end = (cache.current?.voteEndsAt || 0) * 1000;
-    if (!end || end < now) { elClock.textContent = 'Timer: --'; return; }
-    const sec = Math.max(0, Math.ceil((end - now)/1000));
-    elClock.textContent = `Timer: ${sec}s`;
-  }
-  draw();
-  clockTimer = setInterval(draw, 500);
-}
-
-async function save(patch){
-  const payload = { pin: (qs('#pin').value||cache.event.pin||'').toString(), data: patch };
-  const res = await fetch(SAVE_URL, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
-  const out = await res.json();
-  if (!out.ok){ alert('Save failed: ' + (out.error||'unknown')); return; }
-  cache = out.updated;
-  typing = {};
-  render();
-}
-
-function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m])); }
-
-// actions
-elSaveEvent.onclick = () => {
-  save({ event:{
-    venue: elVenue.value.trim(),
-    kj: elKJ.value.trim(),
-    pin: elPIN.value.trim(),
-  }});
-};
-elToggleLock.onclick = () => save({ event:{ locked: !cache.event.locked }});
-elReset.onclick = () => {
-  if (!confirm('Reset this event? This clears venue/KJ/PIN, roster, current, and results.')) return;
-  save({
-    event:{ venue:'', kj:'', pin:'', locked:false, startedAt: 0 },
-    current:{ singer:'', songArtist:'', status:'idle', voteEndsAt:0 },
-    singers:[],
-    results:[]
-  });
-};
-elAdd.onclick = () => {
-  const name = elSinger.value.trim();
-  const sa = elSongArtist.value.trim();
-  if (!name) return;
-  const singers = (cache.singers||[]).slice();
-  singers.push({ name, songArtist: sa, last:'' });
-  elSinger.value = ''; elSongArtist.value = '';
-  save({ singers });
-};
-async function removeSinger(i){
-  const singers = (cache.singers||[]).slice();
-  singers.splice(i,1);
-  await save({ singers });
-}
-async function setCurrent(i){
-  const s = (cache.singers||[])[i];
-  if (!s) return;
-  await save({ current:{ singer: s.name, songArtist: s.songArtist||'', status:'waiting', voteEndsAt: 0 }});
-}
-elStart.onclick = () => {
-  const until = Math.floor(Date.now()/1000) + 30;
-  save({ current:{ voteEndsAt: until, status:'voting' }});
-};
-elExtend.onclick = () => {
-  const now = Math.floor(Date.now()/1000);
-  const base = cache.current.voteEndsAt>now ? cache.current.voteEndsAt : now;
-  save({ current:{ voteEndsAt: base + 15, status:'voting' }});
-};
-elEnd.onclick = () => save({ current:{ voteEndsAt: 0, status:'waiting' }});
-
-document.querySelectorAll('.markBtn').forEach(btn=>{
-  btn.onclick = async ()=>{
-    const mark = btn.getAttribute('data-mark'); // Encore | Another Shot | Maybe Next Time
-    const current = cache.current||{};
-    if (!current.singer) return alert('No current singer set.');
-    // update singer last result & optionally remove if Maybe Next Time
-    const singers = (cache.singers||[]).map(s=>{
-      if (s.name === current.singer) return {...s, last: mark };
-      return s;
-    }).filter(s => !(mark==='Maybe Next Time' && s.name===current.singer));
-    const results = (cache.results||[]).slice();
-    results.unshift({ ts: Date.now(), singer: current.singer, result: mark });
-    const nextCurrent = { singer: current.singer, songArtist: current.songArtist||'', status: mark, voteEndsAt:0 };
-    await save({ singers, results, current: nextCurrent });
-  };
-});
-
-// Poll updates (so multiple host tabs stay in sync)
-setInterval(load, 3000);
-
-// initial
-load();
+(async ()=>{
+  await fetchState();
+  POLL=setInterval(loop, 2000);
+})();
 </script>
 </body>
 </html>
