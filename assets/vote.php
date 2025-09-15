@@ -20,6 +20,7 @@ if (!$state) { flock($fp, LOCK_UN); fclose($fp); http_response_code(409); echo '
 
 $v =& $state['voting'];
 $c =& $state['current'];
+$e =& $state['event'];
 
 if (!$v['open']) { flock($fp, LOCK_UN); fclose($fp); http_response_code(409); echo '{"error":"voting_closed"}'; exit; }
 
@@ -33,13 +34,12 @@ if (isset($v['voters'][$devKey])) {
   http_response_code(429); echo '{"error":"already_voted"}'; exit;
 }
 
-// Count it
 $v['counts'][$choice] = ($v['counts'][$choice] ?? 0) + 1;
 $v['voters'][$devKey] = true;
 $state['serverUpdatedAt'] = time();
 
 ftruncate($fp, 0); rewind($fp);
-fwrite($fp, json_encode($state, JSON_PRETTY_PRINT));
+fwrite($fp, json_encode($state, JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES));
 flock($fp, LOCK_UN); fclose($fp);
 
 echo '{"ok":true}';
