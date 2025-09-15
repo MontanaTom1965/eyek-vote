@@ -1,8 +1,16 @@
 {
-  "event": { "venue": "", "kj": "", "pin": "", "locked": false },
+  "event": {
+    "venue": "",
+    "kj": "",
+    "locked": false
+  },
   "singers": [],
-  "currentSingerId": null,
-  "voting": { "open": false, "endsAt": 0, "votes": { "encore": 0, "another": 0, "maybe": 0 } },
-  "lastResult": null,
-  "version": 0
+  "currentIndex": -1,
+  "voting": {
+    "state": "idle",
+    "endsAt": 0,
+    "counts": { "encore": 0, "another": 0, "maybe": 0 }
+  },
+  "soundsEnabled": false,
+  "lastChange": 0
 }
