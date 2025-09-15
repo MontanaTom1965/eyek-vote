@@ -1,12 +1,18 @@
 {
-  "venue": "",
-  "kj": "",
-  "pin": "",
-  "locked": false,
-  "currentSinger": "",
-  "currentSong": "",
-  "artist": "",
-  "phase": "idle",
-  "result": null,
-  "updated": 0
+  "event": {
+    "venue": "",
+    "kj": "",
+    "pin": "",
+    "locked": false,
+    "startedAt": 0
+  },
+  "current": {
+    "singer": "",
+    "songArtist": "",
+    "status": "idle", 
+    "voteEndsAt": 0
+  },
+  "singers": [],
+  "results": [],
+  "lastChange": 0
 }
