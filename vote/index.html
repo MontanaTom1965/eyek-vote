@@ -1,76 +1,53 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>EYEK • Vote</title>
 <style>
-  :root{--bg:#0b1022;--ink:#e8f0ff;--sub:#a2b4da;--green:#33e27b;--yellow:#ffd166;--red:#ff6b6b;}
-  html,body{margin:0;height:100%;background:radial-gradient(1000px 500px at 50% 15%,#192b58 0%,#0b1022 60%);color:var(--ink);font-family:system-ui,Inter,Segoe UI,Roboto,Arial,sans-serif}
-  .wrap{min-height:100%;display:flex;align-items:center;justify-content:center;padding:24px}
-  .card{background:#0f1930;border-radius:16px;padding:20px;max-width:720px;width:100%;box-shadow:0 10px 28px rgba(0,0,0,.35)}
-  h1{margin:0 0 8px;font-size:26px}
-  .muted{color:var(--sub)}
-  .row{display:flex;gap:10px;margin-top:14px}
-  .btn{flex:1;padding:14px;border-radius:14px;border:none;cursor:pointer;font-weight:700;font-size:18px}
-  .enc{background:linear-gradient(90deg,#21e064,#39ffa0);color:#03150c}
-  .ano{background:linear-gradient(90deg,#ffe08a,#ffd166);color:#321f00}
-  .may{background:linear-gradient(90deg,#ff9b9b,#ff6b6b);color:#330000}
-  .badge{display:inline-block;background:#13224a;color:#bed0ff;padding:4px 10px;border-radius:999px;font-size:12px;margin-left:6px}
+  body{margin:0; font-family:system-ui, Arial, sans-serif; background:#0b0f14; color:#e8f0ff; display:flex; align-items:center; justify-content:center; min-height:100vh}
+  .card{width:min(560px,95vw); background:#121821; border:1px solid #0f1520; border-radius:16px; padding:20px; box-shadow:0 20px 60px rgba(0,0,0,.35); text-align:center}
+  h1{margin:0 0 6px}
+  .muted{color:#a8b4c9}
+  .btns{display:flex; gap:12px; margin-top:16px; flex-wrap:wrap; justify-content:center}
+  button{border:none; padding:14px 18px; border-radius:12px; font-weight:800; cursor:pointer}
+  .enc{background:#22c55e}
+  .ano{background:#facc15; color:#141414}
+  .may{background:#ef4444}
+  .small{font-size:.9rem; margin-top:10px; color:#a8b4c9}
 </style>
 </head>
 <body>
-<div class="wrap">
   <div class="card">
-    <h1>Vote for <span id="who">—</span> <span class="badge" id="status">Closed</span></h1>
-    <div class="muted" id="song"></div>
-    <div class="row">
-      <button class="btn enc" id="btnE">Encore!</button>
-      <button class="btn ano" id="btnA">Another Shot!</button>
-      <button class="btn may" id="btnM">Maybe Next Time</button>
+    <h1 id="who">Voting</h1>
+    <div class="muted" id="venueKj">—</div>
+    <div class="btns">
+      <button class="enc" onclick="vote('encore')">Encore!</button>
+      <button class="ano" onclick="vote('another')">Another Shot!</button>
+      <button class="may" onclick="vote('maybe')">Maybe Next Time</button>
     </div>
-    <div class="muted" style="margin-top:10px">Your vote is anonymous. Thank you!</div>
+    <div class="small" id="status">Waiting…</div>
   </div>
-</div>
 
 <script>
-const API='/assets/state.php';
-let OPEN=false;
-
-function apiGet(){
-  const u=new URL(API,location.origin); u.searchParams.set('action','get');
-  return fetch(u,{cache:'no-store'}).then(r=>r.json());
+const API='/assets/api.php';
+async function load(){
+  const r = await fetch(API+'?cmd=get&ts='+Date.now(), {cache:'no-store'}); const j = await r.json();
+  if (!j.ok) return;
+  const st = j.state;
+  document.getElementById('venueKj').textContent = (st.event.venue||'') + (st.event.kj?(' • '+st.event.kj):'');
+  const cur = st.singers.find(s=>s.id===st.currentSingerId);
+  document.getElementById('who').textContent = st.voting.open && cur ? ('Now Voting: '+cur.name) : 'Voting closed';
+  document.getElementById('status').textContent = st.voting.open ? 'Voting is open — choose your vote.' : 'Please wait for the next singer.';
 }
 async function vote(choice){
-  if (!OPEN) { alert('Voting is closed right now.'); return; }
-  const u=new URL(API,location.origin); u.searchParams.set('action','vote'); u.searchParams.set('choice',choice);
-  const r = await fetch(u, {method:'POST'});
-  const j = await r.json();
-  if (!j.ok) alert(j.error||'Failed');
+  const f = new FormData(); f.append('cmd','vote'); f.append('choice', choice);
+  const r = await fetch(API, { method:'POST', body:f }); const j = await r.json();
+  if (j.ok) { document.getElementById('status').textContent='Vote submitted!'; }
+  else      { document.getElementById('status').textContent='Voting closed.'; }
 }
-
-function render(s){
-  const cur=s.current||{name:'',song:''};
-  const v=s.voting||{isOpen:false, endsAt:0};
-  document.getElementById('who').textContent = cur.name||'—';
-  document.getElementById('song').textContent= cur.song||'';
-  OPEN = !!v.isOpen;
-  document.getElementById('status').textContent = OPEN ? 'Open' : 'Closed';
-  document.getElementById('btnE').disabled = !OPEN;
-  document.getElementById('btnA').disabled = !OPEN;
-  document.getElementById('btnM').disabled = !OPEN;
-}
-setInterval(async ()=>{
-  const r=await apiGet(); if (r.ok) render(r.state);
-}, 1200);
-
-document.getElementById('btnE').onclick = ()=>vote('encore');
-document.getElementById('btnA').onclick = ()=>vote('another');
-document.getElementById('btnM').onclick = ()=>vote('maybe');
-
-(async function init(){
-  const r=await apiGet(); if (r.ok) render(r.state);
-})();
+load();
+setInterval(load, 2000);
 </script>
 </body>
 </html>
