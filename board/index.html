@@ -1,57 +1,67 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
 <title>EYEK • Board</title>
-<meta name="viewport" content="width=device-width, initial-scale=1" />
 <style>
-  :root{--bg:#0a0e16;--text:#eaf2ff;--muted:#9db2d1;--green:#26e28b;--yellow:#ffd24d;--red:#ff5a6b;--border:#1c2b48}
-  *{box-sizing:border-box;font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial}
-  body{margin:0;background:var(--bg);color:var(--text);padding:20px}
-  h1{margin:0 0 10px 0}
-  .muted{color:var(--muted)}
-  table{width:100%;border-collapse:separate;border-spacing:0 8px}
-  th,td{padding:12px 14px;text-align:left}
-  tbody tr{background:#121826;border:1px solid var(--border)}
-  .dot{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:8px}
-  .green{background:var(--green)} .yellow{background:var(--yellow)} .red{background:var(--red)}
+  :root{--bg:#060c1a;--ink:#e9f1ff;--sub:#a6b8dc;--green:#33e27b;--yellow:#ffd166;--red:#ff6b6b;}
+  html,body{margin:0;height:100%;background:linear-gradient(180deg,#0e1a36,#060c1a);color:var(--ink);font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif}
+  .wrap{padding:28px;max-width:1100px;margin:0 auto}
+  h1{margin:0 0 10px;font-size:42px}
+  h2{margin:18px 0 8px;font-size:22px;color:var(--sub)}
+  .pill{display:inline-block;padding:4px 10px;border-radius:999px;background:#13224a;color:#bed0ff;font-size:12px;margin-left:8px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .card{background:#0f1930;border-radius:14px;padding:16px;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+  ul{margin:8px 0 0 18px;line-height:1.8}
+  .res{font-weight:800}
+  .enc{color:var(--green)} .ano{color:#f6c04d} .may{color:#ff8484}
 </style>
 </head>
 <body>
-  <h1>Encore Board</h1>
-  <div class="muted" id="line">—</div>
-  <div style="height:10px"></div>
-  <table>
-    <thead>
-      <tr><th>Singer</th><th>Last Song</th><th>Status</th></tr>
-    </thead>
-    <tbody id="rows"></tbody>
-  </table>
+<div class="wrap">
+  <h1>Earn Your Encore Karaoke <span id="vInfo" class="pill"></span></h1>
+  <div class="grid">
+    <div class="card">
+      <h2>Up Now</h2>
+      <div id="now">—</div>
+      <div id="song" style="color:var(--sub)"></div>
+    </div>
+    <div class="card">
+      <h2>Last Result</h2>
+      <div id="last">—</div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:18px">
+    <h2>Queue</h2>
+    <ul id="queue"></ul>
+  </div>
+</div>
 
 <script>
-const API='/assets/state.php'; let STATE=null, POLL;
-function $(id){return document.getElementById(id)}
-async function fetchState(){
-  const r = await fetch(API+'?action=get',{cache:'no-store'});
-  STATE = await r.json();
-  render();
+const API='/assets/state.php';
+function apiGet(){const u=new URL(API,location.origin);u.searchParams.set('action','get');return fetch(u,{cache:'no-store'}).then(r=>r.json())}
+function render(s){
+  const ev=s.event||{venue:'',kj:''};
+  document.getElementById('vInfo').textContent = ev.venue ? `${ev.venue} • KJ ${ev.kj||''}` : (ev.kj?`KJ ${ev.kj}`:'');
+  const cur=s.current||{name:'',song:''};
+  document.getElementById('now').textContent = cur.name||'—';
+  document.getElementById('song').textContent= cur.song||'';
+
+  const q=document.getElementById('queue'); q.innerHTML='';
+  (s.queue||[]).forEach(x=>{ const li=document.createElement('li'); li.textContent=x.name; q.appendChild(li); });
+
+  const last=s.lastResult;
+  const lastEl=document.getElementById('last');
+  if (!last) lastEl.textContent='—';
+  else {
+    lastEl.innerHTML = last==='encore' ? '<span class="res enc">Encore!</span>' :
+                       last==='another'? '<span class="res ano">Another Shot!</span>' :
+                                         '<span class="res may">Maybe Next Time</span>';
+  }
 }
-function render(){
-  $('line').textContent = (STATE.venue||'') + (STATE.kj?(' • KJ '+STATE.kj):'');
-  const body = $('rows'); body.innerHTML='';
-  (STATE.singers||[]).forEach(s=>{
-    const tr = document.createElement('tr');
-    const status = s.status||'queued';
-    const dot = status==='encore'?'green':(status==='another'?'yellow':(status==='nexttime'?'red':''));
-    tr.innerHTML = `
-      <td>${s.name}</td>
-      <td class="muted">${s.lastSong||''}</td>
-      <td>${dot?`<span class="dot ${dot}"></span>`:''}${status}</td>
-    `;
-    body.appendChild(tr);
-  });
-}
-(async ()=>{ await fetchState(); POLL=setInterval(fetchState, 2000); })();
+setInterval(async ()=>{ const r=await apiGet(); if(r.ok) render(r.state); }, 1500);
+(async ()=>{ const r=await apiGet(); if(r.ok) render(r.state); })();
 </script>
 </body>
 </html>
