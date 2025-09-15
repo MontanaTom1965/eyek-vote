@@ -1,0 +1,25 @@
+name: Export pages for chat
+on:
+  workflow_dispatch:
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Make for-chat copies
+        run: |
+          set -euo pipefail
+          mkdir -p for-chat
+          cp host/index.html   for-chat/index_host.html
+          cp screen/index.html for-chat/index_screen.html
+          cp vote/index.html   for-chat/index_vote.html
+          cp board/index.html  for-chat/index_board.html
+          [ -f assets/status.json ] && cp assets/status.json for-chat/status.json || true
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: for-chat
+          path: for-chat/*
