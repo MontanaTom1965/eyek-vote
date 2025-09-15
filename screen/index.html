@@ -1,194 +1,178 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="utf-8" />
 <title>EYEK • Screen</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;900&display=swap">
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta http-equiv="refresh" content="180">
 <style>
-  :root{
-    --bg:#02050a; --ink:#eaf2ff; --sub:#a0b3d2;
-    --green:#22c55e; --yellow:#facc15; --red:#ef4444;
-  }
-  *{box-sizing:border-box}
-  body{margin:0;height:100vh;display:flex;align-items:center;justify-content:center;background:radial-gradient(1200px 600px at 50% 50%, #0b1322, #04070d 60%, #02050a 100%); color:var(--ink); font-family:Outfit,system-ui}
-  .stage{width:min(1200px,95vw); height:min(680px,90vh); position:relative; border-radius:24px; border:1px solid rgba(255,255,255,.06); background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(0,0,0,.2)); box-shadow:0 40px 120px rgba(0,0,0,.55); overflow:hidden; padding:28px;}
-  .title{font-size:42px; font-weight:900; letter-spacing:.4px}
-  .sub{font-size:22px; opacity:.85}
-  .muted{color:var(--sub)}
-  .center{position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; text-align:center; padding:24px}
-  .badge{display:inline-block; padding:8px 14px; border-radius:999px; border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.05); font-weight:700; letter-spacing:.3px}
-  .timer{font-size:72px; font-weight:900}
-  .stacks{display:flex; gap:28px; align-items:flex-end; margin-top:8px}
-  .stack{width:240px; height:260px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.06); border-radius:16px; display:flex; align-items:flex-end; justify-content:center; padding:12px; position:relative}
-  .count{position:absolute; top:12px; left:12px; font-weight:900; font-size:28px}
-  .ball{width:22px; height:22px; border-radius:999px; margin:4px; animation:bounce 1.2s infinite ease-in-out}
-  .ball.green{background:var(--green)}
-  .ball.yellow{background:var(--yellow)}
-  .ball.red{background:var(--red)}
-  @keyframes bounce{
-    0%,100%{transform:translateY(0)}
-    50%{transform:translateY(-10px)}
-  }
-  /* Result banners */
-  .result{position:absolute; inset:0; display:none; align-items:center; justify-content:center; flex-direction:column; gap:12px}
-  .result.show{display:flex}
-  .res-title{font-size:90px; font-weight:900; text-shadow:0 10px 40px rgba(0,0,0,.6)}
-  .res-encore{color:#d1fadf}
-  .res-another{color:#fef3c7}
-  .res-maybe{color:#fecaca}
-  .confetti{position:absolute; inset:0; pointer-events:none; overflow:hidden}
-  .dot{position:absolute; width:10px; height:10px; border-radius:50%; animation:fall 2.5s linear infinite}
-  @keyframes fall{
-    0%{transform:translateY(-10vh) rotate(0)}
-    100%{transform:translateY(110vh) rotate(720deg)}
-  }
-  .footer{position:absolute; bottom:12px; left:0; right:0; text-align:center; color:#9fb3cf; font-size:14px; opacity:.9}
-  .hide{display:none}
-  iframe{border:none; width:100%; height:100%}
+  :root{--bg:#060913;--txt:#eaf2ff;--muted:#a9b6d9;--green:#25d366;--yellow:#f6c945;--red:#ff5e6c;--cyan:#3ad4ff}
+  *{box-sizing:border-box} body{margin:0;background:radial-gradient(1200px 600px at 50% -10%,#132041 0%,#060913 60%);color:var(--txt);font:700 20px/1.2 Inter,system-ui}
+  .wrap{min-height:100svh;display:grid;place-items:center;padding:24px}
+  .stage{width:min(1100px,92vw);background:rgba(8,14,30,.6);border:1px solid rgba(70,100,160,.35);border-radius:16px;padding:28px;box-shadow:0 20px 80px rgba(0,0,0,.45)}
+  h1{margin:0 0 10px;font-size:40px;letter-spacing:.5px}
+  .muted{color:var(--muted);font-weight:500}
+  .row{display:flex;align-items:end;gap:18px;flex-wrap:wrap}
+  .timer{font-size:56px;letter-spacing:1.5px}
+  .stack{display:grid;gap:10px;margin-top:12px}
+  .ballRow{display:flex;gap:12px;align-items:flex-end}
+  .stackCol{flex:1;min-width:220px}
+  .count{font-size:40px;text-align:center}
+  .pile{display:flex;gap:6px;flex-wrap:wrap;min-height:44px}
+  .ball{width:18px;height:18px;border-radius:50%;animation:pop .6s ease-out}
+  .g{background:var(--green)} .y{background:var(--yellow)} .r{background:var(--red)}
+  @keyframes pop{0%{transform:translateY(12px) scale(.6);opacity:.5}100%{transform:translateY(0) scale(1);opacity:1}}
+  .banner{margin-top:20px;padding:16px;border-radius:14px;text-align:center;border:2px solid transparent}
+  .b-encore{border-color:rgba(37,211,102,.6);box-shadow:0 0 40px rgba(37,211,102,.25) inset}
+  .b-another{border-color:rgba(246,201,69,.6);box-shadow:0 0 40px rgba(246,201,69,.25) inset}
+  .b-maybe{border-color:rgba(255,94,108,.6);box-shadow:0 0 40px rgba(255,94,108,.25) inset}
+  .big{font-size:60px}
+  .sub{font-size:22px;color:var(--muted)}
+  canvas{position:fixed;inset:0;pointer-events:none}
 </style>
 </head>
 <body>
-<div class="stage">
-  <div id="idle" class="center">
-    <div class="badge" id="venueKj">Welcome</div>
-    <div class="title" id="mainLine">Earn Your Encore Karaoke</div>
-    <div class="sub muted" id="subLine">Next up: —</div>
-  </div>
+<canvas id="confetti"></canvas>
+<div class="wrap">
+  <div class="stage">
+    <div class="stack">
+      <h1 id="headline">Welcome to <span id="venue">—</span></h1>
+      <div class="muted">KJ: <span id="kj">—</span></div>
+      <div id="main" class="stack">
+        <div class="row">
+          <div class="stackCol">
+            <div class="muted">Now Singing</div>
+            <div id="singer" style="font-size:44px">—</div>
+            <div id="song" class="muted" style="margin-top:6px">—</div>
+          </div>
+          <div class="stackCol" style="text-align:right">
+            <div class="muted">Voting ends in</div>
+            <div id="timer" class="timer">00:00</div>
+          </div>
+        </div>
 
-  <div id="voting" class="center hide">
-    <div class="badge">Now Voting For</div>
-    <div class="title" id="voteSinger">—</div>
-    <div class="timer" id="timer">00:30</div>
-    <div class="stacks">
-      <div class="stack">
-        <div class="count" id="cEncore">0</div>
-        <div id="bEncore"></div>
-      </div>
-      <div class="stack">
-        <div class="count" id="cAnother">0</div>
-        <div id="bAnother"></div>
-      </div>
-      <div class="stack">
-        <div class="count" id="cMaybe">0</div>
-        <div id="bMaybe"></div>
+        <div id="voteBlock" class="row" style="margin-top:10px">
+          <div class="stackCol">
+            <div class="muted">Encore!</div>
+            <div id="c_encore" class="count">0</div>
+            <div id="pile_encore" class="pile"></div>
+          </div>
+          <div class="stackCol">
+            <div class="muted">Another Shot!</div>
+            <div id="c_another" class="count">0</div>
+            <div id="pile_another" class="pile"></div>
+          </div>
+          <div class="stackCol">
+            <div class="muted">Maybe Next Time</div>
+            <div id="c_maybe" class="count">0</div>
+            <div id="pile_maybe" class="pile"></div>
+          </div>
+        </div>
+
+        <div id="banner" class="banner" style="display:none">
+          <div id="bannerText" class="big">—</div>
+          <div class="sub">Great job! Next singer up soon…</div>
+        </div>
       </div>
     </div>
   </div>
-
-  <div id="result" class="result">
-    <div class="res-title" id="resText">Encore!</div>
-    <div class="confetti" id="confetti"></div>
-  </div>
-
-  <div id="boardWrap" class="center hide">
-    <iframe id="boardFrame" src="/board/index.html"></iframe>
-  </div>
-
-  <div class="footer" id="foot">vote.earnyourencorekaraoke.com</div>
 </div>
 
-<audio id="sndOpen"  src="/assets/voting_open.mp3" preload="auto"></audio>
-<audio id="sndOver"  src="/assets/voting_over.mp3" preload="auto"></audio>
-<audio id="sndEncore" src="/assets/encore.mp3" preload="auto"></audio>
-<audio id="sndLose"   src="/assets/loser.wav" preload="auto"></audio>
+<audio id="sfx_encore" src="/assets/encore.mp3" preload="auto"></audio>
+<audio id="sfx_another" src="/assets/another_shot.mp3" preload="auto"></audio>
+<audio id="sfx_maybe" src="/assets/loser.wav" preload="auto"></audio>
+<audio id="sfx_open" src="/assets/voting_open.mp3" preload="auto"></audio>
+<audio id="sfx_over" src="/assets/voting_over.mp3" preload="auto"></audio>
 
 <script>
-const API='/assets/api.php';
-const $ = s=>document.querySelector(s);
-let STATE=null, prev=null, poll=null, mode='idle', lastSeenResultAt=0;
+const GET_URL = '/assets/get_state.php';
+const POLL = 1200;
 
-function balls(parent, n, cls){
-  parent.innerHTML='';
-  for(let i=0;i<n;i++){
-    const d=document.createElement('div');
-    d.className='ball '+cls;
-    d.style.animationDelay=(Math.random()*1.2)+'s';
-    parent.appendChild(d);
-  }
+const $=s=>document.querySelector(s);
+const venue=$('#venue'), kj=$('#kj'), singer=$('#singer'), song=$('#song'), timer=$('#timer');
+const cE=$('#c_encore'), cA=$('#c_another'), cM=$('#c_maybe');
+const pE=$('#pile_encore'), pA=$('#pile_another'), pM=$('#pile_maybe');
+const banner=$('#banner'), bannerText=$('#bannerText');
+
+let state=null, balls={encore:0,another:0,maybe:0};
+
+function dot(container, cls){
+  const b=document.createElement('div'); b.className='ball '+cls; container.prepend(b);
 }
 
-function confetti(){
-  const c = $('#confetti'); c.innerHTML='';
-  for(let i=0;i<120;i++){
-    const d=document.createElement('div'); d.className='dot';
-    const colors=['#22c55e','#facc15','#38bdf8','#ef4444','#a78bfa'];
-    d.style.background = colors[Math.floor(Math.random()*colors.length)];
-    d.style.left = (Math.random()*100)+'%';
-    d.style.animationDelay = (Math.random()*1.5)+'s';
-    d.style.width = d.style.height = (6+Math.random()*8)+'px';
-    c.appendChild(d);
-  }
+function updateBalls(kind,count){
+  const containers={encore:pE, another:pA, maybe:pM};
+  const cls={encore:'g', another:'y', maybe:'r'}[kind];
+  while(containers[kind].children.length < count) dot(containers[kind], cls);
+  while(containers[kind].children.length > count) containers[kind].removeChild(containers[kind].lastChild);
 }
 
-function show(id){
-  ['idle','voting','result','boardWrap'].forEach(x=>$('#'+x).classList.add('hide'));
-  $('#'+id).classList.remove('hide');
-  mode = id;
+function setBanner(w){
+  banner.style.display = w ? 'block':'none';
+  banner.className='banner';
+  if(!w) return;
+  if(w==='encore'){ banner.classList.add('b-encore'); bannerText.textContent='Encore!'; play('encore'); confetti(); }
+  else if(w==='another'){ banner.classList.add('b-another'); bannerText.textContent='Another Shot!'; play('another'); }
+  else { banner.classList.add('b-maybe'); bannerText.textContent='Maybe Next Time'; play('maybe'); }
 }
 
-function updateScreen(){
-  if(!STATE) return;
-  const venue = STATE.event.venue || 'Your Venue';
-  const kj = STATE.event.kj || 'Your KJ';
-  $('#venueKj').textContent = `${venue} • ${kj}`;
+function fmt(ms){ const s=Math.ceil(ms/1000); const m=Math.floor(s/60), r=s%60; return `${String(m).padStart(2,'0')}:${String(r).padStart(2,'0')}`;}
 
-  // Next up
-  const current = STATE.singers.find(s=>s.id===STATE.currentSingerId);
-  const idx = current ? STATE.singers.findIndex(s=>s.id===current.id) : -1;
-  const next = (idx>=0 && STATE.singers[idx+1]) ? STATE.singers[idx+1].name : '—';
-  $('#subLine').textContent = `Next up: ${next}`;
+async function tick(){
+  const r=await fetch(GET_URL,{cache:'no-store'}); state=await r.json();
+  venue.textContent = state.event.venue||'—';
+  kj.textContent = state.event.kj||'—';
+  singer.textContent = state.current.name||'—';
+  song.textContent = state.current.songArtist||'—';
 
-  // Voting block
-  if (STATE.voting.open) {
-    $('#voteSinger').textContent = current ? current.name : '—';
-    const v = STATE.voting.votes;
-    $('#cEncore').textContent = v.encore;
-    $('#cAnother').textContent = v.another;
-    $('#cMaybe').textContent = v.maybe;
-    balls($('#bEncore'), v.encore, 'green');
-    balls($('#bAnother'), v.another, 'yellow');
-    balls($('#bMaybe'), v.maybe, 'red');
-    const remain = STATE.voting.endsAt - Date.now();
-    $('#timer').textContent = remain>0 ? fmt(remain) : '00:00';
-    if (mode!=='voting') {
-      show('voting');
-      $('#sndOpen').currentTime=0; $('#sndOpen').play().catch(()=>{});
-    }
+  cE.textContent = state.voting.counts.encore||0;
+  cA.textContent = state.voting.counts.another||0;
+  cM.textContent = state.voting.counts.maybe||0;
+
+  updateBalls('encore', state.voting.counts.encore||0);
+  updateBalls('another', state.voting.counts.another||0);
+  updateBalls('maybe',  state.voting.counts.maybe ||0);
+
+  if (state.voting.open){
+    play('open');
+    banner.style.display='none';
+    const ms=Math.max(0, state.voting.endsAt - Date.now());
+    timer.textContent = fmt(ms);
   } else {
-    // If a fresh result exists, show flashy screen 15s, then board 15s, then idle
-    if (STATE.lastResult && STATE.lastResult.at !== lastSeenResultAt) {
-      lastSeenResultAt = STATE.lastResult.at;
-      const outcome = STATE.lastResult.outcome; // encore|another|maybe
-      const text = outcome==='encore'?'Encore!': outcome==='another'?'Another Shot!':'Maybe Next Time';
-      const cls  = outcome==='encore'?'res-encore': outcome==='another'?'res-another':'res-maybe';
-      const sound= outcome==='encore'?'sndEncore': (outcome==='maybe'?'sndLose':null);
-      $('#resText').textContent = text;
-      $('#resText').className = 'res-title '+cls;
-      confetti();
-      show('result');
-      if (sound){ $('#'+sound).currentTime=0; $('#'+sound).play().catch(()=>{}); }
-      setTimeout(()=>{ show('boardWrap'); }, 15000);
-      setTimeout(()=>{ show('idle'); }, 30000);
-    } else if (mode!=='idle' && mode!=='boardWrap') {
-      show('idle');
-    }
+    timer.textContent='00:00';
+    setBanner(state.voting.lastResult);
   }
 }
 
-function fmt(ms){ if (ms<0) ms=0; const s=Math.ceil(ms/1000), m=(s/60)|0, r=s%60; return `${String(m).padStart(2,'0')}:${String(r).padStart(2,'0')}`; }
+const sfx={
+  encore:$('#sfx_encore'), another:$('#sfx_another'), maybe:$('#sfx_maybe'),
+  open:$('#sfx_open'), over:$('#sfx_over')
+};
+function play(k){ sfx[k]?.play().catch(()=>{}); }
 
-async function refresh(){
-  const r = await fetch(API+'?cmd=get&ts='+Date.now(), {cache:'no-store'});
-  const j = await r.json();
-  if (j.ok){ prev=STATE; STATE=j.state; updateScreen(); }
+setInterval(tick, POLL);
+tick();
+
+// simple confetti
+function confetti(){
+  const c=document.getElementById('confetti'),x=c.getContext('2d');
+  c.width=innerWidth; c.height=innerHeight;
+  const parts=Array.from({length:160},()=>({
+    x:Math.random()*c.width, y:-20-Math.random()*80, r:2+Math.random()*4,
+    v:2+Math.random()*4, a:Math.random()*Math.PI, col:`hsl(${Math.random()*360},90%,60%)`
+  }));
+  let t=0;
+  function step(){
+    x.clearRect(0,0,c.width,c.height);
+    parts.forEach(p=>{
+      p.y += p.v; p.x += Math.sin(p.a+t/10);
+      x.fillStyle=p.col; x.beginPath(); x.arc(p.x,p.y,p.r,0,Math.PI*2); x.fill();
+    });
+    t++;
+    if (t<120) requestAnimationFrame(step); else x.clearRect(0,0,c.width,c.height);
+  }
+  step();
 }
-
-// tiny periodic “nudge” to avoid TV sleep (layout change)
-setInterval(()=>{ $('#foot').style.opacity = (0.7 + Math.random()*0.3).toFixed(2); }, 5000);
-
-refresh();
-poll = setInterval(refresh, 1500);
 </script>
 </body>
 </html>
