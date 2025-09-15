@@ -258,28 +258,6 @@ bindLive(kj,          'kj');
 bindLive(hostName,    'hostName');
 bindLive(pin,         'pin');
 
-/* ---------- Event actions ---------- */
-$('#saveEvent').onclick = async ()=>{
-  await postState(); const m=document.getElementById('eventSavedMsg');
-  m.textContent='Saved!'; setTimeout(()=>m.textContent='',1400);
-};
-$('#lockEvent').onclick = async ()=>{
-  state.event.locked = !state.event.locked;
-  await postState();
-  if(state.event.locked) document.getElementById('eventBox').open=false;
-};
-$('#resetEvent').onclick = async ()=>{
-  if(state.event.locked){ alert('Unlock to reset.'); return;}
-  if(!confirm('Reset this event? This clears singers & votes.')) return;
-  state={ serverUpdatedAt: Date.now()/1000|0,
-    event:{venue:'',venuePublic:'',date:new Date().toISOString().slice(0,10),kj:'',hostName:'',pin:'',locked:false},
-    singers:[], current:{id:null,name:'',songArtist:''},
-    voting:{open:false,endsAt:0,extendCount:0,counts:{encore:0,another:0,maybe:0},lastResult:null,voters:{}},
-    winners:{encore:[], another:[]}
-  };
-  await postState();
-};
-
 /* ---------- Singer actions ---------- */
 $('#addSinger').onclick = async ()=>{
   const name=singerName.value.trim(); if(!name){ alert('Enter a singer name.'); return;}
@@ -298,7 +276,7 @@ $('#startVote').onclick = async ()=>{
   state.voting={ open:true, endsAt:Date.now()+30000, extendCount:0,
     counts:{encore:0,another:0,maybe:0}, lastResult:null, voters:{} };
   await postState();
-  audio.playLoop();
+  sfx.playOpen(); // loop voting_open.mp3
 };
 $('#extendVote').onclick = async ()=>{ if(!state.voting.open) return; state.voting.endsAt+=15000; state.voting.extendCount++; await postState(); };
 $('#endVote').onclick = async ()=>{ await concludeVoting(); };
@@ -339,7 +317,12 @@ async function concludeVoting(){
     state.winners[winner]=state.winners[winner].slice(0,50);
   }
   await postState(); announce(winner);
-  audio.stopLoop(); audio.endChime();
+
+  // Sounds at end
+  sfx.stopOpen();
+  sfx.playOver();
+  if (winner === 'encore')       setTimeout(()=>sfx.playEncore(), 150);
+  else if (winner === 'maybe')   setTimeout(()=>sfx.playLoser(),  150);
 }
 
 /* ---------- Loop ---------- */
@@ -350,37 +333,48 @@ function loop(){
       await concludeVoting();
     } else {
       await fetchState(); render();
-      if(!state.voting.open) audio.stopLoop();
+      if(!state.voting.open) sfx.stopOpen();
     }
   }, 800);
 }
 
-/* ---------- Simple WebAudio (Enable Sound) ---------- */
-const audio=(function(){
-  let ctx=null, loopTimer=null, enabled=false;
+/* ---------- Audio using your real files in /assets/ ---------- */
+const sfx = (function(){
+  let enabled=false;
   const statusEl=document.getElementById('soundStatus');
+
+  // Preload Audio elements
+  const aOpen   = new Audio('/assets/voting_open.mp3');  aOpen.loop = true;  aOpen.preload='auto'; aOpen.volume=0.55;
+  const aOver   = new Audio('/assets/voting_over.mp3');  aOver.preload='auto'; aOver.volume=0.9;
+  const aEncore = new Audio('/assets/encore.mp3');       aEncore.preload='auto'; aEncore.volume=0.95;
+  const aLoser  = new Audio('/assets/loser.wav');        aLoser.preload='auto'; aLoser.volume=0.9;
+
   function setStatus(){ statusEl.innerHTML = 'Sound: <b>'+(enabled?'on':'off')+'</b>'; }
-  function ensure(){
-    if(enabled && ctx) return true;
+
+  // Unlock by playing/pausing on a user gesture
+  document.getElementById('enableSound').addEventListener('click', async ()=>{
     try{
-      ctx = new (window.AudioContext||window.webkitAudioContext)();
+      // Attempt brief play/pause to satisfy autoplay policies
+      await aOver.play(); aOver.pause(); aOver.currentTime=0;
+      await aEncore.play(); aEncore.pause(); aEncore.currentTime=0;
+      await aLoser.play(); aLoser.pause(); aLoser.currentTime=0;
+      // Don't start the loop until voting starts
       enabled=true; setStatus();
-      return true;
-    }catch{ return false; }
-  }
-  function beep(freq=880, dur=0.08, gain=0.05){
-    if(!ensure()) return;
-    const o=ctx.createOscillator(); const g=ctx.createGain();
-    o.type='sine'; o.frequency.value=freq; g.gain.value=gain;
-    o.connect(g).connect(ctx.destination);
-    o.start(); o.stop(ctx.currentTime+dur);
-  }
-  function playLoop(){ if(!ensure()) return; stopLoop(); loopTimer=setInterval(()=>beep(880,0.06,0.04), 1000); }
-  function stopLoop(){ if(loopTimer){ clearInterval(loopTimer); loopTimer=null; } }
-  function endChime(){ if(!ensure()) return; beep(523.25,0.09,0.07); setTimeout(()=>beep(659.25,0.09,0.07),110); setTimeout(()=>beep(783.99,0.12,0.07),220); }
-  document.getElementById('enableSound').addEventListener('click', ()=>{ if(ensure()){ beep(660,0.06,0.05); setTimeout(()=>beep(880,0.06,0.05),120);} else { alert('Could not enable audio.'); }});
-  setStatus();
-  return { playLoop, stopLoop, endChime };
+    }catch(e){
+      alert('Could not enable audio. Browser blocked playback.');
+    }
+  });
+
+  function safePlay(aud){ if(!enabled) return; aud.currentTime=0; aud.play().catch(()=>{}); }
+  function safeStop(aud){ try{ aud.pause(); aud.currentTime=0; }catch{} }
+
+  return {
+    playOpen(){ if(!enabled) return; safeStop(aOver); safeStop(aEncore); safeStop(aLoser); safeStop(aOpen); aOpen.play().catch(()=>{}); },
+    stopOpen(){ safeStop(aOpen); },
+    playOver(){ safePlay(aOver); },
+    playEncore(){ safePlay(aEncore); },
+    playLoser(){ safePlay(aLoser); }
+  };
 })();
 
 /* ---------- Boot ---------- */
