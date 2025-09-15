@@ -68,7 +68,8 @@
         <div class="row">
           <div style="flex:1">
             <label>Venue (internal)</label>
-            <input id="venue" type="text" placeholder="venue - city" autocomplete="off" spellcheck="false">
+            <input list="venuesList" id="venue" type="text" placeholder="venue - city" autocomplete="off" spellcheck="false">
+            <datalist id="venuesList"></datalist>
           </div>
           <div style="flex:1">
             <label>Public Venue Name (Screen)</label>
@@ -82,7 +83,8 @@
         <div class="row">
           <div style="flex:1">
             <label>KJ Company</label>
-            <input id="kj" type="text" placeholder="Karaoke Company" autocomplete="off" spellcheck="false">
+            <input list="kjsList" id="kj" type="text" placeholder="Karaoke Company" autocomplete="off" spellcheck="false">
+            <datalist id="kjsList"></datalist>
           </div>
           <div style="flex:1">
             <label>Karaoke Host Name</label>
@@ -155,11 +157,13 @@
 const GET_URL  = '/assets/get_state.php';
 const POST_URL = '/assets/state.php';
 const VOTE_URL = '/assets/vote.php';
+const PERF_URL = '/assets/submit_performance.php';
 
 /* ---------- Utils ---------- */
-function debounce(fn, wait=300){
-  let t; return (...args)=>{ clearTimeout(t); t = setTimeout(()=>fn(...args), wait); };
-}
+function debounce(fn, wait=300){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a),wait); }; }
+const $=s=>document.querySelector(s);
+const $$=(s)=>document.querySelectorAll(s);
+const digitsOnly = s => (s||'').replace(/\D+/g,'');
 
 /* ---------- State & DOM ---------- */
 let state=null, poll=null;
@@ -167,8 +171,8 @@ let suppressEventRenderUntil = 0;
 function suppressEventRender(ms=1000){ suppressEventRenderUntil = Date.now() + ms; }
 function mayRenderEventInputs(){ return Date.now() > suppressEventRenderUntil; }
 
-const $=s=>document.querySelector(s);
 const venue=$('#venue'), venuePublic=$('#venuePublic'), eventDate=$('#eventDate'), kj=$('#kj'), hostName=$('#hostName'), pin=$('#pin');
+const venuesList=$('#venuesList'), kjsList=$('#kjsList');
 const singerName=$('#singerName'), songArtist=$('#songArtist');
 const singerList=$('#singerList');
 const currentName=$('#currentName'), currentSongArtist=$('#currentSongArtist');
@@ -181,6 +185,7 @@ async function fetchState(){
   state=await r.json();
   // backfill
   state.event   ||= {venue:'',venuePublic:'',date:new Date().toISOString().slice(0,10),kj:'',hostName:'',pin:'',locked:false};
+  state.saved   ||= {venues:[], kjs:[]};
   state.singers ||= [];
   state.current ||= {id:null,name:'',songArtist:''};
   state.voting  ||= {open:false,endsAt:0,extendCount:0,counts:{encore:0,another:0,maybe:0},lastResult:null,voters:{}};
@@ -190,16 +195,17 @@ async function postState(){
   await fetch(POST_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(state)});
   await fetchState();
 }
-const postStateDebounced = debounce(async ()=>{
-  await fetch(POST_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(state)});
-  await fetchState(); render();
-}, 300);
+const postStateDebounced = debounce(async ()=>{ await fetch(POST_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(state)}); await fetchState(); render(); }, 250);
 
 /* ---------- Render ---------- */
 function render(){
   if(!state) return;
 
-  // Event fields: reflect only when not actively editing or in suppression window
+  // Populate datalists
+  venuesList.innerHTML = (state.saved.venues||[]).map(v=>`<option value="${v.replace(/"/g,'&quot;')}">`).join('');
+  kjsList.innerHTML    = (state.saved.kjs||[]).map(v=>`<option value="${v.replace(/"/g,'&quot;')}">`).join('');
+
+  // Event fields (respect suppression)
   const canPaint = mayRenderEventInputs();
   if (canPaint && document.activeElement !== venue)        venue.value       = state.event.venue || '';
   if (canPaint && document.activeElement !== venuePublic)  venuePublic.value = state.event.venuePublic || '';
@@ -243,12 +249,14 @@ function announce(w){ if(!w){ resultTag.textContent='—'; resultTag.className='
 }
 
 /* ---------- LIVE INPUT BINDINGS (autosave + suppression) ---------- */
-function bindLive(el, key){
+function bindLive(el, key, transform=(x)=>x){
   el.addEventListener('input', ()=>{
     if(!state?.event) return;
-    state.event[key] = el.value;   // update in-memory immediately
-    suppressEventRender(1000);     // prevent repaint clobber briefly
-    postStateDebounced();          // autosave shortly
+    const val = transform(el.value);
+    el.value = val;                 // reflect normalized value (for PIN)
+    state.event[key] = val;         // in-memory immediately
+    suppressEventRender(800);       // prevent repaint clobber briefly
+    postStateDebounced();           // autosave shortly
   });
 }
 bindLive(venue,       'venue');
@@ -256,7 +264,30 @@ bindLive(venuePublic, 'venuePublic');
 bindLive(eventDate,   'date');
 bindLive(kj,          'kj');
 bindLive(hostName,    'hostName');
-bindLive(pin,         'pin');
+bindLive(pin,         'pin', digitsOnly); // normalize PIN to digits only
+
+/* ---------- Event actions ---------- */
+$('#saveEvent').onclick = async ()=>{
+  await postState(); const m=document.getElementById('eventSavedMsg');
+  m.textContent='Saved!'; setTimeout(()=>m.textContent='',1400);
+};
+$('#lockEvent').onclick = async ()=>{
+  state.event.locked = !state.event.locked;
+  await postState();
+  if(state.event.locked) document.getElementById('eventBox').open=false;
+};
+$('#resetEvent').onclick = async ()=>{
+  if(state.event.locked){ alert('Unlock to reset.'); return;}
+  if(!confirm('Reset this event? This clears singers & votes.')) return;
+  state={ serverUpdatedAt: Date.now()/1000|0,
+    event:{venue:'',venuePublic:'',date:new Date().toISOString().slice(0,10),kj:'',hostName:'',pin:'',locked:false},
+    saved:{venues: state.saved?.venues ?? [], kjs: state.saved?.kjs ?? []},
+    singers:[], current:{id:null,name:'',songArtist:''},
+    voting:{open:false,endsAt:0,extendCount:0,counts:{encore:0,another:0,maybe:0},lastResult:null,voters:{}},
+    winners:{encore:[], another:[]}
+  };
+  await postState();
+};
 
 /* ---------- Singer actions ---------- */
 $('#addSinger').onclick = async ()=>{
@@ -270,13 +301,24 @@ $('#addSinger').onclick = async ()=>{
 function setCurrent(id){ const s=state.singers.find(x=>x.id===id); if(!s) return; state.current={id:s.id,name:s.name,songArtist:state.current.songArtist||''}; postState(); }
 function removeSinger(id){ state.singers=state.singers.filter(x=>x.id!==id); if(state.current.id===id){ state.current={id:null,name:'',songArtist:''}; } postState(); }
 
+/* ---------- Now Singing ---------- */
+currentSongArtist.addEventListener('input', async ()=>{ if(!state.current.id) return; state.current.songArtist=currentSongArtist.value.trim(); await postState(); });
+
 /* ---------- Voting ---------- */
 $('#startVote').onclick = async ()=>{
   if(!state.current.id){ alert('Set a current singer first.'); return; }
+
+  // Submit performance for reporting
+  try{
+    await fetch(PERF_URL, {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ singer: state.current.name || '', song: state.current.songArtist || '' })});
+  }catch{}
+
+  // Open voting and play loop sound
   state.voting={ open:true, endsAt:Date.now()+30000, extendCount:0,
     counts:{encore:0,another:0,maybe:0}, lastResult:null, voters:{} };
   await postState();
-  sfx.playOpen(); // loop voting_open.mp3
+  sfx.playOpen();
 };
 $('#extendVote').onclick = async ()=>{ if(!state.voting.open) return; state.voting.endsAt+=15000; state.voting.extendCount++; await postState(); };
 $('#endVote').onclick = async ()=>{ await concludeVoting(); };
@@ -292,9 +334,6 @@ async function hostVote(kind){
 document.getElementById('hv_encore').onclick = ()=>hostVote('encore');
 document.getElementById('hv_another').onclick = ()=>hostVote('another');
 document.getElementById('hv_maybe').onclick  = ()=>hostVote('maybe');
-
-/* ---------- Now Singing ---------- */
-currentSongArtist.addEventListener('input', async ()=>{ if(!state.current.id) return; state.current.songArtist=currentSongArtist.value.trim(); await postState(); });
 
 /* ---------- Vote conclusion ---------- */
 async function concludeVoting(){
@@ -318,7 +357,6 @@ async function concludeVoting(){
   }
   await postState(); announce(winner);
 
-  // Sounds at end
   sfx.stopOpen();
   sfx.playOver();
   if (winner === 'encore')       setTimeout(()=>sfx.playEncore(), 150);
@@ -338,31 +376,49 @@ function loop(){
   }, 800);
 }
 
-/* ---------- Audio using your real files in /assets/ ---------- */
+/* ---------- Audio: robust unlock using WebAudio + HTMLAudio ---------- */
 const sfx = (function(){
   let enabled=false;
-  const statusEl=document.getElementById('soundStatus');
 
-  // Preload Audio elements
+  // HTMLAudio elements
   const aOpen   = new Audio('/assets/voting_open.mp3');  aOpen.loop = true;  aOpen.preload='auto'; aOpen.volume=0.55;
   const aOver   = new Audio('/assets/voting_over.mp3');  aOver.preload='auto'; aOver.volume=0.9;
   const aEncore = new Audio('/assets/encore.mp3');       aEncore.preload='auto'; aEncore.volume=0.95;
   const aLoser  = new Audio('/assets/loser.wav');        aLoser.preload='auto'; aLoser.volume=0.9;
 
+  const statusEl=document.getElementById('soundStatus');
   function setStatus(){ statusEl.innerHTML = 'Sound: <b>'+(enabled?'on':'off')+'</b>'; }
 
-  // Unlock by playing/pausing on a user gesture
-  document.getElementById('enableSound').addEventListener('click', async ()=>{
+  // WebAudio ping to satisfy iOS/Safari
+  let ctx=null;
+  function waPing(){
     try{
-      // Attempt brief play/pause to satisfy autoplay policies
-      await aOver.play(); aOver.pause(); aOver.currentTime=0;
-      await aEncore.play(); aEncore.pause(); aEncore.currentTime=0;
-      await aLoser.play(); aLoser.pause(); aLoser.currentTime=0;
-      // Don't start the loop until voting starts
-      enabled=true; setStatus();
-    }catch(e){
-      alert('Could not enable audio. Browser blocked playback.');
-    }
+      if(!ctx) ctx = new (window.AudioContext||window.webkitAudioContext)();
+      const o=ctx.createOscillator(); const g=ctx.createGain();
+      g.gain.value=0.0001; o.connect(g).connect(ctx.destination);
+      o.start(); o.stop(ctx.currentTime+0.02);
+      return true;
+    }catch{ return false; }
+  }
+
+  async function warmupAudioEl(el){
+    try{
+      el.muted=true;
+      await el.play();
+      el.pause(); el.currentTime=0; el.muted=false;
+      return true;
+    }catch(e){ return false; }
+  }
+
+  document.getElementById('enableSound').addEventListener('click', async ()=>{
+    const okWA = waPing();
+    const ok1 = await warmupAudioEl(aOver);
+    const ok2 = await warmupAudioEl(aEncore);
+    const ok3 = await warmupAudioEl(aLoser);
+    // don't start loop now; just ensure elements are unlocked
+    enabled = okWA || ok1 || ok2 || ok3;
+    if(!enabled){ alert('Could not enable audio. Browser blocked playback.'); }
+    setStatus();
   });
 
   function safePlay(aud){ if(!enabled) return; aud.currentTime=0; aud.play().catch(()=>{}); }
