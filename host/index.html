@@ -34,14 +34,18 @@
   details{border:1px solid #243459;border-radius:12px} details[open] summary{border-bottom:1px solid #243459}
   summary{list-style:none;cursor:pointer;padding:10px 14px;background:#0f1526;border-radius:12px} summary::-webkit-details-marker{display:none}
   .links a{color:#8edbff;text-decoration:none} .links a:hover{text-decoration:underline}
+  .micro{font-size:12px;color:var(--muted)}
+  .soundLink{font-size:12px;margin-top:6px}
+  .soundLink a{color:#cfe0ff;text-decoration:underline;cursor:pointer}
+  .soundLink a:hover{text-decoration:none}
 </style>
 
 <div class="wrap">
-  <!-- LEFT: Rotation + Links -->
+  <!-- LEFT: Rotation + Links + (Enable Sound) -->
   <div class="side">
     <div class="card">
       <h1>Rotation</h1>
-      <div style="font-size:12px;color:var(--muted);margin:-4px 0 6px">• gray=new • green=Encore • yellow=Another Shot</div>
+      <div class="micro" style="margin:-4px 0 6px">• gray=new • green=Encore • yellow=Another Shot</div>
       <div id="singerList" class="list"></div>
     </div>
     <div class="card links">
@@ -50,13 +54,16 @@
       <a target="_blank" href="/screen/index.html">Open Screen</a><br>
       <a target="_blank" href="/vote/index.html">Open Vote</a><br>
       <a target="_blank" href="/board/index.html">Open Board</a>
+      <div class="soundLink">
+        <span id="soundStatus">Sound: <b>off</b></span> • <a id="enableSound">Enable sound</a>
+      </div>
     </div>
   </div>
 
   <!-- RIGHT: Event + Show Control -->
   <div class="stack">
     <details id="eventBox" class="card" open>
-      <summary><h1 style="display:inline">Event / KJ Setup</h1> <span id="eventSavedMsg" style="font-size:12px;color:var(--muted);margin-left:8px"></span></summary>
+      <summary><h1 style="display:inline">Event / KJ Setup</h1> <span id="eventSavedMsg" class="micro" style="margin-left:8px"></span></summary>
       <div class="stack" style="padding-top:10px">
         <div class="row">
           <div style="flex:1">
@@ -87,7 +94,7 @@
           <button class="btn" id="lockEvent">Lock</button>
           <button class="btn" id="resetEvent">Reset</button>
         </div>
-        <div style="font-size:12px;color:var(--muted)">Lock prevents edits & collapses this section. Reset clears singers & votes (only when unlocked).</div>
+        <div class="micro">Lock prevents edits & collapses this section. Reset clears singers & votes (only when unlocked).</div>
       </div>
     </details>
 
@@ -105,13 +112,13 @@
       <div style="font-weight:800;color:#cfe0ff">Current & Voting</div>
       <div class="row">
         <div style="flex:1">
-          <div style="font-size:12px;color:var(--muted)">Current Singer</div>
+          <div class="micro">Current Singer</div>
           <div id="currentName" style="font-weight:800;font-size:18px">—</div>
-          <div style="font-size:12px;color:var(--muted)">Now Singing — Song/Artist</div>
+          <div class="micro">Now Singing — Song/Artist</div>
           <input id="currentSongArtist" type="text" placeholder="Type song — artist…" disabled autocomplete="off" spellcheck="false">
         </div>
         <div style="text-align:right">
-          <div style="font-size:12px;color:var(--muted)">Timer</div>
+          <div class="micro">Timer</div>
           <div id="timer" class="timer">00:00</div>
         </div>
       </div>
@@ -134,7 +141,7 @@
         <button class="btn warn" id="hv_another">Another Shot!</button>
         <button class="btn bad" id="hv_maybe">Maybe Next Time</button>
       </div>
-      <div style="font-size:12px;color:var(--muted);margin-top:6px">One vote per device per singer/song. Results announced when timer ends or you press <b>End</b>.</div>
+      <div class="micro" style="margin-top:6px">One vote per device per singer/song. Results announced when timer ends or you press <b>End</b>.</div>
     </div>
   </div>
 </div>
@@ -265,6 +272,7 @@ $('#startVote').onclick = async ()=>{
   state.voting={ open:true, endsAt:Date.now()+30000, extendCount:0,
     counts:{encore:0,another:0,maybe:0}, lastResult:null, voters:{} };
   await postState();
+  audio.playLoop(); // sound during voting
 };
 $('#extendVote').onclick = async ()=>{ if(!state.voting.open) return; state.voting.endsAt+=15000; state.voting.extendCount++; await postState(); };
 $('#endVote').onclick = async ()=>{ await concludeVoting(); };
@@ -305,6 +313,7 @@ async function concludeVoting(){
     state.winners[winner]=state.winners[winner].slice(0,50);
   }
   await postState(); announce(winner);
+  audio.stopLoop(); audio.endChime(); // sound end
 }
 
 /* ---------- Loop ---------- */
@@ -315,9 +324,53 @@ function loop(){
       await concludeVoting();
     } else {
       await fetchState(); render();
+      if(!state.voting.open) audio.stopLoop();
     }
   }, 800);
 }
+
+/* ---------- Simple WebAudio (Enable Sound) ---------- */
+const audio=(function(){
+  let ctx=null, loopTimer=null, enabled=false;
+  const statusEl=document.getElementById('soundStatus');
+  function setStatus(){ statusEl.innerHTML = 'Sound: <b>'+(enabled?'on':'off')+'</b>'; }
+  function ensure(){
+    if(enabled && ctx) return true;
+    try{
+      ctx = new (window.AudioContext||window.webkitAudioContext)();
+      enabled=true; setStatus();
+      return true;
+    }catch{ return false; }
+  }
+  function beep(freq=880, dur=0.08, gain=0.05){
+    if(!ensure()) return;
+    const o=ctx.createOscillator(); const g=ctx.createGain();
+    o.type='sine'; o.frequency.value=freq; g.gain.value=gain;
+    o.connect(g).connect(ctx.destination);
+    o.start(); o.stop(ctx.currentTime+dur);
+  }
+  function playLoop(){
+    if(!ensure()) return;
+    stopLoop();
+    // gentle tick every ~1s during open voting
+    loopTimer = setInterval(()=> beep(880, 0.06, 0.04), 1000);
+  }
+  function stopLoop(){ if(loopTimer){ clearInterval(loopTimer); loopTimer=null; } }
+  function endChime(){
+    if(!ensure()) return;
+    // tiny triad: C5-E5-G5
+    beep(523.25,0.09,0.07);
+    setTimeout(()=>beep(659.25,0.09,0.07),110);
+    setTimeout(()=>beep(783.99,0.12,0.07),220);
+  }
+  document.getElementById('enableSound').addEventListener('click', ()=>{
+    if(ensure()){ // warm-up beeps
+      beep(660,0.06,0.05); setTimeout(()=>beep(880,0.06,0.05),120);
+    } else { alert('Could not enable audio.'); }
+  });
+  setStatus();
+  return { playLoop, stopLoop, endChime };
+})();
 
 /* ---------- Boot ---------- */
 (async function init(){ await fetchState(); render(); loop(); })();
