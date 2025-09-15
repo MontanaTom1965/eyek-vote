@@ -1,178 +1,176 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>EYEK • Screen</title>
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta http-equiv="refresh" content="180">
 <style>
-  :root{--bg:#060913;--txt:#eaf2ff;--muted:#a9b6d9;--green:#25d366;--yellow:#f6c945;--red:#ff5e6c;--cyan:#3ad4ff}
-  *{box-sizing:border-box} body{margin:0;background:radial-gradient(1200px 600px at 50% -10%,#132041 0%,#060913 60%);color:var(--txt);font:700 20px/1.2 Inter,system-ui}
-  .wrap{min-height:100svh;display:grid;place-items:center;padding:24px}
-  .stage{width:min(1100px,92vw);background:rgba(8,14,30,.6);border:1px solid rgba(70,100,160,.35);border-radius:16px;padding:28px;box-shadow:0 20px 80px rgba(0,0,0,.45)}
-  h1{margin:0 0 10px;font-size:40px;letter-spacing:.5px}
-  .muted{color:var(--muted);font-weight:500}
-  .row{display:flex;align-items:end;gap:18px;flex-wrap:wrap}
-  .timer{font-size:56px;letter-spacing:1.5px}
-  .stack{display:grid;gap:10px;margin-top:12px}
-  .ballRow{display:flex;gap:12px;align-items:flex-end}
-  .stackCol{flex:1;min-width:220px}
-  .count{font-size:40px;text-align:center}
-  .pile{display:flex;gap:6px;flex-wrap:wrap;min-height:44px}
-  .ball{width:18px;height:18px;border-radius:50%;animation:pop .6s ease-out}
-  .g{background:var(--green)} .y{background:var(--yellow)} .r{background:var(--red)}
-  @keyframes pop{0%{transform:translateY(12px) scale(.6);opacity:.5}100%{transform:translateY(0) scale(1);opacity:1}}
-  .banner{margin-top:20px;padding:16px;border-radius:14px;text-align:center;border:2px solid transparent}
-  .b-encore{border-color:rgba(37,211,102,.6);box-shadow:0 0 40px rgba(37,211,102,.25) inset}
-  .b-another{border-color:rgba(246,201,69,.6);box-shadow:0 0 40px rgba(246,201,69,.25) inset}
-  .b-maybe{border-color:rgba(255,94,108,.6);box-shadow:0 0 40px rgba(255,94,108,.25) inset}
-  .big{font-size:60px}
-  .sub{font-size:22px;color:var(--muted)}
-  canvas{position:fixed;inset:0;pointer-events:none}
+  :root{ --purple:#2F0658; --bg:#0e0b14; --ink:#f6f3ff; --muted:#bdb6d5; --accent:#10b981; --warn:#f59e0b; --danger:#ef4444; }
+  html,body{margin:0;height:100%;background:radial-gradient(1200px 600px at 50% 0%, #1f1740, var(--purple) 40%, #0e0b14 80%); color:var(--ink); font:20px/1.4 system-ui,Segoe UI,Roboto;}
+  .wrap{display:grid;place-items:center;min-height:100%}
+  .panel{max-width:1100px; width:92%; text-align:center; padding:24px}
+  h1{font-size:44px;margin:8px 0 4px}
+  .sub{color:var(--muted); margin-bottom:12px}
+  .big{font-size:72px; font-weight:800; letter-spacing:.5px; margin:12px 0}
+  .pill{display:inline-block; padding:10px 16px; border-radius:999px; border:1px solid rgba(255,255,255,.15); background:rgba(0,0,0,.25)}
+  .row{display:flex; gap:14px; justify-content:center; align-items:flex-end; flex-wrap:wrap}
+  .stack{display:flex; flex-direction:column; align-items:center; gap:10px; min-width:160px}
+  .count{font-size:40px; font-weight:800}
+  .balls{display:flex; gap:6px; min-height:40px; flex-wrap:wrap; justify-content:center}
+  .ball{width:16px; height:16px; border-radius:50%; animation: pop .25s ease; opacity:.9}
+  .ball.g{background:var(--accent)}
+  .ball.y{background:var(--warn)}
+  .ball.r{background:var(--danger)}
+  @keyframes pop { from{transform:scale(.2); opacity:0} to{transform:scale(1); opacity:.9} }
+  .timer{font-size:56px; font-weight:800; letter-spacing:1px}
+  .banner{margin-top:20px; font-size:64px; font-weight:900; padding:18px 26px; border-radius:18px; display:inline-block; animation: flash 1s ease infinite alternate}
+  .enc{background:rgba(16,185,129,.2); color:#b7ffdf; border:2px solid #0c7a58}
+  .sho{background:rgba(245,158,11,.2); color:#ffe9ba; border:2px solid #8a5f05}
+  .nope{background:rgba(239,68,68,.2); color:#ffd0d0; border:2px solid #9b1c1c}
+  @keyframes flash {from{filter:saturate(.9) brightness(.9)} to{filter:saturate(1.2) brightness(1.1)}}
 </style>
 </head>
 <body>
-<canvas id="confetti"></canvas>
-<div class="wrap">
-  <div class="stage">
-    <div class="stack">
-      <h1 id="headline">Welcome to <span id="venue">—</span></h1>
-      <div class="muted">KJ: <span id="kj">—</span></div>
-      <div id="main" class="stack">
-        <div class="row">
-          <div class="stackCol">
-            <div class="muted">Now Singing</div>
-            <div id="singer" style="font-size:44px">—</div>
-            <div id="song" class="muted" style="margin-top:6px">—</div>
-          </div>
-          <div class="stackCol" style="text-align:right">
-            <div class="muted">Voting ends in</div>
-            <div id="timer" class="timer">00:00</div>
-          </div>
-        </div>
+<div class="wrap"><div class="panel">
+  <div id="welcome">
+    <h1>Welcome to <span id="venueName">—</span></h1>
+    <div class="sub">Hosted by <span id="kjName">—</span></div>
+  </div>
 
-        <div id="voteBlock" class="row" style="margin-top:10px">
-          <div class="stackCol">
-            <div class="muted">Encore!</div>
-            <div id="c_encore" class="count">0</div>
-            <div id="pile_encore" class="pile"></div>
-          </div>
-          <div class="stackCol">
-            <div class="muted">Another Shot!</div>
-            <div id="c_another" class="count">0</div>
-            <div id="pile_another" class="pile"></div>
-          </div>
-          <div class="stackCol">
-            <div class="muted">Maybe Next Time</div>
-            <div id="c_maybe" class="count">0</div>
-            <div id="pile_maybe" class="pile"></div>
-          </div>
-        </div>
+  <div id="nowPlaying" style="display:none">
+    <div class="pill">Now Playing</div>
+    <div class="big" id="nowSinger">—</div>
+    <div class="sub" id="nowNotes"></div>
+  </div>
 
-        <div id="banner" class="banner" style="display:none">
-          <div id="bannerText" class="big">—</div>
-          <div class="sub">Great job! Next singer up soon…</div>
-        </div>
+  <div id="nowVoting" style="display:none">
+    <div class="pill">Now Voting For</div>
+    <div class="big" id="voteSinger">—</div>
+    <div class="row" style="margin-top:16px">
+      <div class="stack">
+        <div>Encore!</div>
+        <div class="count" id="ce">0</div>
+        <div class="balls" id="be"></div>
+      </div>
+      <div class="stack">
+        <div>Another Shot!</div>
+        <div class="count" id="ca">0</div>
+        <div class="balls" id="ba"></div>
+      </div>
+      <div class="stack">
+        <div>Maybe Next Time</div>
+        <div class="count" id="cm">0</div>
+        <div class="balls" id="bm"></div>
       </div>
     </div>
+    <div class="timer" id="t"></div>
   </div>
-</div>
 
-<audio id="sfx_encore" src="/assets/encore.mp3" preload="auto"></audio>
-<audio id="sfx_another" src="/assets/another_shot.mp3" preload="auto"></audio>
-<audio id="sfx_maybe" src="/assets/loser.wav" preload="auto"></audio>
-<audio id="sfx_open" src="/assets/voting_open.mp3" preload="auto"></audio>
-<audio id="sfx_over" src="/assets/voting_over.mp3" preload="auto"></audio>
+  <div id="result" style="display:none">
+    <div class="banner" id="rb">—</div>
+  </div>
+</div></div>
+
+<!-- Audio -->
+<audio id="sndOpen"   src="https://vote.earnyourencorekaraoke.com/assets/voting_open.mp3" preload="auto"></audio>
+<audio id="sndOver"   src="https://vote.earnyourencorekaraoke.com/assets/voting_over.mp3" preload="auto"></audio>
+<audio id="sndEncore" src="https://vote.earnyourencorekaraoke.com/assets/encore.mp3" preload="auto"></audio>
+<audio id="sndNope"   src="https://vote.earnyourencorekaraoke.com/assets/loser.wav" preload="auto"></audio>
 
 <script>
-const GET_URL = '/assets/get_state.php';
-const POLL = 1200;
+const BASE = location.origin + '/assets';
+const STATE_URL = BASE + '/status.json';
+let S=null, lastState='', lastEnds=0;
 
-const $=s=>document.querySelector(s);
-const venue=$('#venue'), kj=$('#kj'), singer=$('#singer'), song=$('#song'), timer=$('#timer');
-const cE=$('#c_encore'), cA=$('#c_another'), cM=$('#c_maybe');
-const pE=$('#pile_encore'), pA=$('#pile_another'), pM=$('#pile_maybe');
-const banner=$('#banner'), bannerText=$('#bannerText');
+const qs = s=>document.querySelector(s);
+const venueName=qs('#venueName'), kjName=qs('#kjName');
+const welcome=qs('#welcome'), nowPlaying=qs('#nowPlaying'), nowVoting=qs('#nowVoting'), result=qs('#result');
+const nowSinger=qs('#nowSinger'), nowNotes=qs('#nowNotes');
+const voteSinger=qs('#voteSinger');
+const ce=qs('#ce'), ca=qs('#ca'), cm=qs('#cm');
+const be=qs('#be'), ba=qs('#ba'), bm=qs('#bm');
+const timerEl=qs('#t'); const rb=qs('#rb');
 
-let state=null, balls={encore:0,another:0,maybe:0};
+const sndOpen = qs('#sndOpen'), sndOver=qs('#sndOver'), sndEncore=qs('#sndEncore'), sndNope=qs('#sndNope');
 
-function dot(container, cls){
-  const b=document.createElement('div'); b.className='ball '+cls; container.prepend(b);
+function now(){ return Math.floor(Date.now()/1000) }
+function pickResult(c){ const e=c.encore|0, a=c.another|0, m=c.maybe|0; if(e===0&&a===0&&m===0)return null; if(e>=a&&e>=m)return'enc'; if(a>=e&&a>=m)return'sho'; return'nope'; }
+
+function addBalls(el, count, klass){
+  const have = el.children.length;
+  for(let i=have;i<count;i++){
+    const b=document.createElement('div'); b.className='ball '+klass; el.appendChild(b);
+  }
+  // (don’t shrink; we only grow)
 }
 
-function updateBalls(kind,count){
-  const containers={encore:pE, another:pA, maybe:pM};
-  const cls={encore:'g', another:'y', maybe:'r'}[kind];
-  while(containers[kind].children.length < count) dot(containers[kind], cls);
-  while(containers[kind].children.length > count) containers[kind].removeChild(containers[kind].lastChild);
-}
+function render(){
+  venueName.textContent = S.event.venue||'—';
+  kjName.textContent = S.event.kj||'—';
 
-function setBanner(w){
-  banner.style.display = w ? 'block':'none';
-  banner.className='banner';
-  if(!w) return;
-  if(w==='encore'){ banner.classList.add('b-encore'); bannerText.textContent='Encore!'; play('encore'); confetti(); }
-  else if(w==='another'){ banner.classList.add('b-another'); bannerText.textContent='Another Shot!'; play('another'); }
-  else { banner.classList.add('b-maybe'); bannerText.textContent='Maybe Next Time'; play('maybe'); }
-}
+  // sections
+  const hasCurrent = S.currentIndex>=0 && S.singers[S.currentIndex];
+  const st = S.voting.state;
 
-function fmt(ms){ const s=Math.ceil(ms/1000); const m=Math.floor(s/60), r=s%60; return `${String(m).padStart(2,'0')}:${String(r).padStart(2,'0')}`;}
+  welcome.style.display = hasCurrent ? 'none':'block';
+  nowPlaying.style.display = (hasCurrent && st!=='open' && st!=='closed') ? 'block':'none';
+  nowVoting.style.display = (st==='open') ? 'block':'none';
+  result.style.display    = (st==='closed') ? 'block':'none';
+
+  if (hasCurrent){
+    const sg = S.singers[S.currentIndex];
+    nowSinger.textContent = sg.name;
+    nowNotes.textContent  = sg.notes||'';
+    voteSinger.textContent= sg.name;
+  }
+
+  // voting visuals
+  ce.textContent = S.voting.counts.encore|0;
+  ca.textContent = S.voting.counts.another|0;
+  cm.textContent = S.voting.counts.maybe|0;
+
+  addBalls(be, S.voting.counts.encore|0, 'g');
+  addBalls(ba, S.voting.counts.another|0,'y');
+  addBalls(bm, S.voting.counts.maybe|0,  'r');
+
+  if (st==='open' && S.voting.endsAt>now()){
+    timerEl.textContent = (S.voting.endsAt-now())+'s';
+  } else if (st==='open'){
+    timerEl.textContent = '0s';
+  }
+
+  if (st==='closed'){
+    const res = pickResult(S.voting.counts);
+    if (res==='enc'){ rb.className='banner enc'; rb.textContent='Encore!';}
+    else if (res==='sho'){ rb.className='banner sho'; rb.textContent='Another Shot!';}
+    else { rb.className='banner nope'; rb.textContent='Maybe Next Time';}
+  }
+}
 
 async function tick(){
-  const r=await fetch(GET_URL,{cache:'no-store'}); state=await r.json();
-  venue.textContent = state.event.venue||'—';
-  kj.textContent = state.event.kj||'—';
-  singer.textContent = state.current.name||'—';
-  song.textContent = state.current.songArtist||'—';
+  try{
+    const j = await fetch(STATE_URL+'?t='+Date.now()).then(r=>r.json());
+    const prev = S;
+    S=j; render();
 
-  cE.textContent = state.voting.counts.encore||0;
-  cA.textContent = state.voting.counts.another||0;
-  cM.textContent = state.voting.counts.maybe||0;
+    // sound cues: rely on host toggle (shared flag)
+    const soundsOn = !!S.soundsEnabled;
 
-  updateBalls('encore', state.voting.counts.encore||0);
-  updateBalls('another', state.voting.counts.another||0);
-  updateBalls('maybe',  state.voting.counts.maybe ||0);
-
-  if (state.voting.open){
-    play('open');
-    banner.style.display='none';
-    const ms=Math.max(0, state.voting.endsAt - Date.now());
-    timer.textContent = fmt(ms);
-  } else {
-    timer.textContent='00:00';
-    setBanner(state.voting.lastResult);
-  }
+    // transitions (open/close)
+    if (prev){
+      if (prev.voting.state!=='open' && S.voting.state==='open'){ if (soundsOn){ try{sndOpen.currentTime=0; sndOpen.play()}catch{}} }
+      if (prev.voting.state!=='closed' && S.voting.state==='closed'){
+        if (soundsOn){ try{sndOver.currentTime=0; sndOver.play()}catch{} }
+        const res = pickResult(S.voting.counts);
+        if (soundsOn){
+          if (res==='enc'){ try{sndEncore.currentTime=0; sndEncore.play()}catch{} }
+          else if (res==='nope'){ try{sndNope.currentTime=0; sndNope.play()}catch{} }
+        }
+      }
+    }
+  }catch(e){}
 }
-
-const sfx={
-  encore:$('#sfx_encore'), another:$('#sfx_another'), maybe:$('#sfx_maybe'),
-  open:$('#sfx_open'), over:$('#sfx_over')
-};
-function play(k){ sfx[k]?.play().catch(()=>{}); }
-
-setInterval(tick, POLL);
-tick();
-
-// simple confetti
-function confetti(){
-  const c=document.getElementById('confetti'),x=c.getContext('2d');
-  c.width=innerWidth; c.height=innerHeight;
-  const parts=Array.from({length:160},()=>({
-    x:Math.random()*c.width, y:-20-Math.random()*80, r:2+Math.random()*4,
-    v:2+Math.random()*4, a:Math.random()*Math.PI, col:`hsl(${Math.random()*360},90%,60%)`
-  }));
-  let t=0;
-  function step(){
-    x.clearRect(0,0,c.width,c.height);
-    parts.forEach(p=>{
-      p.y += p.v; p.x += Math.sin(p.a+t/10);
-      x.fillStyle=p.col; x.beginPath(); x.arc(p.x,p.y,p.r,0,Math.PI*2); x.fill();
-    });
-    t++;
-    if (t<120) requestAnimationFrame(step); else x.clearRect(0,0,c.width,c.height);
-  }
-  step();
-}
+render();
+setInterval(tick, 1000);
 </script>
 </body>
 </html>
