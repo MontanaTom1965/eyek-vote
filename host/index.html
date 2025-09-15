@@ -2,311 +2,395 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>EYEK • Host</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap">
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="icon" href="/assets/icon.png" />
 <style>
-  :root{
-    --bg:#0b0f14; --card:#121821; --muted:#1a2230; --ink:#e8f0ff; --sub:#a8b4c9;
-    --green:#22c55e; --yellow:#facc15; --red:#ef4444; --eyek:#7dd3fc;
+  :root {
+    --bg:#0b0f1a; --card:#12192a; --soft:#1b2540;
+    --txt:#eaf2ff; --muted:#a9b6d9;
+    --green:#25d366; --yellow:#f6c945; --red:#ff5e6c; --cyan:#3ad4ff;
+    --accent:#7aa2ff;
   }
-  *{box-sizing:border-box}
-  body{margin:0;font-family:Inter,system-ui,Arial;background:linear-gradient(180deg,#0b0f14,#081019 60%,#070d16);color:var(--ink);}
-  h1,h2,h3{margin:0 0 .5rem}
-  .wrap{display:grid;grid-template-columns: 300px 1fr; gap:16px; padding:16px; max-width:1400px; margin:0 auto;}
-  .card{background:var(--card); border:1px solid #0f1520; border-radius:16px; padding:16px; box-shadow:0 6px 30px rgba(0,0,0,.25)}
-  .grid{display:grid; gap:12px}
-  .row{display:flex; gap:8px; align-items:center}
-  label{font-size:.9rem; color:var(--sub); min-width:90px}
-  input,button,details{font:inherit}
-  input[type=text], input[type=password]{width:100%; background:var(--muted); border:1px solid #20293a; color:var(--ink); padding:10px 12px; border-radius:10px; outline:none}
-  button{background:#1f2836; color:var(--ink); border:1px solid #263146; padding:10px 14px; border-radius:12px; cursor:pointer; transition:.2s; font-weight:600}
-  button:hover{transform:translateY(-1px); box-shadow:0 8px 22px rgba(0,0,0,.25)}
-  .primary{background:linear-gradient(180deg,#1f8bfd,#1360e2); border-color:#0c4fc5}
-  .success{background:linear-gradient(180deg,#1ea85e,#128c4d); border-color:#0f6f3f}
-  .warn{background:linear-gradient(180deg,#f0b429,#d79400); border-color:#b37500; color:#151515}
-  .danger{background:linear-gradient(180deg,#ef4444,#c02626); border-color:#991b1b}
-  .pill{padding:6px 10px; border-radius:999px; font-size:.85rem}
-  .muted{color:var(--sub)}
-  .cols-2{display:grid; grid-template-columns: 1fr 1fr; gap:12px}
-  .section-title{font-weight:800; letter-spacing:.3px}
-  .sidebar{display:flex; flex-direction:column; gap:12px}
-  .singer{display:flex; align-items:center; justify-content:space-between; gap:8px; padding:10px; background:#0f1420; border:1px solid #1a2538; border-radius:12px}
-  .singer .name{font-weight:700}
-  .dots{display:flex; gap:6px; align-items:center}
-  .dot{width:10px; height:10px; border-radius:999px; opacity:.6}
-  .dot.green{background:var(--green)}
-  .dot.yellow{background:var(--yellow)}
-  .dot.red{background:var(--red)}
-  .actions{display:flex; gap:6px}
-  .kicker{font-size:.9rem; color:var(--sub)}
-  details summary{cursor:pointer; padding:10px 12px; background:#0f1420; border:1px solid #1a2538; border-radius:10px; font-weight:700}
-  details[open] summary{border-bottom-left-radius:0;border-bottom-right-radius:0}
-  details .content{border:1px solid #1a2538; border-top:none; border-bottom-left-radius:10px;border-bottom-right-radius:10px; padding:12px; background:#0b111b}
-  .split{display:grid; grid-template-columns: 1fr auto; align-items:end; gap:8px}
-  .section{display:grid; gap:10px}
-  .tiny{font-size:.8rem}
-  .note{font-size:.85rem; color:var(--sub)}
+  *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--txt);font:16px/1.4 system-ui,Segoe UI,Roboto,Helvetica,Arial}
+  .wrap{display:grid;grid-template-columns:320px 1fr;gap:16px;padding:16px}
+  .card{background:linear-gradient(180deg,var(--card),#0f1526);border:1px solid #243459;border-radius:14px;padding:14px;box-shadow:0 4px 20px rgba(0,0,0,.25)}
+  h1{margin:0 0 8px;font-size:20px}
+  h2{margin:0 0 10px;font-size:16px;color:var(--muted)}
+  label{font-size:12px;color:var(--muted);display:block;margin:8px 0 4px}
+  input,button{font:inherit}
+  input[type=text]{width:100%;padding:10px;border-radius:10px;border:1px solid #2b3c62;background:#0d1428;color:var(--txt)}
+  .row{display:flex;gap:10px;align-items:center}
+  .row > *{flex:1}
+  .btn{border:0;border-radius:12px;padding:10px 14px;background:var(--soft);color:var(--txt);cursor:pointer}
+  .btn.primary{background:var(--accent)}
+  .btn.good{background:var(--green);color:#03140b}
+  .btn.warn{background:var(--yellow);color:#2a2105}
+  .btn.bad{background:var(--red)}
+  .btn.ghost{background:transparent;border:1px solid #2b3c62}
+  .stack{display:grid;gap:12px}
+  .side{display:grid;gap:12px}
+  .list{display:grid;gap:8px;max-height:60vh;overflow:auto;padding-right:6px}
+  .pill{display:flex;align-items:center;justify-content:space-between;background:#0d1428;border:1px solid #203153;border-radius:12px;padding:8px 10px}
+  .name{font-weight:600}
+  .minirow{display:flex;gap:6px}
+  .tiny{font-size:12px;color:var(--muted)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+  .counts{display:flex;gap:10px;align-items:center}
+  .bubble{min-width:52px;text-align:center;padding:8px 10px;border-radius:12px;font-weight:700}
+  .b-green{background:rgba(37,211,102,.15);border:1px solid rgba(37,211,102,.35);color:var(--green)}
+  .b-yellow{background:rgba(246,201,69,.15);border:1px solid rgba(246,201,69,.35);color:var(--yellow)}
+  .b-red{background:rgba(255,94,108,.15);border:1px solid rgba(255,94,108,.35);color:var(--red)}
+  .timer{font-size:34px;font-weight:800;letter-spacing:1px}
+  .resultTag{padding:8px 12px;border-radius:999px;border:1px solid #2b3c62;background:#0d1428;min-width:160px;text-align:center;font-weight:700}
+  .r-encore{border-color:rgba(37,211,102,.5);color:var(--green)}
+  .r-another{border-color:rgba(246,201,69,.6);color:var(--yellow)}
+  .r-maybe{border-color:rgba(255,94,108,.6);color:var(--red)}
+  .split{display:grid;grid-template-columns:1.2fr .8fr;gap:12px}
+  .help{font-size:12px;color:var(--muted)}
+  .sectionTitle{font-size:14px;font-weight:800;color:#cfe0ff;margin:4px 0 10px;letter-spacing:.4px}
+  .switch{display:flex;align-items:center;gap:8px}
+  .switch input{width:18px;height:18px}
+  .bar{height:1px;background:#203153;margin:10px 0}
 </style>
 </head>
 <body>
 <div class="wrap">
-
-  <!-- Sidebar: rotation -->
-  <div class="sidebar">
+  <!-- LEFT: singers -->
+  <div class="side">
     <div class="card">
-      <h2 class="section-title">Rotation</h2>
-      <div id="rotation" class="grid" style="margin-top:10px"></div>
+      <h1>Rotation</h1>
+      <div class="help">Click <b>Set</b> to make someone the current singer.</div>
+      <div id="singerList" class="list"></div>
     </div>
     <div class="card">
-      <div class="section">
-        <div class="section-title">Utilities</div>
-        <button class="danger" id="resetEventBtn">Reset Event (keeps venue/KJ/PIN)</button>
-        <div class="note tiny">Resets singers, current singer, voting, results.</div>
-      </div>
+      <h2>Sound</h2>
+      <label class="switch">
+        <input id="soundToggle" type="checkbox">
+        <span>Enable sound effects</span>
+      </label>
+      <div class="help">Browser requires one click to allow audio. Toggle this on once.</div>
+      <audio id="sfx_open" src="/assets/voting_open.mp3" preload="auto"></audio>
+      <audio id="sfx_over" src="/assets/voting_over.mp3" preload="auto"></audio>
+      <audio id="sfx_encore" src="/assets/encore.mp3" preload="auto"></audio>
+      <audio id="sfx_maybe" src="/assets/loser.wav" preload="auto"></audio>
+      <audio id="sfx_another" src="/assets/another_shot.mp3" preload="auto"></audio>
     </div>
   </div>
 
-  <!-- Main -->
-  <div class="grid">
-
-    <!-- Event (collapsible) -->
+  <!-- RIGHT: controls -->
+  <div class="stack">
     <div class="card">
-      <details id="eventDetails" open>
-        <summary>Event • Venue / KJ / PIN</summary>
-        <div class="content grid" style="margin-top:10px">
-          <div class="cols-2">
-            <div class="row"><label>Venue</label><input id="venue" type="text" placeholder="Venue name"></div>
-            <div class="row"><label>KJ</label><input id="kj" type="text" placeholder="KJ name"></div>
+      <h1>Event Setup</h1>
+      <div class="grid2">
+        <div>
+          <label>Venue</label>
+          <input id="venue" type="text" placeholder="Venue name">
+        </div>
+        <div>
+          <label>KJ</label>
+          <input id="kj" type="text" placeholder="KJ name">
+        </div>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button class="btn primary" id="saveEvent">Save</button>
+        <button class="btn ghost" id="resetEvent">Reset Event</button>
+        <span class="tiny" id="eventSavedMsg"></span>
+      </div>
+      <div class="bar"></div>
+      <div class="grid2">
+        <div>
+          <div class="sectionTitle">Singer</div>
+          <div class="row">
+            <input id="singerName" type="text" placeholder="Singer name">
+            <input id="songArtist" type="text" placeholder="Song / Artist">
           </div>
-          <div class="cols-2">
-            <div class="row"><label>PIN</label><input id="pin" type="password" placeholder="Event PIN (for changes)"></div>
-            <div class="row"><label>Status</label>
-              <span id="lockStatus" class="pill" style="background:#263146">Unlocked</span>
+          <div class="row" style="margin-top:10px">
+            <button class="btn" id="addSinger">Add Singer</button>
+          </div>
+        </div>
+        <div>
+          <div class="sectionTitle">Current & Voting</div>
+          <div class="row">
+            <div style="flex:1">
+              <div class="tiny">Current Singer</div>
+              <div id="currentName" style="font-weight:800;font-size:18px">—</div>
+              <div id="currentSong" class="tiny">—</div>
+            </div>
+            <div style="text-align:right">
+              <div class="tiny">Timer</div>
+              <div id="timer" class="timer">00:00</div>
             </div>
           </div>
-          <div class="row" style="gap:10px; flex-wrap:wrap">
-            <button class="primary" id="saveEventBtn">Save Event</button>
-            <button id="toggleLockBtn">Lock / Unlock</button>
+          <div class="counts" style="margin-top:6px">
+            <div class="bubble b-green" id="c_encore">0</div>
+            <div class="bubble b-yellow" id="c_another">0</div>
+            <div class="bubble b-red" id="c_maybe">0</div>
+            <div id="resultTag" class="resultTag">—</div>
+          </div>
+          <div class="grid3" style="margin-top:10px">
+            <button class="btn good" id="startVote">Start (30s)</button>
+            <button class="btn warn" id="extendVote">Extend (+15s)</button>
+            <button class="btn bad" id="endVote">End</button>
           </div>
         </div>
-      </details>
-      <div class="kicker" id="eventSummary" style="margin-top:8px"></div>
-    </div>
-
-    <!-- Singer -->
-    <div class="card">
-      <div class="section-title">Singer</div>
-      <div class="grid" style="margin-top:8px">
-        <div class="row"><label style="min-width:70px">Singer</label><input id="singerName" type="text" placeholder="Singer name"></div>
-        <div class="row"><label style="min-width:70px">Song/Artist</label><input id="songTitle" type="text" placeholder="Song / Artist (optional)"></div>
-        <div class="row" style="gap:8px">
-          <button class="success" id="addSingerBtn">Add Singer</button>
+      </div>
+      <div class="bar"></div>
+      <div>
+        <div class="sectionTitle">Host Vote</div>
+        <div class="grid3">
+          <button class="btn good" id="hv_encore">Encore!</button>
+          <button class="btn warn" id="hv_another">Another Shot!</button>
+          <button class="btn bad" id="hv_maybe">Maybe Next Time</button>
+        </div>
+        <div class="help" style="margin-top:6px">
+          Host vote simply adds to totals. Results announce only when the timer ends or you press <b>End</b>.
         </div>
       </div>
     </div>
-
-    <!-- Current & Voting -->
-    <div class="card">
-      <div class="section">
-        <div class="section-title">Current & Voting</div>
-        <div id="currentInfo" class="kicker">No singer selected.</div>
-        <div class="row" style="gap:8px; margin-top:8px">
-          <button class="primary" id="startBtn">Start 30s</button>
-          <button class="warn" id="extendBtn">Extend +15s</button>
-          <button class="danger" id="endBtn">End Now</button>
-          <div class="pill" id="timer" style="background:#0f1420; border:1px solid #1a2538">00:00</div>
-        </div>
-        <div class="kicker tiny">Voting totals: <span id="totals">E:0 • A:0 • M:0</span></div>
-      </div>
-    </div>
-
-    <!-- Host Vote (separate section) -->
-    <div class="card">
-      <div class="section-title">Host Vote</div>
-      <div class="row" style="gap:8px; margin-top:8px">
-        <button class="success" id="hvEncore">Encore!</button>
-        <button class="warn" id="hvAnother">Another Shot!</button>
-        <button class="danger" id="hvMaybe">Maybe Next Time</button>
-        <span class="note">Host vote increments totals; it doesn't decide the winner early.</span>
-      </div>
-    </div>
-
   </div>
 </div>
 
 <script>
-const API = '/assets/api.php';
-let STATE = null;
-let pollTimer = null;
-let countdownTimer = null;
+const GET_URL = '/assets/get_state.php';
+const POST_URL = '/assets/state.php'; // optional header X-STATE-KEY if you set a secret in state.php
+const POLL_MS = 1200;
 
-const qs = sel => document.querySelector(sel);
-const $venue = qs('#venue');
-const $kj = qs('#kj');
-const $pin = qs('#pin');
-const $lockStatus = qs('#lockStatus');
-const $eventSummary = qs('#eventSummary');
-const $rotation = qs('#rotation');
-const $currentInfo = qs('#currentInfo');
-const $timer = qs('#timer');
-const $totals = qs('#totals');
+let state = null;
+let tickTimer = null;
+let allowSound = false;
 
-async function api(cmd, data={}, method='POST'){
-  const form = new FormData();
-  form.append('cmd', cmd);
-  Object.entries(data).forEach(([k,v])=>form.append(k, v));
-  const res = await fetch(API, { method, body: form, cache:'no-store' });
-  return res.json();
+const $ = sel => document.querySelector(sel);
+const singerList = $('#singerList');
+const venue = $('#venue');
+const kj = $('#kj');
+const singerName = $('#singerName');
+const songArtist = $('#songArtist');
+const currentName = $('#currentName');
+const currentSong = $('#currentSong');
+const timerEl = $('#timer');
+const cEncore = $('#c_encore');
+const cAnother = $('#c_another');
+const cMaybe = $('#c_maybe');
+const resultTag = $('#resultTag');
+
+const sfx = {
+  open: $('#sfx_open'),
+  over: $('#sfx_over'),
+  encore: $('#sfx_encore'),
+  another: $('#sfx_another'),
+  maybe: $('#sfx_maybe'),
+};
+
+function play(key){
+  if(!allowSound) return;
+  const a = sfx[key];
+  if(a){ a.currentTime = 0; a.play().catch(()=>{}); }
 }
 
-function fmtMinSec(ms){
-  if (ms < 0) ms = 0;
-  const s = Math.ceil(ms/1000);
-  const m = Math.floor(s/60), r = s%60;
-  return `${String(m).padStart(2,'0')}:${String(r).padStart(2,'0')}`;
+$('#soundToggle').addEventListener('change', e=>{
+  allowSound = e.target.checked;
+  if(allowSound) play('open'); // quick nudge to unlock audio
+});
+
+$('#saveEvent').addEventListener('click', async ()=>{
+  state.event.venue = venue.value.trim();
+  state.event.kj = kj.value.trim();
+  await postState();
+  flashSaved('eventSavedMsg','Saved!');
+});
+
+$('#resetEvent').addEventListener('click', async ()=>{
+  state = {
+    serverUpdatedAt: Date.now()/1000|0,
+    event: {venue:"", kj:"", locked:false, pin:""},
+    singers: [],
+    current: {id:null,name:"",songArtist:""},
+    voting: {
+      open:false, endsAt:0, extendCount:0,
+      counts:{encore:0,another:0,maybe:0},
+      lastResult:null
+    }
+  };
+  await postState();
+});
+
+$('#addSinger').addEventListener('click', async ()=>{
+  const name = singerName.value.trim();
+  const song = songArtist.value.trim();
+  if(!name) return;
+  const id = 's_'+Math.random().toString(36).slice(2,9);
+  state.singers.push({id, name});
+  // set as current immediately if none set
+  if(!state.current.id){
+    state.current = {id, name, songArtist: song};
+  }
+  await postState();
+  singerName.value = ""; songArtist.value="";
+});
+
+function setCurrent(id){
+  const s = state.singers.find(x=>x.id===id);
+  if(!s) return;
+  // keep song/artist input (fresh entry) for current
+  state.current = {id:s.id, name:s.name, songArtist: songArtist.value.trim()};
+  postState();
+}
+
+function removeSinger(id){
+  state.singers = state.singers.filter(x=>x.id!==id);
+  if(state.current.id===id){
+    state.current = {id:null,name:"",songArtist:""};
+  }
+  postState();
+}
+
+$('#startVote').addEventListener('click', async ()=>{
+  // 30s window
+  const ends = Date.now() + 30_000;
+  state.voting.open = true;
+  state.voting.endsAt = ends;
+  state.voting.extendCount = 0;
+  state.voting.counts = {encore:0, another:0, maybe:0};
+  state.voting.lastResult = null;
+  await postState();
+  play('open');
+});
+
+$('#extendVote').addEventListener('click', async ()=>{
+  if(!state.voting.open) return;
+  state.voting.endsAt += 15_000;
+  state.voting.extendCount++;
+  await postState();
+});
+
+$('#endVote').addEventListener('click', async ()=>{
+  await concludeVoting();
+});
+
+async function concludeVoting(){
+  if(!state.voting.open){
+    // already ended: re-announce last result if exists
+    announce(state.voting.lastResult);
+    return;
+  }
+  state.voting.open = false;
+  state.voting.endsAt = 0;
+  const {encore, another, maybe} = state.voting.counts;
+  let winner = "maybe";
+  if (encore>=another && encore>=maybe) winner = "encore";
+  else if (another>=encore && another>=maybe) winner = "another";
+  else winner = "maybe";
+  state.voting.lastResult = winner;
+  await postState();
+  play('over');
+  setTimeout(()=>announce(winner), 300);
+}
+
+function announce(w){
+  // tag on host
+  if(!w){ resultTag.textContent = "—"; resultTag.className = "resultTag"; return; }
+  if(w==="encore"){ resultTag.textContent="Encore!"; resultTag.className="resultTag r-encore"; play('encore'); }
+  else if(w==="another"){ resultTag.textContent="Another Shot!"; resultTag.className="resultTag r-another"; play('another'); }
+  else { resultTag.textContent="Maybe Next Time"; resultTag.className="resultTag r-maybe"; play('maybe'); }
+}
+
+// Host vote buttons (add to totals only)
+$('#hv_encore').addEventListener('click', ()=> addVote('encore'));
+$('#hv_another').addEventListener('click', ()=> addVote('another'));
+$('#hv_maybe').addEventListener('click', ()=> addVote('maybe'));
+
+async function addVote(kind){
+  if(!state.voting.open) return;
+  state.voting.counts[kind] = (state.voting.counts[kind]||0)+1;
+  await postState();
+}
+
+async function fetchState(){
+  const r = await fetch(GET_URL, {cache:'no-store'});
+  state = await r.json();
+  render();
+}
+
+async function postState(){
+  await fetch(POST_URL, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(state)
+  });
+  await fetchState();
 }
 
 function render(){
-  if (!STATE) return;
-  // Event summary + lock pill
-  $eventSummary.textContent = `Venue: ${STATE.event.venue || '—'}  •  KJ: ${STATE.event.kj || '—'}  •  PIN: ${STATE.event.pin ? '••••' : '—'}`;
-  $lockStatus.textContent = STATE.event.locked ? 'Locked' : 'Unlocked';
-  $lockStatus.style.background = STATE.event.locked ? '#3a1d1d' : '#263146';
-
-  // Keep inputs in sync only if empty (so typing doesn’t get blown away)
-  if (!$venue.value) $venue.value = STATE.event.venue;
-  if (!$kj.value)    $kj.value = STATE.event.kj;
-
-  // Rotation
-  $rotation.innerHTML = '';
-  STATE.singers.forEach(s=>{
-    const resDot = (STATE.lastResult && STATE.lastResult.singerId===s.id)
-      ? (STATE.lastResult.outcome) : null;
-    const el = document.createElement('div');
-    el.className='singer';
-    el.innerHTML = `
-      <div style="display:flex; align-items:center; gap:8px">
-        <div class="dots">
-          <span class="dot green"  style="opacity:${resDot==='encore'?1:.25}"></span>
-          <span class="dot yellow" style="opacity:${resDot==='another'?1:.25}"></span>
-          <span class="dot red"    style="opacity:${resDot==='maybe'?1:.25}"></span>
-        </div>
-        <div class="name">${s.name}</div>
-      </div>
-      <div class="actions">
-        <button class="pill primary" data-set="${s.id}">Set</button>
-        <button class="pill danger" data-del="${s.id}">Remove</button>
-      </div>`;
-    $rotation.appendChild(el);
+  // form
+  venue.value = state.event.venue||"";
+  kj.value = state.event.kj||"";
+  // list
+  singerList.innerHTML = "";
+  state.singers.forEach(s=>{
+    const div = document.createElement('div');
+    div.className="pill";
+    const left = document.createElement('div');
+    left.innerHTML = `<div class="name">${s.name}</div>`;
+    const right = document.createElement('div');
+    right.className="minirow";
+    const setBtn = document.createElement('button');
+    setBtn.className="btn"; setBtn.textContent = "Set";
+    setBtn.onclick = ()=>setCurrent(s.id);
+    const rmBtn = document.createElement('button');
+    rmBtn.className="btn ghost"; rmBtn.textContent="Remove";
+    rmBtn.onclick = ()=>removeSinger(s.id);
+    right.appendChild(setBtn); right.appendChild(rmBtn);
+    div.appendChild(left); div.appendChild(right);
+    singerList.appendChild(div);
   });
+  // current & counts
+  currentName.textContent = state.current.name || "—";
+  currentSong.textContent = state.current.songArtist || "—";
+  cEncore.textContent = state.voting.counts.encore || 0;
+  cAnother.textContent = state.voting.counts.another || 0;
+  cMaybe.textContent = state.voting.counts.maybe || 0;
 
-  // Current & Voting
-  const current = STATE.singers.find(s=>s.id===STATE.currentSingerId);
-  $currentInfo.textContent = current ? `Current: ${current.name}` : 'No singer selected.';
-  const v = STATE.voting;
-  $totals.textContent = `E:${v.votes.encore} • A:${v.votes.another} • M:${v.votes.maybe}`;
+  // timer & result
+  if (state.voting.open) {
+    const ms = Math.max(0, state.voting.endsAt - Date.now());
+    timerEl.textContent = fmt(ms);
+    resultTag.textContent = "Voting…";
+    resultTag.className="resultTag";
+  } else {
+    timerEl.textContent = "00:00";
+    announce(state.voting.lastResult);
+  }
 }
 
-async function refresh(){
-  const res = await fetch(API + '?cmd=get&ts=' + Date.now(), {cache:'no-store'});
-  const js = await res.json();
-  if (js.ok) {
-    const prev = STATE;
-    STATE = js.state;
-    render();
-    // Start/refresh countdown if open
-    if (STATE.voting.open) {
-      startCountdown(STATE.voting.endsAt);
+function fmt(ms){
+  const s = Math.ceil(ms/1000);
+  const m = Math.floor(s/60);
+  const r = s%60;
+  return `${String(m).padStart(2,'0')}:${String(r).padStart(2,'0')}`;
+}
+
+function flashSaved(id,msg){
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  setTimeout(()=>el.textContent="",1200);
+}
+
+async function loop(){
+  await fetchState();
+  if (tickTimer) clearInterval(tickTimer);
+  tickTimer = setInterval(()=>{
+    if (state?.voting?.open && Date.now() >= state.voting.endsAt){
+      concludeVoting();
     } else {
-      stopCountdown();
-      $timer.textContent = '00:00';
+      // just refresh to get voter updates
+      fetchState();
     }
-  }
+  }, POLL_MS);
 }
 
-function startCountdown(endsAt){
-  stopCountdown();
-  countdownTimer = setInterval(()=>{
-    const remain = endsAt - Date.now();
-    $timer.textContent = fmtMinSec(remain);
-    if (remain <= 0) stopCountdown();
-  }, 250);
-}
-function stopCountdown(){ if (countdownTimer){ clearInterval(countdownTimer); countdownTimer=null; } }
-
-// Events
-qs('#saveEventBtn').onclick = async ()=>{
-  const r = await api('set_event', {
-    venue:$venue.value, kj:$kj.value, pin:$pin.value, locked: STATE?.event?.locked ? 'true':'false', 
-    // PIN in this call is used to *change* values when locked
-    // (we also send it as 'pin' for set_event data; that same field updates the stored PIN if non-empty)
-  });
-  if (!r.ok) return alert(r.msg||'Save failed');
-  STATE = r.state; render();
-  alert('Event saved');
-};
-
-qs('#toggleLockBtn').onclick = async ()=>{
-  const want = !(STATE?.event?.locked);
-  const r = await api('lock', { locked: want ? 'true':'false', pin:$pin.value });
-  if (!r.ok) return alert(r.msg||'Lock change failed');
-  STATE = r.state; render();
-};
-
-qs('#addSingerBtn').onclick = async ()=>{
-  const name = qs('#singerName').value.trim();
-  const song = qs('#songTitle').value.trim();
-  if (!name) return alert('Enter a singer name');
-  const r = await api('add_singer', { name, song, pin:$pin.value });
-  if (!r.ok) return alert('Add failed');
-  qs('#singerName').value=''; qs('#songTitle').value='';
-  STATE = r.state; render();
-};
-
-$rotation.addEventListener('click', async (e)=>{
-  const setId = e.target.getAttribute('data-set');
-  const delId = e.target.getAttribute('data-del');
-  if (setId){
-    const r = await api('set_current', { id:setId, pin:$pin.value });
-    if (r.ok){ STATE=r.state; render(); }
-  }
-  if (delId){
-    const r = await api('remove_singer', { id:delId, pin:$pin.value });
-    if (r.ok){ STATE=r.state; render(); }
-  }
-});
-
-qs('#startBtn').onclick = async ()=>{
-  if (!STATE.currentSingerId) return alert('Select a current singer first.');
-  const r = await api('start_vote', { duration:30, pin:$pin.value });
-  if (r.ok){ STATE=r.state; render(); startCountdown(STATE.voting.endsAt); }
-};
-
-qs('#extendBtn').onclick = async ()=>{
-  const r = await api('extend_vote', { seconds:15, pin:$pin.value });
-  if (r.ok){ STATE=r.state; render(); startCountdown(STATE.voting.endsAt); }
-};
-
-qs('#endBtn').onclick = async ()=>{
-  const r = await api('end_vote', { pin:$pin.value });
-  if (r.ok){ STATE=r.state; render(); }
-};
-
-qs('#hvEncore').onclick = ()=> api('host_vote', { choice:'encore', pin:$pin.value }).then(()=>refresh());
-qs('#hvAnother').onclick = ()=> api('host_vote', { choice:'another', pin:$pin.value }).then(()=>refresh());
-qs('#hvMaybe').onclick   = ()=> api('host_vote', { choice:'maybe',   pin:$pin.value }).then(()=>refresh());
-
-qs('#resetEventBtn').onclick = async ()=>{
-  if (!confirm('Reset event (keeps venue/KJ/PIN)?')) return;
-  const r = await api('reset_event', { pin:$pin.value });
-  if (r.ok){ STATE=r.state; render(); }
-};
-
-// Poll
-refresh();
-pollTimer = setInterval(refresh, 2500);
+loop();
 </script>
 </body>
 </html>
