@@ -15,7 +15,7 @@
   <h1>Encore! Vote</h1>
   <div id="join">
     <p class="mini">Enter the event PIN from the screen:</p>
-    <div class="row"><input id="pin" placeholder="PIN" inputmode="numeric"><button class="btn" id="joinBtn">Join</button></div>
+    <div class="row"><input id="pin" placeholder="PIN" inputmode="numeric" autocomplete="off"><button class="btn" id="joinBtn">Join</button></div>
     <div id="err" class="mini" style="color:#ff9a9a"></div>
   </div>
   <div id="panel" style="display:none">
@@ -24,8 +24,8 @@
     <div id="song" class="mini">—</div>
     <div class="row" style="margin-top:12px">
       <button class="btn good"  id="v_encore">Encore!</button>
-      <button class="btn warn"  id="v_another">Another Shot!</button>
-      <button class="btn bad"   id="v_maybe">Maybe Next Time</button>
+      <button class="btn warn  "  id="v_another">Another Shot!</button>
+      <button class="btn bad   "  id="v_maybe">Maybe Next Time</button>
     </div>
     <div id="note" class="mini" style="margin-top:10px">Voting closed…</div>
   </div>
@@ -39,17 +39,22 @@ let state=null, poll=null, eventPin=null;
 async function fetchState(){ const r=await fetch(GET_URL,{cache:'no-store'}); state=await r.json(); }
 function render(){
   if(!state) return;
+
+  const pinHost = digitsOnly(state.event?.pin || '');
+  const pinEmpty = pinHost === '';
+
   if(!eventPin){
     $('#join').style.display='block'; $('#panel').style.display='none';
-    $('#err').textContent = (state.event?.pin||'')==='' ? 'Host has no PIN set (join disabled until a PIN is set).' : '';
+    $('#err').textContent = pinEmpty ? 'Host has no PIN set (join disabled).' : '';
     return;
   }
-  const pinHost = digitsOnly(state.event.pin||'');
+
   if(digitsOnly(eventPin)!==pinHost){
     $('#err').textContent='Wrong PIN for this event.';
     $('#join').style.display='block'; $('#panel').style.display='none';
     return;
   }
+
   $('#join').style.display='none'; $('#panel').style.display='block';
   $('#singer').textContent = state.current?.name || '—';
   $('#song').textContent   = state.current?.songArtist || '—';
@@ -57,6 +62,7 @@ function render(){
   ['v_encore','v_another','v_maybe'].forEach(id=>{ const b=$('#'+id); b.disabled=!open; b.style.opacity=open?1:.6; });
   $('#note').textContent = open ? 'Voting is OPEN' : 'Voting closed…';
 }
+
 async function vote(kind){
   if(!state?.voting?.open) return;
   const res = await fetch(VOTE_URL, {method:'POST', headers:{'Content-Type':'application/json'},
@@ -66,7 +72,8 @@ async function vote(kind){
 }
 function deviceId(){ let id=localStorage.getItem('eyek_device_id'); if(!id){ id=crypto.randomUUID(); localStorage.setItem('eyek_device_id', id);} return id; }
 
-$('#joinBtn').onclick = ()=>{ eventPin = digitsOnly($('#pin').value.trim()); render(); }
+$('#joinBtn').onclick = ()=>{ eventPin = digitsOnly($('#pin').value.trim()); render(); };
+$('#pin').addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ eventPin = digitsOnly($('#pin').value.trim()); render(); }});
 $('#v_encore').onclick = ()=> vote('encore');
 $('#v_another').onclick = ()=> vote('another');
 $('#v_maybe').onclick  = ()=> vote('maybe');
