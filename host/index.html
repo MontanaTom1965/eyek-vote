@@ -277,9 +277,27 @@ $('#saveEvent').addEventListener('click', async ()=>{ // merge draft into state,
   clearDraft();
   const m=$('#eventSavedMsg'); m.textContent='Saved!'; setTimeout(()=>m.textContent='',1400);
 });
-$('#lockEvent').addEventListener('click', async ()=>{ state.event.locked=!state.event.locked; await postState(); renderLockUI(); });
+$('#lockEvent').addEventListener('click', async ()=>{
+  state.event.locked=!state.event.locked;
+  await postState();
+  renderLockUI();
+  // Only collapse immediately when switching to locked.
+  if(state.event.locked){ eventBox.open=false; }
+}); renderLockUI(); });
 $('#resetEvent').addEventListener('click', async ()=>{ if(state.event.locked){ alert('Unlock to reset.'); return;} if(!confirm('Reset this event? This clears singers & votes.')) return; state={ serverUpdatedAt: Date.now()/1000|0, event:{venue:'',venuePublic:'',date:new Date().toISOString().slice(0,10),kj:'',pin:'',locked:false}, singers:[], current:{id:null,name:'',songArtist:''}, voting:{open:false,endsAt:0,extendCount:0,counts:{encore:0,another:0,maybe:0}, lastResult:null} }; clearDraft(); await postState(); });
-function renderLockUI(){ const btn=$('#lockEvent'); if(state.event.locked){ btn.textContent='Unlock'; eventBox.open=false; $('#resetEvent').disabled=true; [venue,venuePublic,eventDate,kj,pin].forEach(el=>el.disabled=true); } else { btn.textContent='Lock'; $('#resetEvent').disabled=false; [venue,venuePublic,eventDate,kj,pin].forEach(el=>el.disabled=false); } }
+function renderLockUI(){
+  const btn=$('#lockEvent');
+  if(state.event.locked){
+    btn.textContent='Unlock';
+    $('#resetEvent').disabled=true;
+    [venue,venuePublic,eventDate,kj,pin].forEach(el=>el.disabled=true);
+    // NOTE: Do NOT force-close the <details>; respect user's manual open/close.
+  } else {
+    btn.textContent='Lock';
+    $('#resetEvent').disabled=false;
+    [venue,venuePublic,eventDate,kj,pin].forEach(el=>el.disabled=false);
+  }
+} else { btn.textContent='Lock'; $('#resetEvent').disabled=false; [venue,venuePublic,eventDate,kj,pin].forEach(el=>el.disabled=false); } }
 
 // ======= Singer Actions =======
 $('#addSinger').addEventListener('click', async ()=>{ const name=singerName.value.trim(); const firstNote=songArtist.value.trim(); if(!name){ alert('Enter a singer name.'); return;} const id='s_'+Math.random().toString(36).slice(2,9); state.singers.push({id,name,_color:''}); if(!state.current.id){ state.current={id,name,songArtist:''}; } await postState(); singerName.value=''; songArtist.value=''; });
@@ -292,11 +310,42 @@ $('#extendVote').addEventListener('click', async ()=>{ if(!state.voting.open) re
 $('#endVote').addEventListener('click', async ()=>{ await concludeVoting(); });
 async function concludeVoting(){ if(!state.voting.open){ announce(state.voting.lastResult); return;} state.voting.open=false; state.voting.endsAt=0; const {encore,another,maybe}=state.voting.counts; let winner='maybe'; if(encore>=another && encore>=maybe) winner='encore'; else if(another>=encore && another>=maybe) winner='another'; else winner='maybe'; state.voting.lastResult=winner; const cur=state.singers.find(s=>s.id===state.current.id); if(cur){ if(winner==='maybe'){ state.singers=state.singers.filter(s=>s.id!==cur.id); } else { cur._color=(winner==='encore'?'green':'yellow'); } } await postState(); play('over'); setTimeout(()=>announce(winner),150); }
 
-// Host Vote buttons
+// Host Vote buttons (one vote per device per singer+song)
 $('#hv_encore').addEventListener('click', ()=> addHostVote('encore'));
 $('#hv_another').addEventListener('click', ()=> addHostVote('another'));
 $('#hv_maybe').addEventListener('click', ()=> addHostVote('maybe'));
-async function addHostVote(kind){ if(!state.voting.open) return; state.voting.counts[kind]=(state.voting.counts[kind]||0)+1; await postState(); }
+
+const VOTE_MEMO_KEY='eyek_device_votes';
+function readVoteMemo(){ try{ return JSON.parse(localStorage.getItem(VOTE_MEMO_KEY)||'{}'); }catch{ return {}; } }
+function writeVoteMemo(m){ localStorage.setItem(VOTE_MEMO_KEY, JSON.stringify(m)); }
+function currentEventKey(){
+  const d = (state?.event?.date)||'';
+  const v = (state?.event?.venue)||'';
+  const p = (state?.event?.pin)||'';
+  return `${d}|${v}|${p}`;
+}
+function currentSongKey(){
+  if(!state?.current?.id) return null;
+  const id = state.current.id;
+  const song = (state.current.songArtist||'').trim().toLowerCase();
+  return `${id}|${song}`;
+}
+function hasVoted(){
+  const ek = currentEventKey(); const sk = currentSongKey(); if(!ek||!sk) return false;
+  const memo = readVoteMemo();
+  return memo[ek] && memo[ek][sk];
+}
+function markVoted(){
+  const ek = currentEventKey(); const sk = currentSongKey(); if(!ek||!sk) return;
+  const memo = readVoteMemo(); memo[ek] = memo[ek]||{}; memo[ek][sk]=true; writeVoteMemo(memo);
+}
+async function addHostVote(kind){
+  if(!state.voting.open) return;
+  if(hasVoted()) { alert('Only one vote per device per singer/song.'); return; }
+  state.voting.counts[kind] = (state.voting.counts[kind]||0)+1;
+  markVoted();
+  await postState();
+}
 
 // ======= Fetch / Render =======
 async function fetchState(){ const r=await fetch(GET_URL,{cache:'no-store'}); state=await r.json(); // backfill
@@ -338,7 +387,12 @@ function render(){
 }
 
 // Debounced Now Singing updates
-currentSongArtist.addEventListener('input', debounce(async ()=>{ if(!state.current.id) return; state.current.songArtist=currentSongArtist.value.trim(); await postState(); }, 400));
+currentSongArtist.addEventListener('input', debounce(async ()=>{
+  if(!state.current.id) return;
+  state.current.songArtist=currentSongArtist.value.trim();
+  // Changing song creates a new unique vote key; no need to clear memo explicitly.
+  await postState();
+}, 400)); await postState(); }, 400));
 
 async function loop(){ await fetchState(); if(tickTimer) clearInterval(tickTimer); tickTimer=setInterval(async ()=>{ if(state?.voting?.open && Date.now()>=state.voting.endsAt){ await concludeVoting(); } else { await fetchState(); } }, POLL_MS); }
 
