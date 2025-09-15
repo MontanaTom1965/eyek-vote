@@ -19,7 +19,9 @@
   input[type=text],input[type=date],input[type=password],input[type=email]{width:100%;padding:10px;border-radius:10px;border:1px solid #2b3c62;background:#0d1428;color:var(--txt)}
   input[disabled]{opacity:.7}
   .row{display:flex;gap:10px;align-items:center}
-  .btn{border:0;border-radius:12px;padding:10px 14px;background:var(--soft);color:var(--txt);cursor:pointer}
+  .btn{border:0;border-radius:12px;padding:10px 14px;background:var(--soft);color:var(--txt);cursor:pointer;transition:transform .04s ease, filter .12s ease}
+  .btn:hover{filter:brightness(1.15)}
+  .btn:active{transform:translateY(1px)}
   .btn.primary{background:var(--accent)} .btn.good{background:var(--green);color:#03140b} .btn.warn{background:var(--yellow);color:#2a2105} .btn.bad{background:var(--red)} .btn.ghost{background:transparent;border:1px solid #2b3c62}
   .stack{display:grid;gap:12px}
   .side{display:grid;gap:12px}
@@ -43,7 +45,7 @@
   summary::-webkit-details-marker{display:none}
   .links a{color:var(--cyan);text-decoration:none} .links a:hover{text-decoration:underline}
   /* Gate */
-  .gate{position:fixed;inset:0;background:rgba(14,8,22,.85);backdrop-filter:blur(6px);display:grid;place-items:center;z-index:99}
+  .gate{position:fixed;inset:0;background:rgba(14,8,22,.92);backdrop-filter:blur(6px);display:grid;place-items:center;z-index:9999;pointer-events:auto}
   .gate .panel{width:min(720px,92vw)} .tabs{display:flex;gap:8px;margin-bottom:10px} .tab{padding:8px 12px;border-radius:10px;border:1px solid #2b3c62;cursor:pointer} .tab.active{background:#203153}
   .err{color:#ff8b8b;font-size:12px}
 </style>
@@ -186,6 +188,12 @@
         <input id="loginEmail" type="email" placeholder="host@yourkj.com" autocomplete="username" name="login_email">
         <input id="loginPass" type="password" placeholder="Password" autocomplete="current-password" name="login_password">
       </div>
+      <div class="row">
+        <button class="btn primary" id="loginBtn" type="button" onclick="handleLogin()">Enter Host Panel</button>
+        <button class="btn ghost" id="demoEnter" type="button" onclick="handleDemoEnter()">Skip (Demo)</button>
+      </div>
+      <div id="loginErr" class="err"></div>
+    </div>
       <div class="row"><button class="btn primary" id="loginBtn" type="button">Enter Host Panel</button></div>
       <div id="loginErr" class="err"></div>
     </div>
@@ -195,6 +203,16 @@
         <input id="regName" type="text" placeholder="Name (optional)" autocomplete="name">
         <input id="regEmail" type="email" placeholder="host@yourkj.com" autocomplete="username" name="register_email">
       </div>
+      <div class="row">
+        <input id="regPass" type="password" placeholder="Create password" autocomplete="new-password" name="register_password">
+        <input id="regPass2" type="password" placeholder="Confirm password" autocomplete="new-password" name="register_password_confirm">
+      </div>
+      <div class="row">
+        <button class="btn primary" id="registerBtn" type="button" onclick="handleRegister()">Create Account</button>
+      </div>
+      <div id="regErr" class="err"></div>
+      <div style="font-size:12px;color:var(--muted)">Demo-only: credentials are stored in this browser. For production, connect to your backend.</div>
+    </div>
       <div class="row">
         <input id="regPass" type="password" placeholder="Create password" autocomplete="new-password" name="register_password">
         <input id="regPass2" type="password" placeholder="Confirm password" autocomplete="new-password" name="register_password_confirm">
@@ -246,8 +264,9 @@ function switchTab(w){ if(w==='login'){tabLogin.classList.add('active');tabRegis
 ['click'].forEach(ev=>{ tabLogin.addEventListener(ev,()=>switchTab('login')); tabRegister.addEventListener(ev,()=>switchTab('register')); });
 async function sha256(str){ const enc=new TextEncoder().encode(str); const buf=await crypto.subtle.digest('SHA-256', enc); return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('') }
 function salt(){ return Array.from(crypto.getRandomValues(new Uint8Array(12))).map(b=>b.toString(16).padStart(2,'0')).join('') }
-$('#registerBtn').addEventListener('click', async ()=>{ const name=$('#regName').value.trim(); const email=$('#regEmail').value.trim().toLowerCase(); const p1=$('#regPass').value, p2=$('#regPass2').value; if(!email||!p1||!p2){ $('#regErr').textContent='Fill email and both password fields.'; return;} if(p1!==p2){ $('#regErr').textContent='Passwords do not match.'; return;} let hosts=getHosts(); if(hosts.find(h=>h.email===email)){ $('#regErr').textContent='Email already registered on this device.'; return;} const s=salt(); const h=await sha256(s+p1); hosts.push({email,name,salt:s,hash:h}); saveHosts(hosts); setSession({email,name}); authed=true; hideGate(); });
-$('#loginBtn').addEventListener('click', async ()=>{ const email=$('#loginEmail').value.trim().toLowerCase(); const pass=$('#loginPass').value; const u=getHosts().find(h=>h.email===email); if(!u){ $('#loginErr').textContent='No account found on this device.'; return;} const h=await sha256(u.salt+pass); if(h!==u.hash){ $('#loginErr').textContent='Incorrect password.'; return;} setSession({email:u.email,name:u.name||''}); authed=true; hideGate(); });
+function handleRegister(){ (async ()=>{ const name=$('#regName').value.trim(); const email=$('#regEmail').value.trim().toLowerCase(); const p1=$('#regPass').value, p2=$('#regPass2').value; if(!email||!p1||!p2){ $('#regErr').textContent='Fill email and both password fields.'; return;} if(p1!==p2){ $('#regErr').textContent='Passwords do not match.'; return;} let hosts=getHosts(); if(hosts.find(h=>h.email===email)){ $('#regErr').textContent='Email already registered on this device.'; return;} const s=salt(); const h=await sha256(s+p1); hosts.push({email,name,salt:s,hash:h}); saveHosts(hosts); setSession({email,name}); authed=true; hideGate(); })().catch(err=>{ console.error(err); $('#regErr').textContent='Could not register.'; }); } const email=$('#regEmail').value.trim().toLowerCase(); const p1=$('#regPass').value, p2=$('#regPass2').value; if(!email||!p1||!p2){ $('#regErr').textContent='Fill email and both password fields.'; return;} if(p1!==p2){ $('#regErr').textContent='Passwords do not match.'; return;} let hosts=getHosts(); if(hosts.find(h=>h.email===email)){ $('#regErr').textContent='Email already registered on this device.'; return;} const s=salt(); const h=await sha256(s+p1); hosts.push({email,name,salt:s,hash:h}); saveHosts(hosts); setSession({email,name}); authed=true; hideGate(); });
+function handleLogin(){ (async ()=>{ const email=$('#loginEmail').value.trim().toLowerCase(); const pass=$('#loginPass').value; const u=getHosts().find(h=>h.email===email); if(!u){ $('#loginErr').textContent='No account found on this device.'; return;} const h=await sha256(u.salt+pass); if(h!==u.hash){ $('#loginErr').textContent='Incorrect password.'; return;} setSession({email:u.email,name:u.name||''}); authed=true; hideGate(); })().catch(err=>{ console.error(err); $('#loginErr').textContent='Could not login.'; }); }
+function handleDemoEnter(){ setSession({email:'demo@local',name:'Demo Host'}); authed=true; hideGate(); } const pass=$('#loginPass').value; const u=getHosts().find(h=>h.email===email); if(!u){ $('#loginErr').textContent='No account found on this device.'; return;} const h=await sha256(u.salt+pass); if(h!==u.hash){ $('#loginErr').textContent='Incorrect password.'; return;} setSession({email:u.email,name:u.name||''}); authed=true; hideGate(); });
 
 // ======= Draft handling (prevents disappearing text before Save) =======
 let draft = null; try{ draft = JSON.parse(localStorage.getItem('eyek_event_draft')||'null'); }catch{ draft=null }
