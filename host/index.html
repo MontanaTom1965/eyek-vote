@@ -189,6 +189,12 @@
         <input id="loginPass" type="password" placeholder="Password" autocomplete="current-password" name="login_password">
       </div>
       <div class="row">
+        <button class="btn primary" id="loginBtn" type="button">Enter Host Panel</button>
+        <button class="btn ghost" id="demoEnter" type="button">Skip (Demo)</button>
+      </div>
+      <div id="loginErr" class="err"></div>
+    </div>
+      <div class="row">
         <button class="btn primary" id="loginBtn" type="button" onclick="handleLogin()">Enter Host Panel</button>
         <button class="btn ghost" id="demoEnter" type="button" onclick="handleDemoEnter()">Skip (Demo)</button>
       </div>
@@ -203,6 +209,16 @@
         <input id="regName" type="text" placeholder="Name (optional)" autocomplete="name">
         <input id="regEmail" type="email" placeholder="host@yourkj.com" autocomplete="username" name="register_email">
       </div>
+      <div class="row">
+        <input id="regPass" type="password" placeholder="Create password" autocomplete="new-password" name="register_password">
+        <input id="regPass2" type="password" placeholder="Confirm password" autocomplete="new-password" name="register_password_confirm">
+      </div>
+      <div class="row">
+        <button class="btn primary" id="registerBtn" type="button">Create Account</button>
+      </div>
+      <div id="regErr" class="err"></div>
+      <div style="font-size:12px;color:var(--muted)">Demo-only: credentials are stored in this browser. For production, connect to your backend.</div>
+    </div>
       <div class="row">
         <input id="regPass" type="password" placeholder="Create password" autocomplete="new-password" name="register_password">
         <input id="regPass2" type="password" placeholder="Confirm password" autocomplete="new-password" name="register_password_confirm">
@@ -417,6 +433,63 @@ async function loop(){ await fetchState(); if(tickTimer) clearInterval(tickTimer
 
 // Boot
 (function init(){ eventDate.value=new Date().toISOString().slice(0,10); const sess=getSession(); if(sess){ authed=true; hideGate(); } else { showGate(); } loop(); })();
+</script>
+<script id="auth_failsafe">
+// Failsafe binder: ensures gate buttons always work
+(function(){
+  function $(s){return document.querySelector(s)}
+  function safe(fn){try{fn()}catch(e){console.error('auth_failsafe',e)}}
+  function hideGate(){ const g=$('#gate'); if(g){ g.style.display='none'; g.setAttribute('inert',''); }}
+  function setSession(sess){ try{ localStorage.setItem('eyek_host_session', JSON.stringify(sess)); }catch(e){} }
+  // Attach listeners if not already
+  safe(()=>{
+    const loginBtn=$('#loginBtn');
+    if(loginBtn && !loginBtn._bound){
+      loginBtn.addEventListener('click', async ()=>{
+        const email=($('#loginEmail')||{}).value?.trim()?.toLowerCase()||'';
+        const pass=($('#loginPass')||{}).value||'';
+        const hosts=JSON.parse(localStorage.getItem('eyek_hosts')||'[]');
+        const u=hosts.find(h=>h.email===email);
+        if(!u){ const e=$('#loginErr'); if(e) e.textContent='No account found on this device.'; return; }
+        const enc=new TextEncoder().encode(u.salt+pass);
+        const buf=await crypto.subtle.digest('SHA-256', enc);
+        const hex=Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+        if(hex!==u.hash){ const e=$('#loginErr'); if(e) e.textContent='Incorrect password.'; return; }
+        setSession({email:u.email,name:u.name||''}); hideGate();
+      });
+      loginBtn._bound=true;
+    }
+  });
+  safe(()=>{
+    const demo=$('#demoEnter');
+    if(demo && !demo._bound){
+      demo.addEventListener('click', ()=>{ setSession({email:'demo@local',name:'Demo Host'}); hideGate(); });
+      demo._bound=true;
+    }
+  });
+  safe(()=>{
+    const reg=$('#registerBtn');
+    if(reg && !reg._bound){
+      reg.addEventListener('click', async ()=>{
+        const name=($('#regName')||{}).value||'';
+        const email=($('#regEmail')||{}).value?.trim()?.toLowerCase()||'';
+        const p1=($('#regPass')||{}).value||'';
+        const p2=($('#regPass2')||{}).value||'';
+        const err=$('#regErr'); if(!email||!p1||!p2){ if(err) err.textContent='Fill email and both password fields.'; return; }
+        if(p1!==p2){ if(err) err.textContent='Passwords do not match.'; return; }
+        const hosts=JSON.parse(localStorage.getItem('eyek_hosts')||'[]');
+        if(hosts.find(h=>h.email===email)){ if(err) err.textContent='Email already registered on this device.'; return; }
+        const salt=Array.from(crypto.getRandomValues(new Uint8Array(12))).map(b=>b.toString(16).padStart(2,'0')).join('');
+        const enc=new TextEncoder().encode(salt+p1);
+        const buf=await crypto.subtle.digest('SHA-256', enc);
+        const hash=Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+        hosts.push({email,name,salt,hash}); localStorage.setItem('eyek_hosts', JSON.stringify(hosts));
+        setSession({email,name}); hideGate();
+      });
+      reg._bound=true;
+    }
+  });
+})();
 </script>
 </body>
 </html>
