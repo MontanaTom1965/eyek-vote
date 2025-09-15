@@ -1,75 +1,51 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <title>Earn Your Encore – Board</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="utf-8"/>
+  <title>EYEK • Board</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <style>
-    body{margin:0;background:#0f0a18;color:#fff;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',Arial,sans-serif}
-    header{padding:12px 16px; text-align:center; background:#1b1430; font-weight:900}
-    .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:16px}
-    .col{border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:12px;background:#120c22;min-height:70vh}
-    h2{margin:0 0 8px}
-    ul{list-style:none;padding:0;margin:0}
-    li{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.08)}
-    .enc{color:#27d07d;font-weight:900}
-    .one{color:#f4d35e;font-weight:900}
+    body{margin:0;font-family:system-ui,Segoe UI,Arial,sans-serif;background:#0a0c12;color:#e6eef8}
+    .wrap{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:16px}
+    .card{background:#0f1422;border:1px solid #1d263b;border-radius:14px;padding:14px}
+    h2{margin:6px 0 10px}
+    .row{display:flex;justify-content:space-between;padding:8px;border-bottom:1px solid #1b2437}
+    .dot{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:8px}
+    .green{background:#1dd05d}.yellow{background:#f9d64a}.red{background:#ff5d7a}.gray{background:#6b7a96}
+    .muted{color:#9fb0cf}
   </style>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 </head>
 <body>
-  <header>Encore Board</header>
-
-  <div class="grid">
-    <div class="col">
-      <h2>Encore!</h2>
-      <ul id="encList"></ul>
-    </div>
-    <div class="col">
-      <h2>One More Shot!</h2>
-      <ul id="oneList"></ul>
-    </div>
+<div class="wrap">
+  <div class="card">
+    <h2>Rotation</h2>
+    <div id="rot"></div>
   </div>
+  <div class="card">
+    <h2>Recent Results</h2>
+    <div id="res"></div>
+  </div>
+</div>
+<script>
+const URL='/assets/status.json';
+function colorOf(x){
+  return x==='Encore'?'green':x==='Another Shot'?'yellow':x==='Maybe Next Time'?'red':'gray';
+}
+async function tick(){
+  const r = await fetch(URL+'?_=' + Date.now());
+  const j = await r.json();
+  const rot = document.getElementById('rot');
+  rot.innerHTML = (j.singers||[]).map(s=>`
+    <div class="row"><span><span class="dot ${colorOf(s.last)}"></span>${s.name}</span><span class="muted">${s.songArtist||''}</span></div>
+  `).join('') || '<div class="muted">No singers yet</div>';
 
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyDGbC08WxruYIDPhZSlDlU-7Kzq-7mHENk",
-      authDomain: "eyek-vote.firebaseapp.com",
-      projectId: "eyek-vote",
-      storageBucket: "eyek-vote.firebasestorage.app",
-      messagingSenderId: "954696683994",
-      appId: "1:954696683994:web:21a84298a94648ff0230e3"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db=firebase.firestore();
-    const $=id=>document.getElementById(id);
-
-    let eventId=null;
-
-    async function boot(){
-      const s = await db.collection('app').doc('state').get();
-      eventId = (s.data()||{}).currentEventId || null;
-      if(!eventId) return;
-
-      db.collection('events').doc(eventId).collection('winners')
-        .orderBy('decidedAt','asc').onSnapshot(qs=>{
-          $('encList').innerHTML=''; $('oneList').innerHTML='';
-          qs.forEach(doc=>{
-            const w=doc.data();
-            if(w.result==='Encore!'){
-              const li=document.createElement('li'); li.innerHTML=`<span class="enc">Encore!</span> — ${w.singerName}`;
-              $('encList').appendChild(li);
-            }else if(w.result==='Another Shot!'){
-              const li=document.createElement('li'); li.innerHTML=`<span class="one">One More Shot!</span> — ${w.singerName}`;
-              $('oneList').appendChild(li);
-            }
-          });
-        });
-    }
-    boot();
-  </script>
-
-  <!-- File: index_board.html | Earn Your Encore Karaoke -->
+  const res = document.getElementById('res');
+  res.innerHTML = (j.results||[]).slice(0,12).map(r=>`
+    <div class="row"><span><span class="dot ${colorOf(r.result)}"></span>${r.singer}</span><span class="muted">${r.result}</span></div>
+  `).join('') || '<div class="muted">No results yet</div>';
+}
+setInterval(tick, 3000);
+tick();
+</script>
 </body>
 </html>
