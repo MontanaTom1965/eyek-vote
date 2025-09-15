@@ -548,11 +548,11 @@ async function postState(){
 }
 
 function render(){
-  // form
-  venue.value = state.event.venue||"";
-  eventDate.value = (state.event.date || new Date().toISOString().slice(0,10));
-  kj.value = state.event.kj||"";
-  pin.value = state.event.pin||"";
+  // form — do NOT stomp user typing; only update if the field is not focused
+  if (document.activeElement !== venue) venue.value = state.event.venue||"";
+  if (document.activeElement !== eventDate) eventDate.value = (state.event.date || new Date().toISOString().slice(0,10));
+  if (document.activeElement !== kj) kj.value = state.event.kj||"";
+  if (document.activeElement !== pin) pin.value = state.event.pin||"";
   renderLockUI();
 
   // datalists
