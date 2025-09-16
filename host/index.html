@@ -12,7 +12,7 @@
   input,button{font:inherit}
   input[type=text],input[type=password],input[type=date]{width:100%;padding:10px;border-radius:10px;border:1px solid #2b3c62;background:#0d1428;color:var(--txt)}
   input[disabled]{opacity:.7}
-  .row{display:flex;gap:10px;align-items:center}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
   .stack{display:grid;gap:12px} .side{display:grid;gap:12px}
   .btn{border:0;border-radius:12px;padding:10px 14px;background:var(--soft);color:var(--txt);cursor:pointer;transition:transform .04s ease,filter .12s ease}
   .btn:hover{filter:brightness(1.1)} .btn:active{transform:translateY(1px)}
@@ -23,7 +23,7 @@
   .dot{width:10px;height:10px;border-radius:50%;background:#6f7a98;border:1px solid #5b678a}
   .dot.green{background:var(--green);border-color:#2b8f57} .dot.yellow{background:var(--yellow);border-color:#9c7b1d}
   .bar{height:1px;background:#203153;margin:10px 0}
-  .counts{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .counts{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
   .bubble{min-width:64px;text-align:center;padding:8px 10px;border-radius:12px;font-weight:700}
   .b-green{background:rgba(37,211,102,.15);border:1px solid rgba(37,211,102,.35);color:var(--green)}
   .b-yellow{background:rgba(246,201,69,.15);border:1px solid rgba(246,201,69,.35);color:var(--yellow)}
@@ -38,6 +38,10 @@
   .soundLink{font-size:12px;margin-top:6px}
   .soundLink a{color:#cfe0ff;text-decoration:underline;cursor:pointer}
   .soundLink a:hover{text-decoration:none}
+  /* mini vote dots next to bubbles */
+  .miniDots{display:flex;gap:3px;align-items:center}
+  .miniDots .d{width:6px;height:6px;border-radius:50%}
+  .d.g{background:var(--green)} .d.y{background:var(--yellow)} .d.r{background:var(--red)}
 </style>
 
 <div class="wrap">
@@ -90,9 +94,13 @@
             <label>Karaoke Host Name</label>
             <input id="hostName" type="text" placeholder="Your name (e.g., Angel)" autocomplete="off" spellcheck="false">
           </div>
-          <div style="width:200px">
+          <div style="width:240px">
             <label>Event PIN</label>
-            <input id="pin" type="password" placeholder="4–8 digits" autocomplete="off" inputmode="numeric">
+            <div class="row" style="gap:8px">
+              <input id="pin" type="password" placeholder="4–8 digits" autocomplete="off" inputmode="numeric" style="flex:1">
+              <button class="btn" id="togglePin" type="button" style="padding:8px 10px">Show</button>
+            </div>
+            <div id="pinSaved" class="micro" style="margin-top:4px;color:#8edbff"></div>
           </div>
         </div>
         <div class="row">
@@ -100,7 +108,7 @@
           <button class="btn" id="lockEvent">Lock</button>
           <button class="btn" id="resetEvent">Reset</button>
         </div>
-        <div class="micro">Lock prevents edits & collapses this section. Reset clears singers & votes (only when unlocked).</div>
+        <div class="micro">Lock prevents edits (but you can still open this panel to Unlock). Reset clears singers & votes (only when unlocked).</div>
       </div>
     </details>
 
@@ -129,9 +137,18 @@
         </div>
       </div>
       <div class="counts" style="margin-top:6px">
-        <div class="bubble b-green" id="c_encore">0</div>
-        <div class="bubble b-yellow" id="c_another">0</div>
-        <div class="bubble b-red" id="c_maybe">0</div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="bubble b-green" id="c_encore">0</div>
+          <div id="miniE" class="miniDots"></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="bubble b-yellow" id="c_another">0</div>
+          <div id="miniA" class="miniDots"></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="bubble b-red" id="c_maybe">0</div>
+          <div id="miniM" class="miniDots"></div>
+        </div>
         <div id="resultTag" class="resultTag">—</div>
       </div>
       <div class="row" style="gap:10px;margin-top:10px">
@@ -153,11 +170,6 @@
 </div>
 
 <script>
-/* endpoints, utils, state bindings … unchanged from the last version you have */
-/* NOTE: only two small changes below:
-   1) concludeVoting() no longer plays the "over" sound
-   2) sfx object no longer defines/uses the "over" sound
-*/
 const GET_URL  = '/assets/get_state.php';
 const POST_URL = '/assets/state.php';
 const VOTE_URL = '/assets/vote.php';
@@ -179,11 +191,17 @@ const singerList=$('#singerList');
 const currentName=$('#currentName'), currentSongArtist=$('#currentSongArtist');
 const timerEl=$('#timer'), cE=$('#c_encore'), cA=$('#c_another'), cM=$('#c_maybe'), resultTag=$('#resultTag');
 const eventBox=$('#eventBox'), lockBtn=document.getElementById('lockEvent');
+const pinSaved=$('#pinSaved'); const togglePin=$('#togglePin');
 
-async function fetchState(){ const r=await fetch(GET_URL,{cache:'no-store'}); state=await r.json();
+// For host mini dots
+let lastCounts = { encore:0, another:0, maybe:0 };
+
+async function fetchState(){
+  const r=await fetch(GET_URL,{cache:'no-store'}); state=await r.json();
   state.event   ||= {venue:'',venuePublic:'',date:new Date().toISOString().slice(0,10),kj:'',hostName:'',pin:'',locked:false};
   state.saved   ||= {venues:[], kjs:[]};
-  state.singers ||= []; state.current ||= {id:null,name:'',songArtist:''};
+  state.singers ||= [];
+  state.current ||= {id:null,name:'',songArtist:''};
   state.voting  ||= {open:false,endsAt:0,extendCount:0,counts:{encore:0,another:0,maybe:0},lastResult:null,voters:{}};
   state.winners ||= {encore:[],another:[]};
 }
@@ -192,6 +210,7 @@ const postStateDebounced = debounce(async ()=>{ await fetch(POST_URL,{method:'PO
 
 function render(){
   if(!state) return;
+
   venuesList.innerHTML = (state.saved.venues||[]).map(v=>`<option value="${v.replace(/"/g,'&quot;')}">`).join('');
   kjsList.innerHTML    = (state.saved.kjs||[]).map(v=>`<option value="${v.replace(/"/g,'&quot;')}">`).join('');
 
@@ -205,7 +224,7 @@ function render(){
   [venue,venuePublic,eventDate,kj,hostName,pin].forEach(el=>el.disabled=state.event.locked);
 
   lockBtn.textContent = state.event.locked ? 'Unlock' : 'Lock';
-  if (state.event.locked) { eventBox.open = false; }
+  // IMPORTANT: Do NOT auto-collapse when locked (leave as user left it)
 
   singerList.innerHTML='';
   (state.singers||[]).forEach(s=>{
@@ -221,7 +240,20 @@ function render(){
   currentName.textContent=state.current.name||'—';
   currentSongArtist.disabled=!state.current.id;
   if(document.activeElement!==currentSongArtist){ currentSongArtist.value=state.current.songArtist||''; }
-  cE.textContent=state.voting.counts.encore||0; cA.textContent=state.voting.counts.another||0; cM.textContent=state.voting.counts.maybe||0;
+
+  const ce=state.voting.counts.encore||0, ca=state.voting.counts.another||0, cm=state.voting.counts.maybe||0;
+  cE.textContent=ce; cA.textContent=ca; cM.textContent=cm;
+
+  // add mini dots for any increases since last render
+  if(state.voting.open){
+    if(ce>lastCounts.encore) addMiniDots('#miniE','g', ce-lastCounts.encore);
+    if(ca>lastCounts.another) addMiniDots('#miniA','y', ca-lastCounts.another);
+    if(cm>lastCounts.maybe) addMiniDots('#miniM','r', cm-lastCounts.maybe);
+  } else {
+    // clear mini dots when round ends
+    ['#miniE','#miniA','#miniM'].forEach(sel=>$(sel).innerHTML='');
+  }
+  lastCounts = {encore:ce, another:ca, maybe:cm};
 
   if(state.voting.open){
     const ms=Math.max(0, (state.voting.endsAt||0)-Date.now());
@@ -231,6 +263,10 @@ function render(){
     timerEl.textContent='00:00'; announce(state.voting.lastResult);
   }
 }
+function addMiniDots(sel, cls, n){
+  const c=$(sel);
+  for(let i=0;i<n;i++){ const d=document.createElement('div'); d.className='d '+cls; c.appendChild(d); if(c.childNodes.length>30) c.removeChild(c.firstChild); }
+}
 function fmt(ms){ const s=Math.ceil(ms/1000); const m=Math.floor(s/60), r=s%60; return `${String(m).padStart(2,'0')}:${String(r).padStart(2,'0')}` }
 function announce(w){ if(!w){ resultTag.textContent='—'; resultTag.className='resultTag'; return;}
   if(w==='encore'){ resultTag.textContent='Encore!'; resultTag.className='resultTag r-encore'; }
@@ -238,19 +274,38 @@ function announce(w){ if(!w){ resultTag.textContent='—'; resultTag.className='
   else { resultTag.textContent='Maybe Next Time'; resultTag.className='resultTag r-maybe'; }
 }
 
-function bindLive(el, key, transform=(x)=>x){
-  el.addEventListener('input', ()=>{
+/* Live bindings */
+function bindLive(el, key, transform=(x)=>x, immediate=false){
+  const handler = async ()=>{
     if(!state?.event) return;
     const val = transform(el.value);
-    el.value = val; state.event[key] = val;
-    suppressEventRender(800); postStateDebounced();
-  });
+    el.value = val;
+    state.event[key] = val;
+    suppressEventRender(600);
+    if(immediate){ await postState(); showPinSaved(key); } else { postStateDebounced(); }
+  };
+  el.addEventListener('input', handler);
+  el.addEventListener('change', handler);
 }
-bindLive(venue,'venue'); bindLive(venuePublic,'venuePublic'); bindLive(eventDate,'date');
-bindLive(kj,'kj'); bindLive(hostName,'hostName'); bindLive(pin,'pin', digitsOnly);
+bindLive(venue,       'venue');
+bindLive(venuePublic, 'venuePublic');
+bindLive(eventDate,   'date');
+bindLive(kj,          'kj');
+bindLive(hostName,    'hostName');
+bindLive(pin,         'pin', digitsOnly, true); // PIN saves instantly
 
-document.getElementById('saveEvent').onclick = async ()=>{ await postState(); const m=document.getElementById('eventSavedMsg'); m.textContent='Saved!'; setTimeout(()=>m.textContent='',1400); };
-lockBtn.onclick = async ()=>{ state.event.locked = !state.event.locked; await postState(); if(state.event.locked) eventBox.open=false; };
+function showPinSaved(key){ if(key!=='pin') return; pinSaved.textContent='PIN saved'; setTimeout(()=>pinSaved.textContent='',1200); }
+togglePin.onclick = ()=>{ pin.type = (pin.type==='password'?'text':'password'); togglePin.textContent = (pin.type==='password'?'Show':'Hide'); };
+
+/* Event actions */
+document.getElementById('saveEvent').onclick = async ()=>{
+  await postState(); const m=document.getElementById('eventSavedMsg');
+  m.textContent='Saved!'; setTimeout(()=>m.textContent='',1400);
+};
+lockBtn.onclick = async ()=>{
+  state.event.locked = !state.event.locked;
+  await postState();
+};
 document.getElementById('resetEvent').onclick = async ()=>{
   if(state.event.locked){ alert('Unlock to reset.'); return;}
   if(!confirm('Reset this event? This clears singers & votes.')) return;
@@ -264,35 +319,44 @@ document.getElementById('resetEvent').onclick = async ()=>{
   await postState();
 };
 
+/* Singer actions */
 document.getElementById('addSinger').onclick = async ()=>{
   const name=singerName.value.trim(); if(!name){ alert('Enter a singer name.'); return;}
   const id='s_'+Math.random().toString(36).slice(2,9);
   state.singers.push({id,name,_color:''});
-  if(!state.current.id){ state.current={id,name,songArtist:''}; }
+  // IMPORTANT: Do NOT auto-set as current here.
   singerName.value=''; songArtist.value='';
   await postState();
 };
 function setCurrent(id){
   const s = state.singers.find(x=>x.id===id); if(!s) return;
-  state.voting = { open:false, endsAt:0, extendCount:0, counts:{encore:0,another:0,maybe:0}, lastResult:null, voters:{} };
-  (state.singers||[]).forEach(x=>{ if(x._color) delete x._color; });
+  // Do NOT clear other singers' indicators here.
   state.current = { id:s.id, name:s.name, songArtist:state.current.songArtist||'' };
   if (typeof sfx?.stopOpen === 'function') sfx.stopOpen();
   postState();
 }
 function removeSinger(id){ state.singers=state.singers.filter(x=>x.id!==id); if(state.current.id===id){ state.current={id:null,name:'',songArtist:''}; } postState(); }
 
+/* Now Singing */
 currentSongArtist.addEventListener('input', async ()=>{ if(!state.current.id) return; state.current.songArtist=currentSongArtist.value.trim(); await postState(); });
 
+/* Voting */
 document.getElementById('startVote').onclick = async ()=>{
   if(!state.current.id){ alert('Set a current singer first.'); return; }
-  try{ await fetch(PERF_URL, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ singer: state.current.name || '', song: state.current.songArtist || '' })}); }catch{}
-  state.voting={ open:true, endsAt:Date.now()+30000, extendCount:0, counts:{encore:0,another:0,maybe:0}, lastResult:null, voters:{} };
-  await postState(); sfx.playOpen();
+  try{
+    await fetch(PERF_URL, {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ singer: state.current.name || '', song: state.current.songArtist || '' })});
+  }catch{}
+  state.voting={ open:true, endsAt:Date.now()+30000, extendCount:0,
+    counts:{encore:0,another:0,maybe:0}, lastResult:null, voters:{} };
+  lastCounts = {encore:0,another:0,maybe:0};
+  await postState();
+  sfx.playOpen();
 };
 document.getElementById('extendVote').onclick = async ()=>{ if(!state.voting.open) return; state.voting.endsAt+=15000; state.voting.extendCount++; await postState(); };
 document.getElementById('endVote').onclick = async ()=>{ await concludeVoting(); };
 
+/* Host vote -> server */
 function deviceId(){ let id=localStorage.getItem('eyek_device_id'); if(!id){ id=crypto.randomUUID(); localStorage.setItem('eyek_device_id', id);} return id; }
 async function hostVote(kind){
   if(!state?.voting?.open) return;
@@ -308,11 +372,15 @@ async function concludeVoting(){
   if(!state.voting.open){ announce(state.voting.lastResult); return; }
   state.voting.open=false; state.voting.endsAt=0;
   const {encore,another,maybe}=state.voting.counts; let winner='maybe';
-  if(encore>=another && encore>=maybe) winner='encore'; else if(another>=encore && another>=maybe) winner='another';
+  if(encore>=another && encore>=maybe) winner='encore';
+  else if(another>=encore && another>=maybe) winner='another';
   state.voting.lastResult=winner;
 
   const cur=state.singers.find(s=>s.id===state.current.id);
-  if(cur){ if(winner==='maybe'){ state.singers=state.singers.filter(s=>s.id!==cur.id); } else { cur._color=(winner==='encore'?'green':'yellow'); } }
+  if(cur){
+    if(winner==='maybe'){ state.singers=state.singers.filter(s=>s.id!==cur.id); }
+    else { cur._color=(winner==='encore'?'green':'yellow'); }
+  }
   state.winners = state.winners || {encore:[], another:[]};
   if(winner==='encore' || winner==='another'){
     state.winners[winner].unshift({when:new Date().toISOString(), name:state.current.name, song:state.current.songArtist||''});
@@ -324,7 +392,7 @@ async function concludeVoting(){
   else if (winner === 'maybe')   setTimeout(()=>sfx.playLoser(),  150);
 }
 
-/* loop unchanged */
+/* Loop */
 function loop(){
   if(poll) clearInterval(poll);
   poll=setInterval(async ()=>{
@@ -337,24 +405,30 @@ function loop(){
   }, 800);
 }
 
-/* Audio: removed "over" sound entirely */
+/* Audio: mp3/wav fallback, no "over" sound */
+function makeAudio(sources){ const a=new Audio(); for(const src of sources){ const el=new Audio(src); el.preload='auto'; el.volume=1.0; if(a.canPlayType(el.type)!=='' || true){ return el; } } return new Audio(sources[0]); }
 const sfx = (function(){
   let enabled=false;
-  const aOpen   = new Audio('/assets/voting_open.mp3');  aOpen.loop = true;  aOpen.preload='auto'; aOpen.volume=1.0;
-  const aEncore = new Audio('/assets/encore.mp3');       aEncore.preload='auto'; aEncore.volume=1.0;
-  const aLoser  = new Audio('/assets/loser.wav');        aLoser.preload='auto'; aLoser.volume=1.0;
+  const aOpen   = makeAudio(['/assets/voting_open.mp3','/assets/voting_open.wav']); aOpen.loop=true;
+  const aEncore = makeAudio(['/assets/encore.mp3','/assets/encore.wav']);
+  const aLoser  = makeAudio(['/assets/loser.wav','/assets/loser.mp3']);
+
   const statusEl=document.getElementById('soundStatus');
   function setStatus(){ statusEl.innerHTML = 'Sound: <b>'+(enabled?'on':'off')+'</b>'; }
+
   let ctx=null;
   function waPing(){ try{ if(!ctx) ctx=new (window.AudioContext||window.webkitAudioContext)(); const o=ctx.createOscillator(), g=ctx.createGain(); g.gain.value=0.0001; o.connect(g).connect(ctx.destination); o.start(); o.stop(ctx.currentTime+0.02); return true; }catch{ return false; } }
   async function warmup(el){ try{ el.muted=true; await el.play(); el.pause(); el.currentTime=0; el.muted=false; return true; }catch{ return false; } }
+
   document.getElementById('enableSound').addEventListener('click', async ()=>{
     const ok = waPing() | await warmup(aEncore) | await warmup(aLoser) | await warmup(aOpen);
     enabled = !!ok; setStatus();
     if(!enabled) alert('Could not enable audio. Browser blocked playback.');
   });
+
   function safePlay(a){ if(!enabled) return; a.currentTime=0; a.play().catch(()=>{}); }
   function safeStop(a){ try{ a.pause(); a.currentTime=0; }catch{} }
+
   return {
     playOpen(){ if(!enabled) return; safeStop(aEncore); safeStop(aLoser); safeStop(aOpen); aOpen.play().catch(()=>{}); },
     stopOpen(){ safeStop(aOpen); },
@@ -362,5 +436,6 @@ const sfx = (function(){
     playLoser(){ safePlay(aLoser); }
   };
 })();
+
 (async function init(){ await fetchState(); render(); loop(); })();
 </script>
