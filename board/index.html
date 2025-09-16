@@ -2,39 +2,77 @@
 <meta charset="utf-8"><title>Encore! • Board</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-  body{margin:0;background:#0f1526;color:#eaf2ff;font:18px system-ui}
-  .wrap{max-width:900px;margin:24px auto;padding:16px}
+  :root{--bg:#0f1526;--card:#0d1428;--line:#2b3c62;--txt:#eaf2ff;--muted:#a9b6d9;--green:#25d366;--yellow:#f6c945}
+  body{margin:0;background:var(--bg);color:var(--txt);font:18px system-ui}
+  .wrap{max-width:1000px;margin:24px auto;padding:16px}
   h1{margin:0 0 16px}
   .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-  .card{background:#0d1428;border:1px solid #2b3c62;border-radius:14px;padding:14px}
+  .card{background:#0d1428;border:1px solid var(--line);border-radius:14px;padding:14px;position:relative}
   .item{padding:8px 10px;border-bottom:1px solid #203153}
   .item:last-child{border-bottom:0}
-  .muted{color:#a9b6d9;font-size:12px}
+  .muted{color:var(--muted);font-size:12px}
+  .titleRow{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+  .pulseDot{width:10px;height:10px;border-radius:50%;background:#8edbff;box-shadow:0 0 12px rgba(142,219,255,.5)}
+  .highlight{box-shadow:0 0 0 0 rgba(142,219,255,0); transition: box-shadow .6s ease}
+  .highlight.active{box-shadow:0 0 0 3px rgba(142,219,255,.3), 0 6px 28px rgba(142,219,255,.2)}
 </style>
+
 <div class="wrap">
   <h1>Encore! Winners Board</h1>
   <div class="grid">
-    <div class="card">
-      <h2 style="margin-top:0;color:#25d366">Encore!</h2>
+    <div id="cardEncore" class="card highlight">
+      <div class="titleRow">
+        <h2 style="margin:0;color:var(--green)">Encore!</h2>
+        <div id="dot" class="pulseDot" title="anti-sleep heartbeat"></div>
+      </div>
       <div id="encoreList"></div>
     </div>
-    <div class="card">
-      <h2 style="margin-top:0;color:#f6c945">Another Shot!</h2>
+    <div id="cardAnother" class="card highlight">
+      <h2 style="margin:0;color:var(--yellow)">Another Shot!</h2>
       <div id="anotherList"></div>
     </div>
   </div>
 </div>
+
 <script>
 const GET_URL='/assets/get_state.php';
 const $=s=>document.querySelector(s);
+
 let state=null;
+
+/* Wake Lock */
+let wakeLock=null;
+async function requestWakeLock(){
+  try{
+    if('wakeLock' in navigator){
+      wakeLock = await navigator.wakeLock.request('screen');
+      wakeLock.addEventListener('release', ()=>{ /* noop */ });
+    }
+  }catch(e){ /* ignore */ }
+}
+document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') requestWakeLock(); });
+
+/* Heartbeat: alternate highlight + pulse dot every 30s */
+function heartbeat(){
+  const a=$('#cardEncore'), b=$('#cardAnother'), dot=$('#dot');
+  a.classList.toggle('active');
+  b.classList.toggle('active');
+  if(dot){ dot.animate([{transform:'scale(1)', opacity:1},{transform:'scale(1.5)', opacity:.6},{transform:'scale(1)', opacity:1}],{duration:600,easing:'ease-in-out'}); }
+}
+setInterval(heartbeat, 30000);
+setTimeout(heartbeat, 3000);
+
 function renderList(el,arr){
   el.innerHTML = (arr&&arr.length? arr.map(x=>`<div class="item"><div><b>${(x.name||'—')}</b></div><div class="muted">${(x.song||'')}</div><div class="muted">${new Date(x.when).toLocaleTimeString()}</div></div>`).join('') : '<div class="muted">No winners yet…</div>');
 }
+
 async function tick(){
   const r=await fetch(GET_URL,{cache:'no-store'}); state=await r.json();
   renderList($('#encoreList'), state.winners?.encore);
   renderList($('#anotherList'), state.winners?.another);
 }
-setInterval(tick, 1200); tick();
+
+setInterval(tick, 1200);
+tick();
+requestWakeLock();
 </script>
