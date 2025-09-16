@@ -2,7 +2,6 @@
 <meta charset="utf-8"><title>Encore! • Screen</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<!-- Heading/display fonts -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@600;800&display=swap" rel="stylesheet">
@@ -12,25 +11,29 @@
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--txt);font:20px system-ui,Segoe UI,Roboto,Helvetica,Arial}
   .wrap{display:grid;place-items:center;min-height:100svh;text-align:center;padding:4vmin;position:relative;overflow:hidden}
-  .title{font-family:"Bebas Neue", system-ui; font-size:9vmin; letter-spacing:.5vmin; margin:0 0 1.2vmin; color:#fff}
-  .venue{font-family:"Montserrat", system-ui; font-weight:800; font-size:6vmin; color:#ffd6ff; margin:0 0 1vmin; text-shadow:0 6px 24px rgba(47,6,88,.45)}
-  .kj{font-family:"Montserrat", system-ui; font-weight:600; font-size:2.6vmin; color:#c9d6ff; margin:0 0 4.5vmin; opacity:.9}
-  .now{font-family:"Montserrat", system-ui; font-weight:800; font-size:4.5vmin; margin:0}
-  .who{font-family:"Bebas Neue", system-ui; font-size:10vmin; letter-spacing:.3vmin; margin:.8vmin 0 3vmin; color:#ffffff}
-  .song{font-size:3vmin;color:var(--muted);margin:0 0 4vmin}
+  .title{font-family:"Bebas Neue"; font-size:9vmin; letter-spacing:.5vmin; margin:0 0 1.2vmin; color:#fff}
+  .venue{font-family:"Montserrat"; font-weight:800; font-size:6vmin; color:#ffd6ff; margin:0 0 1vmin; text-shadow:0 6px 24px rgba(47,6,88,.45)}
+  .kj{font-family:"Montserrat"; font-weight:600; font-size:2.6vmin; color:#c9d6ff; margin:0 0 4.5vmin; opacity:.9}
+  .now{font-family:"Montserrat"; font-weight:800; font-size:4.5vmin; margin:0}
+  .who{font-family:"Bebas Neue"; font-size:10vmin; letter-spacing:.3vmin; margin:.8vmin 0 3vmin; color:#ffffff}
+  .song{font-size:3vmin;color:var(--muted);margin:0 0 3vmin}
   .row{display:flex;gap:2vmin;justify-content:center;flex-wrap:wrap}
   .chip{padding:1vmin 2vmin;border-radius:12px;border:1px solid var(--line);background:var(--card)}
   .enc{color:var(--green)} .ano{color:var(--yellow)} .may{color:var(--red)}
   .badge{display:inline-block;padding:.6vmin 2vmin;border:1px solid var(--line);border-radius:999px;background:var(--card);font-weight:800}
-  .voteNow{margin:3vmin 0 1vmin; display:none}
-  .voteTag{font-family:"Montserrat", system-ui; font-weight:800; font-size:4vmin; color:#fff; padding:1vmin 2.5vmin; border-radius:999px; border:2px solid rgba(255,255,255,.15); background:linear-gradient(135deg, rgba(122,162,255,.2), rgba(47,6,88,.5))}
-  .timer{font-family:"Bebas Neue", system-ui; font-size:12vmin; margin:1vmin 0 2vmin; letter-spacing:.3vmin}
+  .voteNow{margin:2.5vmin 0 1vmin; display:none}
+  .voteTag{font-family:"Montserrat"; font-weight:800; font-size:4vmin; color:#fff; padding:1vmin 2.5vmin; border-radius:999px; border:2px solid rgba(255,255,255,.15); background:linear-gradient(135deg, rgba(122,162,255,.2), rgba(47,6,88,.5))}
+  .timer{font-family:"Bebas Neue"; font-size:12vmin; margin:1vmin 0 1.5vmin; letter-spacing:.3vmin}
   .qrBox{position:absolute; right:3vmin; bottom:3vmin; width:20vmin; height:20vmin; border:2px dashed rgba(255,255,255,.25); border-radius:16px; display:grid; place-items:center; color:#cfe0ff; font-size:2vmin}
   .qrBox::after{content:"QR to vote coming soon"; text-align:center; padding:1vmin}
   #confetti{position:absolute; inset:0; pointer-events:none}
   .flashEncore{position:absolute; top:3vmin; left:50%; transform:translateX(-50%); background:#10152b; border:2px solid rgba(37,211,102,.5); color:var(--green); padding:1vmin 3vmin; border-radius:999px; font-weight:800; font-size:3vmin; box-shadow:0 10px 40px rgba(37,211,102,.35); display:none}
-  /* Tiny heartbeat dot to reassure motion */
   .heartDot{position:absolute; left:2.5vmin; bottom:2.5vmin; width:1.6vmin; height:1.6vmin; border-radius:50%; background:#8edbff; opacity:.7; box-shadow:0 0 16px rgba(142,219,255,.55)}
+  /* vote dots pile area */
+  .dots{position:relative; width:min(80vmin,90vw); height:16vmin; margin:1vmin auto 2vmin; border-radius:16px; border:1px solid rgba(255,255,255,.12); background:rgba(0,0,0,.15); overflow:hidden}
+  .dots .d{position:absolute; width:1.6vmin; height:1.6vmin; border-radius:50%; opacity:.9; transform:translate(-50%,-50%); animation:pop .28s ease-out}
+  .d.g{background:var(--green)} .d.y{background:var(--yellow)} .d.r{background:var(--red)}
+  @keyframes pop{from{transform:translate(-50%,-50%) scale(.6); opacity:.0}to{transform:translate(-50%,-50%) scale(1); opacity:.9}}
 </style>
 
 <div class="wrap">
@@ -41,22 +44,25 @@
   <div id="venue" class="venue">—</div>
   <div id="kj" class="kj">Hosted by —</div>
 
-  <div class="now">Now up:</div>
-  <div id="who" class="who">—</div>
-  <div id="song" class="song">—</div>
+  <div id="nowBlock" style="display:none">
+    <div class="now">Now up:</div>
+    <div id="who" class="who">—</div>
+    <div id="song" class="song">—</div>
+  </div>
 
   <div id="voteNow" class="voteNow">
     <div class="voteTag">VOTE NOW</div>
     <div id="timer" class="timer">00:00</div>
+    <div id="dots" class="dots" aria-label="live vote dots"></div>
   </div>
 
-  <div class="row" style="margin-top:2vmin">
+  <div class="row" style="margin-top:1.5vmin">
     <div class="chip enc">Encore: <b id="cE">0</b></div>
     <div class="chip ano">Another Shot: <b id="cA">0</b></div>
     <div class="chip may">Maybe Next Time: <b id="cM">0</b></div>
   </div>
 
-  <div style="margin-top:3vmin"><span id="status" class="badge">Waiting…</span></div>
+  <div style="margin-top:2.5vmin"><span id="status" class="badge">Waiting…</span></div>
 
   <div class="qrBox" aria-label="QR to vote placeholder"></div>
   <div id="heart" class="heartDot" title="anti-sleep heartbeat"></div>
@@ -68,43 +74,24 @@ const $=s=>document.querySelector(s);
 function fmt(ms){ const s=Math.ceil(ms/1000); const m=Math.floor(s/60), r=s%60; return `${String(m).padStart(2,'0')}:${String(r).padStart(2,'0')}` }
 
 let state=null, lastCelebratedKey=null;
+// For visual dots, remember last counts
+let lastCounts={encore:0, another:0, maybe:0};
 
-/* --- Wake Lock (keep screen on when supported) --- */
+/* Wake Lock */
 let wakeLock=null;
-async function requestWakeLock(){
-  try{
-    if('wakeLock' in navigator){
-      wakeLock = await navigator.wakeLock.request('screen');
-      wakeLock.addEventListener('release', ()=>{ /* noop */ });
-    }
-  }catch(e){ /* ignore */ }
-}
+async function requestWakeLock(){ try{ if('wakeLock' in navigator){ wakeLock = await navigator.wakeLock.request('screen'); } }catch(e){} }
 document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') requestWakeLock(); });
 
-/* --- Light heartbeat every 30s to keep TVs alive --- */
 function heartbeat(){
-  // Pulse venue & KJ with a soft glow
   [$('#venue'), $('#kj')].forEach(el=>{
     if(!el) return;
-    el.animate(
-      [
-        { filter:'brightness(1)', textShadow:'0 6px 24px rgba(47,6,88,.45)' },
-        { filter:'brightness(1.15)', textShadow:'0 10px 36px rgba(122,162,255,.55)' },
-        { filter:'brightness(1)', textShadow:'0 6px 24px rgba(47,6,88,.45)' }
-      ],
-      { duration: 1200, easing:'ease-in-out' }
-    );
+    el.animate([{filter:'brightness(1)', textShadow:'0 6px 24px rgba(47,6,88,.45)'},{filter:'brightness(1.15)', textShadow:'0 10px 36px rgba(122,162,255,.55)'},{filter:'brightness(1)', textShadow:'0 6px 24px rgba(47,6,88,.45)'}],{duration:1200,easing:'ease-in-out'});
   });
-  // Nudge the tiny dot so the frame changes visually
-  const dot=$('#heart');
-  if(dot){
-    dot.animate([{transform:'translateY(0)'},{transform:'translateY(-6px)'},{transform:'translateY(0)'}],{duration:700,easing:'ease-in-out'});
-  }
+  const dot=$('#heart'); if(dot){ dot.animate([{transform:'translateY(0)'},{transform:'translateY(-6px)'},{transform:'translateY(0)'}],{duration:700,easing:'ease-in-out'}); }
 }
-setInterval(heartbeat, 30000); // every 30 seconds
-setTimeout(heartbeat, 3000);   // first gentle pulse shortly after load
+setInterval(heartbeat, 30000); setTimeout(heartbeat, 3000);
 
-/* --- Confetti engine (no deps) --- */
+/* Confetti */
 const confetti=(function(){
   const cv=document.getElementById('confetti'), cx=cv.getContext('2d');
   let W=0,H=0, parts=[], running=false;
@@ -112,11 +99,7 @@ const confetti=(function(){
   function rand(a,b){ return a+Math.random()*(b-a); }
   function burst(n=150){
     for(let i=0;i<n;i++){
-      parts.push({
-        x: W/2, y: H*0.2, r: rand(2,4), a: rand(0,2*Math.PI),
-        vx: rand(-6,6), vy: rand(-2,8), g: 0.18, life: rand(60,140),
-        color: `hsl(${Math.floor(rand(0,360))} 90% 60%)`
-      });
+      parts.push({x: W/2, y: H*0.2, r: rand(2,4), vx: rand(-6,6), vy: rand(-2,8), g: 0.18, life: rand(60,140), color: `hsl(${Math.floor(rand(0,360))} 90% 60%)`});
     }
     if(!running){ running=true; loop(); }
   }
@@ -124,8 +107,7 @@ const confetti=(function(){
     if(!running) return;
     cx.clearRect(0,0,W,H);
     for(let i=parts.length-1;i>=0;i--){
-      const p=parts[i];
-      p.vy+=p.g; p.x+=p.vx; p.y+=p.vy; p.life--;
+      const p=parts[i]; p.vy+=p.g; p.x+=p.vx; p.y+=p.vy; p.life--;
       cx.fillStyle=p.color; cx.beginPath(); cx.arc(p.x,p.y,p.r,0,Math.PI*2); cx.fill();
       if(p.life<=0 || p.y>H+20) parts.splice(i,1);
     }
@@ -137,42 +119,72 @@ const confetti=(function(){
 })();
 
 function showEncoreFlash(){
-  const el=$('#flash');
-  el.style.display='inline-block';
-  el.style.opacity='1';
+  const el=$('#flash'); el.style.display='inline-block'; el.style.opacity='1';
   el.animate([{transform:'translateX(-50%) scale(0.9)', opacity:.0},{transform:'translateX(-50%) scale(1)',opacity:1}],{duration:200,easing:'ease-out'});
-  setTimeout(()=>{
-    el.animate([{opacity:1},{opacity:0}],{duration:800,easing:'ease-in'}).onfinish=()=>{ el.style.display='none'; };
-  }, 1300);
+  setTimeout(()=>{ el.animate([{opacity:1},{opacity:0}],{duration:800,easing:'ease-in'}).onfinish=()=>{ el.style.display='none'; }; }, 1300);
 }
 
-/* --- Main poll/render loop --- */
+/* add dot(s) to pile */
+function addDots(kind, n){
+  const wrap = $('#dots'); const cls = kind==='encore'?'g':kind==='another'?'y':'r';
+  const W = wrap.clientWidth, H = wrap.clientHeight;
+  for(let i=0;i<n;i++){
+    const d=document.createElement('div'); d.className='d '+cls;
+    // random pile-ish spot
+    const x = 10 + Math.random()*(W-20);
+    const y = 10 + Math.random()*(H-20);
+    d.style.left = x+'px'; d.style.top = y+'px';
+    wrap.appendChild(d);
+    // trim to avoid infinite growth
+    if(wrap.childNodes.length>220) wrap.removeChild(wrap.firstChild);
+  }
+}
+
+/* Main loop */
 async function tick(){
   const r=await fetch(GET_URL,{cache:'no-store'}); state=await r.json();
 
   const publicVenue = state.event?.venuePublic || state.event?.venue || '—';
   const kjName      = state.event?.kj || '';
+  const hasCurrent  = !!state.current?.id;
   const singerName  = state.current?.name || '—';
   const songText    = state.current?.songArtist || '';
 
   $('#venue').textContent = publicVenue;
   $('#kj').textContent    = kjName ? `Hosted by ${kjName}` : 'Hosted by —';
-  $('#who').textContent   = singerName;
-  $('#song').textContent  = songText;
+
+  // Show "Now up" only if a current singer is actually set
+  $('#nowBlock').style.display = hasCurrent ? 'block' : 'none';
+  if(hasCurrent){
+    $('#who').textContent   = singerName;
+    $('#song').textContent  = songText;
+  }
 
   const open = !!state.voting?.open;
   const result = state.voting?.lastResult || null;
 
   $('#voteNow').style.display = open ? 'block' : 'none';
 
-  $('#cE').textContent = state.voting?.counts?.encore  ?? 0;
-  $('#cA').textContent = state.voting?.counts?.another ?? 0;
-  $('#cM').textContent = state.voting?.counts?.maybe   ?? 0;
+  const ce = state.voting?.counts?.encore  ?? 0;
+  const ca = state.voting?.counts?.another ?? 0;
+  const cm = state.voting?.counts?.maybe   ?? 0;
+
+  // add new dots for increased counts
+  if(open){
+    if(ce>lastCounts.encore) addDots('encore',  ce-lastCounts.encore);
+    if(ca>lastCounts.another) addDots('another', ca-lastCounts.another);
+    if(cm>lastCounts.maybe) addDots('maybe',    cm-lastCounts.maybe);
+  } else {
+    // clear dots when round ends
+    $('#dots').innerHTML='';
+  }
+  lastCounts = {encore:ce, another:ca, maybe:cm};
+
+  $('#cE').textContent = ce; $('#cA').textContent = ca; $('#cM').textContent = cm;
 
   $('#status').textContent = open ? 'Voting OPEN' :
     (result ? (result==='encore'?'Winner: Encore!': result==='another'?'Winner: Another Shot!':'Winner: Maybe Next Time') : 'Waiting…');
 
-  // Timer
   if(open){
     const ms=Math.max(0,(state.voting.endsAt||0)-Date.now());
     $('#timer').textContent=fmt(ms);
@@ -180,7 +192,6 @@ async function tick(){
     $('#timer').textContent='00:00';
   }
 
-  // Confetti on Encore win — only once per singer+song
   if(!open && result==='encore'){
     const key = (state.current?.id||'') + '|' + (state.current?.name||'') + '|' + (state.current?.songArtist||'');
     if(key !== lastCelebratedKey){
