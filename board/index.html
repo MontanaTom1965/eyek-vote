@@ -1,11 +1,11 @@
 <!doctype html>
-<meta charset="utf-8"><title>Encore! • Board</title>
+<meta charset="utf-8"><title>Still in it!</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
   :root{--bg:#0f1526;--card:#0d1428;--line:#2b3c62;--txt:#eaf2ff;--muted:#a9b6d9;--green:#25d366;--yellow:#f6c945}
   body{margin:0;background:var(--bg);color:var(--txt);font:18px system-ui}
   .wrap{max-width:1000px;margin:24px auto;padding:16px}
-  h1{margin:0 0 16px}
+  h1{margin:0 0 16px;text-align:center}
   .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
   .card{background:#0d1428;border:1px solid var(--line);border-radius:14px;padding:14px;position:relative}
   .item{padding:8px 10px;border-bottom:1px solid #203153}
@@ -18,7 +18,7 @@
 </style>
 
 <div class="wrap">
-  <h1>Encore! Winners Board</h1>
+  <h1>Still in it!</h1>
   <div class="grid">
     <div id="cardEncore" class="card highlight">
       <div class="titleRow">
@@ -42,14 +42,7 @@ let state=null;
 
 /* Wake Lock */
 let wakeLock=null;
-async function requestWakeLock(){
-  try{
-    if('wakeLock' in navigator){
-      wakeLock = await navigator.wakeLock.request('screen');
-      wakeLock.addEventListener('release', ()=>{ /* noop */ });
-    }
-  }catch(e){ /* ignore */ }
-}
+async function requestWakeLock(){ try{ if('wakeLock' in navigator){ wakeLock = await navigator.wakeLock.request('screen'); } }catch(e){} }
 document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') requestWakeLock(); });
 
 /* Heartbeat: alternate highlight + pulse dot every 30s */
