@@ -1,33 +1,46 @@
 <!doctype html>
 <meta charset="utf-8"><title>Encore! • Vote</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@700&display=swap" rel="stylesheet">
 <style>
-  body{margin:0;background:#0f1526;color:#eaf2ff;font:16px system-ui}
+  :root{--bg:#0f1526;--card:#0d1428;--line:#2b3c62;--txt:#eaf2ff;--muted:#a9b6d9;--green:#25d366;--yellow:#f6c945;--red:#ff5e6c}
+  body{margin:0;background:var(--bg);color:var(--txt);font:16px system-ui}
   .wrap{max-width:640px;margin:24px auto;padding:16px}
+  h1{font-family:"Bebas Neue", system-ui; font-size:44px; margin:0 0 4px}
+  .venue{font-family:"Montserrat", system-ui; font-weight:700; font-size:22px; color:#ffd6ff; margin:0 0 16px}
+  .sub{font-size:14px;color:var(--muted);margin-top:2px}
   input,button{font:inherit}
-  input{width:100%;padding:12px;border-radius:12px;border:1px solid #2b3c62;background:#0d1428;color:#eaf2ff}
+  input{width:100%;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--txt)}
   .row{display:flex;gap:10px;align-items:center}
   .btn{flex:1;padding:14px;border:0;border-radius:12px;cursor:pointer}
   .good{background:#25d366;color:#06120a}.warn{background:#f6c945;color:#231a04}.bad{background:#ff5e6c}
-  .mini{font-size:12px;color:#a9b6d9}
+  .mini{font-size:12px;color:var(--muted)}
+  .nowVoting{font-family:"Montserrat", system-ui; font-weight:700; margin:10px 0 6px; font-size:14px; color:#cfe0ff}
+  .who{font-family:"Bebas Neue", system-ui; font-size:36px; margin:0 0 6px}
+  .song{font-size:14px;color:#c9d6ff;margin:0 0 12px}
 </style>
 <div class="wrap">
   <h1>Encore! Vote</h1>
+  <div id="venue" class="venue">Welcome to —</div>
+
   <div id="join">
     <p class="mini">Enter the event PIN from the screen:</p>
     <div class="row"><input id="pin" placeholder="PIN" inputmode="numeric" autocomplete="off"><button class="btn" id="joinBtn">Join</button></div>
     <div id="err" class="mini" style="color:#ff9a9a"></div>
   </div>
+
   <div id="panel" style="display:none">
-    <div class="mini">Now voting for</div>
-    <h2 id="singer">—</h2>
-    <div id="song" class="mini">—</div>
+    <div class="nowVoting">Now voting:</div>
+    <div id="singer" class="who">—</div>
+    <div id="song" class="song">—</div>
+
     <div class="row" style="margin-top:12px">
       <button class="btn good"  id="v_encore">Encore!</button>
-      <button class="btn warn  "  id="v_another">Another Shot!</button>
-      <button class="btn bad   "  id="v_maybe">Maybe Next Time</button>
+      <button class="btn warn"  id="v_another">Another Shot!</button>
+      <button class="btn bad"   id="v_maybe">Maybe Next Time</button>
     </div>
-    <div id="note" class="mini" style="margin-top:10px">Voting closed…</div>
+    <div id="note" class="mini sub">Voting closed…</div>
   </div>
 </div>
 <script>
@@ -39,6 +52,9 @@ let state=null, poll=null, eventPin=null;
 async function fetchState(){ const r=await fetch(GET_URL,{cache:'no-store'}); state=await r.json(); }
 function render(){
   if(!state) return;
+
+  const publicVenue = state.event?.venuePublic || state.event?.venue || '—';
+  document.getElementById('venue').textContent = `Welcome to ${publicVenue}`;
 
   const pinHost = digitsOnly(state.event?.pin || '');
   const pinEmpty = pinHost === '';
@@ -60,7 +76,7 @@ function render(){
   $('#song').textContent   = state.current?.songArtist || '—';
   const open = !!state.voting?.open;
   ['v_encore','v_another','v_maybe'].forEach(id=>{ const b=$('#'+id); b.disabled=!open; b.style.opacity=open?1:.6; });
-  $('#note').textContent = open ? 'Voting is OPEN' : 'Voting closed…';
+  $('#note').textContent = open ? 'Voting is OPEN — make your choice!' : 'Voting closed…';
 }
 
 async function vote(kind){
