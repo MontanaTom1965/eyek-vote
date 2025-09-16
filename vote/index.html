@@ -7,8 +7,8 @@
   :root{--bg:#0f1526;--card:#0d1428;--line:#2b3c62;--txt:#eaf2ff;--muted:#a9b6d9;--green:#25d366;--yellow:#f6c945;--red:#ff5e6c}
   body{margin:0;background:var(--bg);color:var(--txt);font:16px system-ui}
   .wrap{max-width:640px;margin:24px auto;padding:16px}
-  h1{font-family:"Bebas Neue", system-ui; font-size:44px; margin:0 0 4px}
-  .venue{font-family:"Montserrat", system-ui; font-weight:700; font-size:22px; color:#ffd6ff; margin:0 0 16px}
+  h1{font-family:"Bebas Neue"; font-size:44px; margin:0 0 4px}
+  .venue{font-family:"Montserrat"; font-weight:700; font-size:22px; color:#ffd6ff; margin:0 0 16px}
   .sub{font-size:14px;color:var(--muted);margin-top:2px}
   input,button{font:inherit}
   input{width:100%;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--txt)}
@@ -16,9 +16,11 @@
   .btn{flex:1;padding:14px;border:0;border-radius:12px;cursor:pointer}
   .good{background:#25d366;color:#06120a}.warn{background:#f6c945;color:#231a04}.bad{background:#ff5e6c}
   .mini{font-size:12px;color:var(--muted)}
-  .nowVoting{font-family:"Montserrat", system-ui; font-weight:700; margin:10px 0 6px; font-size:14px; color:#cfe0ff}
-  .who{font-family:"Bebas Neue", system-ui; font-size:36px; margin:0 0 6px}
+  .nowVoting{font-family:"Montserrat"; font-weight:700; margin:10px 0 6px; font-size:14px; color:#cfe0ff}
+  .who{font-family:"Bebas Neue"; font-size:36px; margin:0 0 6px}
   .song{font-size:14px;color:#c9d6ff;margin:0 0 12px}
+  .ok{color:#8edbff}
+  .err{color:#ff9a9a}
 </style>
 <div class="wrap">
   <h1>Encore! Vote</h1>
@@ -27,7 +29,7 @@
   <div id="join">
     <p class="mini">Enter the event PIN from the screen:</p>
     <div class="row"><input id="pin" placeholder="PIN" inputmode="numeric" autocomplete="off"><button class="btn" id="joinBtn">Join</button></div>
-    <div id="err" class="mini" style="color:#ff9a9a"></div>
+    <div id="pinStatus" class="mini"></div>
   </div>
 
   <div id="panel" style="display:none">
@@ -57,20 +59,23 @@ function render(){
   document.getElementById('venue').textContent = `Welcome to ${publicVenue}`;
 
   const pinHost = digitsOnly(state.event?.pin || '');
-  const pinEmpty = pinHost === '';
 
   if(!eventPin){
     $('#join').style.display='block'; $('#panel').style.display='none';
-    $('#err').textContent = pinEmpty ? 'Host has no PIN set (join disabled).' : '';
+    $('#pinStatus').textContent = pinHost ? 'Enter PIN to join.' : 'Host has no PIN set (join disabled).';
+    $('#pinStatus').className = 'mini ' + (pinHost?'ok':'err');
     return;
   }
 
   if(digitsOnly(eventPin)!==pinHost){
-    $('#err').textContent='Wrong PIN for this event.';
+    $('#pinStatus').textContent='Wrong PIN for this event.';
+    $('#pinStatus').className='mini err';
     $('#join').style.display='block'; $('#panel').style.display='none';
     return;
   }
 
+  $('#pinStatus').textContent='PIN accepted. Connected to event.';
+  $('#pinStatus').className='mini ok';
   $('#join').style.display='none'; $('#panel').style.display='block';
   $('#singer').textContent = state.current?.name || '—';
   $('#song').textContent   = state.current?.songArtist || '—';
@@ -90,6 +95,7 @@ function deviceId(){ let id=localStorage.getItem('eyek_device_id'); if(!id){ id=
 
 $('#joinBtn').onclick = ()=>{ eventPin = digitsOnly($('#pin').value.trim()); render(); };
 $('#pin').addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ eventPin = digitsOnly($('#pin').value.trim()); render(); }});
+$('#pin').addEventListener('input', ()=>{ if(eventPin){ eventPin = digitsOnly($('#pin').value.trim()); render(); }});
 $('#v_encore').onclick = ()=> vote('encore');
 $('#v_another').onclick = ()=> vote('another');
 $('#v_maybe').onclick  = ()=> vote('maybe');
