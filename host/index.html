@@ -295,10 +295,9 @@
     // Gentle client-only smoothing if serverNow not present
     function smoothEnds(targetKey){
       const target = S.state[targetKey]; if(!target) return;
-      // If displayed left time jumps > 1500ms vs last seen, gently nudge offset
       const ideal = target - Date.now();
       const actual = target - nowMs();
-      const drift = actual - ideal; // includes our offset
+      const drift = actual - ideal;
       if (Math.abs(drift) > 1500) serverOffsetMs -= Math.sign(drift) * 500; // nudge 0.5s per tick
     }
 
@@ -314,7 +313,6 @@
         voteState.textContent = st.phase==='open'?'Open':(st.phase==='prep'?'Get ready…':'Closed');
         nowUp.textContent = 'Now up: ' + (st.singer||'—');
 
-        // timer (ceil for consistency)
         const left = st.phase==='prep'
           ? Math.max(0, Math.ceil((st.prepUntil - nowMs())/1000))
           : st.phase==='open'
@@ -322,10 +320,8 @@
           : 0;
         timer.textContent = new Date(left*1000).toISOString().substring(14,19);
 
-        // counts
         setCounts(st.counts?.encore||0, st.counts?.another||0, st.counts?.maybe||0);
 
-        // mini dots for increments
         ['encore','another','maybe'].forEach(k=>{
           const prevVal = Number(dots[k].dataset.prev||'0'); const cur = st.counts?.[k]||0;
           if(cur>prevVal){ for(let i=0;i<cur-prevVal;i++) addMiniDot(k); }
@@ -339,7 +335,6 @@
           else { aLose.currentTime=0; aLose.play().catch(()=>{}); }
         }
 
-        // smooth drift a bit if serverNow not supplied
         if (!('serverNow' in st)) {
           if (st.phase==='open')  smoothEnds('endsAt');
           if (st.phase==='prep')  smoothEnds('prepUntil');
