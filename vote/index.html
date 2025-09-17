@@ -51,7 +51,19 @@ const $=s=>document.querySelector(s);
 const digitsOnly = s => (s||'').replace(/\D+/g,'');
 let state=null, poll=null, eventPin=null;
 
-async function fetchState(){ const r=await fetch(GET_URL,{cache:'no-store'}); state=await r.json(); }
+// time sync
+let clockOffset=0; function nowMs(){ return Date.now()+clockOffset; }
+function smoothOffset(obs){ if(!isFinite(obs)) return; clockOffset=0.9*clockOffset+0.1*obs; }
+
+async function fetchState(){
+  const r=await fetch(GET_URL,{cache:'no-store'});
+  const fetchedAt=Date.now();
+  state=await r.json();
+  if(state && typeof state.serverNow==='number'){
+    const obs = state.serverNow - fetchedAt;
+    if(clockOffset===0) clockOffset=obs; else smoothOffset(obs);
+  }
+}
 function render(){
   if(!state) return;
   const publicVenue = state.event?.venuePublic || state.event?.venue || '—';
@@ -59,29 +71,30 @@ function render(){
   const pinHost = digitsOnly(state.event?.pin || '');
 
   if(!eventPin){
-    $('#join').style.display='block'; $('#panel').style.display='none';
-    $('#pinStatus').textContent = pinHost ? 'Enter PIN to join.' : 'Host has no PIN set (join disabled).';
-    $('#pinStatus').className = 'mini ' + (pinHost?'ok':'err');
+    document.getElementById('join').style.display='block'; document.getElementById('panel').style.display='none';
+    document.getElementById('pinStatus').textContent = pinHost ? 'Enter PIN to join.' : 'Host has no PIN set (join disabled).';
+    document.getElementById('pinStatus').className = 'mini ' + (pinHost?'ok':'err');
     return;
   }
   if(digitsOnly(eventPin)!==pinHost){
-    $('#pinStatus').textContent='Wrong PIN for this event.';
-    $('#pinStatus').className='mini err';
-    $('#join').style.display='block'; $('#panel').style.display='none';
+    document.getElementById('pinStatus').textContent='Wrong PIN for this event.';
+    document.getElementById('pinStatus').className='mini err';
+    document.getElementById('join').style.display='block'; document.getElementById('panel').style.display='none';
     return;
   }
 
-  $('#pinStatus').textContent='PIN accepted. Connected to event.';
-  $('#pinStatus').className='mini ok';
-  $('#join').style.display='none'; $('#panel').style.display='block';
-  $('#singer').textContent = state.current?.name || '—';
-  $('#song').textContent   = state.current?.songArtist || '—';
+  document.getElementById('pinStatus').textContent='PIN accepted. Connected to event.';
+  document.getElementById('pinStatus').className='mini ok';
+  document.getElementById('join').style.display='none'; document.getElementById('panel').style.display='block';
+  document.getElementById('singer').textContent = state.current?.name || '—';
+  document.getElementById('song').textContent   = state.current?.songArtist || '—';
 
+  const t=nowMs();
   const open = !!state.voting?.open;
-  const inPrep = (!open && (state.voting?.prepUntil||0) > Date.now());
+  const inPrep = (!open && (state.voting?.prepUntil||0) > t);
   const enable = open && !inPrep;
-  ['v_encore','v_another','v_maybe'].forEach(id=>{ const b=$('#'+id); b.disabled=!enable; b.style.opacity=enable?1:.6; });
-  $('#note').textContent = enable ? 'Voting is OPEN — make your choice!' : (inPrep ? 'Get ready to vote…' : 'Voting closed…');
+  ['v_encore','v_another','v_maybe'].forEach(id=>{ const b=document.getElementById(id); b.disabled=!enable; b.style.opacity=enable?1:.6; });
+  document.getElementById('note').textContent = enable ? 'Voting is OPEN — make your choice!' : (inPrep ? 'Get ready to vote…' : 'Voting closed…');
 }
 
 async function vote(kind){
@@ -93,12 +106,15 @@ async function vote(kind){
 }
 function deviceId(){ let id=localStorage.getItem('eyek_device_id'); if(!id){ id=crypto.randomUUID(); localStorage.setItem('eyek_device_id', id);} return id; }
 
-$('#joinBtn').onclick = ()=>{ eventPin = digitsOnly($('#pin').value.trim()); render(); };
-$('#pin').addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ eventPin = digitsOnly($('#pin').value.trim()); render(); }});
-$('#pin').addEventListener('input', ()=>{ if(eventPin){ eventPin = digitsOnly($('#pin').value.trim()); render(); }});
-$('#v_encore').onclick = ()=> vote('encore');
-$('#v_another').onclick = ()=> vote('another');
-$('#v_maybe').onclick  = ()=> vote('maybe');
+document.getElementById('joinBtn').onclick = ()=>{ eventPin = digitsOnly(document.getElementById('pin').value.trim()); render(); };
+document.getElementById('pin').addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ eventPin = digitsOnly(document.getElementById('pin').value.trim()); render(); }});
+document.getElementById('pin').addEventListener('input', ()=>{ if(eventPin){ eventPin = digitsOnly(document.getElementById('pin').value.trim()); render(); }});
 
-(async function init(){ await fetchState(); render(); poll=setInterval(async ()=>{ await fetchState(); render(); }, 900); })();
+document.getElementById('v_encore').onclick = ()=> vote('encore');
+document.getElementById('v_another').onclick = ()=> vote('another');
+document.getElementById('v_maybe').onclick  = ()=> vote('maybe');
+
+(async function init(){ await fetchState(); render(); poll=setInterval(async ()=>{ await fetchState(); render(); }, 1100); })(); // ← stretched a bit
 </script>
+
+<!-- FILE: /vote/index.html -->
