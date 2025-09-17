@@ -23,13 +23,13 @@
   .dot{width:10px;height:10px;border-radius:50%;background:#6f7a98;border:1px solid #5b678a}
   .dot.green{background:var(--green);border-color:#2b8f57} .dot.yellow{background:var(--yellow);border-color:#9c7b1d}
   .bar{height:1px;background:#203153;margin:10px 0}
-  .counts{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
-  .bubble{min-width:64px;text-align:center;padding:8px 10px;border-radius:12px;font-weight:700}
+  .counts{display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+  .bubble{min-width:72px;text-align:center;padding:10px 12px;border-radius:12px;font-weight:800;font-size:16px}
   .b-green{background:rgba(37,211,102,.15);border:1px solid rgba(37,211,102,.35);color:var(--green)}
   .b-yellow{background:rgba(246,201,69,.15);border:1px solid rgba(246,201,69,.35);color:var(--yellow)}
   .b-red{background:rgba(255,94,108,.15);border:1px solid rgba(255,94,108,.35);color:var(--red)}
-  .timer{font-size:34px;font-weight:800}
-  .resultTag{padding:8px 12px;border-radius:999px;border:1px solid #2b3c62;background:#0d1428;min-width:160px;text-align:center;font-weight:700}
+  .timer{font-size:38px;font-weight:900}
+  .resultTag{padding:8px 12px;border-radius:999px;border:1px solid #2b3c62;background:#0d1428;min-width:180px;text-align:center;font-weight:800}
   .r-encore{color:var(--green)} .r-another{color:var(--yellow)} .r-maybe{color:var(--red)}
   details{border:1px solid #243459;border-radius:12px} details[open] summary{border-bottom:1px solid #243459}
   summary{list-style:none;cursor:pointer;padding:10px 14px;background:#0f1526;border-radius:12px} summary::-webkit-details-marker{display:none}
@@ -42,6 +42,9 @@
   .miniDots{display:flex;gap:3px;align-items:center}
   .miniDots .d{width:6px;height:6px;border-radius:50%}
   .d.g{background:var(--green)} .d.y{background:var(--yellow)} .d.r{background:var(--red)}
+  /* Bigger Current Singer block for visibility */
+  .bigCurrent{font-size:22px;font-weight:900}
+  .bigSong input{font-size:16px;padding:12px}
 </style>
 
 <div class="wrap">
@@ -108,7 +111,7 @@
           <button class="btn" id="lockEvent">Lock</button>
           <button class="btn" id="resetEvent">Reset</button>
         </div>
-        <div class="micro">Lock prevents edits (but you can still open this panel to Unlock). Reset clears singers & votes (only when unlocked).</div>
+        <div class="micro">Lock prevents edits (panel does not auto-collapse). Reset clears singers & votes (only when unlocked).</div>
       </div>
     </details>
 
@@ -127,9 +130,9 @@
       <div class="row">
         <div style="flex:1">
           <div class="micro">Current Singer</div>
-          <div id="currentName" style="font-weight:800;font-size:18px">—</div>
+          <div id="currentName" class="bigCurrent">—</div>
           <div class="micro">Now Singing — Song/Artist</div>
-          <input id="currentSongArtist" type="text" placeholder="Type song — artist…" disabled autocomplete="off" spellcheck="false">
+          <div class="bigSong"><input id="currentSongArtist" type="text" placeholder="Type song — artist…" disabled autocomplete="off" spellcheck="false"></div>
         </div>
         <div style="text-align:right">
           <div class="micro">Timer</div>
@@ -152,7 +155,7 @@
         <div id="resultTag" class="resultTag">—</div>
       </div>
       <div class="row" style="gap:10px;margin-top:10px">
-        <button class="btn good" id="startVote">Start (30s)</button>
+        <button class="btn good" id="startVote">Start (30s + 5s prep)</button>
         <button class="btn warn" id="extendVote">Extend (+15s)</button>
         <button class="btn bad" id="endVote">End</button>
       </div>
@@ -196,13 +199,11 @@ const pinSaved=$('#pinSaved'); const togglePin=$('#togglePin');
 // For host mini dots
 let lastCounts = { encore:0, another:0, maybe:0 };
 
-async function fetchState(){
-  const r=await fetch(GET_URL,{cache:'no-store'}); state=await r.json();
+async function fetchState(){ const r=await fetch(GET_URL,{cache:'no-store'}); state=await r.json();
   state.event   ||= {venue:'',venuePublic:'',date:new Date().toISOString().slice(0,10),kj:'',hostName:'',pin:'',locked:false};
   state.saved   ||= {venues:[], kjs:[]};
-  state.singers ||= [];
-  state.current ||= {id:null,name:'',songArtist:''};
-  state.voting  ||= {open:false,endsAt:0,extendCount:0,counts:{encore:0,another:0,maybe:0},lastResult:null,voters:{}};
+  state.singers ||= []; state.current ||= {id:null,name:'',songArtist:''};
+  state.voting  ||= {open:false,prepUntil:0,endsAt:0,extendCount:0,counts:{encore:0,another:0,maybe:0},lastResult:null,voters:{}};
   state.winners ||= {encore:[],another:[]};
 }
 async function postState(){ await fetch(POST_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(state)}); await fetchState(); }
@@ -211,6 +212,7 @@ const postStateDebounced = debounce(async ()=>{ await fetch(POST_URL,{method:'PO
 function render(){
   if(!state) return;
 
+  // saved lists back
   venuesList.innerHTML = (state.saved.venues||[]).map(v=>`<option value="${v.replace(/"/g,'&quot;')}">`).join('');
   kjsList.innerHTML    = (state.saved.kjs||[]).map(v=>`<option value="${v.replace(/"/g,'&quot;')}">`).join('');
 
@@ -224,8 +226,8 @@ function render(){
   [venue,venuePublic,eventDate,kj,hostName,pin].forEach(el=>el.disabled=state.event.locked);
 
   lockBtn.textContent = state.event.locked ? 'Unlock' : 'Lock';
-  // IMPORTANT: Do NOT auto-collapse when locked (leave as user left it)
 
+  // rotation list
   singerList.innerHTML='';
   (state.singers||[]).forEach(s=>{
     const row=document.createElement('div'); row.className='pill';
@@ -244,29 +246,31 @@ function render(){
   const ce=state.voting.counts.encore||0, ca=state.voting.counts.another||0, cm=state.voting.counts.maybe||0;
   cE.textContent=ce; cA.textContent=ca; cM.textContent=cm;
 
-  // add mini dots for any increases since last render
+  // mini dots
   if(state.voting.open){
-    if(ce>lastCounts.encore) addMiniDots('#miniE','g', ce-lastCounts.encore);
+    if(ce>lastCounts.encore)  addMiniDots('#miniE','g', ce-lastCounts.encore);
     if(ca>lastCounts.another) addMiniDots('#miniA','y', ca-lastCounts.another);
-    if(cm>lastCounts.maybe) addMiniDots('#miniM','r', cm-lastCounts.maybe);
+    if(cm>lastCounts.maybe)   addMiniDots('#miniM','r', cm-lastCounts.maybe);
   } else {
-    // clear mini dots when round ends
     ['#miniE','#miniA','#miniM'].forEach(sel=>$(sel).innerHTML='');
   }
   lastCounts = {encore:ce, another:ca, maybe:cm};
 
-  if(state.voting.open){
-    const ms=Math.max(0, (state.voting.endsAt||0)-Date.now());
+  // timer + result
+  const now=Date.now();
+  if(!state.voting.open && (state.voting.prepUntil||0) > now){
+    const ms = state.voting.prepUntil - now;
+    timerEl.textContent = 'Get ready: '+fmt(ms);
+    resultTag.textContent='—'; resultTag.className='resultTag';
+  } else if(state.voting.open){
+    const ms=Math.max(0, (state.voting.endsAt||0)-now);
     timerEl.textContent=fmt(ms);
     resultTag.textContent='Voting…'; resultTag.className='resultTag';
   } else {
     timerEl.textContent='00:00'; announce(state.voting.lastResult);
   }
 }
-function addMiniDots(sel, cls, n){
-  const c=$(sel);
-  for(let i=0;i<n;i++){ const d=document.createElement('div'); d.className='d '+cls; c.appendChild(d); if(c.childNodes.length>30) c.removeChild(c.firstChild); }
-}
+function addMiniDots(sel, cls, n){ const c=$(sel); for(let i=0;i<n;i++){ const d=document.createElement('div'); d.className='d '+cls; c.appendChild(d); if(c.childNodes.length>30) c.removeChild(c.firstChild); } }
 function fmt(ms){ const s=Math.ceil(ms/1000); const m=Math.floor(s/60), r=s%60; return `${String(m).padStart(2,'0')}:${String(r).padStart(2,'0')}` }
 function announce(w){ if(!w){ resultTag.textContent='—'; resultTag.className='resultTag'; return;}
   if(w==='encore'){ resultTag.textContent='Encore!'; resultTag.className='resultTag r-encore'; }
@@ -298,14 +302,8 @@ function showPinSaved(key){ if(key!=='pin') return; pinSaved.textContent='PIN sa
 togglePin.onclick = ()=>{ pin.type = (pin.type==='password'?'text':'password'); togglePin.textContent = (pin.type==='password'?'Show':'Hide'); };
 
 /* Event actions */
-document.getElementById('saveEvent').onclick = async ()=>{
-  await postState(); const m=document.getElementById('eventSavedMsg');
-  m.textContent='Saved!'; setTimeout(()=>m.textContent='',1400);
-};
-lockBtn.onclick = async ()=>{
-  state.event.locked = !state.event.locked;
-  await postState();
-};
+document.getElementById('saveEvent').onclick = async ()=>{ await postState(); const m=document.getElementById('eventSavedMsg'); m.textContent='Saved!'; setTimeout(()=>m.textContent='',1400); };
+lockBtn.onclick = async ()=>{ state.event.locked = !state.event.locked; await postState(); };
 document.getElementById('resetEvent').onclick = async ()=>{
   if(state.event.locked){ alert('Unlock to reset.'); return;}
   if(!confirm('Reset this event? This clears singers & votes.')) return;
@@ -313,7 +311,7 @@ document.getElementById('resetEvent').onclick = async ()=>{
     event:{venue:'',venuePublic:'',date:new Date().toISOString().slice(0,10),kj:'',hostName:'',pin:'',locked:false},
     saved:{venues: state.saved?.venues ?? [], kjs: state.saved?.kjs ?? []},
     singers:[], current:{id:null,name:'',songArtist:''},
-    voting:{open:false,endsAt:0,extendCount:0,counts:{encore:0,another:0,maybe:0},lastResult:null,voters:{}},
+    voting:{open:false,prepUntil:0,endsAt:0,extendCount:0,counts:{encore:0,another:0,maybe:0},lastResult:null,voters:{}},
     winners:{encore:[], another:[]}
   };
   await postState();
@@ -324,15 +322,16 @@ document.getElementById('addSinger').onclick = async ()=>{
   const name=singerName.value.trim(); if(!name){ alert('Enter a singer name.'); return;}
   const id='s_'+Math.random().toString(36).slice(2,9);
   state.singers.push({id,name,_color:''});
-  // IMPORTANT: Do NOT auto-set as current here.
   singerName.value=''; songArtist.value='';
   await postState();
 };
 function setCurrent(id){
   const s = state.singers.find(x=>x.id===id); if(!s) return;
-  // Do NOT clear other singers' indicators here.
-  state.current = { id:s.id, name:s.name, songArtist:state.current.songArtist||'' };
-  if (typeof sfx?.stopOpen === 'function') sfx.stopOpen();
+  // Reset vote counts and last result when switching to a new singer
+  state.voting = { open:false, prepUntil:0, endsAt:0, extendCount:0,
+                   counts:{encore:0,another:0,maybe:0}, lastResult:null, voters:{} };
+  lastCounts = {encore:0,another:0,maybe:0};
+  state.current = { id:s.id, name:s.name, songArtist:'' };
   postState();
 }
 function removeSinger(id){ state.singers=state.singers.filter(x=>x.id!==id); if(state.current.id===id){ state.current={id:null,name:'',songArtist:''}; } postState(); }
@@ -340,18 +339,15 @@ function removeSinger(id){ state.singers=state.singers.filter(x=>x.id!==id); if(
 /* Now Singing */
 currentSongArtist.addEventListener('input', async ()=>{ if(!state.current.id) return; state.current.songArtist=currentSongArtist.value.trim(); await postState(); });
 
-/* Voting */
+/* Voting with 5s prep */
 document.getElementById('startVote').onclick = async ()=>{
   if(!state.current.id){ alert('Set a current singer first.'); return; }
-  try{
-    await fetch(PERF_URL, {method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ singer: state.current.name || '', song: state.current.songArtist || '' })});
-  }catch{}
-  state.voting={ open:true, endsAt:Date.now()+30000, extendCount:0,
-    counts:{encore:0,another:0,maybe:0}, lastResult:null, voters:{} };
+  try{ await fetch(PERF_URL, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ singer: state.current.name || '', song: state.current.songArtist || '' })}); }catch{}
+  const now=Date.now();
+  state.voting={ open:false, prepUntil: now+5000, endsAt:0, extendCount:0, counts:{encore:0,another:0,maybe:0}, lastResult:null, voters:{} };
   lastCounts = {encore:0,another:0,maybe:0};
   await postState();
-  sfx.playOpen();
+  // IMPORTANT: do NOT start loop sound yet; it starts when prep flips to open in loop()
 };
 document.getElementById('extendVote').onclick = async ()=>{ if(!state.voting.open) return; state.voting.endsAt+=15000; state.voting.extendCount++; await postState(); };
 document.getElementById('endVote').onclick = async ()=>{ await concludeVoting(); };
@@ -392,49 +388,54 @@ async function concludeVoting(){
   else if (winner === 'maybe')   setTimeout(()=>sfx.playLoser(),  150);
 }
 
-/* Loop */
+/* Loop: handle prep->open transition and end-on-time */
+let wasOpen=false;
 function loop(){
   if(poll) clearInterval(poll);
   poll=setInterval(async ()=>{
-    if(state?.voting?.open && Date.now()>=state.voting.endsAt){
+    await fetchState();
+    const now=Date.now();
+
+    // handle prep phase flip
+    if(!state.voting.open && (state.voting.prepUntil||0) > 0 && now >= state.voting.prepUntil){
+      state.voting.open = true;
+      state.voting.prepUntil = 0;
+      state.voting.endsAt = now + 30000;
+      await postState();
+      sfx.playOpen(); // start loop when voting actually opens
+    }
+
+    // auto-end when time is up
+    if(state?.voting?.open && now>=state.voting.endsAt){
       await concludeVoting();
     } else {
-      await fetchState(); render();
+      render();
       if(!state.voting.open) sfx.stopOpen();
     }
+    wasOpen = !!state.voting.open;
   }, 800);
 }
 
-/* Audio: mp3/wav fallback, no "over" sound */
-function makeAudio(sources){ const a=new Audio(); for(const src of sources){ const el=new Audio(src); el.preload='auto'; el.volume=1.0; if(a.canPlayType(el.type)!=='' || true){ return el; } } return new Audio(sources[0]); }
+/* Audio (unchanged logic from last good build) */
+function makeAudio(sources){ const a=new Audio(); for(const src of sources){ const el=new Audio(src); el.preload='auto'; el.volume=1.0; return el; } }
 const sfx = (function(){
   let enabled=false;
-  const aOpen   = makeAudio(['/assets/voting_open.mp3','/assets/voting_open.wav']); aOpen.loop=true;
+  const aOpen   = makeAudio(['/assets/voting_open.mp3','/assets/voting_open.wav']);  aOpen.loop=true;
   const aEncore = makeAudio(['/assets/encore.mp3','/assets/encore.wav']);
   const aLoser  = makeAudio(['/assets/loser.wav','/assets/loser.mp3']);
-
   const statusEl=document.getElementById('soundStatus');
   function setStatus(){ statusEl.innerHTML = 'Sound: <b>'+(enabled?'on':'off')+'</b>'; }
-
   let ctx=null;
   function waPing(){ try{ if(!ctx) ctx=new (window.AudioContext||window.webkitAudioContext)(); const o=ctx.createOscillator(), g=ctx.createGain(); g.gain.value=0.0001; o.connect(g).connect(ctx.destination); o.start(); o.stop(ctx.currentTime+0.02); return true; }catch{ return false; } }
   async function warmup(el){ try{ el.muted=true; await el.play(); el.pause(); el.currentTime=0; el.muted=false; return true; }catch{ return false; } }
-
   document.getElementById('enableSound').addEventListener('click', async ()=>{
     const ok = waPing() | await warmup(aEncore) | await warmup(aLoser) | await warmup(aOpen);
-    enabled = !!ok; setStatus();
-    if(!enabled) alert('Could not enable audio. Browser blocked playback.');
+    enabled = !!ok; setStatus(); if(!enabled) alert('Could not enable audio. Browser blocked playback.');
   });
-
   function safePlay(a){ if(!enabled) return; a.currentTime=0; a.play().catch(()=>{}); }
   function safeStop(a){ try{ a.pause(); a.currentTime=0; }catch{} }
-
-  return {
-    playOpen(){ if(!enabled) return; safeStop(aEncore); safeStop(aLoser); safeStop(aOpen); aOpen.play().catch(()=>{}); },
-    stopOpen(){ safeStop(aOpen); },
-    playEncore(){ safePlay(aEncore); },
-    playLoser(){ safePlay(aLoser); }
-  };
+  return { playOpen(){ if(!enabled) return; safeStop(aEncore); safeStop(aLoser); safeStop(aOpen); aOpen.play().catch(()=>{}); },
+           stopOpen(){ safeStop(aOpen); }, playEncore(){ safePlay(aEncore); }, playLoser(){ safePlay(aLoser); } };
 })();
 
 (async function init(){ await fetchState(); render(); loop(); })();
