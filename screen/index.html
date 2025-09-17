@@ -18,27 +18,30 @@
   .who{font-family:"Bebas Neue"; font-size:10vmin; letter-spacing:.3vmin; margin:.8vmin 0 3vmin; color:#ffffff; max-width:96vw; overflow-wrap:anywhere}
   .song{font-size:3vmin;color:var(--muted);margin:0 0 3vmin; max-width:96vw; overflow-wrap:anywhere}
   .row{display:flex;gap:2vmin;justify-content:center;flex-wrap:wrap}
-  .chip{padding:1vmin 2vmin;border-radius:12px;border:1px solid var(--line);background:var(--card)}
+  .chip{padding:1vmin 2vmin;border-radius:12px;border:1px solid var(--line);background:var(--card); font-size:4vmin}
   .enc{color:var(--green)} .ano{color:var(--yellow)} .may{color:var(--red)}
-  .badge{display:inline-block;padding:.6vmin 2vmin;border:1px solid var(--line);border-radius:999px;background:var(--card);font-weight:800}
+  .badge{display:inline-block;padding:1vmin 3vmin;border:2px solid var(--line);border-radius:999px;background:var(--card);font-weight:800; font-size:5vmin}
 
   .voteNow{margin:2.5vmin 0 1vmin; display:none}
-  .voteTag{font-family:"Montserrat"; font-weight:800; font-size:4vmin; color:#fff; padding:1vmin 2.5vmin; border-radius:999px; border:2px solid rgba(255,255,255,.15); background:linear-gradient(135deg, rgba(122,162,255,.2), rgba(47,6,88,.5))}
-  .prepTag{font-family:"Montserrat"; font-weight:800; font-size:3.5vmin; color:#fff; padding:1vmin 2.5vmin; border-radius:999px; border:2px solid rgba(255,255,255,.15); background:linear-gradient(135deg, rgba(255,214,102,.25), rgba(47,6,88,.45))}
-  .timer{font-family:"Bebas Neue"; font-size:12vmin; margin:1vmin 0 1.5vmin; letter-spacing:.3vmin}
+  .voteTag{font-family:"Montserrat"; font-weight:800; font-size:5vmin; color:#fff; padding:1vmin 2.5vmin; border-radius:999px; border:2px solid rgba(255,255,255,.15); background:linear-gradient(135deg, rgba(122,162,255,.2), rgba(47,6,88,.5))}
+  .prepTag{font-family:"Montserrat"; font-weight:800; font-size:5vmin; color:#fff; padding:1vmin 2.5vmin; border-radius:999px; border:2px solid rgba(255,255,255,.15); background:linear-gradient(135deg, rgba(255,214,102,.25), rgba(47,6,88,.45))}
+  .prepCount{font-family:"Bebas Neue"; font-size:20vmin; margin:1vmin 0 1.5vmin; letter-spacing:.3vmin}
+  .timer{font-family:"Bebas Neue"; font-size:14vmin; margin:1vmin 0 1.5vmin; letter-spacing:.3vmin}
 
-  .pit{position:relative; width:min(100vmin,92vw); height:26vmin; margin:1vmin auto 2.2vmin; border-radius:18px; border:2px solid rgba(255,255,255,.18); background:rgba(0,0,0,.18); overflow:hidden}
-  .ball{position:absolute; width:2.4vmin; height:2.4vmin; border-radius:50%; opacity:.95; box-shadow:0 0 10px rgba(0,0,0,.25)}
+  .pit{position:relative; width:min(100vmin,92vw); height:32vmin; margin:1vmin auto 2.2vmin; border-radius:18px; border:2px solid rgba(255,255,255,.18); background:rgba(0,0,0,.18); overflow:hidden}
+  .ball{position:absolute; width:4.2vmin; height:4.2vmin; border-radius:50%; opacity:.95; box-shadow:0 0 10px rgba(0,0,0,.25)}
   .ball.g{background:#25d366} .ball.y{background:#f6c945} .ball.r{background:#ff5e6c}
 
-  .overlay{position:fixed; inset:0; background:rgba(0,0,0,.85); display:none; align-items:center; justify-content:center; z-index:10}
-  .panel{text-align:center}
-  .ovTitle{font-family:"Bebas Neue"; font-size:14vmin; margin:0 0 2vmin}
-  .ovSinger{font-family:"Montserrat"; font-weight:800; font-size:6vmin; margin:0 0 1vmin}
-  .ovSong{font-size:3vmin; color:#cfe0ff}
+  /* 30s Result Overlays */
+  .overlay{position:fixed; inset:0; background:rgba(0,0,0,.92); display:none; align-items:center; justify-content:center; z-index:10}
+  .panel{text-align:center; padding:2vmin 4vmin}
+  .ovTitle{font-family:"Bebas Neue"; font-size:18vmin; margin:0 0 1.2vmin}
+  .ovSinger{font-family:"Montserrat"; font-weight:800; font-size:7vmin; margin:0 0 .6vmin}
+  .ovSong{font-size:3.8vmin; color:#cfe0ff; margin:0 0 1.2vmin}
+  .ovSub{font-size:4.6vmin; margin-top:1vmin}
 
   #confetti{position:absolute; inset:0; pointer-events:none}
-  .flashEncore{position:absolute; top:3vmin; left:50%; transform:translateX(-50%); background:#10152b; border:2px solid rgba(37,211,102,.5); color:var(--green); padding:1vmin 3vmin; border-radius:999px; font-weight:800; font-size:3vmin; box-shadow:0 10px 40px rgba(37,211,102,.35); display:none}
+  .flashEncore{position:absolute; top:3vmin; left:50%; transform:translateX(-50%); background:#10152b; border:2px solid rgba(37,211,102,.5); color:var(--green); padding:1vmin 3vmin; border-radius:999px; font-weight:800; font-size:4vmin; box-shadow:0 10px 40px rgba(37,211,102,.35); display:none}
 </style>
 
 <div class="wrap">
@@ -57,7 +60,7 @@
 
   <div id="prep" style="display:none">
     <div class="prepTag">Get ready to vote!</div>
-    <div id="preTimer" class="timer">00:05</div>
+    <div id="preCount" class="prepCount">5</div>
   </div>
 
   <div id="voteNow" class="voteNow">
@@ -73,6 +76,16 @@
   </div>
 
   <div style="margin-top:2.5vmin"><span id="status" class="badge">Waiting…</span></div>
+
+  <!-- 30s result overlay -->
+  <div id="overlay" class="overlay">
+    <div class="panel">
+      <div id="ovTitle" class="ovTitle">Encore!</div>
+      <div id="ovSinger" class="ovSinger">—</div>
+      <div id="ovSong" class="ovSong">—</div>
+      <div id="ovSub" class="ovSub"></div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -85,6 +98,7 @@ function nowMs(){ return Date.now()+clockOffset; }
 function smoothOffset(observed){ if(!isFinite(observed)) return; clockOffset=0.9*clockOffset+0.1*observed; }
 
 let state=null, prevOpen=false, lastCounts={encore:0, another:0, maybe:0};
+let overlayTimer=null, overlaySingerId=null;
 
 /* Confetti */
 const confetti=(function(){
@@ -92,7 +106,7 @@ const confetti=(function(){
   let W=0,H=0, parts=[], running=false;
   function resize(){ W=cv.width=window.innerWidth; H=cv.height=window.innerHeight; }
   function rand(a,b){ return a+Math.random()*(b-a); }
-  function burst(n=170){
+  function burst(n=200){
     for(let i=0;i<n;i++){
       parts.push({x: W/2, y: H*0.25, r: rand(2,4), vx: rand(-6,6), vy: rand(-2,8), g: 0.18, life: rand(60,140), color: `hsl(${Math.floor(rand(0,360))} 90% 60%)`});
     }
@@ -113,7 +127,6 @@ const confetti=(function(){
   return { burst };
 })();
 function showEncoreFlash(){
-  // kept for visual pop but no sound
   const el=document.getElementById('flash'); el.style.display='inline-block'; el.style.opacity='1';
   el.animate([{transform:'translateX(-50%) scale(0.9)', opacity:.0},{transform:'translateX(-50%) scale(1)',opacity:1}],{duration:200,easing:'ease-out'});
   setTimeout(()=>{ el.animate([{opacity:1},{opacity:0}],{duration:800,easing:'ease-in'}).onfinish=()=>{ el.style.display='none'; }; }, 1300);
@@ -125,16 +138,55 @@ function spawnBalls(kind, n){
   const W=pit.clientWidth, H=pit.clientHeight;
   for(let i=0;i<n;i++){
     const b=document.createElement('div'); b.className='ball '+cls;
-    let x=10+Math.random()*(W-20), y=10, vx=(Math.random()*2-1)*0.8, vy=(Math.random()*1.5+0.8);
+    let x=10+Math.random()*(W-20), y=10, vx=(Math.random()*2-1)*1.0, vy=(Math.random()*1.5+1.0);
     b.style.left=x+'px'; b.style.top=y+'px'; pit.appendChild(b);
     const g=0.22, fr=0.86, dt=16;
     const id=setInterval(()=>{
       vy+=g; x+=vx*dt/16; y+=vy*dt/16;
-      if(x<12){x=12;vx*=-fr} if(x>W-12){x=W-12;vx*=-fr}
-      if(y>H-12){y=H-12; vy*=-fr; if(Math.abs(vy)<0.22){clearInterval(id);} }
+      if(x<14){x=14;vx*=-fr} if(x>W-14){x=W-14;vx*=-fr}
+      if(y>H-14){y=H-14; vy*=-fr; if(Math.abs(vy)<0.22){clearInterval(id);} }
       b.style.left=x+'px'; b.style.top=y+'px';
     }, dt);
     if(pit.childNodes.length>360){ pit.removeChild(pit.firstChild); }
+  }
+}
+
+/* Overlay show/hide for 30s or until singer changes */
+function showOverlay(kind){
+  const ov=document.getElementById('overlay'), t=document.getElementById('ovTitle'),
+        s=document.getElementById('ovSinger'), sg=document.getElementById('ovSong'),
+        sub=document.getElementById('ovSub');
+  const name = state.current?.name || '—';
+  const song = state.current?.songArtist || '';
+  overlaySingerId = state.current?.id || null;
+
+  if(kind==='encore'){
+    t.textContent='Encore!';
+    t.style.color='#25d366';
+    sub.textContent = `Congratulations, ${name}!`;
+    confetti.burst(220); showEncoreFlash();
+  } else if(kind==='another'){
+    t.textContent='Another Shot!';
+    t.style.color='#f6c945';
+    sub.textContent = `Congratulations, ${name}!`;
+  } else {
+    t.textContent='Maybe Next Time';
+    t.style.color='#ff5e6c';
+    sub.textContent = `Sorry, ${name}.`;
+  }
+  s.textContent = name;
+  sg.textContent = song;
+
+  ov.style.display='flex';
+  clearTimeout(overlayTimer);
+  overlayTimer = setTimeout(()=>{ ov.style.display='none'; overlaySingerId=null; }, 30000);
+}
+function hideOverlayIfSingerChanged(){
+  if(!overlaySingerId) return;
+  const curId = state.current?.id || null;
+  if(curId && curId !== overlaySingerId){
+    document.getElementById('overlay').style.display='none';
+    overlaySingerId=null; clearTimeout(overlayTimer);
   }
 }
 
@@ -149,17 +201,19 @@ async function tick(){
     if(clockOffset===0) clockOffset=observed; else smoothOffset(observed);
   }
 
-  const publicVenue = state.event?.venuePublic || state.event?.venue || '—';
-  const kjName      = state.event?.kj || '';
-  const hasCurrent  = !!state.current?.id;
-  const singerName  = state.current?.name || '—';
-  const songText    = state.current?.songArtist || '';
-
-  document.getElementById('venue').textContent = publicVenue;
+  const publicOnly = (state.event?.venuePublic||'').trim();
+  document.getElementById('venue').textContent = publicOnly ? publicOnly : '—';
+  const kjName = state.event?.kj || '';
   document.getElementById('kj').textContent    = kjName ? `Hosted by ${kjName}` : 'Hosted by —';
 
-  document.getElementById('nowBlock').style.display = hasCurrent ? 'block' : 'none';
-  if(hasCurrent){ document.getElementById('who').textContent=singerName; document.getElementById('song').textContent=songText; }
+  const hasCurrent  = !!state.current?.id;
+  if(hasCurrent){
+    document.getElementById('nowBlock').style.display='block';
+    document.getElementById('who').textContent  = state.current?.name || '—';
+    document.getElementById('song').textContent = state.current?.songArtist || '';
+  } else {
+    document.getElementById('nowBlock').style.display='none';
+  }
 
   const t = nowMs();
   const open = !!state.voting?.open;
@@ -169,9 +223,13 @@ async function tick(){
   document.getElementById('prep').style.display    = prep ? 'block' : 'none';
   document.getElementById('voteNow').style.display = (!prep && open) ? 'block' : 'none';
 
+  // Counters
   const ce = state.voting?.counts?.encore  ?? 0;
   const ca = state.voting?.counts?.another ?? 0;
   const cm = state.voting?.counts?.maybe   ?? 0;
+  document.getElementById('cE').textContent = ce;
+  document.getElementById('cA').textContent = ca;
+  document.getElementById('cM').textContent = cm;
 
   if(open){
     if(ce>lastCounts.encore)  spawnBalls('encore',  ce-lastCounts.encore);
@@ -183,9 +241,11 @@ async function tick(){
   }
   lastCounts = {encore:ce, another:ca, maybe:cm};
 
+  // Prep countdown text (5..1)
   if(prep){
-    const ms = state.voting.prepUntil - t;
-    document.getElementById('preTimer').textContent = fmtPre(ms);
+    const ms = Math.max(0, state.voting.prepUntil - t);
+    const sLeft = Math.ceil(ms/1000);
+    document.getElementById('preCount').textContent = String(sLeft);
     document.getElementById('status').textContent = 'Get ready…';
   } else if(open){
     const ms=Math.max(0,(state.voting.endsAt||0)-t);
@@ -193,19 +253,21 @@ async function tick(){
     document.getElementById('status').textContent = 'Voting OPEN';
   } else {
     document.getElementById('timer').textContent='00:00';
-    document.getElementById('status').textContent = result ? (result==='encore'?'Winner: Encore!': result==='another'?'Winner: Another Shot!':'Winner: Maybe Next Time') : 'Waiting…';
+    document.getElementById('status').textContent = result ? (result==='encore'?'Encore!': result==='another'?'Another Shot!':'Maybe Next Time') : 'Waiting…';
   }
 
+  // Transition: open -> closed → show overlay
   if(prevOpen && !open && result){
-    if(result==='encore'){ confetti.burst(180); showEncoreFlash(); }
-    // No overlay audio; TVs are silent by design
+    showOverlay(result); // 30s, silent (host plays audio)
   }
   prevOpen = open;
+
+  // Hide overlay early if host sets a new singer
+  hideOverlayIfSingerChanged();
 }
 function fmt(ms){ const s=Math.ceil(ms/1000); const m=Math.floor(s/60), r=s%60; return `${String(m).padStart(2,'0')}:${String(r).padStart(2,'0')}` }
-function fmtPre(ms){ return '00:'+String(Math.max(0,Math.ceil(ms/1000))).padStart(2,'0'); }
 
-setInterval(tick, 1000); // ← stretched from ~800ms
+setInterval(tick, 1000);
 tick();
 
 // Wake-lock best effort
