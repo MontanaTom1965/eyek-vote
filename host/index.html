@@ -10,7 +10,8 @@
     body{margin:0;background:radial-gradient(1200px 800px at 10% -10%,#3c1181 0%,#2F0658 22%,#1b0930 52%,#0f031a 100%);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Ubuntu,Arial,sans-serif;min-height:100dvh}
     header{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:16px 20px;background:#200b38;position:sticky;top:0;z-index:10;box-shadow:0 6px 24px rgba(0,0,0,.35)}
     h1{margin:0;font-size:20px;font-weight:700;letter-spacing:.5px}
-    .wrap{display:grid;grid-template-columns:320px 1fr;gap:16px;padding:16px}
+    .links a{color:#7fd1ff;text-decoration:none;margin-left:10px}
+    .wrap{display:grid;grid-template-columns:260px 1fr;gap:16px;padding:16px}
     .card{background:var(--card);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:14px 14px 16px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
     .card h2{margin:0 0 10px;font-size:16px;color:#e9ddff}
     label{font-size:12px;color:var(--muted)}
@@ -26,11 +27,10 @@
     .bad{background:rgba(255,92,92,.16);border-color:rgba(255,92,92,.35)}
     .stack{display:flex;flex-direction:column;gap:10px}
     .flex{display:flex;gap:10px;align-items:center}
-    .right{margin-left:auto}
     .muted{color:var(--muted);font-size:12px}
 
-    /* singer list */
-    .singers{display:flex;flex-direction:column;gap:8px;max-height:60dvh;overflow:auto;padding-right:4px}
+    /* sidebar list = names only */
+    .singers{display:flex;flex-direction:column;gap:8px;max-height:66dvh;overflow:auto;padding-right:4px}
     .singer{display:flex;align-items:center;gap:8px;padding:10px;border-radius:12px;border:1px solid rgba(255,255,255,.08);background:#140425}
     .singer .name{font-weight:600}
     .badge{margin-left:auto;border-radius:999px;padding:4px 8px;font-size:12px;border:1px solid rgba(255,255,255,.14)}
@@ -46,49 +46,30 @@
     .dot{position:absolute;width:9px;height:9px;border-radius:50%;opacity:.9;animation:bounce .8s ease-out}
     @keyframes bounce{0%{transform:translateY(-16px)}60%{transform:translateY(26px)}100%{transform:translateY(12px)}}
 
-    .quick{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}
-    .quick button{font-weight:700}
-
     .timer{font-size:32px;font-weight:800}
     .status{display:flex;align-items:center;gap:8px}
-
-    .links a{color:#7fd1ff}
   </style>
 </head>
 <body>
   <header>
     <h1>EYEK • Host</h1>
     <div class="links">
-      <a href="/vote/" target="_blank">Vote</a> ·
-      <a href="/screen/" target="_blank">Screen</a> ·
+      <a href="/host/" target="_blank">Host</a>
+      <a href="/screen/" target="_blank">Screen</a>
       <a href="/board/" target="_blank">Board</a>
+      <a href="/vote/" target="_blank">Vote</a>
     </div>
   </header>
 
   <div class="wrap">
-    <!-- LEFT: rotation & quick actions -->
+    <!-- LEFT: names only -->
     <aside class="card">
       <h2>Rotation</h2>
-      <div class="stack">
-        <div class="row">
-          <input id="newSinger" placeholder="Add singer name" />
-          <button id="addSingerBtn">Add</button>
-        </div>
-        <div class="row">
-          <input id="songTitle" placeholder="Song (optional)" />
-          <input id="songArtist" placeholder="Artist (optional)" />
-        </div>
-        <div class="flex">
-          <button id="setCurrent">Set current singer</button>
-          <button id="removeSinger" class="right">Remove selected</button>
-        </div>
-        <div class="singers" id="singerList"></div>
-      </div>
+      <div class="singers" id="singerList"></div>
     </aside>
 
-    <!-- RIGHT: controls, status, scores -->
+    <!-- RIGHT: event setup + add singer + voting + scores -->
     <main class="stack">
-
       <section class="card">
         <h2>Event & KJ Setup</h2>
         <div class="stack">
@@ -127,12 +108,31 @@
               </div>
             </div>
           </div>
-          <div class="flex">
+          <div class="flex" style="gap:8px;flex-wrap:wrap">
             <button id="saveEvent">Save</button>
-            <button id="lockEvent" class="right">Lock</button>
-            <button id="resetAll" class="bad right">Reset (singers + votes)</button>
+            <button id="lockEvent">Lock</button>
+            <button id="resetAll" class="bad">Reset (singers + votes)</button>
+            <span class="muted" style="margin-left:auto">Sound: <a href="#" id="enableSound">Enable</a></span>
           </div>
-          <div class="muted">Sound: <a href="#" id="enableSound">Enable</a> (required once on this laptop)</div>
+        </div>
+      </section>
+
+      <!-- ADD SINGER lives in MAIN (restored) -->
+      <section class="card">
+        <h2>Add Singer</h2>
+        <div class="stack">
+          <div class="row">
+            <input id="newSinger" placeholder="Singer name" />
+            <button id="addSingerBtn">Add</button>
+          </div>
+          <div class="row">
+            <input id="songTitle"  placeholder="Song (optional)" />
+            <input id="songArtist" placeholder="Artist (optional)" />
+          </div>
+          <div class="flex" style="gap:8px;flex-wrap:wrap">
+            <button id="setCurrent">Set current singer</button>
+            <button id="removeSinger">Remove selected</button>
+          </div>
         </div>
       </section>
 
@@ -145,15 +145,15 @@
           </div>
           <div class="timer" id="timer">00:00</div>
         </div>
-        <div class="grid3" style="margin-top:10px">
+        <div class="row" style="margin-top:10px">
           <button id="startBtn">Start (5s prep → 30s)</button>
           <button id="extendBtn">Extend +15s</button>
           <button id="endBtn">End</button>
         </div>
-        <div class="quick">
-          <button data-qv="encore" style="background:rgba(25,195,125,.2)">Encore</button>
+        <div class="row" style="margin-top:8px">
+          <button data-qv="encore"  style="background:rgba(25,195,125,.2)">Encore</button>
           <button data-qv="another" style="background:rgba(246,195,74,.2)">Another Shot</button>
-          <button data-qv="maybe" style="background:rgba(255,92,92,.2)">Maybe Next Time</button>
+          <button data-qv="maybe"   style="background:rgba(255,92,92,.2)">Maybe Next Time</button>
         </div>
       </section>
 
@@ -165,7 +165,6 @@
           <div class="counter"><h3>Maybe Next Time</h3><div class="num" id="maybeNum">0</div><div class="dots" id="maybeDots"></div></div>
         </div>
       </section>
-
     </main>
   </div>
 
@@ -190,29 +189,30 @@
     const voteState = el('voteState'), nowUp = el('nowUp'), timer = el('timer');
     const encoreNum=el('encoreNum'), anotherNum=el('anotherNum'), maybeNum=el('maybeNum');
     const dots={encore:el('encoreDots'), another:el('anotherDots'), maybe:el('maybeDots')};
+    const list = el('singerList');
 
     // datalists from localStorage mirrors
     function loadDataLists(){
       const venues = JSON.parse(localStorage.getItem('eyek_venues')||'[]');
-      const kjcos = JSON.parse(localStorage.getItem('eyek_kjcos')||'[]');
-      const vdl = el('venues'); vdl.innerHTML = venues.map(v=>`<option value="${v}"></option>`).join('');
-      const kdl = el('kjcos');  kdl.innerHTML = kjcos .map(v=>`<option value="${v}"></option>`).join('');
+      const kjcos  = JSON.parse(localStorage.getItem('eyek_kjcos') ||'[]');
+      el('venues').innerHTML = venues.map(v=>`<option value="${v}"></option>`).join('');
+      el('kjcos' ).innerHTML = kjcos .map(v=>`<option value="${v}"></option>`).join('');
     }
     loadDataLists();
 
     // Event save + mirror datalists
     el('saveEvent').onclick = async ()=>{
-      const v = el('venue').value.trim();
+      const v  = el('venue').value.trim();
       const vp = el('venuePublic').value.trim();
-      const d = el('eventDate').value;
+      const d  = el('eventDate').value;
       const kc = el('kjCompany').value.trim();
       const hn = el('hostName').value.trim();
-      const pin = el('pin').value.trim();
+      const pin= el('pin').value.trim();
       if(!/^[0-9]{4,6}$/.test(pin)){alert('PIN must be 4–6 digits');return;}
       const pushUnique=(k,val)=>{const arr=JSON.parse(localStorage.getItem(k)||'[]'); if(val && !arr.includes(val)){arr.push(val); localStorage.setItem(k, JSON.stringify(arr));}};
       pushUnique('eyek_venues', v); pushUnique('eyek_kjcos', kc); loadDataLists();
       await fetch(S.endpoints.set,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({venue:v,venuePublic:vp,date:d,kjCompany:kc,hostName:hn,pin})});
-      alert('Saved. Datalists updated.');
+      alert('Saved.');
     };
 
     // Lock/Unlock & Reset
@@ -235,47 +235,44 @@
     const aWin  = document.getElementById('aWin');
     const aLose = document.getElementById('aLose');
 
-    function pickSrc(){
-      const a=document.createElement('audio');
-      return (a.canPlayType && a.canPlayType('audio/mpeg')) ? 'mp3' : 'wav';
-    }
+    function pickSrc(){ const a=document.createElement('audio'); return (a.canPlayType && a.canPlayType('audio/mpeg')) ? 'mp3' : 'wav'; }
     const ext = pickSrc();
     aLoop.src = `/assets/voting_open.${ext}`;
     aWin.src  = `/assets/encore.${ext}`;
     aLose.src = `/assets/loser.${ext}`;
 
-    aLoop.addEventListener('error', ()=>console.warn('Voting loop failed to load', aLoop.error));
-    aWin .addEventListener('error', ()=>console.warn('Encore sound failed to load', aWin.error));
-    aLose.addEventListener('error', ()=>console.warn('Lose sound failed to load', aLose.error));
-
     el('enableSound').onclick = async (e)=>{
       e.preventDefault();
-      try{ await aLoop.play(); aLoop.pause(); alert('Sound enabled on this device.'); }
+      try{ await aLoop.play(); aLoop.pause(); alert('Sound enabled on this laptop.'); }
       catch{ alert('Browser blocked autoplay. Click again after interacting on the page.'); }
     };
 
-    // Rotation add/remove/select
-    const list = el('singerList');
+    // Rotation rendering (names only in sidebar)
     function renderSingers(){
       list.innerHTML = S.singers.map((s,i)=>{
         const badge = s.badge?`<span class="badge ${s.badge==='encore'?'b-encore':'b-another'}">${s.badge==='encore'?'Encore':'Another'}</span>`:'';
-        return `<div class="singer" data-i="${i}"><input type="radio" name="sel" ${i===S.selIndex?'checked':''} style="accent-color:#7fd1ff"/> <div class="name">${s.name}</div> ${badge}</div>`
+        return `<label class="singer" data-i="${i}">
+          <input type="radio" name="sel" ${i===S.selIndex?'checked':''} style="accent-color:#7fd1ff"/>
+          <div class="name">${s.name}</div>${badge}
+        </label>`;
       }).join('');
       list.querySelectorAll('.singer').forEach(div=>{
         div.onclick = ()=>{S.selIndex=Number(div.dataset.i); renderSingers();}
       })
     }
+
+    // Add / remove singer
     el('addSingerBtn').onclick = ()=>{
       const nm = el('newSinger').value.trim(); if(!nm) return;
       S.singers.push({name:nm, badge:null}); el('newSinger').value=''; renderSingers();
     };
     el('removeSinger').onclick = ()=>{ if(S.selIndex<0) return; S.singers.splice(S.selIndex,1); S.selIndex=-1; renderSingers(); };
 
-    // Set current singer (also submits optional performance meta)
+    // Set current singer (and clear round counts)
     el('setCurrent').onclick = async ()=>{
       if(S.selIndex<0){alert('Select a singer from the list.');return}
       const s = S.singers[S.selIndex];
-      const song = el('songTitle').value.trim();
+      const song   = el('songTitle').value.trim();
       const artist = el('songArtist').value.trim();
       setCounts(0,0,0);
       await fetch(S.endpoints.perf,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({current:s.name,song,artist})});
@@ -291,17 +288,16 @@
       }
     }
     function nowMs(){ return Date.now() + (serverOffsetMs||0); }
-
-    // Gentle client-only smoothing if serverNow not present
-    function smoothEnds(targetKey){
-      const target = S.state[targetKey]; if(!target) return;
-      const ideal = target - Date.now();
-      const actual = target - nowMs();
-      const drift = actual - ideal;
-      if (Math.abs(drift) > 1500) serverOffsetMs -= Math.sign(drift) * 500; // nudge 0.5s per tick
-    }
-
     function setCounts(e,a,m){encoreNum.textContent=e; anotherNum.textContent=a; maybeNum.textContent=m}
+
+    // Mini dots
+    function addMiniDot(which){
+      const d = document.createElement('div'); d.className='dot';
+      d.style.left = Math.random()*96 + '%';
+      d.style.background = which==='encore'? '#19c37d' : which==='another'? '#f6c34a' : '#ff5c5c';
+      dots[which].appendChild(d);
+      setTimeout(()=> d.remove(), 1200);
+    }
 
     // Polling loop
     let prev={encore:0,another:0,maybe:0, winner:null};
@@ -309,7 +305,7 @@
       try{
         const r = await fetch(S.endpoints.get); const st = await r.json();
         updateOffsetFrom(st);
-        S.state = st; // {phase, prepUntil, endsAt, counts, singer, winner, winType, rotation?}
+        S.state = st;
         voteState.textContent = st.phase==='open'?'Open':(st.phase==='prep'?'Get ready…':'Closed');
         nowUp.textContent = 'Now up: ' + (st.singer||'—');
 
@@ -328,29 +324,16 @@
           dots[k].dataset.prev = cur;
         });
 
-        // play one-shot winner sound (HOST ONLY)
+        // one-shot winner sound (HOST ONLY)
         if(st.winner && st.winType && st.winner!==prev.winner){
           prev.winner = st.winner;
           if(st.winType==='encore'){ aWin.currentTime=0; aWin.play().catch(()=>{}); }
           else { aLose.currentTime=0; aLose.play().catch(()=>{}); }
         }
-
-        if (!('serverNow' in st)) {
-          if (st.phase==='open')  smoothEnds('endsAt');
-          if (st.phase==='prep')  smoothEnds('prepUntil');
-        }
-      }catch(e){/* ignore transient errors */}
+      }catch(e){}
     }, 700);
 
-    function addMiniDot(which){
-      const d = document.createElement('div'); d.className='dot';
-      d.style.left = Math.random()*96 + '%';
-      d.style.background = which==='encore'? '#19c37d' : which==='another'? '#f6c34a' : '#ff5c5c';
-      dots[which].appendChild(d);
-      setTimeout(()=> d.remove(), 1200);
-    }
-
-    // Start/Extend/End (+ optional perf log at Start)
+    // Start/Extend/End (log perf again at Start to bind the actual round)
     el('startBtn').onclick = async ()=>{
       const song   = el('songTitle').value.trim();
       const artist = el('songArtist').value.trim();
@@ -363,12 +346,12 @@
     el('extendBtn').onclick = ()=> fetch(S.endpoints.set,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'extend', add:15})});
     el('endBtn').onclick    = ()=> fetch(S.endpoints.set,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'end'})});
 
-    // Host quick votes
+    // Quick votes
     document.querySelectorAll('[data-qv]').forEach(b=>{
       b.onclick = ()=> fetch(S.endpoints.vote,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pick:b.dataset.qv, device:S.device, host:true})});
     });
 
-    // Loop sound: play when phase becomes open, stop otherwise
+    // Voting loop sound strictly tied to phase
     let loopOn=false;
     setInterval(()=>{
       const p = S.state.phase;
@@ -376,7 +359,6 @@
       if(p!=='open' && loopOn){ aLoop.pause(); loopOn=false; }
     }, 300);
 
-    // initial render
     renderSingers();
   </script>
   <!-- filename: /host/index.html -->
