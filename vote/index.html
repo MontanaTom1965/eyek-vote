@@ -54,10 +54,8 @@ let state=null, poll=null, eventPin=null;
 async function fetchState(){ const r=await fetch(GET_URL,{cache:'no-store'}); state=await r.json(); }
 function render(){
   if(!state) return;
-
   const publicVenue = state.event?.venuePublic || state.event?.venue || '—';
   document.getElementById('venue').textContent = `Welcome to ${publicVenue}`;
-
   const pinHost = digitsOnly(state.event?.pin || '');
 
   if(!eventPin){
@@ -66,7 +64,6 @@ function render(){
     $('#pinStatus').className = 'mini ' + (pinHost?'ok':'err');
     return;
   }
-
   if(digitsOnly(eventPin)!==pinHost){
     $('#pinStatus').textContent='Wrong PIN for this event.';
     $('#pinStatus').className='mini err';
@@ -81,7 +78,6 @@ function render(){
   $('#song').textContent   = state.current?.songArtist || '—';
 
   const open = !!state.voting?.open;
-  // Disable voting during prep or closed
   const inPrep = (!open && (state.voting?.prepUntil||0) > Date.now());
   const enable = open && !inPrep;
   ['v_encore','v_another','v_maybe'].forEach(id=>{ const b=$('#'+id); b.disabled=!enable; b.style.opacity=enable?1:.6; });
