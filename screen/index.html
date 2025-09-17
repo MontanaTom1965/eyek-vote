@@ -28,8 +28,8 @@
   .prepCount{font-family:"Bebas Neue"; font-size:20vmin; margin:1vmin 0 1.5vmin; letter-spacing:.3vmin}
   .timer{font-family:"Bebas Neue"; font-size:14vmin; margin:1vmin 0 1.5vmin; letter-spacing:.3vmin}
 
-  .pit{position:relative; width:min(100vmin,92vw); height:32vmin; margin:1vmin auto 2.2vmin; border-radius:18px; border:2px solid rgba(255,255,255,.18); background:rgba(0,0,0,.18); overflow:hidden}
-  .ball{position:absolute; width:4.2vmin; height:4.2vmin; border-radius:50%; opacity:.95; box-shadow:0 0 10px rgba(0,0,0,.25)}
+  .pit{position:relative; width:min(100vmin,92vw); height:40vmin; margin:1vmin auto 2.2vmin; border-radius:18px; border:2px solid rgba(255,255,255,.18); background:rgba(0,0,0,.18); overflow:hidden}
+  .ball{position:absolute; width:8.4vmin; height:8.4vmin; border-radius:50%; opacity:.95; box-shadow:0 0 10px rgba(0,0,0,.25)}
   .ball.g{background:#25d366} .ball.y{background:#f6c945} .ball.r{background:#ff5e6c}
 
   /* 30s Result Overlays */
@@ -132,22 +132,22 @@ function showEncoreFlash(){
   setTimeout(()=>{ el.animate([{opacity:1},{opacity:0}],{duration:800,easing:'ease-in'}).onfinish=()=>{ el.style.display='none'; }; }, 1300);
 }
 
-/* Physics vote balls */
+/* Physics vote balls (2x size) */
 function spawnBalls(kind, n){
   const pit=document.getElementById('pit'); const cls = kind==='encore'?'g':kind==='another'?'y':'r';
   const W=pit.clientWidth, H=pit.clientHeight;
   for(let i=0;i<n;i++){
     const b=document.createElement('div'); b.className='ball '+cls;
-    let x=10+Math.random()*(W-20), y=10, vx=(Math.random()*2-1)*1.0, vy=(Math.random()*1.5+1.0);
+    let x=14+Math.random()*(W-28), y=14, vx=(Math.random()*2-1)*1.0, vy=(Math.random()*1.5+1.0);
     b.style.left=x+'px'; b.style.top=y+'px'; pit.appendChild(b);
     const g=0.22, fr=0.86, dt=16;
     const id=setInterval(()=>{
       vy+=g; x+=vx*dt/16; y+=vy*dt/16;
-      if(x<14){x=14;vx*=-fr} if(x>W-14){x=W-14;vx*=-fr}
-      if(y>H-14){y=H-14; vy*=-fr; if(Math.abs(vy)<0.22){clearInterval(id);} }
+      if(x<22){x=22;vx*=-fr} if(x>W-22){x=W-22;vx*=-fr}
+      if(y>H-22){y=H-22; vy*=-fr; if(Math.abs(vy)<0.22){clearInterval(id);} }
       b.style.left=x+'px'; b.style.top=y+'px';
     }, dt);
-    if(pit.childNodes.length>360){ pit.removeChild(pit.firstChild); }
+    if(pit.childNodes.length>240){ pit.removeChild(pit.firstChild); }
   }
 }
 
@@ -241,7 +241,7 @@ async function tick(){
   }
   lastCounts = {encore:ce, another:ca, maybe:cm};
 
-  // Prep countdown text (5..1)
+  // Prep countdown text
   if(prep){
     const ms = Math.max(0, state.voting.prepUntil - t);
     const sLeft = Math.ceil(ms/1000);
@@ -257,9 +257,7 @@ async function tick(){
   }
 
   // Transition: open -> closed → show overlay
-  if(prevOpen && !open && result){
-    showOverlay(result); // 30s, silent (host plays audio)
-  }
+  if(prevOpen && !open && result){ showOverlay(result); }
   prevOpen = open;
 
   // Hide overlay early if host sets a new singer
