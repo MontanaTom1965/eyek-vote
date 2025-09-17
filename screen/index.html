@@ -12,29 +12,28 @@
   body{margin:0;background:var(--bg);color:var(--txt);font:20px system-ui,Segoe UI,Roboto,Helvetica,Arial}
   .wrap{display:grid;place-items:center;min-height:100svh;text-align:center;padding:4vmin;position:relative;overflow:hidden}
   .title{font-family:"Bebas Neue"; font-size:9vmin; letter-spacing:.5vmin; margin:0 0 1.2vmin; color:#fff}
-  .venue{font-family:"Montserrat"; font-weight:800; font-size:6vmin; color:#ffd6ff; margin:0 0 1vmin; text-shadow:0 6px 24px rgba(47,6,88,.45); max-width:95vw; white-space:normal; overflow-wrap:anywhere}
-  .kj{font-family:"Montserrat"; font-weight:600; font-size:2.6vmin; color:#c9d6ff; margin:0 0 4.5vmin; opacity:.9; max-width:95vw; overflow-wrap:anywhere}
-  .now{font-family:"Montserrat"; font-weight:800; font-size:4.5vmin; margin:0}
-  .who{font-family:"Bebas Neue"; font-size:10vmin; letter-spacing:.3vmin; margin:.8vmin 0 3vmin; color:#ffffff; max-width:96vw; overflow-wrap:anywhere}
-  .song{font-size:3vmin;color:var(--muted);margin:0 0 3vmin; max-width:96vw; overflow-wrap:anywhere}
+  .venue{font-family:"Montserrat"; font-weight:800; font-size:6.2vmin; color:#ffd6ff; margin:0 0 1vmin; text-shadow:0 6px 24px rgba(47,6,88,.45); max-width:95vw; white-space:normal; overflow-wrap:anywhere}
+  .kj{font-family:"Montserrat"; font-weight:600; font-size:2.8vmin; color:#c9d6ff; margin:0 0 4.5vmin; opacity:.9; max-width:95vw; overflow-wrap:anywhere}
+  .now{font-family:"Montserrat"; font-weight:800; font-size:4.8vmin; margin:0}
+  .who{font-family:"Bebas Neue"; font-size:10.5vmin; letter-spacing:.3vmin; margin:.8vmin 0 3vmin; color:#ffffff; max-width:96vw; overflow-wrap:anywhere}
+  .song{font-size:3.2vmin;color:var(--muted);margin:0 0 3vmin; max-width:96vw; overflow-wrap:anywhere}
   .row{display:flex;gap:2vmin;justify-content:center;flex-wrap:wrap}
   .chip{padding:1vmin 2vmin;border-radius:12px;border:1px solid var(--line);background:var(--card)}
   .enc{color:var(--green)} .ano{color:var(--yellow)} .may{color:var(--red)}
   .badge{display:inline-block;padding:.6vmin 2vmin;border:1px solid var(--line);border-radius:999px;background:var(--card);font-weight:800}
   .voteNow{margin:2.5vmin 0 1vmin; display:none}
-  .voteTag{font-family:"Montserrat"; font-weight:800; font-size:4vmin; color:#fff; padding:1vmin 2.5vmin; border-radius:999px; border:2px solid rgba(255,255,255,.15); background:linear-gradient(135deg, rgba(122,162,255,.2), rgba(47,6,88,.5))}
-  .prepTag{font-family:"Montserrat"; font-weight:800; font-size:3.5vmin; color:#fff; padding:1vmin 2.5vmin; border-radius:999px; border:2px solid rgba(255,255,255,.15); background:linear-gradient(135deg, rgba(255,214,102,.25), rgba(47,6,88,.45))}
-  .timer{font-family:"Bebas Neue"; font-size:12vmin; margin:1vmin 0 1.5vmin; letter-spacing:.3vmin}
+  .voteTag{font-family:"Montserrat"; font-weight:800; font-size:4.2vmin; color:#fff; padding:1vmin 2.5vmin; border-radius:999px; border:2px solid rgba(255,255,255,.15); background:linear-gradient(135deg, rgba(122,162,255,.2), rgba(47,6,88,.5))}
+  .prepTag{font-family:"Montserrat"; font-weight:800; font-size:3.7vmin; color:#fff; padding:1vmin 2.5vmin; border-radius:999px; border:2px solid rgba(255,255,255,.15); background:linear-gradient(135deg, rgba(255,214,102,.25), rgba(47,6,88,.45))}
+  .timer{font-family:"Bebas Neue"; font-size:12.5vmin; margin:1vmin 0 1.5vmin; letter-spacing:.3vmin}
   .qrBox{position:absolute; right:3vmin; bottom:3vmin; width:20vmin; height:20vmin; border:2px dashed rgba(255,255,255,.25); border-radius:16px; display:grid; place-items:center; color:#cfe0ff; font-size:2vmin}
   .qrBox::after{content:"QR to vote coming soon"; text-align:center; padding:1vmin}
   #confetti{position:absolute; inset:0; pointer-events:none}
   .flashEncore{position:absolute; top:3vmin; left:50%; transform:translateX(-50%); background:#10152b; border:2px solid rgba(37,211,102,.5); color:var(--green); padding:1vmin 3vmin; border-radius:999px; font-weight:800; font-size:3vmin; box-shadow:0 10px 40px rgba(37,211,102,.35); display:none}
   .heartDot{position:absolute; left:2.5vmin; bottom:2.5vmin; width:1.6vmin; height:1.6vmin; border-radius:50%; background:#8edbff; opacity:.7; box-shadow:0 0 16px rgba(142,219,255,.55)}
-  /* vote dots pile area */
-  .dots{position:relative; width:min(80vmin,90vw); height:16vmin; margin:1vmin auto 2vmin; border-radius:16px; border:1px solid rgba(255,255,255,.12); background:rgba(0,0,0,.15); overflow:hidden}
-  .dots .d{position:absolute; width:1.6vmin; height:1.6vmin; border-radius:50%; opacity:.9; transform:translate(-50%,-50%); animation:pop .28s ease-out}
-  .d.g{background:var(--green)} .d.y{background:var(--yellow)} .d.r{background:var(--red)}
-  @keyframes pop{from{transform:translate(-50%,-50%) scale(.6); opacity:.0}to{transform:translate(-50%,-50%) scale(1); opacity:.9}}
+  /* vote dots area — larger */
+  .dots{position:relative; width:min(92vmin,92vw); height:28vmin; margin:1vmin auto 2vmin; border-radius:18px; border:1px solid rgba(255,255,255,.12); background:rgba(0,0,0,.15); overflow:hidden}
+  .dot{position:absolute; width:2.4vmin; height:2.4vmin; border-radius:50%}
+  .dot.g{background:var(--green)} .dot.y{background:var(--yellow)} .dot.r{background:var(--red)}
 </style>
 
 <div class="wrap">
@@ -81,9 +80,7 @@ function fmt(ms){ const s=Math.ceil(ms/1000); const m=Math.floor(s/60), r=s%60; 
 function fmtPre(ms){ return '00:'+String(Math.max(0,Math.ceil(ms/1000))).padStart(2,'0'); }
 
 let state=null;
-// confetti control: only when round transitions from open->closed with Encore
-let prevOpen=false;
-// For visual dots, remember last counts
+let prevOpen=false;      // to detect open->closed
 let lastCounts={encore:0, another:0, maybe:0};
 
 /* Wake Lock */
@@ -106,7 +103,7 @@ const confetti=(function(){
   let W=0,H=0, parts=[], running=false;
   function resize(){ W=cv.width=window.innerWidth; H=cv.height=window.innerHeight; }
   function rand(a,b){ return a+Math.random()*(b-a); }
-  function burst(n=150){
+  function burst(n=180){
     for(let i=0;i<n;i++){
       parts.push({x: W/2, y: H*0.2, r: rand(2,4), vx: rand(-6,6), vy: rand(-2,8), g: 0.18, life: rand(60,140), color: `hsl(${Math.floor(rand(0,360))} 90% 60%)`});
     }
@@ -127,25 +124,58 @@ const confetti=(function(){
   return { burst };
 })();
 
-function showEncoreFlash(){
-  const el=$('#flash'); el.style.display='inline-block'; el.style.opacity='1';
-  el.animate([{transform:'translateX(-50%) scale(0.9)', opacity:.0},{transform:'translateX(-50%) scale(1)',opacity:1}],{duration:200,easing:'ease-out'});
-  setTimeout(()=>{ el.animate([{opacity:1},{opacity:0}],{duration:800,easing:'ease-in'}).onfinish=()=>{ el.style.display='none'; }; }, 1300);
-}
+/* Physics dots */
+const physics = (function(){
+  const dotsWrap = ()=>document.getElementById('dots');
+  const actors = new Set(); // active animations
+  function add(kind, n){
+    const wrap=dotsWrap(); const W=wrap.clientWidth, H=wrap.clientHeight;
+    for(let i=0;i<n;i++){
+      const d=document.createElement('div'); d.className='dot '+(kind==='encore'?'g':kind==='another'?'y':'r');
+      wrap.appendChild(d);
+      // initial position near top center with jitter
+      let x=W*0.5 + (Math.random()*2-1)*W*0.1;
+      let y=H*0.15 + Math.random()*H*0.05;
+      // velocity & physics
+      let vx=(Math.random()*2-1)*0.45*W/100; // px per frame-ish
+      let vy=(Math.random()*-0.8)*H/120;
+      const g = H/900;     // gravity
+      const fr = 0.995;    // friction
+      const bounce=0.65;   // bounce loss
+      const stopV=H/1500;  // velocity threshold to settle
+      const maxT = 2200;   // ms
+      const born = performance.now();
 
-/* add dot(s) to pile */
-function addDots(kind, n){
-  const wrap = $('#dots'); const cls = kind==='encore'?'g':kind==='another'?'y':'r';
-  const W = wrap.clientWidth, H = wrap.clientHeight;
-  for(let i=0;i<n;i++){
-    const d=document.createElement('div'); d.className='d '+cls;
-    const x = 10 + Math.random()*(W-20);
-    const y = 10 + Math.random()*(H-20);
-    d.style.left = x+'px'; d.style.top = y+'px';
-    wrap.appendChild(d);
-    if(wrap.childNodes.length>220) wrap.removeChild(wrap.firstChild);
+      function step(t){
+        const dt=16; // approx
+        vy += g*dt;
+        x += vx*dt; y += vy*dt;
+
+        // walls
+        if(x<12){x=12; vx*=-bounce;}
+        if(x>W-12){x=W-12; vx*=-bounce;}
+        if(y>H-12){
+          y=H-12; vy*=-bounce; vx*=fr;
+          // small random kick to keep them lively
+          if(Math.abs(vy)<stopV) vy=0;
+          if(Math.abs(vx)<stopV) vx=0;
+        }
+        d.style.transform=`translate(${x}px,${y}px)`;
+
+        const alive = (performance.now()-born) < maxT && (Math.abs(vx)+Math.abs(vy))>stopV*0.2;
+        if(alive){ actors.add(handle); requestAnimationFrame(step); }
+        else { actors.delete(handle); }
+      }
+      d.style.transform=`translate(${x}px,${y}px)`;
+      function handle(ts){ step(ts); }
+      requestAnimationFrame(step);
+    }
+    // trim DOM children
+    while(wrap.childNodes.length>260){ wrap.removeChild(wrap.firstChild); }
   }
-}
+  function clear(){ const wrap=dotsWrap(); wrap.innerHTML=''; actors.clear(); }
+  return { add, clear };
+})();
 
 /* Main loop */
 async function tick(){
@@ -169,22 +199,21 @@ async function tick(){
   const prep = (!open && (state.voting?.prepUntil||0) > now);
   const result = state.voting?.lastResult || null;
 
-  // Phases visibility
+  // Phases
   $('#prep').style.display    = prep ? 'block' : 'none';
   $('#voteNow').style.display = (!prep && open) ? 'block' : 'none';
 
-  // Counters
+  // Counts
   const ce = state.voting?.counts?.encore  ?? 0;
   const ca = state.voting?.counts?.another ?? 0;
   const cm = state.voting?.counts?.maybe   ?? 0;
 
   if(open){
-    if(ce>lastCounts.encore)  addDots('encore',  ce-lastCounts.encore);
-    if(ca>lastCounts.another) addDots('another', ca-lastCounts.another);
-    if(cm>lastCounts.maybe)   addDots('maybe',   cm-lastCounts.maybe);
+    if(ce>lastCounts.encore)  physics.add('encore',  ce-lastCounts.encore);
+    if(ca>lastCounts.another) physics.add('another', ca-lastCounts.another);
+    if(cm>lastCounts.maybe)   physics.add('maybe',   cm-lastCounts.maybe);
   } else {
-    // clear on prep or closed
-    $('#dots').innerHTML='';
+    physics.clear();
     lastCounts = {encore:0, another:0, maybe:0};
   }
   lastCounts = {encore:ce, another:ca, maybe:cm};
@@ -204,15 +233,30 @@ async function tick(){
     $('#status').textContent = result ? (result==='encore'?'Winner: Encore!': result==='another'?'Winner: Another Shot!':'Winner: Maybe Next Time') : 'Waiting…';
   }
 
-  // Fire confetti only on transition from open->closed with Encore
+  // Confetti only when voting just closed with Encore
   if(prevOpen && !open && result==='encore'){
-    confetti.burst(180);
-    showEncoreFlash();
+    confetti.burst(200);
+    const el=$('#flash'); el.style.display='inline-block'; el.style.opacity='1';
+    el.animate([{transform:'translateX(-50%) scale(0.9)', opacity:.0},{transform:'translateX(-50%) scale(1)',opacity:1}],{duration:200,easing:'ease-out'});
+    setTimeout(()=>{ el.animate([{opacity:1},{opacity:0}],{duration:800,easing:'ease-in'}).onfinish=()=>{ el.style.display='none'; }; }, 1300);
   }
   prevOpen = open;
 }
 
 setInterval(tick, 800);
 tick();
+
+/* Wake + heartbeat */
+let wakeLock=null;
+async function requestWakeLock(){ try{ if('wakeLock' in navigator){ wakeLock = await navigator.wakeLock.request('screen'); } }catch(e){} }
+document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') requestWakeLock(); });
+function heartbeat(){
+  [$('#venue'), $('#kj')].forEach(el=>{
+    if(!el) return;
+    el.animate([{filter:'brightness(1)', textShadow:'0 6px 24px rgba(47,6,88,.45)'},{filter:'brightness(1.15)', textShadow:'0 10px 36px rgba(122,162,255,.55)'},{filter:'brightness(1)', textShadow:'0 6px 24px rgba(47,6,88,.45)'}],{duration:1200,easing:'ease-in-out'});
+  });
+  const dot=$('#heart'); if(dot){ dot.animate([{transform:'translateY(0)'},{transform:'translateY(-6px)'},{transform:'translateY(0)'}],{duration:700,easing:'ease-in-out'}); }
+}
+setInterval(heartbeat, 30000); setTimeout(heartbeat, 3000);
 requestWakeLock();
 </script>
