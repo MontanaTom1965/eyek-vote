@@ -492,27 +492,22 @@ function loop(){
   }, 1000);
 }
 
-/* Audio: universal unlock + Host-only playback (wav primary where available) */
-function makeAudio(sources){
-  let el=null;
-  for(const src of sources){
-    const a=new Audio(); a.src=src; a.preload='auto'; el=a; break;
-  }
-  return el;
-}
+/* Audio: Host-only with your exact files */
 const sfx = (function(){
   let enabled=false;
-  const aOpen   = makeAudio(['/assets/voting_open.mp3','/assets/voting_open.wav']);  if(aOpen) aOpen.loop=true;
-  const aEncore = makeAudio(['/assets/encore.wav','/assets/encore.mp3']);
-  const aLoser  = makeAudio(['/assets/loser.wav','/assets/loser.mp3']);
+  const aOpen   = new Audio('/assets/voting_open.mp3'); aOpen.loop = true;
+  const aEncore = new Audio('/assets/encore.mp3');
+  const aLoser  = new Audio('/assets/loser.wav');
+
   const statusEl=document.getElementById('soundStatus');
   function setStatus(){ statusEl.innerHTML = 'Sound: <b>'+(enabled?'on':'off')+'</b>'; }
 
   let ctx=null;
   function waPing(){ try{ if(!ctx) ctx=new (window.AudioContext||window.webkitAudioContext)(); const o=ctx.createOscillator(), g=ctx.createGain(); g.gain.value=0.0001; o.connect(g).connect(ctx.destination); o.start(); o.stop(ctx.currentTime+0.02); return true; }catch{ return false; } }
-  async function warmup(el){ try{ if(!el) return false; el.muted=true; await el.play(); el.pause(); el.currentTime=0; el.muted=false; return true; }catch{ return false; } }
+  async function warm(el){ try{ el.muted=true; await el.play(); el.pause(); el.currentTime=0; el.muted=false; return true; }catch(e){ console.warn('[audio] warmup blocked', e); return false; } }
+
   async function unlockAll(){
-    const ok = waPing() | await warmup(aEncore) | await warmup(aLoser) | await warmup(aOpen);
+    const ok = waPing() | await warm(aEncore) | await warm(aLoser) | await warm(aOpen);
     enabled = !!ok; setStatus();
     console.log('[audio] unlock', {enabled: !!ok});
   }
@@ -520,9 +515,9 @@ const sfx = (function(){
   function firstGesture(){ unlockAll(); window.removeEventListener('pointerdown', firstGesture, {passive:true}); }
   window.addEventListener('pointerdown', firstGesture, {passive:true});
 
-  function safePlay(a){ if(!enabled||!a) return; a.currentTime=0; a.play().catch(err=>console.warn('[audio] play blocked', err)); }
-  function safeStop(a){ try{ if(!a) return; a.pause(); a.currentTime=0; }catch{} }
-  return { playOpen(){ if(!enabled) return; safeStop(aEncore); safeStop(aLoser); safeStop(aOpen); aOpen && aOpen.play().catch(()=>{}); },
+  function safePlay(a){ if(!enabled) return; a.currentTime=0; a.play().catch(err=>console.warn('[audio] play blocked', err)); }
+  function safeStop(a){ try{ a.pause(); a.currentTime=0; }catch{} }
+  return { playOpen(){ if(!enabled) return; safeStop(aEncore); safeStop(aLoser); safeStop(aOpen); aOpen.play().catch(()=>{}); },
            stopOpen(){ safeStop(aOpen); }, playEncore(){ safePlay(aEncore); }, playLoser(){ safePlay(aLoser); } };
 })();
 
