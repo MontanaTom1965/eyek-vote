@@ -1,6 +1,6 @@
 <?php
 // /assets/get_state.php
-// Reads state.json and returns it with serverNow + no-cache headers
+// Reads state.json and returns it with serverNow + strict no-cache headers
 
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
@@ -32,3 +32,5 @@ $state['serverNow'] = (int) floor(microtime(true) * 1000);
 
 // Output JSON
 echo json_encode($state, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+
+// FILE: /assets/get_state.php
