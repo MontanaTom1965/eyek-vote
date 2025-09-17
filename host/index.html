@@ -44,7 +44,6 @@
   .mdot{position:absolute;width:12px;height:12px;border-radius:50%;opacity:.95}
   .mdot.g{background:#25d366} .mdot.y{background:#f6c945} .mdot.r{background:#ff5e6c}
 
-  /* footer tools bar */
   .tools{grid-column:1/-1}
   .tools .btn{padding:8px 10px}
 </style>
@@ -64,7 +63,7 @@
       <a target="_blank" href="/vote/index.html">Open Vote</a><br>
       <a target="_blank" href="/board/index.html">Open Board</a>
       <div class="soundLink">
-        <span id="soundStatus">Sound: <b>off</b></span> • <a id="enableSound">Enable sound</a>
+        <span id="soundStatus">Sound: <b>off</b></span> • <span id="loopStatus">Loop: <b>stopped</b></span> • <a id="enableSound">Enable sound</a>
       </div>
     </div>
   </div>
@@ -119,8 +118,6 @@
 
     <div class="card">
       <h1>Show Control</h1>
-
-      <!-- One-line add singer row (song field ~half) -->
       <div class="row">
         <input id="singerName" type="text" placeholder="Singer name (e.g., Lisa H.)" autocomplete="off" spellcheck="false" style="flex:1.2">
         <input id="songArtist" type="text" placeholder="(Optional) First song — artist (notes)" autocomplete="off" spellcheck="false" style="flex:0.8; min-width:260px">
@@ -129,7 +126,6 @@
 
       <div class="bar"></div>
 
-      <!-- Make this the same visual weight as 'Show Control' -->
       <h1 style="margin:8px 0 6px">Current & Voting</h1>
       <div class="row">
         <div style="flex:1">
@@ -176,7 +172,6 @@
       <div class="micro" style="margin-top:6px">One vote per device per singer/song. Results announced when timer ends or you press <b>End</b>.</div>
     </div>
 
-    <!-- Full-width tools: quick sound links -->
     <div class="card tools">
       <h1>Tools</h1>
       <div class="micro" style="margin:-4px 0 10px">If a browser blocks autoplay, click a sound once to ensure audio is unlocked.</div>
@@ -199,25 +194,21 @@ function debounce(fn, wait=300){ let t; return (...a)=>{ clearTimeout(t); t=setT
 const $=s=>document.querySelector(s);
 const digitsOnly = s => (s||'').replace(/\D+/g,'');
 
-// ---- time sync (serverNow) ----
-let clockOffset = 0; // ms = serverNow - Date.now()
+// ---- time sync ----
+let clockOffset = 0;
 function nowMs(){ return Date.now() + clockOffset; }
 function smoothOffset(observed){ if(!isFinite(observed)) return; clockOffset = 0.9*clockOffset + 0.1*observed; }
 
 let state=null, poll=null;
 
-// ---- input overwrite guard + pause polling while choosing from datalists ----
+// overwrite guard + pause polling while choosing from datalists
 const lastEdit = Object.create(null);
 const RECENT_MS = 6000;
 function markEdit(id){ lastEdit[id] = Date.now(); }
-function canUpdateField(el, id){
-  if(document.activeElement === el) return false;
-  if((lastEdit[id]||0) > Date.now()-RECENT_MS) return false;
-  return true;
-}
-let pollPaused = false, resumeTimer=null;
-function pausePolling(){ pollPaused = true; }
-function resumePollingSoon(){ clearTimeout(resumeTimer); resumeTimer = setTimeout(()=>{ pollPaused=false; }, 500); }
+function canUpdateField(el, id){ if(document.activeElement === el) return false; if((lastEdit[id]||0) > Date.now()-RECENT_MS) return false; return true; }
+let pollPaused=false, resumeTimer=null;
+function pausePolling(){ pollPaused=true; }
+function resumePollingSoon(){ clearTimeout(resumeTimer); resumeTimer=setTimeout(()=>{ pollPaused=false; }, 500); }
 
 let suppressEventRenderUntil = 0;
 function suppressEventRender(ms=1000){ suppressEventRenderUntil = Date.now() + ms; }
@@ -232,13 +223,12 @@ const timerEl=$('#timer'), cE=$('#c_encore'), cA=$('#c_another'), cM=$('#c_maybe
 const lockBtn=document.getElementById('lockEvent');
 const pinSaved=$('#pinSaved'); const togglePin=$('#togglePin');
 
-// Focus handlers to pause polling (so dropdowns don't vanish)
 [venue, venuePublic, eventDate, kj, hostName, pin].forEach(el=>{
   el.addEventListener('focusin', pausePolling);
   el.addEventListener('focusout', resumePollingSoon);
 });
 
-// mini strip physics
+// mini-dot physics on host
 function spawnMini(containerSel, kind, n=1){
   const box=$(containerSel); if(!box) return;
   const cls = kind==='encore'?'g':kind==='another'?'y':'r';
@@ -277,8 +267,8 @@ async function fetchState(){
   state.voting  ||= {open:false,prepUntil:0,endsAt:0,extendCount:0,counts:{encore:0,another:0,maybe:0},lastResult:null,voters:{}};
   state.winners ||= {encore:[],another:[]};
 }
-async function postState(){ await fetch(POST_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(state)}); await fetchState(); }
-const postStateDebounced = debounce(async ()=>{ await fetch(POST_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(state)}); await fetchState(); render(); }, 220);
+async function postState(){ await fetch('/assets/state.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(state)}); await fetchState(); }
+const postStateDebounced = debounce(async ()=>{ await fetch('/assets/state.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(state)}); await fetchState(); render(); }, 220);
 
 function updateDatalistsImmediate(){
   const Lvenues = JSON.parse(localStorage.getItem('eyek_saved_venues') || '[]');
@@ -326,12 +316,11 @@ function render(){
 
   currentName.textContent=state.current.name||'—';
   currentSongArtist.disabled=!state.current.id;
-  if(canUpdateField(currentSongArtist,'currentSongArtist')){ currentSongArtist.value=state.current.songArtist||''; }
+  if(canUpdateField(currentSongArtist,'currentSongArtist')) currentSongArtist.value=state.current.songArtist||'';
 
   const ce=state.voting.counts.encore||0, ca=state.voting.counts.another||0, cm=state.voting.counts.maybe||0;
   cE.textContent=ce; cA.textContent=ca; cM.textContent=cm;
 
-  // mini bounce dots
   if(state.voting.open){
     if(ce>lastCounts.encore)  spawnMini('#miniE','encore',  ce-lastCounts.encore);
     if(ca>lastCounts.another) spawnMini('#miniA','another', ca-lastCounts.another);
@@ -355,13 +344,14 @@ function render(){
   }
 }
 function fmt(ms){ const s=Math.ceil(ms/1000); const m=Math.floor(s/60), r=s%60; return `${String(m).padStart(2,'0')}:${String(r).padStart(2,'0')}` }
-function announce(w){ if(!w){ resultTag.textContent='—'; resultTag.className='resultTag'; return;}
+function announce(w){
+  if(!w){ resultTag.textContent='—'; resultTag.className='resultTag'; return;}
   if(w==='encore'){ resultTag.textContent='Encore!'; resultTag.className='resultTag r-encore'; }
   else if(w==='another'){ resultTag.textContent='Another Shot!'; resultTag.className='resultTag r-another'; }
   else { resultTag.textContent='Maybe Next Time'; resultTag.className='resultTag r-maybe'; }
 }
 
-/* Live bindings + lastEdit marks */
+/* Bindings */
 function bindLive(el, key, transform=(x)=>x, immediate=false){
   const handler = async ()=>{
     if(!state?.event) return;
@@ -381,7 +371,7 @@ bindLive(venuePublic, 'venuePublic');
 bindLive(eventDate,   'date');
 bindLive(kj,          'kj');
 bindLive(hostName,    'hostName');
-bindLive(pin,         'pin', digitsOnly, true); // PIN saves instantly
+bindLive(pin,         'pin', digitsOnly, true);
 
 function showPinSaved(key){ if(key!=='pin') return; pinSaved.textContent='PIN saved'; setTimeout(()=>pinSaved.textContent='',1200); }
 togglePin.onclick = ()=>{ pin.type = (pin.type==='password'?'text':'password'); togglePin.textContent = (pin.type==='password'?'Show':'Hide'); };
@@ -432,7 +422,12 @@ function setCurrent(id){
 function removeSinger(id){ state.singers=state.singers.filter(x=>x.id!==id); if(state.current.id===id){ state.current={id:null,name:'',songArtist:''}; } postState(); }
 
 /* Now Singing text */
-currentSongArtist.addEventListener('input', async ()=>{ if(!state.current.id) return; state.current.songArtist=currentSongArtist.value.trim(); markEdit('currentSongArtist'); await postState(); });
+currentSongArtist.addEventListener('input', async ()=>{
+  if(!state.current.id) return;
+  state.current.songArtist=currentSongArtist.value.trim();
+  markEdit('currentSongArtist');
+  await postState();
+});
 
 /* Voting with 5s prep */
 document.getElementById('startVote').onclick = async ()=>{
@@ -477,12 +472,12 @@ async function concludeVoting(){
     state.winners[winner]=state.winners[winner].slice(0,50);
   }
   await postState(); announce(winner);
-  sfx.stopOpen(); // stop loop
-  if (winner === 'encore')       setTimeout(()=>sfx.playEncore(), 120);
-  else                           setTimeout(()=>sfx.playLoser(),  120);
+  sfx.stopOpen();
+  if (winner === 'encore') setTimeout(()=>sfx.playEncore(),120);
+  else setTimeout(()=>sfx.playLoser(),120);
 }
 
-/* Loop (slightly slower for stability) */
+/* Loop + sound keepalive */
 function loop(){
   if(poll) clearInterval(poll);
   poll=setInterval(async ()=>{
@@ -495,19 +490,19 @@ function loop(){
       state.voting.prepUntil = 0;
       state.voting.endsAt = t + 30000;
       await postState();
-      sfx.playOpen(); // Host-only loop audio when OPEN
+      sfx.playOpen(); // start loop when opening
     }
 
     if(state?.voting?.open && t>=state.voting.endsAt){
       await concludeVoting();
     } else {
       render();
-      if(!state.voting.open) sfx.stopOpen();
+      if(state.voting.open) sfx.ensureLoop(); else sfx.stopOpen();
     }
   }, 1000);
 }
 
-/* Audio: Host-only with your exact files + quick buttons */
+/* Audio: host-only with keepalive and status */
 const sfx = (function(){
   let enabled=false;
   const aOpen   = new Audio('/assets/voting_open.mp3'); aOpen.loop = true;
@@ -515,30 +510,41 @@ const sfx = (function(){
   const aLoser  = new Audio('/assets/loser.wav');
 
   const statusEl=document.getElementById('soundStatus');
+  const loopEl  =document.getElementById('loopStatus');
   function setStatus(){ statusEl.innerHTML = 'Sound: <b>'+(enabled?'on':'off')+'</b>'; }
+  function setLoop(v){ loopEl.innerHTML = 'Loop: <b>'+(v?'playing':'stopped')+'</b>'; }
 
   let ctx=null;
   function waPing(){ try{ if(!ctx) ctx=new (window.AudioContext||window.webkitAudioContext)(); const o=ctx.createOscillator(), g=ctx.createGain(); g.gain.value=0.0001; o.connect(g).connect(ctx.destination); o.start(); o.stop(ctx.currentTime+0.02); return true; }catch{ return false; } }
-  async function warm(el){ try{ el.muted=true; await el.play(); el.pause(); el.currentTime=0; el.muted=false; return true; }catch(e){ console.warn('[audio] warmup blocked', e); return false; } }
+  async function warm(el){ try{ el.muted=true; await el.play(); el.pause(); el.currentTime=0; el.muted=false; return true; }catch{ return false; } }
 
   async function unlockAll(){
     const ok = waPing() | await warm(aEncore) | await warm(aLoser) | await warm(aOpen);
     enabled = !!ok; setStatus();
-    console.log('[audio] unlock', {enabled: !!ok});
   }
   document.getElementById('enableSound').addEventListener('click', unlockAll);
   function firstGesture(){ unlockAll(); window.removeEventListener('pointerdown', firstGesture, {passive:true}); }
   window.addEventListener('pointerdown', firstGesture, {passive:true});
 
-  function safePlay(a){ if(!enabled) return; a.currentTime=0; a.play().catch(err=>console.warn('[audio] play blocked', err)); }
-  function safeStop(a){ try{ a.pause(); a.currentTime=0; }catch{} }
-  return { playOpen(){ if(!enabled) return; safeStop(aEncore); safeStop(aLoser); safeStop(aOpen); aOpen.play().catch(()=>{}); },
-           stopOpen(){ safeStop(aOpen); }, playEncore(){ safePlay(aEncore); }, playLoser(){ safePlay(aLoser); },
-           _enable(){ unlockAll(); }, _open:aOpen, _enc:aEncore, _los:aLoser };
+  function safePlay(a){ if(!enabled) return; a.currentTime = a.currentTime || 0; a.play().then(()=>setLoop(!a.paused)).catch(()=>setLoop(false)); }
+  function safeStop(a){ try{ a.pause(); a.currentTime=0; setLoop(false);}catch{} }
+
+  document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') ensureLoop(); });
+
+  function ensureLoop(){
+    if(!enabled) return setLoop(false);
+    if(aOpen.paused){ aOpen.play().then(()=>setLoop(true)).catch(()=>setLoop(false)); }
+    else setLoop(true);
+  }
+
+  return {
+    playOpen(){ if(!enabled) return; aOpen.currentTime=0; aOpen.play().then(()=>setLoop(true)).catch(()=>setLoop(false)); },
+    stopOpen(){ safeStop(aOpen); },
+    ensureLoop,
+    playEncore(){ safePlay(aEncore); },
+    playLoser(){ safePlay(aLoser); }
+  };
 })();
-document.getElementById('play_open').onclick  = ()=>{ sfx._enable?.(); sfx.playOpen(); };
-document.getElementById('play_encore').onclick= ()=>{ sfx._enable?.(); sfx.playEncore(); };
-document.getElementById('play_loser').onclick = ()=>{ sfx._enable?.(); sfx.playLoser(); };
 
 (async function init(){ await fetchState(); render(); loop(); })();
 </script>
