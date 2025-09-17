@@ -12,33 +12,30 @@
   body{margin:0;background:var(--bg);color:var(--txt);font:20px system-ui,Segoe UI,Roboto,Helvetica,Arial}
   .wrap{display:grid;place-items:center;min-height:100svh;text-align:center;padding:4vmin;position:relative;overflow:hidden}
   .title{font-family:"Bebas Neue"; font-size:9vmin; letter-spacing:.5vmin; margin:0 0 1.2vmin; color:#fff}
-  .venue{font-family:"Montserrat"; font-weight:800; font-size:6vmin; color:#ffd6ff; margin:0 0 1vmin; text-shadow:0 6px 24px rgba(47,6,88,.45); max-width:95vw; white-space:normal; overflow-wrap:anywhere}
+  .venue{font-family:"Montserrat"; font-weight:800; font-size:6vmin; color:#ffd6ff; margin:0 0 1vmin; text-shadow:0 6px 24px rgba(47,6,88,.45); max-width:95vw; overflow-wrap:anywhere}
   .kj{font-family:"Montserrat"; font-weight:600; font-size:2.6vmin; color:#c9d6ff; margin:0 0 4.5vmin; opacity:.9; max-width:95vw; overflow-wrap:anywhere}
-  .now{font-family:"Montserrat"; font-weight:800; font-size:4.5vmin; margin:0}
-  .who{font-family:"Bebas Neue"; font-size:10vmin; letter-spacing:.3vmin; margin:.8vmin 0 3vmin; color:#ffffff; max-width:96vw; overflow-wrap:anywhere}
-  .song{font-size:3vmin;color:var(--muted);margin:0 0 3vmin; max-width:96vw; overflow-wrap:anywhere}
-  .row{display:flex;gap:2vmin;justify-content:center;flex-wrap:wrap}
-  .chip{padding:1vmin 2vmin;border-radius:12px;border:1px solid var(--line);background:var(--card); font-size:4vmin}
-  .enc{color:var(--green)} .ano{color:var(--yellow)} .may{color:var(--red)}
-  .badge{display:inline-block;padding:1vmin 3vmin;border:2px solid var(--line);border-radius:999px;background:var(--card);font-weight:800; font-size:5vmin}
 
-  .voteNow{margin:2.5vmin 0 1vmin; display:none}
-  .voteTag{font-family:"Montserrat"; font-weight:800; font-size:5vmin; color:#fff; padding:1vmin 2.5vmin; border-radius:999px; border:2px solid rgba(255,255,255,.15); background:linear-gradient(135deg, rgba(122,162,255,.2), rgba(47,6,88,.5))}
-  .prepTag{font-family:"Montserrat"; font-weight:800; font-size:5vmin; color:#fff; padding:1vmin 2.5vmin; border-radius:999px; border:2px solid rgba(255,255,255,.15); background:linear-gradient(135deg, rgba(255,214,102,.25), rgba(47,6,88,.45))}
-  .prepCount{font-family:"Bebas Neue"; font-size:20vmin; margin:1vmin 0 1.5vmin; letter-spacing:.3vmin}
+  /* Voting fullscreen section */
+  .voteView{display:none}
+  .voteHeading{font-family:"Montserrat"; font-weight:800; font-size:7.5vmin; margin:0 0 1.5vmin}
+  .who{font-family:"Bebas Neue"; font-size:12vmin; letter-spacing:.3vmin; margin:.5vmin 0 2vmin; color:#ffffff; max-width:96vw; overflow-wrap:anywhere}
   .timer{font-family:"Bebas Neue"; font-size:14vmin; margin:1vmin 0 1.5vmin; letter-spacing:.3vmin}
 
-  .pit{position:relative; width:min(100vmin,92vw); height:40vmin; margin:1vmin auto 2.2vmin; border-radius:18px; border:2px solid rgba(255,255,255,.18); background:rgba(0,0,0,.18); overflow:hidden}
-  .ball{position:absolute; width:8.4vmin; height:8.4vmin; border-radius:50%; opacity:.95; box-shadow:0 0 10px rgba(0,0,0,.25)}
+  .pit{position:relative; width:min(110vmin,92vw); height:56vmin; margin:1vmin auto 1.5vmin; border-radius:22px; border:3px solid rgba(255,255,255,.22); background:rgba(0,0,0,.18); overflow:hidden}
+  .ball{position:absolute; width:16.8vmin; height:16.8vmin; border-radius:50%; opacity:.95; box-shadow:0 0 12px rgba(0,0,0,.35)}
   .ball.g{background:#25d366} .ball.y{background:#f6c945} .ball.r{background:#ff5e6c}
 
-  /* 30s Result Overlays */
+  .tally{display:none; gap:3vmin; justify-content:center; margin-top:1vmin}
+  .chip{padding:1.2vmin 2.8vmin;border-radius:14px;border:2px solid var(--line);background:var(--card); font-size:5vmin}
+  .enc{color:var(--green)} .ano{color:var(--yellow)} .may{color:var(--red)}
+
+  /* 15s Result Overlays */
   .overlay{position:fixed; inset:0; background:rgba(0,0,0,.92); display:none; align-items:center; justify-content:center; z-index:10}
   .panel{text-align:center; padding:2vmin 4vmin}
-  .ovTitle{font-family:"Bebas Neue"; font-size:18vmin; margin:0 0 1.2vmin}
-  .ovSinger{font-family:"Montserrat"; font-weight:800; font-size:7vmin; margin:0 0 .6vmin}
-  .ovSong{font-size:3.8vmin; color:#cfe0ff; margin:0 0 1.2vmin}
-  .ovSub{font-size:4.6vmin; margin-top:1vmin}
+  .ovTitle{font-family:"Bebas Neue"; font-size:20vmin; margin:0 0 1.2vmin}
+  .ovSinger{font-family:"Montserrat"; font-weight:800; font-size:8vmin; margin:0 0 .6vmin}
+  .ovSong{font-size:4vmin; color:#cfe0ff; margin:0 0 1.2vmin}
+  .ovSub{font-size:5vmin; margin-top:1vmin}
 
   #confetti{position:absolute; inset:0; pointer-events:none}
   .flashEncore{position:absolute; top:3vmin; left:50%; transform:translateX(-50%); background:#10152b; border:2px solid rgba(37,211,102,.5); color:var(--green); padding:1vmin 3vmin; border-radius:999px; font-weight:800; font-size:4vmin; box-shadow:0 10px 40px rgba(37,211,102,.35); display:none}
@@ -48,36 +45,28 @@
   <canvas id="confetti"></canvas>
   <div id="flash" class="flashEncore">Encore! 🎉</div>
 
-  <h1 class="title">Welcome to</h1>
-  <div id="venue" class="venue">—</div>
-  <div id="kj" class="kj">Hosted by —</div>
+  <!-- Main welcome view (hidden while voting) -->
+  <div id="welcome">
+    <h1 class="title">Welcome to</h1>
+    <div id="venue" class="venue">—</div>
+    <div id="kj" class="kj">Hosted by —</div>
+  </div>
 
-  <div id="nowBlock" style="display:none">
-    <div class="now">Now up:</div>
+  <!-- Voting fullscreen view -->
+  <div id="voteView" class="voteView">
+    <div class="voteHeading">Now voting for</div>
     <div id="who" class="who">—</div>
-    <div id="song" class="song">—</div>
-  </div>
-
-  <div id="prep" style="display:none">
-    <div class="prepTag">Get ready to vote!</div>
-    <div id="preCount" class="prepCount">5</div>
-  </div>
-
-  <div id="voteNow" class="voteNow">
-    <div class="voteTag">VOTE NOW</div>
     <div id="timer" class="timer">00:00</div>
     <div id="pit" class="pit" aria-label="live vote balls"></div>
+
+    <div id="tally" class="tally">
+      <div class="chip enc">Encore: <b id="cE">0</b></div>
+      <div class="chip ano">Another Shot: <b id="cA">0</b></div>
+      <div class="chip may">Maybe Next Time: <b id="cM">0</b></div>
+    </div>
   </div>
 
-  <div class="row" style="margin-top:1.5vmin">
-    <div class="chip enc">Encore: <b id="cE">0</b></div>
-    <div class="chip ano">Another Shot: <b id="cA">0</b></div>
-    <div class="chip may">Maybe Next Time: <b id="cM">0</b></div>
-  </div>
-
-  <div style="margin-top:2.5vmin"><span id="status" class="badge">Waiting…</span></div>
-
-  <!-- 30s result overlay -->
+  <!-- 15s result overlay -->
   <div id="overlay" class="overlay">
     <div class="panel">
       <div id="ovTitle" class="ovTitle">Encore!</div>
@@ -99,6 +88,7 @@ function smoothOffset(observed){ if(!isFinite(observed)) return; clockOffset=0.9
 
 let state=null, prevOpen=false, lastCounts={encore:0, another:0, maybe:0};
 let overlayTimer=null, overlaySingerId=null;
+let tallyUntil=0;
 
 /* Confetti */
 const confetti=(function(){
@@ -106,7 +96,7 @@ const confetti=(function(){
   let W=0,H=0, parts=[], running=false;
   function resize(){ W=cv.width=window.innerWidth; H=cv.height=window.innerHeight; }
   function rand(a,b){ return a+Math.random()*(b-a); }
-  function burst(n=200){
+  function burst(n=260){
     for(let i=0;i<n;i++){
       parts.push({x: W/2, y: H*0.25, r: rand(2,4), vx: rand(-6,6), vy: rand(-2,8), g: 0.18, life: rand(60,140), color: `hsl(${Math.floor(rand(0,360))} 90% 60%)`});
     }
@@ -132,26 +122,26 @@ function showEncoreFlash(){
   setTimeout(()=>{ el.animate([{opacity:1},{opacity:0}],{duration:800,easing:'ease-in'}).onfinish=()=>{ el.style.display='none'; }; }, 1300);
 }
 
-/* Physics vote balls (2x size) */
+/* Big physics balls */
 function spawnBalls(kind, n){
   const pit=document.getElementById('pit'); const cls = kind==='encore'?'g':kind==='another'?'y':'r';
   const W=pit.clientWidth, H=pit.clientHeight;
   for(let i=0;i<n;i++){
     const b=document.createElement('div'); b.className='ball '+cls;
-    let x=14+Math.random()*(W-28), y=14, vx=(Math.random()*2-1)*1.0, vy=(Math.random()*1.5+1.0);
+    let x=24+Math.random()*(W-48), y=24, vx=(Math.random()*2-1)*1.0, vy=(Math.random()*1.5+1.0);
     b.style.left=x+'px'; b.style.top=y+'px'; pit.appendChild(b);
     const g=0.22, fr=0.86, dt=16;
     const id=setInterval(()=>{
       vy+=g; x+=vx*dt/16; y+=vy*dt/16;
-      if(x<22){x=22;vx*=-fr} if(x>W-22){x=W-22;vx*=-fr}
-      if(y>H-22){y=H-22; vy*=-fr; if(Math.abs(vy)<0.22){clearInterval(id);} }
+      if(x<32){x=32;vx*=-fr} if(x>W-32){x=W-32;vx*=-fr}
+      if(y>H-32){y=H-32; vy*=-fr; if(Math.abs(vy)<0.22){clearInterval(id);} }
       b.style.left=x+'px'; b.style.top=y+'px';
     }, dt);
-    if(pit.childNodes.length>240){ pit.removeChild(pit.firstChild); }
+    if(pit.childNodes.length>180){ pit.removeChild(pit.firstChild); }
   }
 }
 
-/* Overlay show/hide for 30s or until singer changes */
+/* Overlay show/hide for ~15s or until singer changes */
 function showOverlay(kind){
   const ov=document.getElementById('overlay'), t=document.getElementById('ovTitle'),
         s=document.getElementById('ovSinger'), sg=document.getElementById('ovSong'),
@@ -164,7 +154,7 @@ function showOverlay(kind){
     t.textContent='Encore!';
     t.style.color='#25d366';
     sub.textContent = `Congratulations, ${name}!`;
-    confetti.burst(220); showEncoreFlash();
+    confetti.burst(280); showEncoreFlash();
   } else if(kind==='another'){
     t.textContent='Another Shot!';
     t.style.color='#f6c945';
@@ -179,7 +169,7 @@ function showOverlay(kind){
 
   ov.style.display='flex';
   clearTimeout(overlayTimer);
-  overlayTimer = setTimeout(()=>{ ov.style.display='none'; overlaySingerId=null; }, 30000);
+  overlayTimer = setTimeout(()=>{ ov.style.display='none'; overlaySingerId=null; }, 15000);
 }
 function hideOverlayIfSingerChanged(){
   if(!overlaySingerId) return;
@@ -190,7 +180,7 @@ function hideOverlayIfSingerChanged(){
   }
 }
 
-/* Main loop (1000ms) */
+/* Main loop */
 async function tick(){
   const r=await fetch(GET_URL,{cache:'no-store'});
   const fetchedAt=Date.now();
@@ -201,27 +191,33 @@ async function tick(){
     if(clockOffset===0) clockOffset=observed; else smoothOffset(observed);
   }
 
+  const welcome   = document.getElementById('welcome');
+  const voteView  = document.getElementById('voteView');
+  const whoEl     = document.getElementById('who');
+  const timerEl   = document.getElementById('timer');
+  const pit       = document.getElementById('pit');
+  const tally     = document.getElementById('tally');
+
   const publicOnly = (state.event?.venuePublic||'').trim();
   document.getElementById('venue').textContent = publicOnly ? publicOnly : '—';
   const kjName = state.event?.kj || '';
   document.getElementById('kj').textContent    = kjName ? `Hosted by ${kjName}` : 'Hosted by —';
 
   const hasCurrent  = !!state.current?.id;
-  if(hasCurrent){
-    document.getElementById('nowBlock').style.display='block';
-    document.getElementById('who').textContent  = state.current?.name || '—';
-    document.getElementById('song').textContent = state.current?.songArtist || '';
-  } else {
-    document.getElementById('nowBlock').style.display='none';
-  }
-
   const t = nowMs();
   const open = !!state.voting?.open;
   const prep = (!open && (state.voting?.prepUntil||0) > t);
   const result = state.voting?.lastResult || null;
 
-  document.getElementById('prep').style.display    = prep ? 'block' : 'none';
-  document.getElementById('voteNow').style.display = (!prep && open) ? 'block' : 'none';
+  // Switch views
+  if(open){
+    welcome.style.display='none';
+    voteView.style.display='block';
+    whoEl.textContent = state.current?.name || '—';
+  } else {
+    voteView.style.display='none';
+    welcome.style.display='block';
+  }
 
   // Counters
   const ce = state.voting?.counts?.encore  ?? 0;
@@ -232,32 +228,29 @@ async function tick(){
   document.getElementById('cM').textContent = cm;
 
   if(open){
-    if(ce>lastCounts.encore)  spawnBalls('encore',  ce-lastCounts.encore);
-    if(ca>lastCounts.another) spawnBalls('another', ca-lastCounts.another);
-    if(cm>lastCounts.maybe)   spawnBalls('maybe',   cm-lastCounts.maybe);
-  } else {
-    document.getElementById('pit').innerHTML='';
-    lastCounts = {encore:0,another:0,maybe:0};
-  }
-  lastCounts = {encore:ce, another:ca, maybe:cm};
+    const prev = { ...lastCounts };
+    if(ce>prev.encore)  spawnBalls('encore',  ce-prev.encore);
+    if(ca>prev.another) spawnBalls('another', ca-prev.another);
+    if(cm>prev.maybe)   spawnBalls('maybe',   cm-prev.maybe);
+    lastCounts = {encore:ce, another:ca, maybe:cm};
 
-  // Prep countdown text
-  if(prep){
-    const ms = Math.max(0, state.voting.prepUntil - t);
-    const sLeft = Math.ceil(ms/1000);
-    document.getElementById('preCount').textContent = String(sLeft);
-    document.getElementById('status').textContent = 'Get ready…';
-  } else if(open){
     const ms=Math.max(0,(state.voting.endsAt||0)-t);
-    document.getElementById('timer').textContent=fmt(ms);
-    document.getElementById('status').textContent = 'Voting OPEN';
+    timerEl.textContent=fmt(ms);
+    // Tally visible while open
+    tally.style.display='flex';
   } else {
-    document.getElementById('timer').textContent='00:00';
-    document.getElementById('status').textContent = result ? (result==='encore'?'Encore!': result==='another'?'Another Shot!':'Maybe Next Time') : 'Waiting…';
+    pit.innerHTML='';
+    lastCounts = {encore:0,another:0,maybe:0};
+    timerEl.textContent='00:00';
+    // Tally visible only for 15s after close
+    tally.style.display = (t < tallyUntil) ? 'flex' : 'none';
   }
 
-  // Transition: open -> closed → show overlay
-  if(prevOpen && !open && result){ showOverlay(result); }
+  // Transition: open -> closed
+  if(prevOpen && !open){
+    tallyUntil = t + 15000; // show tally for 15s
+    if(result){ showOverlay(result); }
+  }
   prevOpen = open;
 
   // Hide overlay early if host sets a new singer
