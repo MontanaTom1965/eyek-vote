@@ -66,8 +66,8 @@ async function fetchState(){
 }
 function render(){
   if(!state) return;
-  const publicVenue = state.event?.venuePublic || state.event?.venue || '—';
-  document.getElementById('venue').textContent = `Welcome to ${publicVenue}`;
+  const publicVenue = (state.event?.venuePublic || '').trim();
+  document.getElementById('venue').textContent = `Welcome to ${publicVenue || '—'}`;
   const pinHost = digitsOnly(state.event?.pin || '');
 
   if(!eventPin){
@@ -114,7 +114,7 @@ document.getElementById('v_encore').onclick = ()=> vote('encore');
 document.getElementById('v_another').onclick = ()=> vote('another');
 document.getElementById('v_maybe').onclick  = ()=> vote('maybe');
 
-(async function init(){ await fetchState(); render(); poll=setInterval(async ()=>{ await fetchState(); render(); }, 1100); })(); // ← stretched a bit
+(async function init(){ await fetchState(); render(); poll=setInterval(async ()=>{ await fetchState(); render(); }, 1100); })();
 </script>
 
 <!-- FILE: /vote/index.html -->
