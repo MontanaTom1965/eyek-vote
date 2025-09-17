@@ -38,12 +38,8 @@
   .soundLink{font-size:12px;margin-top:6px}
   .soundLink a{color:#cfe0ff;text-decoration:underline;cursor:pointer}
   .soundLink a:hover{text-decoration:none}
-
-  /* Bigger Current Singer block */
   .bigCurrent{font-size:26px;font-weight:900}
   .bigSong input{font-size:17px;padding:12px}
-
-  /* Mini bounce strip under each count */
   .miniStrip{position:relative;width:160px;height:30px;border-radius:10px;background:#0b1123;border:1px solid #1b2b4a;overflow:hidden}
   .mdot{position:absolute;width:12px;height:12px;border-radius:50%;opacity:.95}
   .mdot.g{background:#25d366} .mdot.y{background:#f6c945} .mdot.r{background:#ff5e6c}
@@ -189,12 +185,20 @@ const digitsOnly = s => (s||'').replace(/\D+/g,'');
 // ---- time sync (serverNow) ----
 let clockOffset = 0; // ms = serverNow - Date.now()
 function nowMs(){ return Date.now() + clockOffset; }
-function smoothOffset(observed){ // gentle EMA if needed
-  if(!isFinite(observed)) return;
-  clockOffset = 0.9*clockOffset + 0.1*observed;
-}
+function smoothOffset(observed){ if(!isFinite(observed)) return; clockOffset = 0.9*clockOffset + 0.1*observed; }
 
 let state=null, poll=null;
+
+// ---- input overwrite guard ----
+const lastEdit = Object.create(null);
+const RECENT_MS = 2500; // do not overwrite if edited within this window
+function markEdit(id){ lastEdit[id] = Date.now(); }
+function canUpdateField(el, id){
+  if(document.activeElement === el) return false;
+  if((lastEdit[id]||0) > Date.now()-RECENT_MS) return false;
+  return true;
+}
+
 let suppressEventRenderUntil = 0;
 function suppressEventRender(ms=1000){ suppressEventRenderUntil = Date.now() + ms; }
 function mayRenderEventInputs(){ return Date.now() > suppressEventRenderUntil; }
@@ -236,15 +240,11 @@ async function fetchState(){
   const serverFetchedAt = Date.now();
   state=await r.json();
 
-  // time sync
   if(state && typeof state.serverNow === 'number'){
     const observed = state.serverNow - serverFetchedAt;
-    // Update aggressively on first loads, smoothly afterwards
-    if(clockOffset === 0) clockOffset = observed;
-    else smoothOffset(observed);
+    if(clockOffset === 0) clockOffset = observed; else smoothOffset(observed);
   }
 
-  // defaults
   state.event   ||= {venue:'',venuePublic:'',date:new Date().toISOString().slice(0,10),kj:'',hostName:'',pin:'',locked:false};
   state.saved   ||= {venues:[], kjs:[]};
   state.singers ||= []; state.current ||= {id:null,name:'',songArtist:''};
@@ -276,12 +276,12 @@ function render(){
   updateDatalistsImmediate();
 
   const canPaint = mayRenderEventInputs();
-  if (canPaint && document.activeElement !== venue)        venue.value       = state.event.venue || '';
-  if (canPaint && document.activeElement !== venuePublic)  venuePublic.value = state.event.venuePublic || '';
-  if (canPaint && document.activeElement !== eventDate)    eventDate.value   = state.event.date || new Date().toISOString().slice(0,10);
-  if (canPaint && document.activeElement !== kj)           kj.value          = state.event.kj || '';
-  if (canPaint && document.activeElement !== hostName)     hostName.value    = state.event.hostName || '';
-  if (canPaint && document.activeElement !== pin)          pin.value         = state.event.pin || '';
+  if (canPaint && canUpdateField(venue,'venue'))                venue.value       = state.event.venue || '';
+  if (canPaint && canUpdateField(venuePublic,'venuePublic'))    venuePublic.value = state.event.venuePublic || '';
+  if (canPaint && canUpdateField(eventDate,'eventDate'))        eventDate.value   = state.event.date || new Date().toISOString().slice(0,10);
+  if (canPaint && canUpdateField(kj,'kj'))                      kj.value          = state.event.kj || '';
+  if (canPaint && canUpdateField(hostName,'hostName'))          hostName.value    = state.event.hostName || '';
+  if (canPaint && canUpdateField(pin,'pin'))                    pin.value         = state.event.pin || '';
   [venue,venuePublic,eventDate,kj,hostName,pin].forEach(el=>el.disabled=state.event.locked);
 
   lockBtn.textContent = state.event.locked ? 'Unlock' : 'Lock';
@@ -300,7 +300,7 @@ function render(){
 
   currentName.textContent=state.current.name||'—';
   currentSongArtist.disabled=!state.current.id;
-  if(document.activeElement!==currentSongArtist){ currentSongArtist.value=state.current.songArtist||''; }
+  if(canUpdateField(currentSongArtist,'currentSongArtist')){ currentSongArtist.value=state.current.songArtist||''; }
 
   const ce=state.voting.counts.encore||0, ca=state.voting.counts.another||0, cm=state.voting.counts.maybe||0;
   cE.textContent=ce; cA.textContent=ca; cM.textContent=cm;
@@ -335,13 +335,14 @@ function announce(w){ if(!w){ resultTag.textContent='—'; resultTag.className='
   else { resultTag.textContent='Maybe Next Time'; resultTag.className='resultTag r-maybe'; }
 }
 
-/* Live bindings (also push to local saved list on blur so dropdowns appear instantly) */
+/* Live bindings + lastEdit marks */
 function bindLive(el, key, transform=(x)=>x, immediate=false){
   const handler = async ()=>{
     if(!state?.event) return;
     const val = transform(el.value);
     el.value = val;
     state.event[key] = val;
+    markEdit(el.id);
     suppressEventRender(600);
     if(immediate){ await postState(); showPinSaved(key); } else { postStateDebounced(); }
   };
@@ -400,12 +401,12 @@ function setCurrent(id){
   lastCounts = {encore:0,another:0,maybe:0};
   state.current = { id:s.id, name:s.name, songArtist:'' };
   postState();
-  logPerformance('set_current'); // performance logging on Set
+  logPerformance('set_current');
 }
 function removeSinger(id){ state.singers=state.singers.filter(x=>x.id!==id); if(state.current.id===id){ state.current={id:null,name:'',songArtist:''}; } postState(); }
 
 /* Now Singing text */
-currentSongArtist.addEventListener('input', async ()=>{ if(!state.current.id) return; state.current.songArtist=currentSongArtist.value.trim(); await postState(); });
+currentSongArtist.addEventListener('input', async ()=>{ if(!state.current.id) return; state.current.songArtist=currentSongArtist.value.trim(); markEdit('currentSongArtist'); await postState(); });
 
 /* Voting with 5s prep */
 document.getElementById('startVote').onclick = async ()=>{
@@ -414,7 +415,7 @@ document.getElementById('startVote').onclick = async ()=>{
   state.voting={ open:false, prepUntil: t+5000, endsAt:0, extendCount:0, counts:{encore:0,another:0,maybe:0}, lastResult:null, voters:{} };
   lastCounts = {encore:0,another:0,maybe:0};
   await postState();
-  logPerformance('start_round'); // optional logging at the start
+  logPerformance('start_round');
 };
 document.getElementById('extendVote').onclick = async ()=>{ if(!state.voting.open) return; state.voting.endsAt+=15000; state.voting.extendCount++; await postState(); };
 document.getElementById('endVote').onclick = async ()=>{ await concludeVoting(); };
@@ -450,35 +451,33 @@ async function concludeVoting(){
     state.winners[winner]=state.winners[winner].slice(0,50);
   }
   await postState(); announce(winner);
-  sfx.stopOpen(); // stop loop first
+  sfx.stopOpen();
   if (winner === 'encore')       setTimeout(()=>sfx.playEncore(), 120);
   else                           setTimeout(()=>sfx.playLoser(),  120);
 }
 
-/* Loop: handle prep->open transition and end-on-time (using synced clock) */
+/* Loop (slightly slower for stability): prep->open transition + time-up */
 function loop(){
   if(poll) clearInterval(poll);
   poll=setInterval(async ()=>{
     await fetchState();
     const t=nowMs();
 
-    // prep -> open
     if(!state.voting.open && (state.voting.prepUntil||0) > 0 && t >= state.voting.prepUntil){
       state.voting.open = true;
       state.voting.prepUntil = 0;
       state.voting.endsAt = t + 30000;
       await postState();
-      sfx.playOpen(); // Host-only loop audio when OPEN
+      sfx.playOpen();
     }
 
-    // time-up
     if(state?.voting?.open && t>=state.voting.endsAt){
       await concludeVoting();
     } else {
       render();
       if(!state.voting.open) sfx.stopOpen();
     }
-  }, 800);
+  }, 1000); // ← stretched from ~800ms
 }
 
 /* Audio: universal unlock + Host-only playback */
@@ -510,3 +509,5 @@ const sfx = (function(){
 
 (async function init(){ await fetchState(); render(); loop(); })();
 </script>
+
+<!-- FILE: /host/index.html -->
