@@ -9,9 +9,8 @@
   .card{background:linear-gradient(180deg,var(--card),#0e0e22);border:1px solid #2a2f56;border-radius:14px;padding:14px;box-shadow:0 6px 26px rgba(0,0,0,.35)}
   h1{margin:0 0 8px;font-size:20px} h2{margin:0 0 10px;font-size:16px;color:var(--muted)}
   label{font-size:12px;color:var(--muted);display:block;margin:8px 0 4px}
-  input,button,select{font:inherit}
-  input[type=text],input[type=password],input[type=date],select{width:100%;padding:10px;border-radius:10px;border:1px solid #2b3c62;background:#0d1428;color:var(--txt)}
-  select{cursor:pointer}
+  input,button{font:inherit}
+  input[type=text],input[type=password],input[type=date]{width:100%;padding:10px;border-radius:10px;border:1px solid #2b3c62;background:#0d1428;color:var(--txt)}
   input[disabled]{opacity:.7}
   .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
   .stack{display:grid;gap:12px} .side{display:grid;gap:12px}
@@ -24,13 +23,13 @@
   .dot{width:10px;height:10px;border-radius:50%;background:#6f7a98;border:1px solid #5b678a}
   .dot.green{background:var(--green);border-color:#2b8f57} .dot.yellow{background:var(--yellow);border-color:#9c7b1d}
   .bar{height:1px;background:#203153;margin:10px 0}
-  .counts{display:flex;gap:18px;align-items:center;flex-wrap:wrap}
-  .bubble{min-width:72px;text-align:center;padding:10px 12px;border-radius:12px;font-weight:800;font-size:16px}
+  .counts{display:flex;gap:20px;align-items:center;flex-wrap:wrap}
+  .bubble{min-width:78px;text-align:center;padding:10px 12px;border-radius:12px;font-weight:800;font-size:16px}
   .b-green{background:rgba(37,211,102,.15);border:1px solid rgba(37,211,102,.35);color:var(--green)}
   .b-yellow{background:rgba(246,201,69,.15);border:1px solid rgba(246,201,69,.35);color:var(--yellow)}
   .b-red{background:rgba(255,94,108,.15);border:1px solid rgba(255,94,108,.35);color:var(--red)}
-  .timer{font-size:38px;font-weight:900}
-  .resultTag{padding:8px 12px;border-radius:999px;border:1px solid #2b3c62;background:#0d1428;min-width:180px;text-align:center;font-weight:800}
+  .timer{font-size:40px;font-weight:900}
+  .resultTag{padding:8px 12px;border-radius:999px;border:1px solid #2b3c62;background:#0d1428;min-width:190px;text-align:center;font-weight:800}
   .r-encore{color:var(--green)} .r-another{color:var(--yellow)} .r-maybe{color:var(--red)}
   details{border:1px solid #243459;border-radius:12px} details[open] summary{border-bottom:1px solid #243459}
   summary{list-style:none;cursor:pointer;padding:10px 14px;background:#0f1526;border-radius:12px} summary::-webkit-details-marker{display:none}
@@ -39,21 +38,15 @@
   .soundLink{font-size:12px;margin-top:6px}
   .soundLink a{color:#cfe0ff;text-decoration:underline;cursor:pointer}
   .soundLink a:hover{text-decoration:none}
-  /* mini vote dots next to bubbles */
-  .miniDots{display:flex;gap:5px;align-items:center;min-height:12px}
-  .miniDots .d{width:10px;height:10px;border-radius:50%}
-  .d.g{background:var(--green)} .d.y{background:var(--yellow)} .d.r{background:var(--red)}
-  .miniDots .d{animation:miniBounce .7s ease-out}
-  @keyframes miniBounce{
-    0%{transform:translateY(-10px);opacity:0}
-    60%{transform:translateY(3px);opacity:1}
-    100%{transform:translateY(0)}
-  }
-  /* Bigger Current Singer block for visibility */
-  .bigCurrent{font-size:24px;font-weight:900}
+
+  /* Bigger Current Singer block */
+  .bigCurrent{font-size:26px;font-weight:900}
   .bigSong input{font-size:17px;padding:12px}
-  /* small dropdown next to inputs */
-  .shrink{min-width:180px}
+
+  /* Mini bounce strip under each count */
+  .miniStrip{position:relative;width:140px;height:26px;border-radius:10px;background:#0b1123;border:1px solid #1b2b4a;overflow:hidden}
+  .mdot{position:absolute;width:12px;height:12px;border-radius:50%;opacity:.95}
+  .mdot.g{background:#25d366} .mdot.y{background:#f6c945} .mdot.r{background:#ff5e6c}
 </style>
 
 <div class="wrap">
@@ -84,10 +77,7 @@
         <div class="row">
           <div style="flex:1">
             <label>Venue (internal)</label>
-            <div class="row" style="gap:8px">
-              <input list="venuesList" id="venue" type="text" placeholder="venue - city" autocomplete="off" spellcheck="false">
-              <select id="venueSel" class="shrink"></select>
-            </div>
+            <input list="venuesList" id="venue" type="text" placeholder="venue - city" autocomplete="off" spellcheck="false">
             <datalist id="venuesList"></datalist>
           </div>
           <div style="flex:1">
@@ -102,10 +92,7 @@
         <div class="row">
           <div style="flex:1">
             <label>KJ Company</label>
-            <div class="row" style="gap:8px">
-              <input list="kjsList" id="kj" type="text" placeholder="Karaoke Company" autocomplete="off" spellcheck="false">
-              <select id="kjSel" class="shrink"></select>
-            </div>
+            <input list="kjsList" id="kj" type="text" placeholder="Karaoke Company" autocomplete="off" spellcheck="false">
             <datalist id="kjsList"></datalist>
           </div>
           <div style="flex:1">
@@ -154,21 +141,23 @@
           <div id="timer" class="timer">00:00</div>
         </div>
       </div>
+
       <div class="counts" style="margin-top:6px">
-        <div style="display:flex;align-items:center;gap:10px">
+        <div>
           <div class="bubble b-green" id="c_encore">0</div>
-          <div id="miniE" class="miniDots"></div>
+          <div id="miniE" class="miniStrip"></div>
         </div>
-        <div style="display:flex;align-items:center;gap:10px">
+        <div>
           <div class="bubble b-yellow" id="c_another">0</div>
-          <div id="miniA" class="miniDots"></div>
+          <div id="miniA" class="miniStrip"></div>
         </div>
-        <div style="display:flex;align-items:center;gap:10px">
+        <div>
           <div class="bubble b-red" id="c_maybe">0</div>
-          <div id="miniM" class="miniDots"></div>
+          <div id="miniM" class="miniStrip"></div>
         </div>
         <div id="resultTag" class="resultTag">—</div>
       </div>
+
       <div class="row" style="gap:10px;margin-top:10px">
         <button class="btn good" id="startVote">Start (30s + 5s prep)</button>
         <button class="btn warn" id="extendVote">Extend (+15s)</button>
@@ -204,15 +193,35 @@ function mayRenderEventInputs(){ return Date.now() > suppressEventRenderUntil; }
 
 const venue=$('#venue'), venuePublic=$('#venuePublic'), eventDate=$('#eventDate'), kj=$('#kj'), hostName=$('#hostName'), pin=$('#pin');
 const venuesList=document.getElementById('venuesList'), kjsList=document.getElementById('kjsList');
-const venueSel=$('#venueSel'), kjSel=$('#kjSel');
 const singerName=$('#singerName'), songArtist=$('#songArtist');
 const singerList=$('#singerList');
 const currentName=$('#currentName'), currentSongArtist=$('#currentSongArtist');
 const timerEl=$('#timer'), cE=$('#c_encore'), cA=$('#c_another'), cM=$('#c_maybe'), resultTag=$('#resultTag');
-const eventBox=$('#eventBox'), lockBtn=document.getElementById('lockEvent');
+const lockBtn=document.getElementById('lockEvent');
 const pinSaved=$('#pinSaved'); const togglePin=$('#togglePin');
 
-// For host mini dots
+// mini strip physics
+function spawnMini(containerSel, kind, n=1){
+  const box=$(containerSel); if(!box) return;
+  const cls = kind==='encore'?'g':kind==='another'?'y':'r';
+  const W=box.clientWidth, H=box.clientHeight;
+  for(let i=0;i<n;i++){
+    const d=document.createElement('div'); d.className='mdot '+cls;
+    d.style.left=(Math.random()*W|0)+'px'; d.style.top='-6px';
+    box.appendChild(d);
+    let x=parseFloat(d.style.left), y=-6, vx=(Math.random()*1.6-0.8), vy=(Math.random()*1.2+0.6);
+    const g=0.25, fr=0.82, dt=16;
+    const id=setInterval(()=>{
+      vy+=g; x+=vx*dt/16; y+=vy*dt/16;
+      if(x<6){x=6;vx*=-fr} if(x>W-6){x=W-6;vx*=-fr}
+      if(y>H-6){y=H-6; vy*=-fr; if(Math.abs(vy)<0.25){clearInterval(id);} }
+      d.style.left=x+'px'; d.style.top=y+'px';
+    }, dt);
+    // trim
+    if(box.childNodes.length>90){ box.removeChild(box.firstChild); }
+  }
+}
+
 let lastCounts = { encore:0, another:0, maybe:0 };
 
 async function fetchState(){ const r=await fetch(GET_URL,{cache:'no-store'}); state=await r.json();
@@ -223,21 +232,29 @@ async function fetchState(){ const r=await fetch(GET_URL,{cache:'no-store'}); st
   state.winners ||= {encore:[],another:[]};
 }
 async function postState(){ await fetch(POST_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(state)}); await fetchState(); }
-const postStateDebounced = debounce(async ()=>{ await fetch(POST_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(state)}); await fetchState(); render(); }, 250);
+const postStateDebounced = debounce(async ()=>{ await fetch(POST_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(state)}); await fetchState(); render(); }, 220);
 
-function fillSavedControls(){
-  // datalists
-  venuesList.innerHTML = (state.saved.venues||[]).map(v=>`<option value="${v.replace(/"/g,'&quot;')}">`).join('');
-  kjsList.innerHTML    = (state.saved.kjs||[]).map(v=>`<option value="${v.replace(/"/g,'&quot;')}">`).join('');
-  // selects
-  function fillSelect(sel, arr){ sel.innerHTML = `<option value="">Recent…</option>` + (arr||[]).map(v=>`<option>${v.replace(/</g,'&lt;')}</option>`).join(''); }
-  fillSelect(venueSel, state.saved.venues); fillSelect(kjSel, state.saved.kjs);
+function updateDatalistsImmediate(){
+  // merge backend-saved with local mirror for instant dropdowns
+  const Lvenues = JSON.parse(localStorage.getItem('eyek_saved_venues') || '[]');
+  const Lkjs    = JSON.parse(localStorage.getItem('eyek_saved_kjs') || '[]');
+  const venues = [...new Set([...(state.saved.venues||[]), ...Lvenues])];
+  const kjs    = [...new Set([...(state.saved.kjs||[]),    ...Lkjs])];
+  venuesList.innerHTML = venues.map(v=>`<option value="${v.replace(/"/g,'&quot;')}">`).join('');
+  kjsList.innerHTML    = kjs.map(v=>`<option value="${v.replace(/"/g,'&quot;')}">`).join('');
+}
+function pushLocalList(key, val){
+  val=(val||'').trim(); if(!val) return;
+  const k = key==='venue' ? 'eyek_saved_venues' : 'eyek_saved_kjs';
+  const arr = JSON.parse(localStorage.getItem(k) || '[]');
+  const next = [val, ...arr.filter(x=>x.toLowerCase()!==val.toLowerCase())].slice(0,50);
+  localStorage.setItem(k, JSON.stringify(next));
+  updateDatalistsImmediate();
 }
 
 function render(){
   if(!state) return;
-
-  fillSavedControls();
+  updateDatalistsImmediate();
 
   const canPaint = mayRenderEventInputs();
   if (canPaint && document.activeElement !== venue)        venue.value       = state.event.venue || '';
@@ -269,17 +286,16 @@ function render(){
   const ce=state.voting.counts.encore||0, ca=state.voting.counts.another||0, cm=state.voting.counts.maybe||0;
   cE.textContent=ce; cA.textContent=ca; cM.textContent=cm;
 
-  // mini dots (bigger + bounce)
+  // mini bounce dots
   if(state.voting.open){
-    if(ce>lastCounts.encore)  addMiniDots('#miniE','g', ce-lastCounts.encore);
-    if(ca>lastCounts.another) addMiniDots('#miniA','y', ca-lastCounts.another);
-    if(cm>lastCounts.maybe)   addMiniDots('#miniM','r', cm-lastCounts.maybe);
+    if(ce>lastCounts.encore)  spawnMini('#miniE','encore',  ce-lastCounts.encore);
+    if(ca>lastCounts.another) spawnMini('#miniA','another', ca-lastCounts.another);
+    if(cm>lastCounts.maybe)   spawnMini('#miniM','maybe',   cm-lastCounts.maybe);
   } else {
     ['#miniE','#miniA','#miniM'].forEach(sel=>$(sel).innerHTML='');
   }
   lastCounts = {encore:ce, another:ca, maybe:cm};
 
-  // timer + result
   const now=Date.now();
   if(!state.voting.open && (state.voting.prepUntil||0) > now){
     const ms = state.voting.prepUntil - now;
@@ -293,14 +309,6 @@ function render(){
     timerEl.textContent='00:00'; announce(state.voting.lastResult);
   }
 }
-function addMiniDots(sel, cls, n){
-  const c=$(sel);
-  for(let i=0;i<n;i++){
-    const d=document.createElement('div'); d.className='d '+cls;
-    c.appendChild(d);
-    if(c.childNodes.length>40) c.removeChild(c.firstChild);
-  }
-}
 function fmt(ms){ const s=Math.ceil(ms/1000); const m=Math.floor(s/60), r=s%60; return `${String(m).padStart(2,'0')}:${String(r).padStart(2,'0')}` }
 function announce(w){ if(!w){ resultTag.textContent='—'; resultTag.className='resultTag'; return;}
   if(w==='encore'){ resultTag.textContent='Encore!'; resultTag.className='resultTag r-encore'; }
@@ -308,7 +316,7 @@ function announce(w){ if(!w){ resultTag.textContent='—'; resultTag.className='
   else { resultTag.textContent='Maybe Next Time'; resultTag.className='resultTag r-maybe'; }
 }
 
-/* Live bindings */
+/* Live bindings (also push to local saved list on blur so dropdowns appear instantly) */
 function bindLive(el, key, transform=(x)=>x, immediate=false){
   const handler = async ()=>{
     if(!state?.event) return;
@@ -320,6 +328,7 @@ function bindLive(el, key, transform=(x)=>x, immediate=false){
   };
   el.addEventListener('input', handler);
   el.addEventListener('change', handler);
+  el.addEventListener('blur', ()=>{ if(key==='venue'||key==='kj'){ pushLocalList(key, el.value); }});
 }
 bindLive(venue,       'venue');
 bindLive(venuePublic, 'venuePublic');
@@ -331,14 +340,12 @@ bindLive(pin,         'pin', digitsOnly, true); // PIN saves instantly
 function showPinSaved(key){ if(key!=='pin') return; pinSaved.textContent='PIN saved'; setTimeout(()=>pinSaved.textContent='',1200); }
 togglePin.onclick = ()=>{ pin.type = (pin.type==='password'?'text':'password'); togglePin.textContent = (pin.type==='password'?'Show':'Hide'); };
 
-/* quick-select dropdowns */
-venueSel.addEventListener('change', ()=>{ if(!venueSel.value) return; venue.value=venueSel.value; venue.dispatchEvent(new Event('change')); });
-kjSel.addEventListener('change', ()=>{ if(!kjSel.value) return; kj.value=kjSel.value; kj.dispatchEvent(new Event('change')); });
-
 /* Event actions */
 document.getElementById('saveEvent').onclick = async ()=>{
-  await postState(); const m=document.getElementById('eventSavedMsg');
-  m.textContent='Saved!'; setTimeout(()=>m.textContent='',1400);
+  // also store venue/kj immediately to local mirrors
+  pushLocalList('venue', venue.value);
+  pushLocalList('kj', kj.value);
+  await postState(); const m=document.getElementById('eventSavedMsg'); m.textContent='Saved!'; setTimeout(()=>m.textContent='',1400);
 };
 lockBtn.onclick = async ()=>{ state.event.locked = !state.event.locked; await postState(); };
 document.getElementById('resetEvent').onclick = async ()=>{
@@ -364,6 +371,7 @@ document.getElementById('addSinger').onclick = async ()=>{
 };
 function setCurrent(id){
   const s = state.singers.find(x=>x.id===id); if(!s) return;
+  // Reset vote counts and last result when switching to a new singer
   state.voting = { open:false, prepUntil:0, endsAt:0, extendCount:0,
                    counts:{encore:0,another:0,maybe:0}, lastResult:null, voters:{} };
   lastCounts = {encore:0,another:0,maybe:0};
@@ -383,10 +391,6 @@ document.getElementById('startVote').onclick = async ()=>{
   state.voting={ open:false, prepUntil: now+5000, endsAt:0, extendCount:0, counts:{encore:0,another:0,maybe:0}, lastResult:null, voters:{} };
   lastCounts = {encore:0,another:0,maybe:0};
   await postState();
-  // If sound isn't enabled, nudge the host
-  if(!audio.enabled()){
-    alert('Tap "Enable sound" (left panel) to allow voting sounds.');
-  }
 };
 document.getElementById('extendVote').onclick = async ()=>{ if(!state.voting.open) return; state.voting.endsAt+=15000; state.voting.extendCount++; await postState(); };
 document.getElementById('endVote').onclick = async ()=>{ await concludeVoting(); };
@@ -422,9 +426,9 @@ async function concludeVoting(){
     state.winners[winner]=state.winners[winner].slice(0,50);
   }
   await postState(); announce(winner);
-  audio.stopOpen();
-  if (winner === 'encore')       setTimeout(()=>audio.playEncore(), 150);
-  else if (winner === 'maybe')   setTimeout(()=>audio.playLoser(),  150);
+  sfx.stopOpen();
+  if (winner === 'encore')       setTimeout(()=>sfx.playEncore(), 120);
+  else if (winner === 'maybe')   setTimeout(()=>sfx.playLoser(),  120);
 }
 
 /* Loop: handle prep->open transition and end-on-time */
@@ -434,53 +438,52 @@ function loop(){
     await fetchState();
     const now=Date.now();
 
+    // prep -> open
     if(!state.voting.open && (state.voting.prepUntil||0) > 0 && now >= state.voting.prepUntil){
       state.voting.open = true;
       state.voting.prepUntil = 0;
       state.voting.endsAt = now + 30000;
       await postState();
-      audio.playOpen(); // start loop when voting actually opens
+      sfx.playOpen(); // start loop precisely when voting opens
     }
 
+    // time-up
     if(state?.voting?.open && now>=state.voting.endsAt){
       await concludeVoting();
     } else {
       render();
-      if(!state.voting.open) audio.stopOpen();
+      if(!state.voting.open) sfx.stopOpen();
     }
   }, 800);
 }
 
-/* Audio: warmup + fallback + status */
-function mkAudio(paths){ const a=new Audio(); for(const p of paths){ const el=new Audio(p); el.preload='auto'; return el; } }
-const audio=(function(){
+/* Audio: universal unlock + fallback */
+function makeAudio(sources){ const a=new Audio(); for(const src of sources){ const el=new Audio(src); el.preload='auto'; el.volume=1.0; return el; } }
+const sfx = (function(){
   let enabled=false;
-  const aOpen   = mkAudio(['/assets/voting_open.mp3','/assets/voting_open.wav']); aOpen.loop=true;
-  const aEncore = mkAudio(['/assets/encore.mp3','/assets/encore.wav']);
-  const aLoser  = mkAudio(['/assets/loser.wav','/assets/loser.mp3']);
+  const aOpen   = makeAudio(['/assets/voting_open.mp3','/assets/voting_open.wav']);  aOpen.loop=true;
+  const aEncore = makeAudio(['/assets/encore.mp3','/assets/encore.wav']);
+  const aLoser  = makeAudio(['/assets/loser.wav','/assets/loser.mp3']);
   const statusEl=document.getElementById('soundStatus');
-
   function setStatus(){ statusEl.innerHTML = 'Sound: <b>'+(enabled?'on':'off')+'</b>'; }
 
   let ctx=null;
   function waPing(){ try{ if(!ctx) ctx=new (window.AudioContext||window.webkitAudioContext)(); const o=ctx.createOscillator(), g=ctx.createGain(); g.gain.value=0.0001; o.connect(g).connect(ctx.destination); o.start(); o.stop(ctx.currentTime+0.02); return true; }catch{ return false; } }
-  async function warm(el){ try{ el.muted=true; await el.play(); el.pause(); el.currentTime=0; el.muted=false; return true; }catch{ return false; } }
+  async function warmup(el){ try{ el.muted=true; await el.play(); el.pause(); el.currentTime=0; el.muted=false; return true; }catch{ return false; } }
+  async function unlockAll(){
+    const ok = waPing() | await warmup(aEncore) | await warmup(aLoser) | await warmup(aOpen);
+    enabled = !!ok; setStatus();
+  }
+  // Explicit button
+  document.getElementById('enableSound').addEventListener('click', unlockAll);
+  // Universal: first user gesture anywhere unlocks
+  function firstGesture(){ unlockAll(); window.removeEventListener('pointerdown', firstGesture, {passive:true}); }
+  window.addEventListener('pointerdown', firstGesture, {passive:true});
 
-  document.getElementById('enableSound').addEventListener('click', async ()=>{
-    const ok = waPing() | await warm(aEncore) | await warm(aLoser) | await warm(aOpen);
-    enabled = !!ok; setStatus(); if(!enabled) alert('Could not enable audio. Browser blocked playback.');
-  });
-
-  function play(a){ if(!enabled) return; a.currentTime=0; a.play().catch(()=>{}); }
-  function stop(a){ try{ a.pause(); a.currentTime=0; }catch{} }
-
-  return {
-    enabled:()=>enabled,
-    playOpen(){ if(!enabled) return; stop(aEncore); stop(aLoser); stop(aOpen); aOpen.play().catch(()=>{}); },
-    stopOpen(){ stop(aOpen); },
-    playEncore(){ play(aEncore); },
-    playLoser(){ play(aLoser); }
-  };
+  function safePlay(a){ if(!enabled) return; a.currentTime=0; a.play().catch(()=>{}); }
+  function safeStop(a){ try{ a.pause(); a.currentTime=0; }catch{} }
+  return { playOpen(){ if(!enabled) return; safeStop(aEncore); safeStop(aLoser); safeStop(aOpen); aOpen.play().catch(()=>{}); },
+           stopOpen(){ safeStop(aOpen); }, playEncore(){ safePlay(aEncore); }, playLoser(){ safePlay(aLoser); } };
 })();
 
 (async function init(){ await fetchState(); render(); loop(); })();
