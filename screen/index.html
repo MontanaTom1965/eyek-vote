@@ -1,153 +1,218 @@
 <!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>EYEK • Screen</title>
+<meta charset="utf-8"><title>Encore! • Screen</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@600;800&display=swap" rel="stylesheet">
+
 <style>
-  :root{--ink:#f7f2ff;--muted:#ccb6ff;--ok:#19c37d;--warn:#f6c34a;--bad:#ff5c5c}
-  html,body{height:100%;margin:0;color:var(--ink);
-    font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif;
-    background:radial-gradient(1400px 900px at 10% -10%,#3c1181 0%,#2F0658 22%,#1b0930 52%,#0f031a 100%)}
-  .wrap{display:grid;grid-template-rows:auto 1fr auto;gap:10px;height:100%}
-  header{display:flex;align-items:baseline;gap:16px;justify-content:center;padding:14px 20px}
-  h1{margin:0;font-size:34px;letter-spacing:.5px}
-  .now{font-size:20px;color:var(--muted)}
+  :root{ --bg:#0f1526; --card:#0d1428; --line:#2b3c62; --txt:#eaf2ff; --muted:#b9c6ff; --green:#25d366; --yellow:#f6c945; --red:#ff5e6c; --purple:#2F0658; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);font:20px system-ui,Segoe UI,Roboto,Helvetica,Arial}
+  .wrap{display:grid;place-items:center;min-height:100svh;text-align:center;padding:4vmin;position:relative;overflow:hidden}
+  .title{font-family:"Bebas Neue"; font-size:9vmin; letter-spacing:.5vmin; margin:0 0 1.2vmin; color:#fff}
+  .venue{font-family:"Montserrat"; font-weight:800; font-size:6vmin; color:#ffd6ff; margin:0 0 1vmin; text-shadow:0 6px 24px rgba(47,6,88,.45); max-width:95vw; white-space:normal; overflow-wrap:anywhere}
+  .kj{font-family:"Montserrat"; font-weight:600; font-size:2.6vmin; color:#c9d6ff; margin:0 0 4.5vmin; opacity:.9; max-width:95vw; overflow-wrap:anywhere}
+  .now{font-family:"Montserrat"; font-weight:800; font-size:4.5vmin; margin:0}
+  .who{font-family:"Bebas Neue"; font-size:10vmin; letter-spacing:.3vmin; margin:.8vmin 0 3vmin; color:#ffffff; max-width:96vw; overflow-wrap:anywhere}
+  .song{font-size:3vmin;color:var(--muted);margin:0 0 3vmin; max-width:96vw; overflow-wrap:anywhere}
+  .row{display:flex;gap:2vmin;justify-content:center;flex-wrap:wrap}
+  .chip{padding:1vmin 2vmin;border-radius:12px;border:1px solid var(--line);background:var(--card)}
+  .enc{color:var(--green)} .ano{color:var(--yellow)} .may{color:var(--red)}
+  .badge{display:inline-block;padding:.6vmin 2vmin;border:1px solid var(--line);border-radius:999px;background:var(--card);font-weight:800}
 
-  .zone{position:relative;margin:0 24px;border-radius:22px;border:1px solid rgba(255,255,255,.1);background:rgba(0,0,0,.25);box-shadow:0 20px 60px rgba(0,0,0,.45);overflow:hidden}
-  .counters{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;padding:16px}
-  .counter{background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:12px 16px;text-align:center}
-  .counter h3{margin:0 0 6px;font-size:18px;color:#e9ddff}
-  .num{font-size:46px;font-weight:900}
+  .voteNow{margin:2.5vmin 0 1vmin; display:none}
+  .voteTag{font-family:"Montserrat"; font-weight:800; font-size:4vmin; color:#fff; padding:1vmin 2.5vmin; border-radius:999px; border:2px solid rgba(255,255,255,.15); background:linear-gradient(135deg, rgba(122,162,255,.2), rgba(47,6,88,.5))}
+  .prepTag{font-family:"Montserrat"; font-weight:800; font-size:3.5vmin; color:#fff; padding:1vmin 2.5vmin; border-radius:999px; border:2px solid rgba(255,255,255,.15); background:linear-gradient(135deg, rgba(255,214,102,.25), rgba(47,6,88,.45))}
+  .timer{font-family:"Bebas Neue"; font-size:12vmin; margin:1vmin 0 1.5vmin; letter-spacing:.3vmin}
 
-  /* bouncing balls */
-  canvas{width:100%;height:48vh;display:block}
+  .pit{position:relative; width:min(100vmin,92vw); height:26vmin; margin:1vmin auto 2.2vmin; border-radius:18px; border:2px solid rgba(255,255,255,.18); background:rgba(0,0,0,.18); overflow:hidden}
+  .ball{position:absolute; width:2.4vmin; height:2.4vmin; border-radius:50%; opacity:.95; box-shadow:0 0 10px rgba(0,0,0,.25)}
+  .ball.g{background:#25d366} .ball.y{background:#f6c945} .ball.r{background:#ff5e6c}
 
-  footer{display:flex;justify-content:center;gap:16px;align-items:center;padding:10px 0 18px}
-  .timer{font-size:44px;font-weight:900}
-  .state{padding:8px 14px;border-radius:999px;border:1px solid rgba(255,255,255,.2)}
+  .overlay{position:fixed; inset:0; background:rgba(0,0,0,.85); display:none; align-items:center; justify-content:center; z-index:10}
+  .panel{text-align:center}
+  .ovTitle{font-family:"Bebas Neue"; font-size:14vmin; margin:0 0 2vmin}
+  .ovSinger{font-family:"Montserrat"; font-weight:800; font-size:6vmin; margin:0 0 1vmin}
+  .ovSong{font-size:3vmin; color:#cfe0ff}
 
-  /* win overlays (silent) */
-  .winPanel{position:fixed;inset:0;display:none;place-items:center;z-index:9999}
-  .winInner{text-align:center}
-  .winBig{font-size:16vw;font-weight:1000;line-height:0.9}
-  .winSub{font-size:4vw;font-weight:700;margin-top:1rem}
-  .win--encore{background:var(--ok);color:#042315}
-  .win--another{background:var(--warn);color:#3a2500}
-  .win--maybe{background:#2a0a3e;color:#f7f2ff;border:10px solid var(--bad);box-sizing:border-box}
-
-  .heartbeat{position:absolute;inset:auto 8px 8px auto;width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.5);animation:hb 4s infinite}
-  @keyframes hb{0%{transform:scale(1);opacity:.6} 50%{transform:scale(1.4);opacity:.35} 100%{transform:scale(1);opacity:.6}}
+  #confetti{position:absolute; inset:0; pointer-events:none}
+  .flashEncore{position:absolute; top:3vmin; left:50%; transform:translateX(-50%); background:#10152b; border:2px solid rgba(37,211,102,.5); color:var(--green); padding:1vmin 3vmin; border-radius:999px; font-weight:800; font-size:3vmin; box-shadow:0 10px 40px rgba(37,211,102,.35); display:none}
 </style>
-</head>
-<body>
-  <div class="wrap">
-    <header>
-      <h1 id="venue">—</h1>
-      <div class="now" id="nowUp">Now up: —</div>
-    </header>
 
-    <section class="zone">
-      <div class="counters">
-        <div class="counter"><h3>Encore</h3><div class="num" id="encoreNum">0</div></div>
-        <div class="counter"><h3>Another Shot</h3><div class="num" id="anotherNum">0</div></div>
-        <div class="counter"><h3>Maybe Next Time</h3><div class="num" id="maybeNum">0</div></div>
-      </div>
-      <canvas id="balls"></canvas>
-      <div class="heartbeat" title="awake"></div>
-    </section>
+<div class="wrap">
+  <canvas id="confetti"></canvas>
+  <div id="flash" class="flashEncore">Encore! 🎉</div>
 
-    <footer>
-      <div class="state" id="state">Closed</div>
-      <div class="timer" id="timer">00:00</div>
-    </footer>
+  <h1 class="title">Welcome to</h1>
+  <div id="venue" class="venue">—</div>
+  <div id="kj" class="kj">Hosted by —</div>
+
+  <div id="nowBlock" style="display:none">
+    <div class="now">Now up:</div>
+    <div id="who" class="who">—</div>
+    <div id="song" class="song">—</div>
   </div>
 
-  <!-- Unified silent result overlay -->
-  <div class="winPanel" id="winPanel">
-    <div class="winInner">
-      <div class="winBig" id="winBig">Encore!</div>
-      <div class="winSub" id="winSub">Congrats <span id="winName">Singer</span>!</div>
-    </div>
+  <div id="prep" style="display:none">
+    <div class="prepTag">Get ready to vote!</div>
+    <div id="preTimer" class="timer">00:05</div>
   </div>
+
+  <div id="voteNow" class="voteNow">
+    <div class="voteTag">VOTE NOW</div>
+    <div id="timer" class="timer">00:00</div>
+    <div id="pit" class="pit" aria-label="live vote balls"></div>
+  </div>
+
+  <div class="row" style="margin-top:1.5vmin">
+    <div class="chip enc">Encore: <b id="cE">0</b></div>
+    <div class="chip ano">Another Shot: <b id="cA">0</b></div>
+    <div class="chip may">Maybe Next Time: <b id="cM">0</b></div>
+  </div>
+
+  <div style="margin-top:2.5vmin"><span id="status" class="badge">Waiting…</span></div>
+</div>
 
 <script>
-const EP={get:'/assets/get_state.php'};
-let ST={phase:'closed',counts:{encore:0,another:0,maybe:0},prepUntil:0,endsAt:0,singer:null,venuePublic:null,winner:null,winType:null};
+const GET_URL='/assets/get_state.php';
+const $=s=>document.querySelector(s);
 
-// Wake lock to keep TVs alive
-let wakelock=null; async function keepAwake(){try{wakelock=await navigator.wakeLock.request('screen');}catch(e){}}
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible') keepAwake()}); keepAwake();
+// time sync
+let clockOffset=0;
+function nowMs(){ return Date.now()+clockOffset; }
+function smoothOffset(observed){ if(!isFinite(observed)) return; clockOffset=0.9*clockOffset+0.1*observed; }
 
-const vEl=document.getElementById('venue'), upEl=document.getElementById('nowUp');
-const tEl=document.getElementById('timer'), sEl=document.getElementById('state');
-const nums={encore:document.getElementById('encoreNum'), another:document.getElementById('anotherNum'), maybe:document.getElementById('maybeNum')};
+let state=null, prevOpen=false, lastCounts={encore:0, another:0, maybe:0};
 
-// Bouncing balls physics
-const cvs=document.getElementById('balls'), ctx=cvs.getContext('2d');
-function resize(){cvs.width=cvs.clientWidth*2; cvs.height=cvs.clientHeight*2}
-addEventListener('resize',resize,{passive:true}); resize();
-const balls=[];
-function addBall(color){balls.push({x:Math.random()*cvs.width,y:20+Math.random()*40,vx:(Math.random()-.5)*8,vy:0,r:16+Math.random()*12,color});}
-function step(){
-  ctx.clearRect(0,0,cvs.width,cvs.height);
-  const g=0.8, fr=0.995;
-  balls.forEach(b=>{
-    b.vy+=g; b.x+=b.vx; b.y+=b.vy; b.vx*=fr; b.vy*=fr;
-    if(b.y+b.r>cvs.height){b.y=cvs.height-b.r; b.vy*=-0.78}
-    if(b.x-b.r<0||b.x+b.r>cvs.width){b.vx*=-0.9}
-    ctx.beginPath(); ctx.arc(b.x,b.y,b.r,0,Math.PI*2); ctx.fillStyle=b.color; ctx.fill();
-  });
-  requestAnimationFrame(step);
-}
-requestAnimationFrame(step);
-function pushBalls(which,count){
-  const color = which==='encore'? '#19c37d' : which==='another'? '#f6c34a' : '#ff5c5c';
-  for(let i=0;i<count;i++) addBall(color);
-}
-
-// Timer sync
-let serverOffsetMs=0;
-function updateOffsetFrom(st){
-  if(typeof st.serverNow==='number'){ if(!window.__serverOffsetMs) window.__serverOffsetMs=st.serverNow - Date.now(); serverOffsetMs=window.__serverOffsetMs; }
-}
-const nowMs=()=>Date.now()+(serverOffsetMs||0);
-
-// Win overlay
-const winPanel=document.getElementById('winPanel'), winBig=document.getElementById('winBig'), winSub=document.getElementById('winSub');
-function showWin(type,singer){
-  winPanel.className='winPanel';
-  if(type==='encore'){ winPanel.classList.add('win--encore'); winBig.textContent='Encore!';         winSub.innerHTML=`Congrats <span>${singer||''}</span>!`; }
-  else if(type==='another'){ winPanel.classList.add('win--another'); winBig.textContent='Another Shot!'; winSub.innerHTML=`${singer||''} sings again later`; }
-  else { winPanel.classList.add('win--maybe'); winBig.textContent='Maybe Next Time'; winSub.innerHTML=`Sorry <span>${singer||''}</span>!`; }
-  winPanel.style.display='grid'; setTimeout(()=>winPanel.style.display='none',10000);
+/* Confetti */
+const confetti=(function(){
+  const cv=document.getElementById('confetti'), cx=cv.getContext('2d');
+  let W=0,H=0, parts=[], running=false;
+  function resize(){ W=cv.width=window.innerWidth; H=cv.height=window.innerHeight; }
+  function rand(a,b){ return a+Math.random()*(b-a); }
+  function burst(n=170){
+    for(let i=0;i<n;i++){
+      parts.push({x: W/2, y: H*0.25, r: rand(2,4), vx: rand(-6,6), vy: rand(-2,8), g: 0.18, life: rand(60,140), color: `hsl(${Math.floor(rand(0,360))} 90% 60%)`});
+    }
+    if(!running){ running=true; loop(); }
+  }
+  function loop(){
+    if(!running) return;
+    cx.clearRect(0,0,W,H);
+    for(let i=parts.length-1;i>=0;i--){
+      const p=parts[i]; p.vy+=p.g; p.x+=p.vx; p.y+=p.vy; p.life--;
+      cx.fillStyle=p.color; cx.beginPath(); cx.arc(p.x,p.y,p.r,0,Math.PI*2); cx.fill();
+      if(p.life<=0 || p.y>H+20) parts.splice(i,1);
+    }
+    if(parts.length===0){ running=false; return; }
+    requestAnimationFrame(loop);
+  }
+  window.addEventListener('resize', resize); resize();
+  return { burst };
+})();
+function showEncoreFlash(){
+  // kept for visual pop but no sound
+  const el=document.getElementById('flash'); el.style.display='inline-block'; el.style.opacity='1';
+  el.animate([{transform:'translateX(-50%) scale(0.9)', opacity:.0},{transform:'translateX(-50%) scale(1)',opacity:1}],{duration:200,easing:'ease-out'});
+  setTimeout(()=>{ el.animate([{opacity:1},{opacity:0}],{duration:800,easing:'ease-in'}).onfinish=()=>{ el.style.display='none'; }; }, 1300);
 }
 
-// Polling
-let prev={encore:0,another:0,maybe:0,winner:null};
-setInterval(async()=>{
-  try{
-    const r=await fetch(EP.get); const st=await r.json(); ST=st; updateOffsetFrom(st);
-    vEl.textContent=st.venuePublic||'—'; upEl.textContent='Now up: '+(st.singer||'—');
-    sEl.textContent=st.phase==='open'?'Open':(st.phase==='prep'?'Get ready…':'Closed');
+/* Physics vote balls */
+function spawnBalls(kind, n){
+  const pit=document.getElementById('pit'); const cls = kind==='encore'?'g':kind==='another'?'y':'r';
+  const W=pit.clientWidth, H=pit.clientHeight;
+  for(let i=0;i<n;i++){
+    const b=document.createElement('div'); b.className='ball '+cls;
+    let x=10+Math.random()*(W-20), y=10, vx=(Math.random()*2-1)*0.8, vy=(Math.random()*1.5+0.8);
+    b.style.left=x+'px'; b.style.top=y+'px'; pit.appendChild(b);
+    const g=0.22, fr=0.86, dt=16;
+    const id=setInterval(()=>{
+      vy+=g; x+=vx*dt/16; y+=vy*dt/16;
+      if(x<12){x=12;vx*=-fr} if(x>W-12){x=W-12;vx*=-fr}
+      if(y>H-12){y=H-12; vy*=-fr; if(Math.abs(vy)<0.22){clearInterval(id);} }
+      b.style.left=x+'px'; b.style.top=y+'px';
+    }, dt);
+    if(pit.childNodes.length>360){ pit.removeChild(pit.firstChild); }
+  }
+}
 
-    const left = st.phase==='prep'
-      ? Math.max(0, Math.ceil((st.prepUntil - nowMs())/1000))
-      : st.phase==='open'
-      ? Math.max(0, Math.ceil((st.endsAt   - nowMs())/1000))
-      : 0;
-    tEl.textContent=new Date(left*1000).toISOString().substring(14,19);
+/* Main loop (1000ms) */
+async function tick(){
+  const r=await fetch(GET_URL,{cache:'no-store'});
+  const fetchedAt=Date.now();
+  state=await r.json();
 
-    const c=st.counts||{encore:0,another:0,maybe:0};
-    ['encore','another','maybe'].forEach(k=>{
-      const cur=c[k]||0; nums[k].textContent=cur;
-      if(cur>prev[k]) pushBalls(k,cur-prev[k]); prev[k]=cur;
-    });
+  if(state && typeof state.serverNow==='number'){
+    const observed = state.serverNow - fetchedAt;
+    if(clockOffset===0) clockOffset=observed; else smoothOffset(observed);
+  }
 
-    if(st.winner && st.winType && st.winner!==prev.winner){ prev.winner=st.winner; showWin(st.winType, st.winner); }
-  }catch(e){}
-},700);
+  const publicVenue = state.event?.venuePublic || state.event?.venue || '—';
+  const kjName      = state.event?.kj || '';
+  const hasCurrent  = !!state.current?.id;
+  const singerName  = state.current?.name || '—';
+  const songText    = state.current?.songArtist || '';
+
+  document.getElementById('venue').textContent = publicVenue;
+  document.getElementById('kj').textContent    = kjName ? `Hosted by ${kjName}` : 'Hosted by —';
+
+  document.getElementById('nowBlock').style.display = hasCurrent ? 'block' : 'none';
+  if(hasCurrent){ document.getElementById('who').textContent=singerName; document.getElementById('song').textContent=songText; }
+
+  const t = nowMs();
+  const open = !!state.voting?.open;
+  const prep = (!open && (state.voting?.prepUntil||0) > t);
+  const result = state.voting?.lastResult || null;
+
+  document.getElementById('prep').style.display    = prep ? 'block' : 'none';
+  document.getElementById('voteNow').style.display = (!prep && open) ? 'block' : 'none';
+
+  const ce = state.voting?.counts?.encore  ?? 0;
+  const ca = state.voting?.counts?.another ?? 0;
+  const cm = state.voting?.counts?.maybe   ?? 0;
+
+  if(open){
+    if(ce>lastCounts.encore)  spawnBalls('encore',  ce-lastCounts.encore);
+    if(ca>lastCounts.another) spawnBalls('another', ca-lastCounts.another);
+    if(cm>lastCounts.maybe)   spawnBalls('maybe',   cm-lastCounts.maybe);
+  } else {
+    document.getElementById('pit').innerHTML='';
+    lastCounts = {encore:0,another:0,maybe:0};
+  }
+  lastCounts = {encore:ce, another:ca, maybe:cm};
+
+  if(prep){
+    const ms = state.voting.prepUntil - t;
+    document.getElementById('preTimer').textContent = fmtPre(ms);
+    document.getElementById('status').textContent = 'Get ready…';
+  } else if(open){
+    const ms=Math.max(0,(state.voting.endsAt||0)-t);
+    document.getElementById('timer').textContent=fmt(ms);
+    document.getElementById('status').textContent = 'Voting OPEN';
+  } else {
+    document.getElementById('timer').textContent='00:00';
+    document.getElementById('status').textContent = result ? (result==='encore'?'Winner: Encore!': result==='another'?'Winner: Another Shot!':'Winner: Maybe Next Time') : 'Waiting…';
+  }
+
+  if(prevOpen && !open && result){
+    if(result==='encore'){ confetti.burst(180); showEncoreFlash(); }
+    // No overlay audio; TVs are silent by design
+  }
+  prevOpen = open;
+}
+function fmt(ms){ const s=Math.ceil(ms/1000); const m=Math.floor(s/60), r=s%60; return `${String(m).padStart(2,'0')}:${String(r).padStart(2,'0')}` }
+function fmtPre(ms){ return '00:'+String(Math.max(0,Math.ceil(ms/1000))).padStart(2,'0'); }
+
+setInterval(tick, 1000); // ← stretched from ~800ms
+tick();
+
+// Wake-lock best effort
+let wakeLock=null;
+async function requestWakeLock(){ try{ if('wakeLock' in navigator){ wakeLock = await navigator.wakeLock.request('screen'); } }catch(e){} }
+document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') requestWakeLock(); });
+requestWakeLock();
 </script>
-<!-- filename: /screen/index.html -->
-</body>
-</html>
+
+<!-- FILE: /screen/index.html -->
