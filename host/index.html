@@ -43,6 +43,10 @@
   .miniStrip{position:relative;width:160px;height:30px;border-radius:10px;background:#0b1123;border:1px solid #1b2b4a;overflow:hidden}
   .mdot{position:absolute;width:12px;height:12px;border-radius:50%;opacity:.95}
   .mdot.g{background:#25d366} .mdot.y{background:#f6c945} .mdot.r{background:#ff5e6c}
+
+  /* footer tools bar */
+  .tools{grid-column:1/-1}
+  .tools .btn{padding:8px 10px}
 </style>
 
 <div class="wrap">
@@ -73,12 +77,12 @@
         <div class="row">
           <div style="flex:1">
             <label>Venue (internal)</label>
-            <input list="venuesList" id="venue" type="text" placeholder="venue - city" autocomplete="off" spellcheck="false">
+            <input list="venuesList" id="venue" type="text" placeholder="Venue - City" autocomplete="off" spellcheck="false">
             <datalist id="venuesList"></datalist>
           </div>
           <div style="flex:1">
             <label>Public Venue Name (Screen)</label>
-            <input id="venuePublic" type="text" placeholder="the Venue!" autocomplete="off" spellcheck="false">
+            <input id="venuePublic" type="text" placeholder="Public Venue Name" autocomplete="off" spellcheck="false">
           </div>
           <div style="width:200px">
             <label>Date</label>
@@ -93,7 +97,7 @@
           </div>
           <div style="flex:1">
             <label>Karaoke Host Name</label>
-            <input id="hostName" type="text" placeholder="Your name (e.g., Angel)" autocomplete="off" spellcheck="false">
+            <input id="hostName" type="text" placeholder="KJ Host Name" autocomplete="off" spellcheck="false">
           </div>
           <div style="width:240px">
             <label>Event PIN</label>
@@ -115,16 +119,18 @@
 
     <div class="card">
       <h1>Show Control</h1>
-      <div style="font-weight:800;color:#cfe0ff">Add Singer</div>
+
+      <!-- One-line add singer row (song field ~half) -->
       <div class="row">
-        <input id="singerName" type="text" placeholder="Singer name (e.g., Lisa H.)" autocomplete="off" spellcheck="false">
-        <input id="songArtist" type="text" placeholder="(Optional) First song — artist (notes)" autocomplete="off" spellcheck="false">
+        <input id="singerName" type="text" placeholder="Singer name (e.g., Lisa H.)" autocomplete="off" spellcheck="false" style="flex:1.2">
+        <input id="songArtist" type="text" placeholder="(Optional) First song — artist (notes)" autocomplete="off" spellcheck="false" style="flex:0.8; min-width:260px">
         <button class="btn primary" id="addSinger" type="button">Add Singer</button>
       </div>
 
       <div class="bar"></div>
 
-      <div style="font-weight:800;color:#cfe0ff">Current & Voting</div>
+      <!-- Make this the same visual weight as 'Show Control' -->
+      <h1 style="margin:8px 0 6px">Current & Voting</h1>
       <div class="row">
         <div style="flex:1">
           <div class="micro">Current Singer</div>
@@ -169,6 +175,17 @@
       </div>
       <div class="micro" style="margin-top:6px">One vote per device per singer/song. Results announced when timer ends or you press <b>End</b>.</div>
     </div>
+
+    <!-- Full-width tools: quick sound links -->
+    <div class="card tools">
+      <h1>Tools</h1>
+      <div class="micro" style="margin:-4px 0 10px">If a browser blocks autoplay, click a sound once to ensure audio is unlocked.</div>
+      <div class="row" style="flex-wrap:wrap">
+        <button class="btn" id="play_open">Play Voting_Open</button>
+        <button class="btn" id="play_encore">Play Encore!</button>
+        <button class="btn" id="play_loser">Play Maybe Next Time!</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -189,19 +206,17 @@ function smoothOffset(observed){ if(!isFinite(observed)) return; clockOffset = 0
 
 let state=null, poll=null;
 
-// ---- input overwrite guard ----
+// ---- input overwrite guard + pause polling while choosing from datalists ----
 const lastEdit = Object.create(null);
-const RECENT_MS = 6000; // expanded window
+const RECENT_MS = 6000;
 function markEdit(id){ lastEdit[id] = Date.now(); }
 function canUpdateField(el, id){
   if(document.activeElement === el) return false;
   if((lastEdit[id]||0) > Date.now()-RECENT_MS) return false;
   return true;
 }
-
-// pause polling while focused in the event/KJ inputs (so datalist dropdowns don’t vanish)
 let pollPaused = false, resumeTimer=null;
-function pausePolling(){ if(poll){ pollPaused = true; } }
+function pausePolling(){ pollPaused = true; }
 function resumePollingSoon(){ clearTimeout(resumeTimer); resumeTimer = setTimeout(()=>{ pollPaused=false; }, 500); }
 
 let suppressEventRenderUntil = 0;
@@ -217,7 +232,7 @@ const timerEl=$('#timer'), cE=$('#c_encore'), cA=$('#c_another'), cM=$('#c_maybe
 const lockBtn=document.getElementById('lockEvent');
 const pinSaved=$('#pinSaved'); const togglePin=$('#togglePin');
 
-// Focus handlers to pause polling
+// Focus handlers to pause polling (so dropdowns don't vanish)
 [venue, venuePublic, eventDate, kj, hostName, pin].forEach(el=>{
   el.addEventListener('focusin', pausePolling);
   el.addEventListener('focusout', resumePollingSoon);
@@ -467,11 +482,11 @@ async function concludeVoting(){
   else                           setTimeout(()=>sfx.playLoser(),  120);
 }
 
-/* Loop (slightly slower for stability) + polling pause while editing */
+/* Loop (slightly slower for stability) */
 function loop(){
   if(poll) clearInterval(poll);
   poll=setInterval(async ()=>{
-    if(pollPaused) return; // don't fetch/render while editing dropdowns/inputs
+    if(pollPaused) return;
     await fetchState();
     const t=nowMs();
 
@@ -492,7 +507,7 @@ function loop(){
   }, 1000);
 }
 
-/* Audio: Host-only with your exact files */
+/* Audio: Host-only with your exact files + quick buttons */
 const sfx = (function(){
   let enabled=false;
   const aOpen   = new Audio('/assets/voting_open.mp3'); aOpen.loop = true;
@@ -518,8 +533,12 @@ const sfx = (function(){
   function safePlay(a){ if(!enabled) return; a.currentTime=0; a.play().catch(err=>console.warn('[audio] play blocked', err)); }
   function safeStop(a){ try{ a.pause(); a.currentTime=0; }catch{} }
   return { playOpen(){ if(!enabled) return; safeStop(aEncore); safeStop(aLoser); safeStop(aOpen); aOpen.play().catch(()=>{}); },
-           stopOpen(){ safeStop(aOpen); }, playEncore(){ safePlay(aEncore); }, playLoser(){ safePlay(aLoser); } };
+           stopOpen(){ safeStop(aOpen); }, playEncore(){ safePlay(aEncore); }, playLoser(){ safePlay(aLoser); },
+           _enable(){ unlockAll(); }, _open:aOpen, _enc:aEncore, _los:aLoser };
 })();
+document.getElementById('play_open').onclick  = ()=>{ sfx._enable?.(); sfx.playOpen(); };
+document.getElementById('play_encore').onclick= ()=>{ sfx._enable?.(); sfx.playEncore(); };
+document.getElementById('play_loser').onclick = ()=>{ sfx._enable?.(); sfx.playLoser(); };
 
 (async function init(){ await fetchState(); render(); loop(); })();
 </script>
