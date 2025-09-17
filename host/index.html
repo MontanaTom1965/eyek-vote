@@ -191,13 +191,18 @@ let state=null, poll=null;
 
 // ---- input overwrite guard ----
 const lastEdit = Object.create(null);
-const RECENT_MS = 2500; // do not overwrite if edited within this window
+const RECENT_MS = 6000; // expanded window
 function markEdit(id){ lastEdit[id] = Date.now(); }
 function canUpdateField(el, id){
   if(document.activeElement === el) return false;
   if((lastEdit[id]||0) > Date.now()-RECENT_MS) return false;
   return true;
 }
+
+// pause polling while focused in the event/KJ inputs (so datalist dropdowns don’t vanish)
+let pollPaused = false, resumeTimer=null;
+function pausePolling(){ if(poll){ pollPaused = true; } }
+function resumePollingSoon(){ clearTimeout(resumeTimer); resumeTimer = setTimeout(()=>{ pollPaused=false; }, 500); }
 
 let suppressEventRenderUntil = 0;
 function suppressEventRender(ms=1000){ suppressEventRenderUntil = Date.now() + ms; }
@@ -211,6 +216,12 @@ const currentName=$('#currentName'), currentSongArtist=$('#currentSongArtist');
 const timerEl=$('#timer'), cE=$('#c_encore'), cA=$('#c_another'), cM=$('#c_maybe'), resultTag=$('#resultTag');
 const lockBtn=document.getElementById('lockEvent');
 const pinSaved=$('#pinSaved'); const togglePin=$('#togglePin');
+
+// Focus handlers to pause polling
+[venue, venuePublic, eventDate, kj, hostName, pin].forEach(el=>{
+  el.addEventListener('focusin', pausePolling);
+  el.addEventListener('focusout', resumePollingSoon);
+});
 
 // mini strip physics
 function spawnMini(containerSel, kind, n=1){
@@ -451,15 +462,16 @@ async function concludeVoting(){
     state.winners[winner]=state.winners[winner].slice(0,50);
   }
   await postState(); announce(winner);
-  sfx.stopOpen();
+  sfx.stopOpen(); // stop loop
   if (winner === 'encore')       setTimeout(()=>sfx.playEncore(), 120);
   else                           setTimeout(()=>sfx.playLoser(),  120);
 }
 
-/* Loop (slightly slower for stability): prep->open transition + time-up */
+/* Loop (slightly slower for stability) + polling pause while editing */
 function loop(){
   if(poll) clearInterval(poll);
   poll=setInterval(async ()=>{
+    if(pollPaused) return; // don't fetch/render while editing dropdowns/inputs
     await fetchState();
     const t=nowMs();
 
@@ -468,7 +480,7 @@ function loop(){
       state.voting.prepUntil = 0;
       state.voting.endsAt = t + 30000;
       await postState();
-      sfx.playOpen();
+      sfx.playOpen(); // Host-only loop audio when OPEN
     }
 
     if(state?.voting?.open && t>=state.voting.endsAt){
@@ -477,33 +489,40 @@ function loop(){
       render();
       if(!state.voting.open) sfx.stopOpen();
     }
-  }, 1000); // ← stretched from ~800ms
+  }, 1000);
 }
 
-/* Audio: universal unlock + Host-only playback */
-function makeAudio(sources){ const a=new Audio(); for(const src of sources){ const el=new Audio(src); el.preload='auto'; el.volume=1.0; return el; } }
+/* Audio: universal unlock + Host-only playback (wav primary where available) */
+function makeAudio(sources){
+  let el=null;
+  for(const src of sources){
+    const a=new Audio(); a.src=src; a.preload='auto'; el=a; break;
+  }
+  return el;
+}
 const sfx = (function(){
   let enabled=false;
-  const aOpen   = makeAudio(['/assets/voting_open.mp3','/assets/voting_open.wav']);  aOpen.loop=true;
-  const aEncore = makeAudio(['/assets/encore.mp3','/assets/encore.wav']);
-  const aLoser  = makeAudio(['/assets/loser.mp3','/assets/loser.wav']);
+  const aOpen   = makeAudio(['/assets/voting_open.mp3','/assets/voting_open.wav']);  if(aOpen) aOpen.loop=true;
+  const aEncore = makeAudio(['/assets/encore.wav','/assets/encore.mp3']);
+  const aLoser  = makeAudio(['/assets/loser.wav','/assets/loser.mp3']);
   const statusEl=document.getElementById('soundStatus');
   function setStatus(){ statusEl.innerHTML = 'Sound: <b>'+(enabled?'on':'off')+'</b>'; }
 
   let ctx=null;
   function waPing(){ try{ if(!ctx) ctx=new (window.AudioContext||window.webkitAudioContext)(); const o=ctx.createOscillator(), g=ctx.createGain(); g.gain.value=0.0001; o.connect(g).connect(ctx.destination); o.start(); o.stop(ctx.currentTime+0.02); return true; }catch{ return false; } }
-  async function warmup(el){ try{ el.muted=true; await el.play(); el.pause(); el.currentTime=0; el.muted=false; return true; }catch{ return false; } }
+  async function warmup(el){ try{ if(!el) return false; el.muted=true; await el.play(); el.pause(); el.currentTime=0; el.muted=false; return true; }catch{ return false; } }
   async function unlockAll(){
     const ok = waPing() | await warmup(aEncore) | await warmup(aLoser) | await warmup(aOpen);
     enabled = !!ok; setStatus();
+    console.log('[audio] unlock', {enabled: !!ok});
   }
   document.getElementById('enableSound').addEventListener('click', unlockAll);
   function firstGesture(){ unlockAll(); window.removeEventListener('pointerdown', firstGesture, {passive:true}); }
   window.addEventListener('pointerdown', firstGesture, {passive:true});
 
-  function safePlay(a){ if(!enabled) return; a.currentTime=0; a.play().catch(()=>{}); }
-  function safeStop(a){ try{ a.pause(); a.currentTime=0; }catch{} }
-  return { playOpen(){ if(!enabled) return; safeStop(aEncore); safeStop(aLoser); safeStop(aOpen); aOpen.play().catch(()=>{}); },
+  function safePlay(a){ if(!enabled||!a) return; a.currentTime=0; a.play().catch(err=>console.warn('[audio] play blocked', err)); }
+  function safeStop(a){ try{ if(!a) return; a.pause(); a.currentTime=0; }catch{} }
+  return { playOpen(){ if(!enabled) return; safeStop(aEncore); safeStop(aLoser); safeStop(aOpen); aOpen && aOpen.play().catch(()=>{}); },
            stopOpen(){ safeStop(aOpen); }, playEncore(){ safePlay(aEncore); }, playLoser(){ safePlay(aLoser); } };
 })();
 
