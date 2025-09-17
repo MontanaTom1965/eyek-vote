@@ -25,7 +25,7 @@
     .timer{font-size:44px;font-weight:900}
     .state{padding:8px 14px;border-radius:999px;border:1px solid rgba(255,255,255,.2)}
 
-    /* full-screen outcome panel (silent) */
+    /* win overlay (silent) */
     .winPanel{position:fixed;inset:0;display:none;place-items:center;z-index:9999}
     .winInner{text-align:center}
     .winBig{font-size:16vw;font-weight:1000;line-height:0.9}
@@ -34,7 +34,7 @@
     .win--another{background:#f6c34a;color:#3a2500}
     .win--maybe{background:#2a0a3e;color:#f7f2ff;border:10px solid #ff5c5c;box-sizing:border-box}
 
-    /* subtle heartbeat to keep TVs alive */
+    /* wake hint */
     .heartbeat{position:absolute;inset:auto 8px 8px auto;width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.5);animation:hb 4s infinite}
     @keyframes hb{0%{transform:scale(1);opacity:.6} 50%{transform:scale(1.4);opacity:.35} 100%{transform:scale(1);opacity:.6}}
   </style>
@@ -62,7 +62,7 @@
     </footer>
   </div>
 
-  <!-- Unified silent outcome panel -->
+  <!-- 10s full-screen outcome panel (silent) -->
   <div class="winPanel" id="winPanel">
     <div class="winInner">
       <div class="winBig" id="winBig">Encore!</div>
@@ -74,7 +74,7 @@
     const EP={get:'/assets/get_state.php'};
     let ST={phase:'closed', counts:{encore:0,another:0,maybe:0}, prepUntil:0, endsAt:0, singer:null, venuePublic:null, winner:null, winType:null};
 
-    // Wake lock (best effort)
+    // Wake lock
     let wakelock=null; async function keepAwake(){try{wakelock=await navigator.wakeLock.request('screen');}catch(e){} }
     document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible') keepAwake()}); keepAwake();
 
@@ -103,7 +103,7 @@
       for(let i=0;i<count;i++) addBall(color);
     }
 
-    // Timer sync helpers (same concept as Host, but silent)
+    // Timer sync (using serverNow if present)
     let serverOffsetMs = 0;
     function updateOffsetFrom(st){
       if (typeof st.serverNow === 'number' && !Number.isNaN(st.serverNow)) {
@@ -113,25 +113,16 @@
     }
     function nowMs(){ return Date.now() + (serverOffsetMs||0); }
 
-    function smoothEnds(targetKey){
-      const target = ST[targetKey]; if(!target) return;
-      const ideal = target - Date.now();
-      const actual = target - nowMs();
-      const drift = actual - ideal;
-      if (Math.abs(drift) > 1500) serverOffsetMs -= Math.sign(drift) * 500;
-    }
-
-    // Unified win panel (silent)
+    // Win overlay (silent)
     const winPanel = document.getElementById('winPanel');
     const winBig   = document.getElementById('winBig');
     const winSub   = document.getElementById('winSub');
-    const winName  = document.getElementById('winName');
 
     function showWin(type, singer){
       winPanel.className='winPanel';
-      if (type==='encore'){ winPanel.classList.add('win--encore'); winBig.textContent='Encore!';         winSub.innerHTML = `Congrats <span id="winName">${singer||''}</span>!`; }
+      if (type==='encore'){ winPanel.classList.add('win--encore'); winBig.textContent='Encore!';         winSub.innerHTML = `Congrats <span>${singer||''}</span>!`; }
       else if (type==='another'){ winPanel.classList.add('win--another'); winBig.textContent='Another Shot!'; winSub.innerHTML = `${singer||''} sings again later`; }
-      else { winPanel.classList.add('win--maybe'); winBig.textContent='Maybe Next Time'; winSub.innerHTML = `Sorry <span id="winName">${singer||''}</span>!`; }
+      else { winPanel.classList.add('win--maybe'); winBig.textContent='Maybe Next Time'; winSub.innerHTML = `Sorry <span>${singer||''}</span>!`; }
       winPanel.style.display='grid';
       setTimeout(()=>{ winPanel.style.display='none'; }, 10000);
     }
@@ -160,15 +151,9 @@
           prev[k]=cur;
         });
 
-        // show 10s silent panel based on backend-marked win
         if(st.winner && st.winType && st.winner!==prev.winner){
           prev.winner=st.winner;
           showWin(st.winType, st.winner);
-        }
-
-        if (!('serverNow' in st)) {
-          if (st.phase==='open')  smoothEnds('endsAt');
-          if (st.phase==='prep')  smoothEnds('prepUntil');
         }
       }catch(e){}
     },700);
