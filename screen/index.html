@@ -1,43 +1,44 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>EYEK • Screen</title>
-  <style>
-    :root{--ink:#f7f2ff;--muted:#ccb6ff}
-    html,body{height:100%;margin:0;background:radial-gradient(1400px 900px at 10% -10%,#3c1181 0%,#2F0658 22%,#1b0930 52%,#0f031a 100%);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif;overflow:hidden}
-    .wrap{display:grid;grid-template-rows:auto 1fr auto;gap:10px;height:100%}
-    header{display:flex;align-items:baseline;gap:16px;justify-content:center;padding:16px 20px}
-    h1{margin:0;font-size:34px;letter-spacing:.5px}
-    .now{font-size:20px;color:var(--muted)}
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>EYEK • Screen</title>
+<style>
+  :root{--ink:#f7f2ff;--muted:#ccb6ff;--ok:#19c37d;--warn:#f6c34a;--bad:#ff5c5c}
+  html,body{height:100%;margin:0;color:var(--ink);
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif;
+    background:radial-gradient(1400px 900px at 10% -10%,#3c1181 0%,#2F0658 22%,#1b0930 52%,#0f031a 100%)}
+  .wrap{display:grid;grid-template-rows:auto 1fr auto;gap:10px;height:100%}
+  header{display:flex;align-items:baseline;gap:16px;justify-content:center;padding:14px 20px}
+  h1{margin:0;font-size:34px;letter-spacing:.5px}
+  .now{font-size:20px;color:var(--muted)}
 
-    .voteZone{position:relative;margin:0 24px;border-radius:22px;border:1px solid rgba(255,255,255,.1);background:rgba(0,0,0,.22);box-shadow:0 20px 60px rgba(0,0,0,.45);overflow:hidden}
-    .counters{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;padding:18px}
-    .counter{background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:12px 16px;text-align:center}
-    .counter h3{margin:0 0 6px;font-size:18px;color:#e9ddff}
-    .num{font-size:46px;font-weight:900}
+  .zone{position:relative;margin:0 24px;border-radius:22px;border:1px solid rgba(255,255,255,.1);background:rgba(0,0,0,.25);box-shadow:0 20px 60px rgba(0,0,0,.45);overflow:hidden}
+  .counters{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;padding:16px}
+  .counter{background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:12px 16px;text-align:center}
+  .counter h3{margin:0 0 6px;font-size:18px;color:#e9ddff}
+  .num{font-size:46px;font-weight:900}
 
-    /* bouncing balls */
-    canvas{width:100%;height:48vh;display:block}
+  /* bouncing balls */
+  canvas{width:100%;height:48vh;display:block}
 
-    footer{display:flex;justify-content:center;gap:16px;align-items:center;padding:10px 0 18px}
-    .timer{font-size:44px;font-weight:900}
-    .state{padding:8px 14px;border-radius:999px;border:1px solid rgba(255,255,255,.2)}
+  footer{display:flex;justify-content:center;gap:16px;align-items:center;padding:10px 0 18px}
+  .timer{font-size:44px;font-weight:900}
+  .state{padding:8px 14px;border-radius:999px;border:1px solid rgba(255,255,255,.2)}
 
-    /* win overlay (silent) */
-    .winPanel{position:fixed;inset:0;display:none;place-items:center;z-index:9999}
-    .winInner{text-align:center}
-    .winBig{font-size:16vw;font-weight:1000;line-height:0.9}
-    .winSub{font-size:4vw;font-weight:700;margin-top:1rem}
-    .win--encore{background:#19c37d;color:#042315}
-    .win--another{background:#f6c34a;color:#3a2500}
-    .win--maybe{background:#2a0a3e;color:#f7f2ff;border:10px solid #ff5c5c;box-sizing:border-box}
+  /* win overlays (silent) */
+  .winPanel{position:fixed;inset:0;display:none;place-items:center;z-index:9999}
+  .winInner{text-align:center}
+  .winBig{font-size:16vw;font-weight:1000;line-height:0.9}
+  .winSub{font-size:4vw;font-weight:700;margin-top:1rem}
+  .win--encore{background:var(--ok);color:#042315}
+  .win--another{background:var(--warn);color:#3a2500}
+  .win--maybe{background:#2a0a3e;color:#f7f2ff;border:10px solid var(--bad);box-sizing:border-box}
 
-    /* wake hint */
-    .heartbeat{position:absolute;inset:auto 8px 8px auto;width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.5);animation:hb 4s infinite}
-    @keyframes hb{0%{transform:scale(1);opacity:.6} 50%{transform:scale(1.4);opacity:.35} 100%{transform:scale(1);opacity:.6}}
-  </style>
+  .heartbeat{position:absolute;inset:auto 8px 8px auto;width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.5);animation:hb 4s infinite}
+  @keyframes hb{0%{transform:scale(1);opacity:.6} 50%{transform:scale(1.4);opacity:.35} 100%{transform:scale(1);opacity:.6}}
+</style>
 </head>
 <body>
   <div class="wrap">
@@ -46,7 +47,7 @@
       <div class="now" id="nowUp">Now up: —</div>
     </header>
 
-    <section class="voteZone">
+    <section class="zone">
       <div class="counters">
         <div class="counter"><h3>Encore</h3><div class="num" id="encoreNum">0</div></div>
         <div class="counter"><h3>Another Shot</h3><div class="num" id="anotherNum">0</div></div>
@@ -62,7 +63,7 @@
     </footer>
   </div>
 
-  <!-- 10s full-screen outcome panel (silent) -->
+  <!-- Unified silent result overlay -->
   <div class="winPanel" id="winPanel">
     <div class="winInner">
       <div class="winBig" id="winBig">Encore!</div>
@@ -70,94 +71,83 @@
     </div>
   </div>
 
-  <script>
-    const EP={get:'/assets/get_state.php'};
-    let ST={phase:'closed', counts:{encore:0,another:0,maybe:0}, prepUntil:0, endsAt:0, singer:null, venuePublic:null, winner:null, winType:null};
+<script>
+const EP={get:'/assets/get_state.php'};
+let ST={phase:'closed',counts:{encore:0,another:0,maybe:0},prepUntil:0,endsAt:0,singer:null,venuePublic:null,winner:null,winType:null};
 
-    // Wake lock
-    let wakelock=null; async function keepAwake(){try{wakelock=await navigator.wakeLock.request('screen');}catch(e){} }
-    document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible') keepAwake()}); keepAwake();
+// Wake lock to keep TVs alive
+let wakelock=null; async function keepAwake(){try{wakelock=await navigator.wakeLock.request('screen');}catch(e){}}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible') keepAwake()}); keepAwake();
 
-    const vEl = document.getElementById('venue');
-    const upEl = document.getElementById('nowUp');
-    const tEl = document.getElementById('timer');
-    const sEl = document.getElementById('state');
-    const nums={encore:document.getElementById('encoreNum'), another:document.getElementById('anotherNum'), maybe:document.getElementById('maybeNum')};
+const vEl=document.getElementById('venue'), upEl=document.getElementById('nowUp');
+const tEl=document.getElementById('timer'), sEl=document.getElementById('state');
+const nums={encore:document.getElementById('encoreNum'), another:document.getElementById('anotherNum'), maybe:document.getElementById('maybeNum')};
 
-    // Bouncing balls
-    const cvs = document.getElementById('balls');
-    const ctx = cvs.getContext('2d');
-    function resize(){cvs.width=cvs.clientWidth*2; cvs.height=cvs.clientHeight*2}
-    addEventListener('resize',resize,{passive:true}); resize();
-    const balls=[]; function addBall(color){balls.push({x:Math.random()*cvs.width,y:20+Math.random()*40,vx:(Math.random()-.5)*8,vy:0,r:16+Math.random()*12, color, spin:Math.random()*6.28})}
-    function step(){
-      ctx.clearRect(0,0,cvs.width,cvs.height);
-      const g=0.8, fric=0.995;
-      balls.forEach(b=>{b.vy+=g; b.x+=b.vx; b.y+=b.vy; b.vx*=fric; b.vy*=fric; if(b.y+b.r>cvs.height){b.y=cvs.height-b.r; b.vy*=-0.78} if(b.x-b.r<0||b.x+b.r>cvs.width){b.vx*=-0.9}
-        ctx.beginPath(); ctx.arc(b.x,b.y,b.r,0,Math.PI*2); ctx.fillStyle=b.color; ctx.fill();});
-      requestAnimationFrame(step);
-    } requestAnimationFrame(step);
+// Bouncing balls physics
+const cvs=document.getElementById('balls'), ctx=cvs.getContext('2d');
+function resize(){cvs.width=cvs.clientWidth*2; cvs.height=cvs.clientHeight*2}
+addEventListener('resize',resize,{passive:true}); resize();
+const balls=[];
+function addBall(color){balls.push({x:Math.random()*cvs.width,y:20+Math.random()*40,vx:(Math.random()-.5)*8,vy:0,r:16+Math.random()*12,color});}
+function step(){
+  ctx.clearRect(0,0,cvs.width,cvs.height);
+  const g=0.8, fr=0.995;
+  balls.forEach(b=>{
+    b.vy+=g; b.x+=b.vx; b.y+=b.vy; b.vx*=fr; b.vy*=fr;
+    if(b.y+b.r>cvs.height){b.y=cvs.height-b.r; b.vy*=-0.78}
+    if(b.x-b.r<0||b.x+b.r>cvs.width){b.vx*=-0.9}
+    ctx.beginPath(); ctx.arc(b.x,b.y,b.r,0,Math.PI*2); ctx.fillStyle=b.color; ctx.fill();
+  });
+  requestAnimationFrame(step);
+}
+requestAnimationFrame(step);
+function pushBalls(which,count){
+  const color = which==='encore'? '#19c37d' : which==='another'? '#f6c34a' : '#ff5c5c';
+  for(let i=0;i<count;i++) addBall(color);
+}
 
-    function pushBalls(which, count){
-      const color = which==='encore'? '#19c37d' : which==='another'? '#f6c34a' : '#ff5c5c';
-      for(let i=0;i<count;i++) addBall(color);
-    }
+// Timer sync
+let serverOffsetMs=0;
+function updateOffsetFrom(st){
+  if(typeof st.serverNow==='number'){ if(!window.__serverOffsetMs) window.__serverOffsetMs=st.serverNow - Date.now(); serverOffsetMs=window.__serverOffsetMs; }
+}
+const nowMs=()=>Date.now()+(serverOffsetMs||0);
 
-    // Timer sync (using serverNow if present)
-    let serverOffsetMs = 0;
-    function updateOffsetFrom(st){
-      if (typeof st.serverNow === 'number' && !Number.isNaN(st.serverNow)) {
-        if (!window.__serverOffsetMs) window.__serverOffsetMs = st.serverNow - Date.now();
-        serverOffsetMs = window.__serverOffsetMs;
-      }
-    }
-    function nowMs(){ return Date.now() + (serverOffsetMs||0); }
+// Win overlay
+const winPanel=document.getElementById('winPanel'), winBig=document.getElementById('winBig'), winSub=document.getElementById('winSub');
+function showWin(type,singer){
+  winPanel.className='winPanel';
+  if(type==='encore'){ winPanel.classList.add('win--encore'); winBig.textContent='Encore!';         winSub.innerHTML=`Congrats <span>${singer||''}</span>!`; }
+  else if(type==='another'){ winPanel.classList.add('win--another'); winBig.textContent='Another Shot!'; winSub.innerHTML=`${singer||''} sings again later`; }
+  else { winPanel.classList.add('win--maybe'); winBig.textContent='Maybe Next Time'; winSub.innerHTML=`Sorry <span>${singer||''}</span>!`; }
+  winPanel.style.display='grid'; setTimeout(()=>winPanel.style.display='none',10000);
+}
 
-    // Win overlay (silent)
-    const winPanel = document.getElementById('winPanel');
-    const winBig   = document.getElementById('winBig');
-    const winSub   = document.getElementById('winSub');
+// Polling
+let prev={encore:0,another:0,maybe:0,winner:null};
+setInterval(async()=>{
+  try{
+    const r=await fetch(EP.get); const st=await r.json(); ST=st; updateOffsetFrom(st);
+    vEl.textContent=st.venuePublic||'—'; upEl.textContent='Now up: '+(st.singer||'—');
+    sEl.textContent=st.phase==='open'?'Open':(st.phase==='prep'?'Get ready…':'Closed');
 
-    function showWin(type, singer){
-      winPanel.className='winPanel';
-      if (type==='encore'){ winPanel.classList.add('win--encore'); winBig.textContent='Encore!';         winSub.innerHTML = `Congrats <span>${singer||''}</span>!`; }
-      else if (type==='another'){ winPanel.classList.add('win--another'); winBig.textContent='Another Shot!'; winSub.innerHTML = `${singer||''} sings again later`; }
-      else { winPanel.classList.add('win--maybe'); winBig.textContent='Maybe Next Time'; winSub.innerHTML = `Sorry <span>${singer||''}</span>!`; }
-      winPanel.style.display='grid';
-      setTimeout(()=>{ winPanel.style.display='none'; }, 10000);
-    }
+    const left = st.phase==='prep'
+      ? Math.max(0, Math.ceil((st.prepUntil - nowMs())/1000))
+      : st.phase==='open'
+      ? Math.max(0, Math.ceil((st.endsAt   - nowMs())/1000))
+      : 0;
+    tEl.textContent=new Date(left*1000).toISOString().substring(14,19);
 
-    // Polling
-    let prev={encore:0,another:0,maybe:0, winner:null};
-    setInterval(async()=>{
-      try{
-        const r = await fetch(EP.get); const st = await r.json(); ST=st;
-        updateOffsetFrom(st);
+    const c=st.counts||{encore:0,another:0,maybe:0};
+    ['encore','another','maybe'].forEach(k=>{
+      const cur=c[k]||0; nums[k].textContent=cur;
+      if(cur>prev[k]) pushBalls(k,cur-prev[k]); prev[k]=cur;
+    });
 
-        vEl.textContent = st.venuePublic||'—';
-        upEl.textContent = 'Now up: ' + (st.singer||'—');
-        sEl.textContent = st.phase==='open'? 'Open' : (st.phase==='prep'?'Get ready…':'Closed');
-
-        const left = st.phase==='prep'
-          ? Math.max(0, Math.ceil((st.prepUntil - nowMs())/1000))
-          : st.phase==='open'
-          ? Math.max(0, Math.ceil((st.endsAt   - nowMs())/1000))
-          : 0;
-        tEl.textContent = new Date(left*1000).toISOString().substring(14,19);
-
-        ['encore','another','maybe'].forEach(k=>{
-          const cur=st.counts?.[k]||0; nums[k].textContent=cur;
-          if(cur>prev[k]) pushBalls(k, cur-prev[k]);
-          prev[k]=cur;
-        });
-
-        if(st.winner && st.winType && st.winner!==prev.winner){
-          prev.winner=st.winner;
-          showWin(st.winType, st.winner);
-        }
-      }catch(e){}
-    },700);
-  </script>
-  <!-- filename: /screen/index.html -->
+    if(st.winner && st.winType && st.winner!==prev.winner){ prev.winner=st.winner; showWin(st.winType, st.winner); }
+  }catch(e){}
+},700);
+</script>
+<!-- filename: /screen/index.html -->
 </body>
 </html>
