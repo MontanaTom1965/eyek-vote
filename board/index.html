@@ -1,71 +1,77 @@
 <!doctype html>
-<meta charset="utf-8"><title>Still in it!</title>
+<meta charset="utf-8">
+<title>Encore! • Board</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
+
 <style>
-  :root{--bg:#0f1526;--card:#0d1428;--line:#2b3c62;--txt:#eaf2ff;--muted:#a9b6d9;--green:#25d366;--yellow:#f6c945}
-  body{margin:0;background:var(--bg);color:var(--txt);font:18px system-ui}
-  .wrap{max-width:1000px;margin:24px auto;padding:16px}
-  h1{margin:0 0 16px;text-align:center}
+  :root{--purple:#2F0658;--bg:#0f1526;--card:#0d1428;--line:#2b3c62;--txt:#eaf2ff;--muted:#aab2d6;--green:#25d366;--yellow:#f6c945}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);font:18px/1.4 system-ui,Segoe UI,Roboto,Helvetica,Arial}
+  .wrap{min-height:100svh;padding:20px;display:grid;gap:16px}
   .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-  .card{background:#0d1428;border:1px solid var(--line);border-radius:14px;padding:14px;position:relative}
-  .item{padding:8px 10px;border-bottom:1px solid #203153}
-  .item:last-child{border-bottom:0}
-  .muted{color:var(--muted);font-size:12px}
-  .titleRow{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
-  .pulseDot{width:10px;height:10px;border-radius:50%;background:#8edbff;box-shadow:0 0 12px rgba(142,219,255,.5)}
-  .highlight{box-shadow:0 0 0 0 rgba(142,219,255,0); transition: box-shadow .6s ease}
-  .highlight.active{box-shadow:0 0 0 3px rgba(142,219,255,.3), 0 6px 28px rgba(142,219,255,.2)}
+  .card{background:linear-gradient(180deg,var(--card),#0e0e22);border:1px solid #2a2f56;border-radius:16px;padding:16px;box-shadow:0 6px 26px rgba(0,0,0,.35)}
+  .title{margin:0 0 10px;font-weight:900;letter-spacing:.5px}
+  .t-enc{color:var(--green);font-size:42px}
+  .t-another{color:var(--yellow);font-size:42px}
+  .list{display:grid;gap:10px;max-height:78vh;overflow:auto;padding-right:6px}
+  .row{display:flex;gap:10px;align-items:center;background:#0b1123;border:1px solid #1b2b4a;border-radius:12px;padding:12px}
+  .name{font-size:28px;font-weight:800;flex:0 0 auto}
+  .song{font-size:18px;color:#cfe0ff;opacity:.9;flex:1;min-width:120px}
+  .dot{width:12px;height:12px;border-radius:999px}
+  .g{background:var(--green)} .y{background:var(--yellow)}
+  .muted{color:var(--muted);font-size:14px}
 </style>
 
 <div class="wrap">
-  <h1>Still in it!</h1>
+  <!-- No top heading per your request -->
   <div class="grid">
-    <div id="cardEncore" class="card highlight">
-      <div class="titleRow">
-        <h2 style="margin:0;color:var(--green)">Encore!</h2>
-        <div id="dot" class="pulseDot" title="anti-sleep heartbeat"></div>
-      </div>
-      <div id="encoreList"></div>
+    <div class="card">
+      <h1 class="title t-enc">Encore!</h1>
+      <div id="encList" class="list"></div>
     </div>
-    <div id="cardAnother" class="card highlight">
-      <h2 style="margin:0;color:var(--yellow)">Another Shot!</h2>
-      <div id="anotherList"></div>
+    <div class="card">
+      <h1 class="title t-another">Another Shot!</h1>
+      <div id="anList" class="list"></div>
     </div>
   </div>
+  <div class="muted">Board updates automatically when votes close.</div>
 </div>
 
 <script>
 const GET_URL='/assets/get_state.php';
 const $=s=>document.querySelector(s);
 
-let state=null;
+let lastJson='';
 
-/* Wake Lock */
-let wakeLock=null;
-async function requestWakeLock(){ try{ if('wakeLock' in navigator){ wakeLock = await navigator.wakeLock.request('screen'); } }catch(e){} }
-document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') requestWakeLock(); });
-
-/* Heartbeat: alternate highlight + pulse dot every 30s */
-function heartbeat(){
-  const a=$('#cardEncore'), b=$('#cardAnother'), dot=$('#dot');
-  a.classList.toggle('active');
-  b.classList.toggle('active');
-  if(dot){ dot.animate([{transform:'scale(1)', opacity:1},{transform:'scale(1.5)', opacity:.6},{transform:'scale(1)', opacity:1}],{duration:600,easing:'ease-in-out'}); }
+async function fetchState(){
+  const r=await fetch(GET_URL,{cache:'no-store'});
+  return await r.json();
 }
-setInterval(heartbeat, 30000);
-setTimeout(heartbeat, 3000);
+function render(state){
+  const enc = state?.winners?.encore || [];
+  const an  = state?.winners?.another|| [];
+  const encList = document.getElementById('encList');
+  const anList  = document.getElementById('anList');
 
-function renderList(el,arr){
-  el.innerHTML = (arr&&arr.length? arr.map(x=>`<div class="item"><div><b>${(x.name||'—')}</b></div><div class="muted">${(x.song||'')}</div><div class="muted">${new Date(x.when).toLocaleTimeString()}</div></div>`).join('') : '<div class="muted">No winners yet…</div>');
+  encList.innerHTML = enc.map(it=>row(it.name, it.song, 'g')).join('');
+  anList.innerHTML  = an.map(it=>row(it.name, it.song, 'y')).join('');
 }
+function row(name, song, cls){
+  name = name || '—'; song = song || '';
+  return `<div class="row">
+            <div class="dot ${cls}"></div>
+            <div class="name">${escapeHtml(name)}</div>
+            <div class="song">${escapeHtml(song)}</div>
+          </div>`;
+}
+function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m])); }
 
 async function tick(){
-  const r=await fetch(GET_URL,{cache:'no-store'}); state=await r.json();
-  renderList($('#encoreList'), state.winners?.encore);
-  renderList($('#anotherList'), state.winners?.another);
+  const st = await fetchState();
+  const json = JSON.stringify({winners: st?.winners || {}});
+  if(json!==lastJson){ lastJson=json; render(st); }
 }
-
-setInterval(tick, 1200);
-tick();
-requestWakeLock();
+setInterval(tick, 1500); tick();
 </script>
+
+<!-- FILE: /board/index.html -->
