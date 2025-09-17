@@ -8,7 +8,7 @@
   body{margin:0;background:var(--bg);color:var(--txt);font:16px system-ui}
   .wrap{max-width:640px;margin:24px auto;padding:16px}
   h1{font-family:"Bebas Neue"; font-size:44px; margin:0 0 4px}
-  .venue{font-family:"Montserrat"; font-weight:700; font-size:22px; color:#ffd6ff; margin:0 0 16px}
+  .venue{font-family:"Montserrat"; font-weight:700; font-size:22px; color:#ffd6ff; margin:0 0 16px; overflow-wrap:anywhere}
   .sub{font-size:14px;color:var(--muted);margin-top:2px}
   input,button{font:inherit}
   input{width:100%;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--txt)}
@@ -17,8 +17,8 @@
   .good{background:#25d366;color:#06120a}.warn{background:#f6c945;color:#231a04}.bad{background:#ff5e6c}
   .mini{font-size:12px;color:var(--muted)}
   .nowVoting{font-family:"Montserrat"; font-weight:700; margin:10px 0 6px; font-size:14px; color:#cfe0ff}
-  .who{font-family:"Bebas Neue"; font-size:36px; margin:0 0 6px}
-  .song{font-size:14px;color:#c9d6ff;margin:0 0 12px}
+  .who{font-family:"Bebas Neue"; font-size:36px; margin:0 0 6px; overflow-wrap:anywhere}
+  .song{font-size:14px;color:#c9d6ff;margin:0 0 12px; overflow-wrap:anywhere}
   .ok{color:#8edbff}
   .err{color:#ff9a9a}
 </style>
@@ -79,9 +79,13 @@ function render(){
   $('#join').style.display='none'; $('#panel').style.display='block';
   $('#singer').textContent = state.current?.name || '—';
   $('#song').textContent   = state.current?.songArtist || '—';
+
   const open = !!state.voting?.open;
-  ['v_encore','v_another','v_maybe'].forEach(id=>{ const b=$('#'+id); b.disabled=!open; b.style.opacity=open?1:.6; });
-  $('#note').textContent = open ? 'Voting is OPEN — make your choice!' : 'Voting closed…';
+  // Disable voting during prep or closed
+  const inPrep = (!open && (state.voting?.prepUntil||0) > Date.now());
+  const enable = open && !inPrep;
+  ['v_encore','v_another','v_maybe'].forEach(id=>{ const b=$('#'+id); b.disabled=!enable; b.style.opacity=enable?1:.6; });
+  $('#note').textContent = enable ? 'Voting is OPEN — make your choice!' : (inPrep ? 'Get ready to vote…' : 'Voting closed…');
 }
 
 async function vote(kind){
