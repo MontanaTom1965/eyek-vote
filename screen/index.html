@@ -13,7 +13,13 @@
   .wrap{display:grid;place-items:center;min-height:100svh;text-align:center;padding:4vmin;position:relative;overflow:hidden}
   .title{font-family:"Bebas Neue"; font-size:9vmin; letter-spacing:.5vmin; margin:0 0 1.2vmin; color:#fff}
   .venue{font-family:"Montserrat"; font-weight:800; font-size:6vmin; color:#ffd6ff; margin:0 0 1vmin; text-shadow:0 6px 24px rgba(47,6,88,.45); max-width:95vw; overflow-wrap:anywhere}
-  .kj{font-family:"Montserrat"; font-weight:600; font-size:2.6vmin; color:#c9d6ff; margin:0 0 4.5vmin; opacity:.9; max-width:95vw; overflow-wrap:anywhere}
+  .kj{font-family:"Montserrat"; font-weight:600; font-size:2.6vmin; color:#c9d6ff; margin:0 0 2.5vmin; opacity:.9; max-width:95vw; overflow-wrap:anywhere}
+
+  /* Now/Prep bar (welcome view only) */
+  .nowBar{margin-top:1.5vmin}
+  .nowTitle{font-family:"Montserrat"; font-weight:800; font-size:4.8vmin; margin:.6vmin 0 .2vmin; color:#ffffff}
+  .nowName{font-family:"Bebas Neue"; font-size:9vmin; margin:0 0 .2vmin}
+  .prep{font-family:"Montserrat"; font-size:3.8vmin; color:#cfe0ff; margin:.8vmin 0 0}
 
   /* Voting fullscreen section */
   .voteView{display:none}
@@ -54,6 +60,12 @@
     <h1 class="title">Welcome to</h1>
     <div id="venue" class="venue">—</div>
     <div id="kj" class="kj">Hosted by —</div>
+
+    <div id="nowBar" class="nowBar" style="display:none">
+      <div class="nowTitle">Now Singing:</div>
+      <div id="nowName" class="nowName">—</div>
+      <div id="prep" class="prep" style="display:none">Get ready to vote in 00:05</div>
+    </div>
   </div>
 
   <!-- Voting fullscreen view -->
@@ -100,7 +112,7 @@ const confetti=(function(){
   let W=0,H=0, parts=[], running=false;
   function resize(){ W=cv.width=window.innerWidth; H=cv.height=window.innerHeight; }
   function rand(a,b){ return a+Math.random()*(b-a); }
-  function burst(n=280){
+  function burst(n=300){
     for(let i=0;i<n;i++){
       parts.push({x: W/2, y: H*0.25, r: rand(2,4), vx: rand(-6,6), vy: rand(-2,8), g: 0.18, life: rand(60,140), color: `hsl(${Math.floor(rand(0,360))} 90% 60%)`});
     }
@@ -202,7 +214,7 @@ async function tick(){
   const pit       = document.getElementById('pit');
   const tally     = document.getElementById('tally');
 
-  // Always show venue/kj in welcome (not in vote view)
+  // Welcome view basics
   const publicOnly = (state.event?.venuePublic||'').trim();
   document.getElementById('venue').textContent = publicOnly ? publicOnly : '—';
   const kjName = state.event?.kj || '';
@@ -210,17 +222,52 @@ async function tick(){
 
   const t = nowMs();
   const open = !!state.voting?.open;
+  const prep = (!open && (state.voting?.prepUntil||0) > t);
   const result = state.voting?.lastResult || null;
+  const hasCurrent = !!state.current?.id;
 
-  if(open){
+  // Now/Prep panel (only in welcome)
+  const nowBar = document.getElementById('nowBar');
+  const nowName= document.getElementById('nowName');
+  const prepEl = document.getElementById('prep');
+
+  if(!open){
+    welcome.style.display='block';
+    voteView.style.display='none';
+
+    if(hasCurrent){
+      nowBar.style.display='block';
+      nowName.textContent = state.current?.name || '—';
+      if(prep){
+        const ms = Math.max(0, (state.voting?.prepUntil||0) - t);
+        prepEl.style.display='block';
+        prepEl.textContent = 'Get ready to vote in ' + fmt(ms);
+      } else {
+        prepEl.style.display='none';
+      }
+    } else {
+      nowBar.style.display='none';
+      prepEl.style.display='none';
+    }
+
+    // Tally only for 15s after close
+    tally.style.display = (t < tallyUntil) ? 'flex' : 'none';
+    pit.innerHTML='';
+    lastCounts = {encore:0,another:0,maybe:0};
+    document.getElementById('cE').textContent = 0;
+    document.getElementById('cA').textContent = 0;
+    document.getElementById('cM').textContent = 0;
+  } else {
+    // Voting fullscreen view
     welcome.style.display='none';
     voteView.style.display='block';
     whoEl.textContent = state.current?.name || '—';
+
     const ce = state.voting?.counts?.encore  ?? 0;
     const ca = state.voting?.counts?.another ?? 0;
     const cm = state.voting?.counts?.maybe   ?? 0;
 
-    // spawn new balls
+    // Spawn new balls as counts rise
     if(ce>lastCounts.encore)  spawnBalls('encore',  ce-lastCounts.encore);
     if(ca>lastCounts.another) spawnBalls('another', ca-lastCounts.another);
     if(cm>lastCounts.maybe)   spawnBalls('maybe',   cm-lastCounts.maybe);
@@ -229,24 +276,16 @@ async function tick(){
     const ms=Math.max(0,(state.voting.endsAt||0)-t);
     timerEl.textContent=fmt(ms);
 
-    // Tally shows during open
-    tally.style.display='flex';
+    // live tally visible during open
     document.getElementById('cE').textContent = ce;
     document.getElementById('cA').textContent = ca;
     document.getElementById('cM').textContent = cm;
-  } else {
-    voteView.style.display='none';
-    welcome.style.display='block';
-    pit.innerHTML='';
-    lastCounts = {encore:0,another:0,maybe:0};
-    timerEl.textContent='00:00';
-    // Tally visible only for 15s after close
-    tally.style.display = (t < tallyUntil) ? 'flex' : 'none';
+    tally.style.display='flex';
   }
 
   // Transition: open -> closed
   if(prevOpen && !open){
-    tallyUntil = t + 15000; // show tally for 15s after close
+    tallyUntil = t + 15000; // show tally 15s after close
     if(result){ showOverlay(result); }
   }
   prevOpen = open;
