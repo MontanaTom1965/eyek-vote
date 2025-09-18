@@ -20,10 +20,13 @@
   .dot{width:12px;height:12px;border-radius:999px}
   .g{background:var(--green)} .y{background:var(--yellow)}
   .muted{color:var(--muted);font-size:14px}
+
+  /* subtle heartbeat to avoid TV sleep */
+  .heartbeat{animation:hb 6s infinite ease-in-out}
+  @keyframes hb{0%,100%{opacity:1}50%{opacity:.995}}
 </style>
 
-<div class="wrap">
-  <!-- No top heading per your request -->
+<div class="wrap heartbeat">
   <div class="grid">
     <div class="card">
       <h1 class="title t-enc">Encore!</h1>
@@ -71,7 +74,13 @@ async function tick(){
   const json = JSON.stringify({winners: st?.winners || {}});
   if(json!==lastJson){ lastJson=json; render(st); }
 }
-setInterval(tick, 1500); tick();
+setInterval(tick, 2000); tick();
+
+// Wake-lock best effort
+let wakeLock=null;
+async function requestWakeLock(){ try{ if('wakeLock' in navigator){ wakeLock = await navigator.wakeLock.request('screen'); } }catch(e){} }
+document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') requestWakeLock(); });
+requestWakeLock();
 </script>
 
 <!-- FILE: /board/index.html -->
