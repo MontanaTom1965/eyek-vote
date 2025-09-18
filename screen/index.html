@@ -29,7 +29,7 @@
   .chip{padding:1.2vmin 2.8vmin;border-radius:14px;border:2px solid var(--line);background:var(--card); font-size:5vmin}
   .enc{color:var(--green)} .ano{color:var(--yellow)} .may{color:var(--red)}
 
-  /* 15s Result Overlays */
+  /* Result Overlays (15s) */
   .overlay{position:fixed; inset:0; background:rgba(0,0,0,.92); display:none; align-items:center; justify-content:center; z-index:10}
   .panel{text-align:center; padding:2vmin 4vmin}
   .ovTitle{font-family:"Bebas Neue"; font-size:20vmin; margin:0 0 1.2vmin}
@@ -39,9 +39,13 @@
 
   #confetti{position:absolute; inset:0; pointer-events:none}
   .flashEncore{position:absolute; top:3vmin; left:50%; transform:translateX(-50%); background:#10152b; border:2px solid rgba(37,211,102,.5); color:var(--green); padding:1vmin 3vmin; border-radius:999px; font-weight:800; font-size:4vmin; box-shadow:0 10px 40px rgba(37,211,102,.35); display:none}
+
+  /* subtle heartbeat to keep panels “active” */
+  .heartbeat{animation:hb 6s infinite ease-in-out; }
+  @keyframes hb{ 0%,100%{opacity:1} 50%{opacity:.995} }
 </style>
 
-<div class="wrap">
+<div class="wrap heartbeat">
   <canvas id="confetti"></canvas>
   <div id="flash" class="flashEncore">Encore! 🎉</div>
 
@@ -96,7 +100,7 @@ const confetti=(function(){
   let W=0,H=0, parts=[], running=false;
   function resize(){ W=cv.width=window.innerWidth; H=cv.height=window.innerHeight; }
   function rand(a,b){ return a+Math.random()*(b-a); }
-  function burst(n=260){
+  function burst(n=280){
     for(let i=0;i<n;i++){
       parts.push({x: W/2, y: H*0.25, r: rand(2,4), vx: rand(-6,6), vy: rand(-2,8), g: 0.18, life: rand(60,140), color: `hsl(${Math.floor(rand(0,360))} 90% 60%)`});
     }
@@ -154,7 +158,7 @@ function showOverlay(kind){
     t.textContent='Encore!';
     t.style.color='#25d366';
     sub.textContent = `Congratulations, ${name}!`;
-    confetti.burst(280); showEncoreFlash();
+    confetti.burst(300); showEncoreFlash();
   } else if(kind==='another'){
     t.textContent='Another Shot!';
     t.style.color='#f6c945';
@@ -198,47 +202,41 @@ async function tick(){
   const pit       = document.getElementById('pit');
   const tally     = document.getElementById('tally');
 
+  // Always show venue/kj in welcome (not in vote view)
   const publicOnly = (state.event?.venuePublic||'').trim();
   document.getElementById('venue').textContent = publicOnly ? publicOnly : '—';
   const kjName = state.event?.kj || '';
   document.getElementById('kj').textContent    = kjName ? `Hosted by ${kjName}` : 'Hosted by —';
 
-  const hasCurrent  = !!state.current?.id;
   const t = nowMs();
   const open = !!state.voting?.open;
-  const prep = (!open && (state.voting?.prepUntil||0) > t);
   const result = state.voting?.lastResult || null;
 
-  // Switch views
   if(open){
     welcome.style.display='none';
     voteView.style.display='block';
     whoEl.textContent = state.current?.name || '—';
-  } else {
-    voteView.style.display='none';
-    welcome.style.display='block';
-  }
+    const ce = state.voting?.counts?.encore  ?? 0;
+    const ca = state.voting?.counts?.another ?? 0;
+    const cm = state.voting?.counts?.maybe   ?? 0;
 
-  // Counters
-  const ce = state.voting?.counts?.encore  ?? 0;
-  const ca = state.voting?.counts?.another ?? 0;
-  const cm = state.voting?.counts?.maybe   ?? 0;
-  document.getElementById('cE').textContent = ce;
-  document.getElementById('cA').textContent = ca;
-  document.getElementById('cM').textContent = cm;
-
-  if(open){
-    const prev = { ...lastCounts };
-    if(ce>prev.encore)  spawnBalls('encore',  ce-prev.encore);
-    if(ca>prev.another) spawnBalls('another', ca-prev.another);
-    if(cm>prev.maybe)   spawnBalls('maybe',   cm-prev.maybe);
+    // spawn new balls
+    if(ce>lastCounts.encore)  spawnBalls('encore',  ce-lastCounts.encore);
+    if(ca>lastCounts.another) spawnBalls('another', ca-lastCounts.another);
+    if(cm>lastCounts.maybe)   spawnBalls('maybe',   cm-lastCounts.maybe);
     lastCounts = {encore:ce, another:ca, maybe:cm};
 
     const ms=Math.max(0,(state.voting.endsAt||0)-t);
     timerEl.textContent=fmt(ms);
-    // Tally visible while open
+
+    // Tally shows during open
     tally.style.display='flex';
+    document.getElementById('cE').textContent = ce;
+    document.getElementById('cA').textContent = ca;
+    document.getElementById('cM').textContent = cm;
   } else {
+    voteView.style.display='none';
+    welcome.style.display='block';
     pit.innerHTML='';
     lastCounts = {encore:0,another:0,maybe:0};
     timerEl.textContent='00:00';
@@ -248,7 +246,7 @@ async function tick(){
 
   // Transition: open -> closed
   if(prevOpen && !open){
-    tallyUntil = t + 15000; // show tally for 15s
+    tallyUntil = t + 15000; // show tally for 15s after close
     if(result){ showOverlay(result); }
   }
   prevOpen = open;
@@ -261,7 +259,7 @@ function fmt(ms){ const s=Math.ceil(ms/1000); const m=Math.floor(s/60), r=s%60; 
 setInterval(tick, 1000);
 tick();
 
-// Wake-lock best effort
+// Wake-lock + heartbeat to keep TVs awake
 let wakeLock=null;
 async function requestWakeLock(){ try{ if('wakeLock' in navigator){ wakeLock = await navigator.wakeLock.request('screen'); } }catch(e){} }
 document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') requestWakeLock(); });
