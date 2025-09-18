@@ -203,15 +203,15 @@ let state=null, poll=null;
 
 // overwrite guard + pause polling while choosing from datalists
 const lastEdit = Object.create(null);
-const RECENT_MS = 6000;
+const RECENT_MS = 12000; // longer so dropdowns don't get stomped
 function markEdit(id){ lastEdit[id] = Date.now(); }
 function canUpdateField(el, id){ if(document.activeElement === el) return false; if((lastEdit[id]||0) > Date.now()-RECENT_MS) return false; return true; }
 let pollPaused=false, resumeTimer=null;
-function pausePolling(){ pollPaused=true; }
-function resumePollingSoon(){ clearTimeout(resumeTimer); resumeTimer=setTimeout(()=>{ pollPaused=false; }, 500); }
+function pausePolling(){ pollPaused=true; clearTimeout(resumeTimer); }
+function resumePollingSoon(){ clearTimeout(resumeTimer); resumeTimer=setTimeout(()=>{ pollPaused=false; }, 1800); } // longer tail
 
 let suppressEventRenderUntil = 0;
-function suppressEventRender(ms=1000){ suppressEventRenderUntil = Date.now() + ms; }
+function suppressEventRender(ms=1200){ suppressEventRenderUntil = Date.now() + ms; }
 function mayRenderEventInputs(){ return Date.now() > suppressEventRenderUntil; }
 
 const venue=$('#venue'), venuePublic=$('#venuePublic'), eventDate=$('#eventDate'), kj=$('#kj'), hostName=$('#hostName'), pin=$('#pin');
@@ -224,11 +224,12 @@ const lockBtn=document.getElementById('lockEvent');
 const pinSaved=$('#pinSaved'); const togglePin=$('#togglePin');
 
 [venue, venuePublic, eventDate, kj, hostName, pin].forEach(el=>{
-  el.addEventListener('focusin', pausePolling);
+  el.addEventListener('focusin', ()=>{ pausePolling(); markEdit(el.id); });
   el.addEventListener('focusout', resumePollingSoon);
+  el.addEventListener('input', ()=>{ markEdit(el.id); pausePolling(); });
 });
 
-// mini-dot physics on host
+// mini-dot physics (unchanged)
 function spawnMini(containerSel, kind, n=1){
   const box=$(containerSel); if(!box) return;
   const cls = kind==='encore'?'g':kind==='another'?'y':'r';
@@ -267,8 +268,8 @@ async function fetchState(){
   state.voting  ||= {open:false,prepUntil:0,endsAt:0,extendCount:0,counts:{encore:0,another:0,maybe:0},lastResult:null,voters:{}};
   state.winners ||= {encore:[],another:[]};
 }
-async function postState(){ await fetch('/assets/state.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(state)}); await fetchState(); }
-const postStateDebounced = debounce(async ()=>{ await fetch('/assets/state.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(state)}); await fetchState(); render(); }, 220);
+async function postState(){ await fetch(POST_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(state)}); await fetchState(); }
+const postStateDebounced = debounce(async ()=>{ await fetch(POST_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(state)}); await fetchState(); render(); }, 220);
 
 function updateDatalistsImmediate(){
   const Lvenues = JSON.parse(localStorage.getItem('eyek_saved_venues') || '[]');
@@ -300,7 +301,7 @@ function render(){
   if (canPaint && canUpdateField(pin,'pin'))                    pin.value         = state.event.pin || '';
   [venue,venuePublic,eventDate,kj,hostName,pin].forEach(el=>el.disabled=state.event.locked);
 
-  lockBtn.textContent = state.event.locked ? 'Unlock' : 'Lock';
+  document.getElementById('lockEvent').textContent = state.event.locked ? 'Unlock' : 'Lock';
 
   // rotation list
   singerList.innerHTML='';
@@ -359,7 +360,7 @@ function bindLive(el, key, transform=(x)=>x, immediate=false){
     el.value = val;
     state.event[key] = val;
     markEdit(el.id);
-    suppressEventRender(600);
+    suppressEventRender(900);
     if(immediate){ await postState(); showPinSaved(key); } else { postStateDebounced(); }
   };
   el.addEventListener('input', handler);
@@ -382,7 +383,7 @@ document.getElementById('saveEvent').onclick = async ()=>{
   pushLocalList('kj', kj.value);
   await postState(); const m=document.getElementById('eventSavedMsg'); m.textContent='Saved!'; setTimeout(()=>m.textContent='',1400);
 };
-lockBtn.onclick = async ()=>{ state.event.locked = !state.event.locked; await postState(); };
+document.getElementById('lockEvent').onclick = async ()=>{ state.event.locked = !state.event.locked; await postState(); };
 document.getElementById('resetEvent').onclick = async ()=>{
   if(state.event.locked){ alert('Unlock to reset.'); return;}
   if(!confirm('Reset this event? This clears singers & votes.')) return;
@@ -405,10 +406,7 @@ document.getElementById('addSinger').onclick = async ()=>{
   await postState();
 };
 async function logPerformance(action){
-  try{
-    await fetch(PERF_URL, {method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ action, when: new Date().toISOString(), singer: state.current?.name || '', song: state.current?.songArtist || '' })});
-  }catch(e){}
+  try{ await fetch(PERF_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,when:new Date().toISOString(),singer:state.current?.name||'',song:state.current?.songArtist||''})}); }catch(e){}
 }
 function setCurrent(id){
   const s = state.singers.find(x=>x.id===id); if(!s) return;
@@ -485,6 +483,7 @@ function loop(){
     await fetchState();
     const t=nowMs();
 
+    // flip to OPEN after prep
     if(!state.voting.open && (state.voting.prepUntil||0) > 0 && t >= state.voting.prepUntil){
       state.voting.open = true;
       state.voting.prepUntil = 0;
@@ -526,7 +525,7 @@ const sfx = (function(){
   function firstGesture(){ unlockAll(); window.removeEventListener('pointerdown', firstGesture, {passive:true}); }
   window.addEventListener('pointerdown', firstGesture, {passive:true});
 
-  function safePlay(a){ if(!enabled) return; a.currentTime = a.currentTime || 0; a.play().then(()=>setLoop(!a.paused)).catch(()=>setLoop(false)); }
+  function safePlay(a){ if(!enabled) return; a.play().then(()=>setLoop(!a.paused)).catch(()=>setLoop(false)); }
   function safeStop(a){ try{ a.pause(); a.currentTime=0; setLoop(false);}catch{} }
 
   document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') ensureLoop(); });
@@ -545,6 +544,11 @@ const sfx = (function(){
     playLoser(){ safePlay(aLoser); }
   };
 })();
+
+// quick test buttons
+document.getElementById('play_open').onclick  = ()=>{ sfx.ensureLoop(); };
+document.getElementById('play_encore').onclick= ()=>{ sfx.playEncore(); };
+document.getElementById('play_loser').onclick = ()=>{ sfx.playLoser(); };
 
 (async function init(){ await fetchState(); render(); loop(); })();
 </script>
