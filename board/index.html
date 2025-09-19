@@ -1,87 +1,59 @@
 <!doctype html>
-<meta charset="utf-8">
+<meta charset="utf-8" />
 <title>Encore! • Board</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@600;800&display=swap" rel="stylesheet">
 <style>
-  :root{--purple:#2F0658;--bg:#0f1526;--card:#0d1428;--line:#2b3c62;--txt:#eaf2ff;--muted:#aab2d6;--green:#25d366;--yellow:#f6c945}
-  *{box-sizing:border-box}
-  html,body{height:100%}
-  body{margin:0;background:var(--bg);color:var(--txt);font:18px/1.4 system-ui,Segoe UI,Roboto,Helvetica,Arial}
-  .wrap{min-height:100svh;display:grid;grid-template-rows:1fr auto;gap:16px;padding:20px}
-  .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;min-height:0}
-  .card{background:linear-gradient(180deg,var(--card),#0e0e22);border:1px solid #2a2f56;border-radius:16px;padding:16px;box-shadow:0 6px 26px rgba(0,0,0,.35);display:flex;flex-direction:column;min-height:0}
-  .title{margin:0 0 10px;font-weight:900;letter-spacing:.5px;text-align:center}
-  .t-enc{color:var(--green);font-size:42px}
-  .t-another{color:var(--yellow);font-size:42px}
-  .list{display:grid;gap:10px;overflow:auto;padding-right:6px;flex:1;min-height:0}
-  .row{display:flex;gap:10px;align-items:center;background:#0b1123;border:1px solid #1b2b4a;border-radius:12px;padding:12px}
-  .name{font-size:28px;font-weight:800;flex:0 0 auto}
-  .song{font-size:18px;color:#cfe0ff;opacity:.9;flex:1;min-width:120px}
-  .dot{width:12px;height:12px;border-radius:999px}
-  .g{background:var(--green)} .y{background:var(--yellow)}
-  .muted{color:var(--muted);font-size:14px;text-align:center}
-
-  /* subtle heartbeat to avoid TV sleep */
-  .heartbeat{animation:hb 6s infinite ease-in-out}
-  @keyframes hb{0%,100%{opacity:1}50%{opacity:.995}}
+  :root{--bg:#2F0658;--card:#1b0930;--line:#5b3d87;--txt:#eef3ff;--green:#25d366;--yellow:#f6c945}
+  *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--txt);font:18px/1.4 system-ui}
+  .wrap{min-height:100svh;display:grid;grid-template-columns:1fr 1fr;gap:20px;padding:24px}
+  .col{background:linear-gradient(180deg,var(--card),#16072a);border:1px solid var(--line);border-radius:16px;display:flex;flex-direction:column}
+  .title{font-family:"Bebas Neue"; font-size:6vmin; text-align:center; padding:16px 10px 8px; margin:0}
+  .title.enc{color:var(--green)} .title.ano{color:var(--yellow)}
+  .list{flex:1; overflow:auto; padding:0 16px 16px}
+  .pill{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#220d3f;border:1px solid #6f52a8;border-radius:12px;padding:12px 14px;margin:10px 0}
+  .name{font-weight:800;font-size:22px}
+  .song{opacity:.85}
 </style>
 
-<div class="wrap heartbeat">
-  <div class="grid">
-    <div class="card">
-      <h1 class="title t-enc">Encore!</h1>
-      <div id="encList" class="list"></div>
-    </div>
-    <div class="card">
-      <h1 class="title t-another">Another Shot!</h1>
-      <div id="anList" class="list"></div>
-    </div>
+<div class="wrap">
+  <div class="col">
+    <h2 class="title enc">Encore!</h2>
+    <div id="encList" class="list"></div>
   </div>
-  <div class="muted">Board updates automatically when votes close.</div>
+  <div class="col">
+    <h2 class="title ano">Another Shot!</h2>
+    <div id="anoList" class="list"></div>
+  </div>
 </div>
 
 <script>
 const GET_URL='/assets/get_state.php';
 const $=s=>document.querySelector(s);
 
-let lastJson='';
-
-async function fetchState(){
-  const r=await fetch(GET_URL,{cache:'no-store'});
-  return await r.json();
-}
-function render(state){
-  const enc = state?.winners?.encore || [];
-  const an  = state?.winners?.another|| [];
-  const encList = document.getElementById('encList');
-  const anList  = document.getElementById('anList');
-
-  encList.innerHTML = enc.map(it=>row(it.name, it.song, 'g')).join('');
-  anList.innerHTML  = an.map(it=>row(it.name, it.song, 'y')).join('');
-}
-function row(name, song, cls){
-  name = name || '—'; song = song || '';
-  return `<div class="row">
-            <div class="dot ${cls}"></div>
-            <div class="name">${escapeHtml(name)}</div>
-            <div class="song">${escapeHtml(song)}</div>
-          </div>`;
-}
-function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m])); }
-
 async function tick(){
-  const st = await fetchState();
-  const json = JSON.stringify({winners: st?.winners || {}});
-  if(json!==lastJson){ lastJson=json; render(st); }
+  const r=await fetch(GET_URL,{cache:'no-store'});
+  const st=await r.json();
+  const enc = st?.winners?.encore  ?? [];
+  const ano = st?.winners?.another ?? [];
+  render('#encList', enc);
+  render('#anoList', ano);
 }
-setInterval(tick, 2000); tick();
-
-// Wake-lock best effort
-let wakeLock=null;
-async function requestWakeLock(){ try{ if('wakeLock' in navigator){ wakeLock = await navigator.wakeLock.request('screen'); } }catch(e){} }
-document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') requestWakeLock(); });
-requestWakeLock();
+function render(sel, arr){
+  const box=$(sel); box.innerHTML='';
+  arr.forEach(x=>{
+    const row=document.createElement('div'); row.className='pill';
+    const left=document.createElement('div');
+    const name=document.createElement('div'); name.className='name'; name.textContent=x.name||'—';
+    const song=document.createElement('div'); song.className='song'; song.textContent=x.song||'';
+    left.append(name,song);
+    const when=document.createElement('div'); when.textContent=new Date(x.when||Date.now()).toLocaleTimeString();
+    row.append(left,when); box.append(row);
+  });
+}
+setInterval(tick, 1500); tick();
 </script>
 
 <!-- FILE: /board/index.html -->
