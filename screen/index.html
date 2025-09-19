@@ -1,97 +1,96 @@
 <!doctype html>
-<meta charset="utf-8"><title>Encore! • Screen</title>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Encore! • Screen</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@600;800&display=swap" rel="stylesheet">
-
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@700;800&display=swap" rel="stylesheet">
 <style>
-  :root{ --bg:#2F0658; --card:#1b0930; --line:#6f52a8; --txt:#eaf2ff; --green:#25d366; --yellow:#f6c945; --red:#ff5e6c; }
+  :root{
+    --bg:#1b0930; /* darker, bar-friendly */
+    --txt:#ffffff; --muted:#d8c7ff; --line:#6f52a8;
+    --green:#25d366; --yellow:#f6c945; --red:#ff5e6c;
+  }
   *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--txt);font:20px system-ui}
-  .wrap{display:grid;place-items:center;min-height:100svh;text-align:center;padding:4vmin;position:relative;overflow:hidden}
-  .title{font-family:"Bebas Neue"; font-size:9vmin; letter-spacing:.5vmin; margin:0 0 1.2vmin; color:#fff}
-  .venue{font-family:"Montserrat"; font-weight:800; font-size:6vmin; color:#ffd6ff; margin:0 0 1vmin; text-shadow:0 6px 24px rgba(0,0,0,.45); max-width:95vw; overflow-wrap:anywhere}
-  .kj{font-family:"Montserrat"; font-weight:600; font-size:2.6vmin; color:#e9dbff; margin:0 0 2.5vmin; opacity:.95; max-width:95vw; overflow-wrap:anywhere}
+  body{margin:0;background:var(--bg);color:var(--txt);font:18px/1.35 "Montserrat",system-ui}
+  .wrap{min-height:100svh;display:flex;flex-direction:column;gap:16px;padding:24px}
+  .head{text-align:center}
+  .venue{font-family:"Bebas Neue";font-size:96px;letter-spacing:1px;margin:0}
+  .host{font-size:34px;margin:0;color:var(--muted)}
+  .now{margin-top:26px;text-align:center}
+  .nowLbl{font-family:"Bebas Neue";font-size:52px;margin:0;color:#ffe8ff}
+  .nowName{font-family:"Bebas Neue";font-size:84px;margin:10px 0 0}
 
-  .nowBar{margin-top:1.5vmin}
-  .nowTitle{font-family:"Montserrat"; font-weight:800; font-size:4.8vmin; margin:.6vmin 0 .2vmin; color:#ffffff}
-  .nowName{font-family:"Bebas Neue"; font-size:9vmin; margin:0 0 .2vmin}
-  .prep{font-family:"Montserrat"; font-size:3.8vmin; color:#cfe0ff; margin:.8vmin 0 0}
+  /* Voting fullscreen state */
+  .voteTop{display:flex;justify-content:space-between;align-items:flex-start;margin-top:10px}
+  .voteNow{font-family:"Bebas Neue";font-size:56px}
+  .timer{font-family:"Bebas Neue";font-size:64px}
 
-  .voteView{display:none; position:relative}
-  .hud{position:absolute; top:2vmin; left:2vmin; right:2vmin; display:flex; justify-content:space-between; align-items:flex-start; pointer-events:none}
-  .hud .left{font-family:"Montserrat"; font-weight:800; font-size:4.6vmin; text-align:left}
-  .hud .right{font-family:"Bebas Neue"; font-size:10vmin; letter-spacing:.3vmin}
-  .who{font-family:"Bebas Neue"; font-size:9vmin; margin-top:.4vmin}
+  .box{flex:1;display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:18px 0}
+  .col{background:#140625;border:2px solid rgba(255,255,255,.15);border-radius:18px;min-height:360px;position:relative;overflow:hidden}
+  .label{position:absolute;top:10px;left:14px;font-size:20px;color:#cdbff0}
+  .ball{position:absolute;width:26px;height:26px;border-radius:50%}
+  .g{background:var(--green)} .y{background:var(--yellow)} .r{background:var(--red)}
 
-  .pit{position:relative; width:min(110vmin,92vw); height:38vmin; margin:10vmin auto 1.5vmin;
-        border-radius:22px; border:3px solid rgba(255,255,255,.22); background:rgba(0,0,0,.18); overflow:hidden; display:grid; grid-template-columns:1fr 1fr 1fr}
-  .lane{position:relative; border-right:2px dashed rgba(255,255,255,.18)}
-  .lane:last-child{border-right:none}
-  .ball{position:absolute; width:6vmin; height:6vmin; border-radius:50%; opacity:.95; box-shadow:0 0 12px rgba(0,0,0,.35)}
-  .ball.g{background:#25d366} .ball.y{background:#f6c945} .ball.r{background:#ff5e6c}
+  .tally{display:flex;justify-content:center;gap:16px;font-size:32px;font-weight:900}
+  .chip{padding:10px 18px;border-radius:999px;border:2px solid rgba(255,255,255,.15)}
+  .enc{background:var(--green);color:#072a14}
+  .ano{background:var(--yellow);color:#352600}
+  .may{background:var(--red);color:#2b0e12}
 
-  .tally{display:none; gap:3vmin; justify-content:center; margin-top:1vmin}
-  .chip{padding:1.2vmin 2.8vmin;border-radius:14px;border:2px solid var(--line);background:var(--card); font-size:5vmin}
-  .enc{color:var(--green)} .ano{color:var(--yellow)} .may{color:var(--red)}
+  /* Overlay for result */
+  .overlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.78);z-index:50}
+  .ovCard{width:min(1200px,92vw);text-align:center;border:3px solid rgba(255,255,255,.18);border-radius:22px;padding:30px}
+  .ovTitle{font-family:"Bebas Neue";font-size:140px;margin:0}
+  .ovSub{font-size:48px;margin:10px 0 0}
+  .ov-enc{background:rgba(37,211,102,.1); border-color: rgba(37,211,102,.55)}
+  .ov-ano{background:rgba(246,201,69,.1); border-color: rgba(246,201,69,.55)}
+  .ov-may{background:rgba(255,94,108,.1); border-color: rgba(255,94,108,.55)}
 
-  .overlay{position:fixed; inset:0; background:rgba(0,0,0,.92); display:none; align-items:center; justify-content:center; z-index:10}
-  .panel{text-align:center; padding:2vmin 4vmin}
-  .ovTitle{font-family:"Bebas Neue"; font-size:20vmin; margin:0 0 1.2vmin}
-  .ovMsg{font-family:"Montserrat"; font-weight:800; font-size:7vmin; margin:0 0 .6vmin; color:#cfe0ff}
-
-  #confetti{position:absolute; inset:0; pointer-events:none}
-  .flashEncore{position:absolute; top:3vmin; left:50%; transform:translateX(-50%); background:#1b0930; border:2px solid rgba(37,211,102,.5); color:#25d366; padding:1vmin 3vmin; border-radius:999px; font-weight:800; font-size:4vmin; box-shadow:0 10px 40px rgba(37,211,102,.35); display:none}
-
-  .heartbeat{animation:hb 6s infinite ease-in-out}
-  @keyframes hb{0%,100%{opacity:1}50%{opacity:.995}}
+  /* confetti */
+  #confetti{position:fixed;inset:0;pointer-events:none;display:none}
 </style>
+</head>
+<body>
+<canvas id="confetti"></canvas>
 
-<div class="wrap heartbeat">
-  <canvas id="confetti"></canvas>
-  <div id="flash" class="flashEncore">Encore! 🎉</div>
+<div class="wrap" id="root">
+  <header class="head">
+    <h1 id="venue" class="venue">Welcome to —</h1>
+    <p id="hostBy" class="host">Hosted by —</p>
+  </header>
 
-  <div id="welcome">
-    <h1 class="title">Welcome to</h1>
-    <div id="venue" class="venue">—</div>
-    <div id="kj" class="kj">Hosted by —</div>
+  <section class="now">
+    <h2 class="nowLbl" id="nowLbl">Now Singing</h2>
+    <div id="nowName" class="nowName">—</div>
+  </section>
 
-    <div id="nowBar" class="nowBar" style="display:none">
-      <div class="nowTitle">Now Singing:</div>
-      <div id="nowName" class="nowName">—</div>
-      <div id="prep" class="prep" style="display:none">Get ready to vote in 00:05</div>
-    </div>
-  </div>
-
-  <div id="voteView" class="voteView">
-    <div class="hud">
-      <div class="left">
-        <div>Now voting for:</div>
-        <div id="who" class="who">—</div>
-      </div>
-      <div id="timer" class="right">00:00</div>
+  <!-- Voting area (appears only during prep/open and shortly after) -->
+  <section id="votingArea" style="display:none">
+    <div class="voteTop">
+      <div id="voteNow" class="voteNow">Now Voting For: —</div>
+      <div id="timer" class="timer">00:00</div>
     </div>
 
-    <div id="pit" class="pit" aria-label="live vote balls">
-      <div id="laneE" class="lane"></div>
-      <div id="laneA" class="lane"></div>
-      <div id="laneM" class="lane"></div>
+    <div class="box">
+      <div class="col" id="colE"><div class="label">Encore!</div></div>
+      <div class="col" id="colA"><div class="label">Another Shot!</div></div>
+      <div class="col" id="colM"><div class="label">Maybe Next Time!</div></div>
     </div>
 
-    <div id="tally" class="tally">
-      <div class="chip enc">Encore: <b id="cE">0</b></div>
-      <div class="chip ano">Another Shot: <b id="cA">0</b></div>
-      <div class="chip may">Maybe Next Time: <b id="cM">0</b></div>
+    <div class="tally" id="tally" style="display:none">
+      <div class="chip enc">Encore! <b id="cE" style="margin-left:8px">0</b></div>
+      <div class="chip ano">Another Shot! <b id="cA" style="margin-left:8px">0</b></div>
+      <div class="chip may">Maybe Next Time! <b id="cM" style="margin-left:8px">0</b></div>
     </div>
-  </div>
+  </section>
+</div>
 
-  <div id="overlay" class="overlay">
-    <div class="panel">
-      <div id="ovTitle" class="ovTitle">Encore!</div>
-      <div id="ovMsg" class="ovMsg">Congratulations, —!</div>
-    </div>
+<!-- Results overlay -->
+<div id="overlay" class="overlay">
+  <div id="ovCard" class="ovCard">
+    <div id="ovTitle" class="ovTitle">Encore!</div>
+    <p id="ovSub" class="ovSub">Congratulations, —</p>
   </div>
 </div>
 
@@ -99,199 +98,144 @@
 const GET_URL='/assets/get_state.php';
 const $=s=>document.querySelector(s);
 
-let clockOffset=0; function nowMs(){ return Date.now()+clockOffset; }
-function smoothOffset(observed){ if(!isFinite(observed)) return; clockOffset=0.9*clockOffset+0.1*observed; }
+let state=null,lastCounts={encore:0,another:0,maybe:0},clockOffset=0,overlayHideAt=0,overlaySingerId=null;
+function nowMs(){return Date.now()+clockOffset}
+function smoothOffset(o){if(!isFinite(o))return;clockOffset=0.9*clockOffset+0.1*o}
 
-let state=null, prevOpen=false, lastCounts={encore:0, another:0, maybe:0};
-let overlayTimer=null, overlaySingerId=null;
-let tallyUntil=0;
-
-/* Confetti + flash */
-const confetti=(function(){
-  const cv=document.getElementById('confetti'), cx=cv.getContext('2d');
-  let W=0,H=0, parts=[], running=false;
-  function resize(){ W=cv.width=window.innerWidth; H=cv.height=window.innerHeight; }
-  function rand(a,b){ return a+Math.random()*(b-a); }
-  function burst(n=240){
-    for(let i=0;i<n;i++){
-      parts.push({x: W/2, y: H*0.25, r: rand(2,4), vx: rand(-6,6), vy: rand(-2,8), g: 0.18, life: rand(60,140), color: `hsl(${Math.floor(rand(0,360))} 90% 60%)`});
-    }
-    if(!running){ running=true; loop(); }
-  }
-  function loop(){
-    if(!running) return;
-    cx.clearRect(0,0,W,H);
-    for(let i=parts.length-1;i>=0;i--){
-      const p=parts[i]; p.vy+=p.g; p.x+=p.vx; p.y+=p.vy; p.life--;
-      cx.fillStyle=p.color; cx.beginPath(); cx.arc(p.x,p.y,p.r,0,Math.PI*2); cx.fill();
-      if(p.life<=0 || p.y>H+20) parts.splice(i,1);
-    }
-    if(parts.length===0){ running=false; return; }
-    requestAnimationFrame(loop);
-  }
-  window.addEventListener('resize', resize); resize();
-  return { burst };
-})();
-function showEncoreFlash(){
-  const el=document.getElementById('flash'); el.style.display='inline-block'; el.style.opacity='1';
-  el.animate([{transform:'translateX(-50%) scale(0.9)', opacity:.0},{transform:'translateX(-50%) scale(1)',opacity:1}],{duration:200,easing:'ease-out'});
-  setTimeout(()=>{ el.animate([{opacity:1},{opacity:0}],{duration:800,easing:'ease-in'}).onfinish=()=>{ el.style.display='none'; }; }, 1300);
-}
-
-/* Balls */
-function spawnBalls(kind, n){
-  const lane = kind==='encore' ? $('#laneE') : kind==='another' ? $('#laneA') : $('#laneM');
-  const W=lane.clientWidth, H=lane.clientHeight;
-  const cls = kind==='encore'?'g':kind==='another'?'y':'r';
-  for(let i=0;i<n;i++){
-    const b=document.createElement('div'); b.className='ball '+cls;
-    let x=12+Math.random()*(W-24), y=12, vx=(Math.random()*2-1)*0.9, vy=(Math.random()*1.5+0.9);
-    b.style.left=x+'px'; b.style.top=y+'px'; lane.appendChild(b);
-    const g=0.22, fr=0.86, dt=16, R=3;
-    const id=setInterval(()=>{
-      vy+=g; x+=vx*dt/16; y+=vy*dt/16;
-      if(x<R*2){x=R*2;vx*=-fr} if(x>W-R*2){x=W-R*2;vx*=-fr}
-      if(y>H-R*2){y=H-R*2; vy*=-fr; if(Math.abs(vy)<0.22){clearInterval(id);} }
-      b.style.left=x+'px'; b.style.top=y+'px';
-    }, dt);
-    if(lane.childNodes.length>120){ lane.removeChild(lane.firstChild); }
-  }
-}
-
-/* Overlay */
-function showOverlay(kind){
-  const ov=document.getElementById('overlay'),
-        t=document.getElementById('ovTitle'),
-        msg=document.getElementById('ovMsg');
-  const name = state.current?.name || '—';
-  overlaySingerId = state.current?.id || null;
-
-  if(kind==='encore'){
-    t.textContent='Encore!';
-    t.style.color='#25d366';
-    msg.textContent = `Congratulations, ${name}!`;
-    confetti.burst(260); showEncoreFlash();
-  } else if(kind==='another'){
-    t.textContent='Another Shot!';
-    t.style.color='#f6c945';
-    msg.textContent = `Congratulations, ${name}!`;
-  } else {
-    t.textContent='Maybe Next Time';
-    t.style.color='#ff5e6c';
-    msg.textContent = `Sorry, ${name}.`;
-  }
-
-  ov.style.display='flex';
-  clearTimeout(overlayTimer);
-  overlayTimer = setTimeout(()=>{ ov.style.display='none'; overlaySingerId=null; }, 15000);
-}
-function hideOverlayIfSingerChanged(){
-  if(!overlaySingerId) return;
-  const curId = state.current?.id || null;
-  if(curId && curId !== overlaySingerId){
-    document.getElementById('overlay').style.display='none';
-    overlaySingerId=null; clearTimeout(overlayTimer);
-  }
-}
-
-/* Main loop */
-async function tick(){
+async function fetchState(){
   const r=await fetch(GET_URL,{cache:'no-store'});
-  const fetchedAt=Date.now();
-  state=await r.json();
-
-  if(state && typeof state.serverNow==='number'){
-    const observed = state.serverNow - fetchedAt;
-    if(clockOffset===0) clockOffset=observed; else smoothOffset(observed);
-  }
-
-  const welcome   = document.getElementById('welcome');
-  const voteView  = document.getElementById('voteView');
-  const whoEl     = document.getElementById('who');
-  const timerEl   = document.getElementById('timer');
-  const tally     = document.getElementById('tally');
-
-  const publicOnly = (state.event?.venuePublic||'').trim();
-  document.getElementById('venue').textContent = publicOnly ? publicOnly : '—';
-  const kjName = state.event?.kj || '';
-  document.getElementById('kj').textContent    = kjName ? `Hosted by ${kjName}` : 'Hosted by —';
-
-  const t = nowMs();
-  const open = !!state.voting?.open;
-  const prep = (!open && (state.voting?.prepUntil||0) > t);
-  const result = state.voting?.lastResult || null;
-  const hasCurrent = !!state.current?.id;
-
-  const nowBar = document.getElementById('nowBar');
-  const nowName= document.getElementById('nowName');
-  const prepEl = document.getElementById('prep');
-
-  if(!open){
-    welcome.style.display='block';
-    voteView.style.display='none';
-
-    if(hasCurrent){
-      nowBar.style.display='block';
-      nowName.textContent = state.current?.name || '—';
-      if(prep){
-        const ms = Math.max(0, (state.voting?.prepUntil||0) - t);
-        prepEl.style.display='block';
-        prepEl.textContent = 'Get ready to vote in ' + fmt(ms);
-      } else {
-        prepEl.style.display='none';
-      }
-    } else {
-      nowBar.style.display='none';
-      prepEl.style.display='none';
-    }
-
-    tally.style.display = (t < tallyUntil) ? 'flex' : 'none';
-    ['#laneE','#laneA','#laneM'].forEach(sel=>{ const el=$(sel); if(el) el.innerHTML=''; });
-    lastCounts = {encore:0,another:0,maybe:0};
-    document.getElementById('cE').textContent = 0;
-    document.getElementById('cA').textContent = 0;
-    document.getElementById('cM').textContent = 0;
-  } else {
-    welcome.style.display='none';
-    voteView.style.display='block';
-    whoEl.textContent = state.current?.name || '—';
-
-    const ce = state.voting?.counts?.encore  ?? 0;
-    const ca = state.voting?.counts?.another ?? 0;
-    const cm = state.voting?.counts?.maybe   ?? 0;
-
-    if(ce>lastCounts.encore)  spawnBalls('encore',  ce-lastCounts.encore);
-    if(ca>lastCounts.another) spawnBalls('another', ca-lastCounts.another);
-    if(cm>lastCounts.maybe)   spawnBalls('maybe',   cm-lastCounts.maybe);
-    lastCounts = {encore:ce, another:ca, maybe:cm};
-
-    const ms=Math.max(0,(state.voting.endsAt||0)-t);
-    timerEl.textContent=fmt(ms);
-
-    document.getElementById('cE').textContent = ce;
-    document.getElementById('cA').textContent = ca;
-    document.getElementById('cM').textContent = cm;
-    tally.style.display='flex';
-  }
-
-  if(prevOpen && !open){
-    tallyUntil = t + 15000;
-    if(result){ showOverlay(result); }
-  }
-  prevOpen = open;
-
-  hideOverlayIfSingerChanged();
+  const fetchedAt=Date.now(); state=await r.json();
+  if(state && typeof state.serverNow==='number'){ smoothOffset(state.serverNow - fetchedAt); }
+  render();
 }
+setInterval(fetchState,1000); fetchState();
+
 function fmt(ms){ const s=Math.ceil(ms/1000); const m=Math.floor(s/60), r=s%60; return `${String(m).padStart(2,'0')}:${String(r).padStart(2,'0')}` }
 
-setInterval(tick, 1000);
-tick();
+function setHeader(){
+  $('#venue').textContent = (state?.event?.venuePublic ? `Welcome to ${state.event.venuePublic}` : 'Welcome to —');
+  $('#hostBy').textContent = (state?.event?.kj ? `Hosted by ${state.event.kj}` : 'Hosted by —');
+}
+function setNow(name){ $('#nowName').textContent = name || '—'; }
 
-// Wake lock to keep TV awake
-let wakeLock=null;
-async function requestWakeLock(){ try{ if('wakeLock' in navigator){ wakeLock = await navigator.wakeLock.request('screen'); } }catch(e){} }
-document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') requestWakeLock(); });
-requestWakeLock();
+function spawn(col, kind, n=1){
+  const el=$(col); const W=el.clientWidth, H=el.clientHeight;
+  const cls = kind==='encore'?'g':kind==='another'?'y':'r';
+  for(let i=0;i<n;i++){
+    const b=document.createElement('div'); b.className='ball '+cls; b.style.left=(Math.random()*W|0)+'px'; b.style.top='-24px';
+    el.appendChild(b);
+    let x=parseFloat(b.style.left), y=-24, vx=(Math.random()*1.6-0.8), vy=(Math.random()*1.2+0.6);
+    const g=0.25, fr=0.82, dt=16;
+    const id=setInterval(()=>{
+      vy+=g; x+=vx*dt/16; y+=vy*dt/16;
+      if(x<13){x=13;vx*=-fr} if(x>W-13){x=W-13;vx*=-fr}
+      if(y>H-13){y=H-13; vy*=-fr; if(Math.abs(vy)<0.25){clearInterval(id);} }
+      b.style.left=x+'px'; b.style.top=y+'px';
+    }, dt);
+    if(el.childNodes.length>260){ el.removeChild(el.firstChild); }
+  }
+}
+
+/* Confetti (simple canvas) */
+const confettiCanvas = document.getElementById('confetti');
+const ctx = confettiCanvas.getContext('2d');
+let confettiRunning=false, confettiTs=0, confettiParts=[];
+function startConfetti(){
+  resize(); confettiCanvas.style.display='block'; confettiRunning=true; confettiTs=Date.now(); confettiParts=[];
+  for(let i=0;i<240;i++){
+    confettiParts.push({x:Math.random()*innerWidth,y:Math.random()*-innerHeight,vx:(Math.random()*2-1)*2,vy:Math.random()*3+2,size:Math.random()*6+4,color:['#25d366','#f6c945','#ff5e6c'][Math.floor(Math.random()*3)],rot:Math.random()*Math.PI,vr:(Math.random()*0.1-0.05)});
+  }
+  requestAnimationFrame(stepConfetti);
+}
+function stopConfetti(){ confettiRunning=false; confettiCanvas.style.display='none'; }
+function stepConfetti(){
+  if(!confettiRunning) return;
+  const t=Date.now()-confettiTs; if(t>15000) { stopConfetti(); return; }
+  ctx.clearRect(0,0,confettiCanvas.width, confettiCanvas.height);
+  for(const p of confettiParts){
+    p.vy+=0.02; p.x+=p.vx; p.y+=p.vy; p.rot+=p.vr;
+    if(p.y>innerHeight+20){ p.y=-20; p.x=Math.random()*innerWidth; p.vy=Math.random()*3+2; }
+    ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.rot);
+    ctx.fillStyle=p.color; ctx.fillRect(-p.size/2,-p.size/2,p.size,p.size);
+    ctx.restore();
+  }
+  requestAnimationFrame(stepConfetti);
+}
+function resize(){ confettiCanvas.width=innerWidth; confettiCanvas.height=innerHeight; }
+addEventListener('resize', resize);
+
+function showOverlay(kind, name){
+  const ov=$('#overlay'), card=$('#ovCard'), title=$('#ovTitle'), sub=$('#ovSub');
+  card.className='ovCard '+(kind==='encore'?'ov-enc':kind==='another'?'ov-ano':'ov-may');
+  title.textContent = kind==='encore' ? 'Encore!' : (kind==='another' ? 'Another Shot!' : 'Maybe Next Time!');
+  // avoid double period if name ends with .
+  const cleanName = (name||'').replace(/\.\s*$/,'');
+  sub.textContent = kind==='maybe' ? `Thanks, ${cleanName||'singer'}!` : `Congratulations, ${cleanName||'singer'}!`;
+  ov.style.display='flex';
+  overlayHideAt = Date.now()+30000;
+  overlaySingerId = state?.current?.id || null;
+
+  if(kind==='encore') startConfetti();
+}
+function hideOverlay(){ $('#overlay').style.display='none'; stopConfetti(); overlayHideAt=0; }
+
+function render(){
+  setHeader();
+
+  const open = !!state?.voting?.open;
+  const t = nowMs();
+  const prep = (!open && (state?.voting?.prepUntil||0) > t);
+  const endsAt = state?.voting?.endsAt || 0;
+  const curName = (state?.current?.name||'').trim();
+  const curId   = state?.current?.id || null;
+
+  // If overlay showing, auto-hide after 30s or if singer changed
+  if(overlayHideAt && (Date.now()>overlayHideAt || (overlaySingerId && overlaySingerId!==curId))){
+    hideOverlay();
+  }
+
+  // Update "Now Singing" (blank after results or when no singer)
+  if(open || prep){
+    setNow(curName);
+  } else {
+    // when closed, keep blank until new singer Set (host will clear current singer)
+    setNow('');
+  }
+
+  const votingArea=$('#votingArea');
+
+  if(prep){
+    votingArea.style.display='block';
+    $('#voteNow').textContent = curName ? `Get ready to vote for: ${curName}` : 'Get ready to vote…';
+    $('#timer').textContent = fmt(Math.max(0,(state.voting.prepUntil||0) - t));
+    $('#tally').style.display='none';
+    // clear columns
+    ['#colE','#colA','#colM'].forEach(s=>$(s).innerHTML = '<div class="label">'+(s==='#colE'?'Encore!':s==='#colA'?'Another Shot!':'Maybe Next Time!')+'</div>');
+  } else if(open){
+    votingArea.style.display='block';
+    $('#voteNow').textContent = curName ? `Now Voting For: ${curName}` : 'Now Voting!';
+    $('#timer').textContent = fmt(Math.max(0, endsAt - t));
+    $('#tally').style.display='flex';
+
+    const ce=state?.voting?.counts?.encore||0, ca=state?.voting?.counts?.another||0, cm=state?.voting?.counts?.maybe||0;
+    $('#cE').textContent=ce; $('#cA').textContent=ca; $('#cM').textContent=cm;
+
+    if(ce>lastCounts.encore)  spawn('#colE','encore',  ce-lastCounts.encore);
+    if(ca>lastCounts.another) spawn('#colA','another', ca-lastCounts.another);
+    if(cm>lastCounts.maybe)   spawn('#colM','maybe',   cm-lastCounts.maybe);
+    lastCounts={encore:ce,another:ca,maybe:cm};
+  } else {
+    votingArea.style.display='none';
+    lastCounts={encore:0,another:0,maybe:0};
+
+    // if a result exists and overlay not yet shown, show it
+    const res = state?.voting?.lastResult || null;
+    if(res && $('#overlay').style.display!=='flex'){
+      showOverlay(res, curName);
+    }
+  }
+}
 </script>
-
+</body>
+</html>
 <!-- FILE: /screen/index.html -->
