@@ -4,97 +4,59 @@
 <meta charset="utf-8">
 <title>Encore! • Vote</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@600;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;800&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#2F0658; --card:#1b0930; --card2:#16072a; --line:#6f52a8; --txt:#eef3ff;
-    --green:#25d366; --yellow:#f6c945; --red:#ff5e6c; --ink:#0f1125;
+    --bgDeep1:#1B0930; --bgDeep2:#16072A; /* NEW */
+    --txt:#fff; --sub:#d8c7ff;
+    --green:#25d366; --yellow:#f6c945; --red:#ff5e6c;
   }
   *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--txt);font:16px/1.45 "Montserrat",system-ui}
-  .wrap{min-height:100svh;display:grid;place-items:center;padding:20px}
-  .card{width:min(980px,94vw);background:linear-gradient(180deg,var(--card),var(--card2));border:1px solid var(--line);border-radius:16px;box-shadow:0 10px 40px rgba(0,0,0,.35);padding:20px}
-  .title{font-family:"Bebas Neue";font-size:44px;letter-spacing:1px;margin:0 0 2px;text-align:center}
-  .venue{font-weight:800;text-align:center;margin:0 0 8px;font-size:20px;color:#ffd6ff}
-  .who{font-family:"Bebas Neue";font-size:38px;text-align:center;margin:8px 0 4px}
-  .prep{font-size:18px;text-align:center;color:#cfe0ff}
-  .timer{font-family:"Bebas Neue";font-size:48px;letter-spacing:1px;text-align:center;margin:8px 0 16px}
-
-  .pinGate{display:grid;gap:10px;justify-items:center;margin:14px 0 8px}
-  .pinGate input{font:inherit;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:#220d3f;color:#eef3ff;width:220px;text-align:center;letter-spacing:2px}
-  .btn{font:inherit;padding:12px 16px;border-radius:12px;border:1px solid var(--line);background:#3a2166;color:#fff;cursor:pointer}
-  .btn:disabled{opacity:.6;cursor:not-allowed}
-
-  .voteRow{display:grid;grid-template-columns:1fr;gap:12px;max-width:720px;margin:0 auto}
-  .voteBtn{padding:16px 18px;font-weight:900;border:0;border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,.25);font-size:22px}
-  .v-enc{background:var(--green);color:#072a14}
-  .v-ano{background:var(--yellow);color:#332400}
-  .v-may{background:var(--red);color:#2b0e12}
-
-  .tally{display:flex;gap:12px;justify-content:center;margin-top:16px;flex-wrap:wrap}
-  .chip{padding:10px 18px;border-radius:999px;font-weight:900;border:2px solid rgba(0,0,0,.15);font-size:16px}
-  .chip.enc{background:var(--green); color:#072a14}
-  .chip.ano{background:var(--yellow); color:#352600}
-  .chip.may{background:var(--red);   color:#2b0e12}
-
-  .msg{margin-top:10px;text-align:center;color:#e9dbff}
-  .ok{color:#b7ffcf}
-  .err{color:#ffd0d6}
-
-  /* Full-screen result overlay */
-  .overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;z-index:50}
-  .ovCard{width:min(900px,92vw);text-align:center;border-radius:18px;padding:30px 20px}
-  .ovTitle{font-family:"Bebas Neue";font-size:78px;margin:0 0 8px}
-  .ovSub{font-size:26px;margin:0}
-  .ov-enc{background:rgba(37,211,102,.12);border:2px solid rgba(37,211,102,.6);color:#caffdf}
-  .ov-ano{background:rgba(246,201,69,.12);border:2px solid rgba(246,201,69,.7);color:#ffeaa6}
-  .ov-may{background:rgba(255,94,108,.12);border:2px solid rgba(255,94,108,.7);color:#ffc2ca}
+  body{margin:0;background:linear-gradient(180deg,var(--bgDeep1),var(--bgDeep2));color:var(--txt);font:17px/1.4 "Montserrat",system-ui}
+  .wrap{min-height:100svh;display:flex;flex-direction:column;gap:16px;padding:22px}
+  h1{margin:0;font-size:28px}
+  .sub{color:var(--sub)}
+  .pin{display:grid;grid-template-columns:1fr auto;gap:8px}
+  input{width:100%;padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,.25);background:#220d3f;color:#fff}
+  button{padding:12px 14px;border-radius:10px;border:0;font-weight:800;cursor:pointer}
+  .row{display:grid;grid-template-columns:1fr;gap:10px}
+  .btnG{background:var(--green);color:#042a13}
+  .btnY{background:var(--yellow);color:#352600}
+  .btnR{background:var(--red);color:#2b0e12}
+  .tally{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+  .chip{padding:10px 18px;border-radius:999px;border:2px solid rgba(255,255,255,.15);font-weight:900}
+  .enc{background:var(--green);color:#072a14}
+  .ano{background:var(--yellow);color:#352600}
+  .may{background:var(--red);color:#2b0e12}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <div class="card" id="app">
-    <h1 class="title">Encore! Voting</h1>
-    <div id="venue" class="venue">Welcome to —</div>
-
-    <!-- PIN gate -->
-    <div id="pinGate" class="pinGate" style="display:none">
-      <div>Enter Event PIN to vote:</div>
-      <input id="pinInput" type="password" inputmode="numeric" maxlength="6" placeholder="PIN" />
-      <button id="pinBtn" class="btn">Unlock</button>
-      <div id="pinMsg" class="msg err" style="display:none"></div>
-    </div>
-
-    <!-- Voting status -->
-    <div id="status" class="who" style="display:none">Now voting for —</div>
-    <div id="prep" class="prep" style="display:none">Get ready to vote in 00:05</div>
-    <div id="timer" class="timer" style="display:none">00:00</div>
-
-    <!-- Vote buttons -->
-    <div id="voteRow" class="voteRow" style="display:none">
-      <button id="bEnc" class="voteBtn v-enc">Encore!</button>
-      <button id="bAno" class="voteBtn v-ano">Another Shot!</button>
-      <button id="bMay" class="voteBtn v-may">Maybe Next Time!</button>
-    </div>
-
-    <!-- Tally -->
-    <div id="tally" class="tally" style="display:none">
-      <div class="chip enc">Encore! <b id="cE" style="margin-left:8px">0</b></div>
-      <div class="chip ano">Another Shot! <b id="cA" style="margin-left:8px">0</b></div>
-      <div class="chip may">Maybe Next Time! <b id="cM" style="margin-left:8px">0</b></div>
-    </div>
-
-    <div id="msg" class="msg"></div>
+  <div>
+    <h1 id="welcome">Welcome to <span id="venue">—</span></h1>
+    <div class="sub" id="now">Now voting for: —</div>
   </div>
-</div>
 
-<!-- Result overlay -->
-<div id="resultOverlay" class="overlay">
-  <div id="ovCard" class="ovCard">
-    <div id="ovTitle" class="ovTitle">Encore!</div>
-    <p id="ovSub" class="ovSub">Congratulations, —</p>
+  <div id="gate">
+    <div class="sub">Enter event PIN to vote</div>
+    <div class="pin" style="margin-top:8px">
+      <input id="pin" inputmode="numeric" placeholder="PIN">
+      <button id="unlock">Unlock</button>
+    </div>
+    <div id="msg" class="sub" style="margin-top:6px"></div>
+  </div>
+
+  <div id="vote" style="display:none">
+    <div class="row">
+      <button id="vE" class="btnG">Encore!</button>
+      <button id="vA" class="btnY">Another Shot!</button>
+      <button id="vM" class="btnR">Maybe Next Time!</button>
+    </div>
+    <div class="tally" style="margin-top:12px">
+      <div class="chip enc">Encore! <b id="cE">0</b></div>
+      <div class="chip ano">Another Shot! <b id="cA">0</b></div>
+      <div class="chip may">Maybe Next Time! <b id="cM">0</b></div>
+    </div>
   </div>
 </div>
 
@@ -102,169 +64,47 @@
 const GET_URL='/assets/get_state.php';
 const VOTE_URL='/assets/vote.php';
 const $=s=>document.querySelector(s);
-
-// time sync
-let clockOffset=0; function nowMs(){ return Date.now()+clockOffset; }
-function smoothOffset(o){ if(!isFinite(o))return; clockOffset=0.9*clockOffset+0.1*o; }
-
-// local
-function deviceId(){ let id=localStorage.getItem('eyek_device_id'); if(!id){ id=crypto.randomUUID(); localStorage.setItem('eyek_device_id',id);} return id; }
-function currentEventKey(st){ const v=(st.event?.venue||'').trim(); const d=(st.event?.date||'').trim(); return `eyek_pin_ok_${d}_${v}`; }
-
-let state=null, lastResultSeen=null, overlayHideAt=0, overlaySingerId=null;
+let state=null, clockOffset=0;
+function nowMs(){return Date.now()+clockOffset}
+function smoothOffset(o){ if(!isFinite(o)) return; clockOffset=0.9*clockOffset+0.1*o; }
+function deviceId(){ let id=localStorage.getItem('eyek_device_id'); if(!id){ id=crypto.randomUUID(); localStorage.setItem('eyek_device_id', id);} return id; }
 
 async function fetchState(){
-  const r=await fetch(GET_URL,{cache:'no-store'});
-  const fetchedAt=Date.now();
-  state=await r.json();
+  const r=await fetch(GET_URL,{cache:'no-store'}); const fetchedAt=Date.now(); state=await r.json();
   if(state && typeof state.serverNow==='number'){ smoothOffset(state.serverNow - fetchedAt); }
   render();
 }
-
-function fmt(ms){ const s=Math.ceil(ms/1000); const m=Math.floor(s/60), r=s%60; return `${String(m).padStart(2,'0')}:${String(r).padStart(2,'0')}` }
-
-function hasPinAccess(){
-  if(!state) return false;
-  const k=currentEventKey(state);
-  return localStorage.getItem(k) === (state.event?.pin||'');
-}
-
-function showPinGate(show){ $('#pinGate').style.display = show ? 'grid' : 'none'; }
-
-function showOverlay(kind, singer){
-  const ov=$('#resultOverlay'), card=$('#ovCard'), title=$('#ovTitle'), sub=$('#ovSub');
-  card.className='ovCard '+(kind==='encore'?'ov-enc':kind==='another'?'ov-ano':'ov-may');
-  title.textContent = kind==='encore' ? 'Encore!' : (kind==='another' ? 'Another Shot!' : 'Maybe Next Time!');
-  sub.textContent = singer ? `Congratulations, ${singer}` : (kind==='maybe' ? 'Thanks for singing!' : 'Congratulations!');
-  ov.style.display='flex';
-  overlayHideAt = Date.now()+30000; // ~30s
-  overlaySingerId = state?.current?.id || null;
-}
-function hideOverlay(){ $('#resultOverlay').style.display='none'; overlayHideAt=0; }
+setInterval(fetchState,1000); fetchState();
 
 function render(){
-  const venueName = (state?.event?.venuePublic||'').trim();
-  $('#venue').textContent = venueName ? `Welcome to ${venueName}` : 'Welcome to —';
-
+  $('#venue').textContent = (state?.event?.venuePublic||'—');
   const open = !!state?.voting?.open;
-  const t = nowMs();
-  const prep = (!open && (state?.voting?.prepUntil||0) > t);
-  const endsAt = state?.voting?.endsAt || 0;
-  const curName = (state?.current?.name||'').trim();
-  const curId   = state?.current?.id || null;
+  const t=nowMs(); const prep = (!open && (state?.voting?.prepUntil||0) > t);
+  const name = (state?.current?.name||'').trim() || '—';
+  $('#now').textContent = open||prep ? `Now voting for: ${name}` : '—';
 
-  // auto-hide overlay if 30s passed or singer changed
-  if(overlayHideAt && (Date.now()>overlayHideAt || (overlaySingerId && overlaySingerId!==curId))){
-    hideOverlay();
-  }
+  $('#gate').style.display = (open || prep) ? 'none':'block';
+  $('#vote').style.display = (open || prep) ? 'block':'none';
 
-  // if a fresh result appears, show overlay
-  const res = state?.voting?.lastResult || null;
-  if(!open && res && res!==lastResultSeen){
-    showOverlay(res, curName);
-    lastResultSeen = res;
-  } else if(open){
-    // if a new round starts, reset the memory
-    lastResultSeen = null;
-    hideOverlay();
-  }
-
-  // pin gate
-  const needPin = !hasPinAccess();
-  showPinGate(needPin);
-  const canVote = !needPin && open && !!state.current?.id;
-
-  // status headers
-  const status = $('#status'), prepEl=$('#prep'), timer=$('#timer');
-
-  if($('#resultOverlay').style.display==='flex'){
-    // While overlay is up, suppress status lines
-    status.style.display='none'; prepEl.style.display='none'; timer.style.display='none';
-  } else if(prep){
-    status.style.display='block';
-    status.textContent = curName ? `Get ready to vote for: ${curName}` : 'Get ready to vote…';
-    prepEl.style.display='block';
-    prepEl.textContent = 'Get ready to vote in ' + fmt(Math.max(0,(state.voting.prepUntil||0) - t));
-    timer.style.display='none';
-  } else if(open){
-    status.style.display='block';
-    status.textContent = curName ? `Now voting for: ${curName}` : 'Now voting!';
-    prepEl.style.display='none';
-    timer.style.display='block';
-    timer.textContent = fmt(Math.max(0, endsAt - t));
-  } else {
-    // After voting ends (and overlay hidden or not yet triggered), show neutral idle
-    status.style.display='block';
-    status.textContent = 'Waiting for the next singer…';
-    prepEl.style.display='none';
-    timer.style.display='none';
-  }
-
-  // buttons
-  const row = $('#voteRow');
-  row.style.display = (!needPin && (open || prep)) ? 'grid' : 'none';
-  const already = state?.voting?.voters && state.voting.voters[deviceId()];
-  const disabled = !canVote || !!already;
-  ['bEnc','bAno','bMay'].forEach(id=>{ const b=$( '#'+id ); b.disabled = disabled; });
-
-  // tally
-  const ce = state?.voting?.counts?.encore  ?? 0;
-  const ca = state?.voting?.counts?.another ?? 0;
-  const cm = state?.voting?.counts?.maybe   ?? 0;
-  $('#cE').textContent = ce; $('#cA').textContent = ca; $('#cM').textContent = cm;
-  // show tally during voting, and also while overlay is up (so they can see the totals)
-  $('#tally').style.display = (!needPin && (open || $('#resultOverlay').style.display==='flex')) ? 'flex' : 'none';
-
-  // message
-  const msg = $('#msg');
-  if(needPin){ msg.textContent = ''; }
-  else if(already){
-    const c = already;
-    const nice = c==='encore'?'Encore!':c==='another'?'Another Shot!':'Maybe Next Time!';
-    msg.innerHTML = `<span class="ok">Vote recorded</span>: <b>${nice}</b> — thanks!`;
-  } else if(!open){
-    msg.textContent = $('#resultOverlay').style.display==='flex' ? '' : 'Voting is currently closed.';
-  } else {
-    msg.textContent = '';
-  }
+  $('#cE').textContent = state?.voting?.counts?.encore||0;
+  $('#cA').textContent = state?.voting?.counts?.another||0;
+  $('#cM').textContent = state?.voting?.counts?.maybe||0;
 }
 
-async function sendVote(choice){
-  try{
-    const res = await fetch(VOTE_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({choice, deviceId:deviceId()})});
-    if(!res.ok){
-      const e=await res.json().catch(()=>({error:'vote_failed'}));
-      if(e.error==='pin_required'){ showError('PIN required.'); }
-      else if(e.error==='already_voted'){ showError('Only one vote per device this round.'); }
-      else showError('Could not submit vote.');
-    } else {
-      await fetchState();
-    }
-  }catch(e){ showError('Network error.'); }
+$('#unlock').onclick = async ()=>{
+  const pin = $('#pin').value.trim();
+  if(!pin){ $('#msg').textContent='Enter a PIN.'; return; }
+  const ok = pin === (state?.event?.pin||'');
+  $('#msg').textContent = ok ? 'Unlocked.' : 'Wrong PIN.';
+  if(ok) { $('#gate').style.display='none'; $('#vote').style.display='block'; }
+};
+
+async function send(choice){
+  if(!(state?.voting?.open)) return;
+  const res=await fetch(VOTE_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({choice,deviceId:deviceId()})});
+  if(!res.ok){ const e=await res.json().catch(()=>({error:'vote_failed'})); if(e.error==='already_voted'){ alert('You already voted this round.'); } }
 }
-function showError(txt){
-  const el=$('#msg'); el.classList.remove('ok'); el.classList.add('err'); el.textContent=txt;
-}
-
-$('#bEnc').addEventListener('click', ()=>sendVote('encore'));
-$('#bAno').addEventListener('click', ()=>sendVote('another'));
-$('#bMay').addEventListener('click', ()=>sendVote('maybe'));
-
-// PIN flow
-const pinInput=$('#pinInput'), pinBtn=$('#pinBtn'), pinMsg=$('#pinMsg');
-pinBtn.addEventListener('click', ()=>{
-  const entered = (pinInput.value||'').replace(/\D+/g,'');
-  const actual  = (state?.event?.pin||'').replace(/\D+/g,'');
-  if(!entered){ pinMsg.style.display='block'; pinMsg.textContent='Enter the PIN.'; return; }
-  if(entered !== actual){ pinMsg.style.display='block'; pinMsg.textContent='Wrong PIN'; return; }
-  pinMsg.style.display='none';
-  localStorage.setItem(currentEventKey(state), actual);
-  render();
-});
-
-// loop
-setInterval(fetchState, 1000);
-fetchState();
+$('#vE').onclick=()=>send('encore'); $('#vA').onclick=()=>send('another'); $('#vM').onclick=()=>send('maybe');
 </script>
 </body>
 </html>
