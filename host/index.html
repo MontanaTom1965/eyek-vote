@@ -10,7 +10,7 @@
 <style>
   :root{
     --purple:#2F0658; --bg:#2F0658; --card:#1b0930; --card2:#16072a; --line:#6f52a8; --txt:#eef3ff; --muted:#cdbff0; --accent:#b692ff;
-    --green:#25d366; --yellow:#f6c945; --red:#ff5e6c;
+    --green:#25d366; --yellow:#f6c945; --red:#ff5e6c; --ink:#1a1030;
   }
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--txt);font:15px/1.45 "Montserrat",system-ui}
@@ -27,16 +27,17 @@
   .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   .row-60-40{display:grid;grid-template-columns:3fr 2fr;gap:14px} /* longer singer fields */
   .btn{padding:10px 12px;border:1px solid var(--line);background:#3a2166;color:#eaf2ff;border-radius:10px;cursor:pointer}
-  .btn.pri{background:var(--accent);color:#1a1030;border:0;font-weight:800}
+  .btn.pri{background:var(--accent);color:var(--ink);border:0;font-weight:800}
   .btn.warn{background:#ff8a6b;border:0;color:#1a0d0d}
   .btn.ghost{background:transparent;border:1px dashed var(--line)}
-  .btn.start{background:#1f9d55;border-color:#1f9d55;color:#08150d;font-weight:800}
-  .btn.extend{background:#f6c945;border-color:#f6c945;color:#3a2c00;font-weight:800}
-  .btn.end{background:#ff5e6c;border-color:#ff5e6c;color:#2b0e12;font-weight:800}
+  .btn.start{background:var(--green);border-color:var(--green);color:#08150d;font-weight:800}
+  .btn.extend{background:var(--yellow);border-color:var(--yellow);color:#3a2c00;font-weight:800}
+  .btn.end{background:var(--red);border-color:var(--red);color:#2b0e12;font-weight:800}
   .stack{display:flex;gap:8px;flex-wrap:wrap}
   .pill{display:flex;align-items:center;gap:10px;background:#220d3f;border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:8px}
   .dot{width:10px;height:10px;border-radius:999px;background:#999;flex:0 0 10px}
   .dot.green{background:var(--green)} .dot.yellow{background:var(--yellow)}
+  .nameTag{background:#fff;color:#111;padding:4px 8px;border-radius:8px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .kv{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   .sectionTitle{font-size:18px;font-weight:900;margin:6px 0 10px}
   .divider{height:1px;background:#5b3d87;margin:10px 0;opacity:.7}
@@ -66,6 +67,7 @@
   .footlinks{display:flex;flex-wrap:wrap;gap:10px}
   a.link{color:#d8c7ff;text-decoration:none}
   .tiny{font-size:12px;color:#d9cdff}
+  .white{color:#fff}
   .sticky{position:sticky;top:16px}
 
   /* collapsible details */
@@ -74,6 +76,9 @@
   details.setup[open] > summary{border-bottom:1px solid #533b87}
   details.setup .body{padding:12px 16px 16px}
   .right .tinyPad{margin-top:6px}
+
+  /* Sounds column layout */
+  .soundList{display:grid;grid-template-columns:1fr;gap:8px}
 </style>
 </head>
 <body>
@@ -144,26 +149,29 @@
     <div class="card" style="margin-top:16px">
       <h2>Singer Control</h2>
       <div class="body">
+        <!-- Two boxes side-by-side -->
         <div class="row-60-40">
-          <!-- Left: Add Singer -->
+          <!-- Left: Add Singer BOX -->
           <div>
-            <div class="sectionTitle" style="margin-top:0">Add Singer</div>
-            <div class="row" style="grid-template-columns:1fr 1fr">
-              <div>
-                <div class="sublabel">Singer Name</div>
-                <input id="singerName" placeholder="e.g., Lisa H." />
+            <div class="currentBox">
+              <div class="sectionTitle" style="margin-top:0">Add Singer</div>
+              <div class="row" style="grid-template-columns:1fr 1fr">
+                <div>
+                  <div class="sublabel">Singer Name</div>
+                  <input id="singerName" placeholder="Name" />
+                </div>
+                <div>
+                  <div class="sublabel">Song / Artist</div>
+                  <input id="songArtist" placeholder="Song - Artist" />
+                </div>
               </div>
-              <div>
-                <div class="sublabel">Song / Artist</div>
-                <input id="songArtist" placeholder="e.g., Lovin' Every Minute of It — Loverboy" />
+              <div class="stack" style="margin-top:10px">
+                <button id="addSinger" class="btn pri">Add Singer</button>
               </div>
-            </div>
-            <div class="stack" style="margin-top:10px">
-              <button id="addSinger" class="btn pri">Add Singer</button>
             </div>
           </div>
 
-          <!-- Right: Current Singer (incl. timers/buttons) -->
+          <!-- Right: Current Singer BOX -->
           <div>
             <div class="currentBox">
               <div class="sectionTitle" style="margin-top:0">Current Singer</div>
@@ -188,18 +196,18 @@
                   </div>
                 </div>
               </div>
-
-              <div class="divider"></div>
-
-              <div class="sectionTitle">Host Voting</div>
-              <div class="stack" style="margin-top:6px">
-                <button id="hv_encore" class="btn">Host Vote: Encore</button>
-                <button id="hv_another" class="btn">Host Vote: Another</button>
-                <button id="hv_maybe" class="btn">Host Vote: Maybe</button>
-              </div>
             </div>
           </div>
-        </div> <!-- /row-60-40 -->
+        </div><!-- /row-60-40 -->
+
+        <!-- Full-width Host Voting BELOW both boxes -->
+        <div class="divider"></div>
+        <div class="sectionTitle">Host Voting</div>
+        <div class="stack" style="margin-top:6px;justify-content:center">
+          <button id="hv_encore"  class="btn start">Encore!</button>
+          <button id="hv_another" class="btn extend">Another Shot!</button>
+          <button id="hv_maybe"   class="btn end">Maybe Next Time!</button>
+        </div>
       </div>
     </div>
 
@@ -242,15 +250,15 @@
         <a class="link" target="_blank" href="/vote/index.html">Vote</a>
       </div>
       <div class="divider"></div>
-      <button id="enableSound" class="btn ghost" style="width:100%">Enable sound</button>
+      <button id="enableSound" class="btn start" style="width:100%">Enable sound</button>
       <div class="tiny tinyPad" id="soundStatus">Sound: <b>off</b></div>
       <div class="tiny" id="loopStatus">Loop: <b>stopped</b></div>
       <div class="divider"></div>
-      <div class="tiny"><b>Sound test</b></div>
-      <div class="stack" style="margin-top:6px">
-        <button id="play_open" class="btn">Play Voting_Open</button>
-        <button id="play_encore" class="btn">Play Encore</button>
-        <button id="play_loser" class="btn">Play Maybe</button>
+      <div class="sectionTitle white" style="margin-top:0">Sounds</div>
+      <div class="soundList">
+        <button id="play_open"   class="btn start">Voting</button>
+        <button id="play_encore" class="btn start">Encore!</button>
+        <button id="play_loser"  class="btn start">Maybe Next Time!</button>
       </div>
     </div>
   </aside>
@@ -402,9 +410,9 @@ function render(){
   (state.singers||[]).forEach(s=>{
     const row=document.createElement('div'); row.className='pill';
     const dot=document.createElement('div'); dot.className='dot '+(s._color||'');
-    const name=document.createElement('div'); name.textContent=s.name; name.style.fontWeight='600'; name.style.overflow='hidden'; name.style.textOverflow='ellipsis'; name.style.whiteSpace='nowrap';
+    const name=document.createElement('div'); name.className='nameTag'; name.textContent=s.name;
     const actions=document.createElement('div'); actions.style.display='flex'; actions.style.gap='6px';
-    const setB=document.createElement('button'); setB.className='btn'; setB.textContent='Set'; setB.onclick=()=>setCurrent(s.id);
+    const setB=document.createElement('button'); setB.className='btn start'; setB.textContent='Set'; setB.onclick=()=>setCurrent(s.id);
     const rmB=document.createElement('button'); rmB.className='btn warn'; rmB.textContent='Remove'; rmB.onclick=()=>removeSinger(s.id);
     actions.append(setB,rmB); row.append(dot,name,actions); singerList.append(row);
   });
@@ -605,7 +613,6 @@ function loop(){
 const sfx = (function(){
   let enabled=false;
 
-  // try mp3 first; if it fails to play, we will switch to wav dynamically
   const aOpen   = new Audio('/assets/voting_open.mp3'); aOpen.loop = true; aOpen.preload='auto';
   const aEncore = new Audio('/assets/encore.mp3');      aEncore.preload='auto';
   const aLoser  = new Audio('/assets/loser.wav');       aLoser.preload='auto';
@@ -632,7 +639,6 @@ const sfx = (function(){
       setLoop(true);
       setTimeout(()=>{ try{ aOpen.pause(); aOpen.currentTime=0; setLoop(false);}catch{} }, 800);
     }catch{
-      // fallback to wav if present
       if(!triedWavFallback){
         triedWavFallback=true;
         aOpen.src='/assets/voting_open.wav';
@@ -646,7 +652,6 @@ const sfx = (function(){
   function safePlay(a){ if(!enabled) return; a.play().then(()=>setLoop(!a.paused)).catch(()=>setLoop(false)); }
   function safeStop(a){ try{ a.pause(); a.currentTime=0; setLoop(false);}catch{} }
 
-  // Keep the loop alive while open; retry wav fallback if mp3 can’t start
   setInterval(async ()=>{
     if(!enabled) return;
     if(state?.voting?.open){
@@ -687,7 +692,7 @@ const sfx = (function(){
   };
 })();
 
-// test buttons (left inert but wired if you want to try)
+// test buttons
 document.getElementById('play_open').onclick  = ()=>{};
 document.getElementById('play_encore').onclick= ()=>{};
 document.getElementById('play_loser').onclick = ()=>{};
