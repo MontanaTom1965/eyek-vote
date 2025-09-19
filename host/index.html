@@ -22,14 +22,13 @@
   .muted{color:var(--muted)}
   input,select,button{font:inherit}
   input[type="text"],input[type="date"],input[type="password"],input[type="number"],datalist{
-    width:100%;padding:12px;border-radius:12px;border:1px solid var(--line);background:#220d3f;color:var(--txt)
+    width:100%;padding:12px;border-radius:12px;border:1px solid var(--line);background:#220d3f;color:#eef3ff
   }
   .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-  .row-60-40{display:grid;grid-template-columns:3fr 2fr;gap:14px} /* longer singer fields */
+  .row-60-40{display:grid;grid-template-columns:3fr 2fr;gap:14px}
   .btn{padding:10px 12px;border:1px solid var(--line);background:#3a2166;color:#eaf2ff;border-radius:10px;cursor:pointer}
   .btn.pri{background:var(--accent);color:var(--ink);border:0;font-weight:800}
   .btn.warn{background:#ff8a6b;border:0;color:#1a0d0d}
-  .btn.ghost{background:transparent;border:1px dashed var(--line)}
   .btn.start{background:var(--green);border-color:var(--green);color:#08150d;font-weight:800}
   .btn.extend{background:var(--yellow);border-color:var(--yellow);color:#3a2c00;font-weight:800}
   .btn.end{background:var(--red);border-color:var(--red);color:#2b0e12;font-weight:800}
@@ -42,7 +41,6 @@
   .sectionTitle{font-size:18px;font-weight:900;margin:6px 0 10px}
   .divider{height:1px;background:#5b3d87;margin:10px 0;opacity:.7}
   .sublabel{font-size:12px;color:#e9dbff;margin-top:6px}
-  .lg{font-size:22px}
   .xl{font-size:28px}
   .currentBox{background:#220d3f;border:1px solid var(--line);border-radius:14px;padding:12px;margin-top:8px}
   .currentBox .big{font-weight:900;font-size:30px}
@@ -80,16 +78,12 @@
   /* Sounds list */
   .soundList{display:grid;grid-template-columns:1fr;gap:8px}
 
-  /* Attention pulse for Enable sound */
-  .callout{
-    animation: pulse 1.2s ease-in-out infinite;
-    box-shadow: 0 0 0 0 rgba(37,211,102,.55);
-    transform: translateZ(0);
-  }
+  /* pulsing enable sound */
+  .callout{animation:pulse 1.2s ease-in-out infinite;box-shadow:0 0 0 0 rgba(37,211,102,.55)}
   @keyframes pulse{
-    0%{ box-shadow: 0 0 0 0 rgba(37,211,102,.55); transform: scale(1.00); }
-    70%{ box-shadow: 0 0 0 18px rgba(37,211,102,0); transform: scale(1.02); }
-    100%{ box-shadow: 0 0 0 0 rgba(37,211,102,0); transform: scale(1.00); }
+    0%{ box-shadow:0 0 0 0 rgba(37,211,102,.55); transform:scale(1.00);}
+    70%{ box-shadow:0 0 0 18px rgba(37,211,102,0); transform:scale(1.02);}
+    100%{ box-shadow:0 0 0 0 rgba(37,211,102,0); transform:scale(1.00);}
   }
 </style>
 </head>
@@ -161,9 +155,8 @@
     <div class="card" style="margin-top:16px">
       <h2>Singer Control</h2>
       <div class="body">
-        <!-- Two boxes side-by-side -->
         <div class="row-60-40">
-          <!-- Left: Add Singer BOX -->
+          <!-- Add Singer -->
           <div>
             <div class="currentBox">
               <div class="sectionTitle" style="margin-top:0">Add Singer</div>
@@ -183,7 +176,7 @@
             </div>
           </div>
 
-          <!-- Right: Current Singer BOX -->
+          <!-- Current Singer -->
           <div>
             <div class="currentBox">
               <div class="sectionTitle" style="margin-top:0">Current Singer</div>
@@ -210,9 +203,10 @@
               </div>
             </div>
           </div>
+
         </div><!-- /row-60-40 -->
 
-        <!-- Full-width Host Voting BELOW both boxes -->
+        <!-- Host Voting -->
         <div class="divider"></div>
         <div class="sectionTitle">Host Voting</div>
         <div class="stack" style="margin-top:6px;justify-content:center">
@@ -415,9 +409,9 @@ function render(){
   [venue,venuePublic,eventDate,kj,hostName,pin].forEach(el=>el.disabled=disabled);
 
   document.getElementById('lockEvent').textContent = disabled ? 'Unlock' : 'Lock';
-  document.getElementById('setupPanel').open = !disabled; // collapse when locked
+  document.getElementById('setupPanel').open = !disabled;
 
-  // rotation list
+  // rotation
   singerList.innerHTML='';
   (state.singers||[]).forEach(s=>{
     const row=document.createElement('div'); row.className='pill';
@@ -440,9 +434,7 @@ function render(){
     if(ce>lastCounts.encore)  spawnMini('#miniE','encore',  ce-lastCounts.encore);
     if(ca>lastCounts.another) spawnMini('#miniA','another', ca-lastCounts.another);
     if(cm>lastCounts.maybe)   spawnMini('#miniM','maybe',   cm-lastCounts.maybe);
-  } else {
-    ['#miniE','#miniA','#miniM'].forEach(sel=>$(sel).innerHTML='');
-  }
+  } else { ['#miniE','#miniA','#miniM'].forEach(sel=>$(sel).innerHTML=''); }
   lastCounts = {encore:ce, another:ca, maybe:cm};
 
   const tNow = nowMs();
@@ -621,7 +613,7 @@ function loop(){
   }, 1000);
 }
 
-/* Audio: host-only with MP3→WAV fallback + keepalive + pulsing CTA */
+/* Audio: host-only with unlock pulse */
 const sfx = (function(){
   let enabled=false;
 
@@ -638,17 +630,8 @@ const sfx = (function(){
   function setLoop(v){ loopEl.innerHTML = 'Loop: <b>'+(v?'playing':'stopped')+'</b>'; }
 
   let ctx=null;
-  function waPing(){
-    try{
-      if(!ctx) ctx=new (window.AudioContext||window.webkitAudioContext)();
-      const o=ctx.createOscillator(), g=ctx.createGain(); g.gain.value=0.0001;
-      o.connect(g).connect(ctx.destination); o.start(); o.stop(ctx.currentTime+0.02);
-      return true;
-    }catch{ return false; }
-  }
-  async function warm(el){
-    try{ el.muted=true; await el.play(); el.pause(); el.currentTime=0; el.muted=false; return true; }catch{ return false; }
-  }
+  function waPing(){ try{ if(!ctx) ctx=new (window.AudioContext||window.webkitAudioContext)(); const o=ctx.createOscillator(), g=ctx.createGain(); g.gain.value=0.0001; o.connect(g).connect(ctx.destination); o.start(); o.stop(ctx.currentTime+0.02); return true; }catch{ return false; } }
+  async function warm(el){ try{ el.muted=true; await el.play(); el.pause(); el.currentTime=0; el.muted=false; return true; }catch{ return false; } }
 
   async function enable(){
     const ok = waPing() | await warm(aEncore) | await warm(aLoser) | await warm(aOpen);
@@ -660,11 +643,8 @@ const sfx = (function(){
   enableBtn.addEventListener('click', async ()=>{
     const ok = await enable();
     if(ok){
-      // Tiny chirp of the loop so user hears “it works”
-      try{
-        aOpen.currentTime=0; await aOpen.play(); setLoop(true);
-        setTimeout(()=>{ try{ aOpen.pause(); aOpen.currentTime=0; setLoop(false);}catch{} }, 500);
-      }catch{
+      try{ aOpen.currentTime=0; await aOpen.play(); setLoop(true); setTimeout(()=>{ try{ aOpen.pause(); aOpen.currentTime=0; setLoop(false);}catch{} }, 500); }
+      catch{
         if(!triedWavFallback){
           triedWavFallback=true; aOpen.src='/assets/voting_open.wav';
           try{ await aOpen.play(); setLoop(true); setTimeout(()=>{ try{ aOpen.pause(); aOpen.currentTime=0; setLoop(false);}catch{} }, 500);}catch{}
@@ -673,14 +653,13 @@ const sfx = (function(){
     }
   });
 
-  // Gesture on first pointer if they forget to click the button explicitly
+  // backup: if they interact anywhere
   function firstGesture(){ enable(); window.removeEventListener('pointerdown', firstGesture, {passive:true}); }
   window.addEventListener('pointerdown', firstGesture, {passive:true});
 
   function safePlay(a){ if(!enabled) return; a.play().then(()=>setLoop(!a.paused)).catch(()=>setLoop(false)); }
   function safeStop(a){ try{ a.pause(); a.currentTime=0; setLoop(false);}catch{} }
 
-  // Keep the loop alive while open; retry wav fallback if mp3 can’t start
   setInterval(async ()=>{
     if(!enabled) return;
     if(state?.voting?.open){
@@ -712,21 +691,19 @@ const sfx = (function(){
     } else setLoop(true);
   }
 
-  // Public API
   return {
     startLoop(){ if(!enabled) return; aOpen.currentTime=0; aOpen.play().then(()=>setLoop(true)).catch(()=>setLoop(false)); },
     stopOpen(){ safeStop(aOpen); },
     ensureLoop,
     playEncore(){ safePlay(aEncore); },
-    playLoser(){ safePlay(aLoser); },
-    enable
+    playLoser(){ safePlay(aLoser); }
   };
 })();
 
-// Sound test buttons — ensure unlock first, then play
-document.getElementById('play_open').onclick   = async ()=>{ await sfx.enable(); sfx.startLoop(); setTimeout(()=>sfx.stopOpen(), 900); };
-document.getElementById('play_encore').onclick = async ()=>{ await sfx.enable(); sfx.playEncore(); };
-document.getElementById('play_loser').onclick  = async ()=>{ await sfx.enable(); sfx.playLoser(); };
+// Sound test buttons
+document.getElementById('play_open').onclick   = async ()=>{ await sfx.enable?.(); sfx.startLoop(); setTimeout(()=>sfx.stopOpen(), 900); };
+document.getElementById('play_encore').onclick = async ()=>{ await sfx.enable?.(); sfx.playEncore(); };
+document.getElementById('play_loser').onclick  = async ()=>{ await sfx.enable?.(); sfx.playLoser(); };
 
 (async function init(){ await fetchState(); render(); loop(); })();
 </script>
