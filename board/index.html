@@ -1,59 +1,58 @@
 <!doctype html>
-<meta charset="utf-8" />
+<html lang="en">
+<head>
+<meta charset="utf-8">
 <title>Encore! • Board</title>
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@600;800&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@700;800&display=swap" rel="stylesheet">
 <style>
-  :root{--bg:#2F0658;--card:#1b0930;--line:#5b3d87;--txt:#eef3ff;--green:#25d366;--yellow:#f6c945}
-  *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--txt);font:18px/1.4 system-ui}
-  .wrap{min-height:100svh;display:grid;grid-template-columns:1fr 1fr;gap:20px;padding:24px}
-  .col{background:linear-gradient(180deg,var(--card),#16072a);border:1px solid var(--line);border-radius:16px;display:flex;flex-direction:column}
-  .title{font-family:"Bebas Neue"; font-size:6vmin; text-align:center; padding:16px 10px 8px; margin:0}
-  .title.enc{color:var(--green)} .title.ano{color:var(--yellow)}
-  .list{flex:1; overflow:auto; padding:0 16px 16px}
-  .pill{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#220d3f;border:1px solid #6f52a8;border-radius:12px;padding:12px 14px;margin:10px 0}
-  .name{font-weight:800;font-size:22px}
-  .song{opacity:.85}
+  :root{
+    --bg:#1b0930; --txt:#fff; --muted:#d8c7ff;
+    --green:#25d366; --yellow:#f6c945;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);font:18px/1.35 "Montserrat",system-ui}
+  .wrap{min-height:100svh;display:grid;grid-template-columns:1fr 1fr;gap:24px;padding:24px}
+  .col{border:2px solid rgba(255,255,255,.15);border-radius:16px;padding:16px;display:flex;flex-direction:column;min-height:calc(100svh - 48px)}
+  .title{font-family:"Bebas Neue";font-size:84px;text-align:center;margin:6px 0 6px}
+  .enc{color:var(--green); text-shadow:0 0 24px rgba(37,211,102,.35)}
+  .ano{color:var(--yellow); text-shadow:0 0 24px rgba(246,201,69,.35)}
+  .list{flex:1;display:flex;flex-direction:column;gap:14px;overflow:hidden}
+  .row{font-size:40px;padding:10px 14px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1)}
+  .sub{font-size:20px;color:var(--muted);margin-left:8px}
 </style>
-
+</head>
+<body>
 <div class="wrap">
-  <div class="col">
-    <h2 class="title enc">Encore!</h2>
+  <section class="col">
+    <h1 class="title enc">Encore!</h1>
     <div id="encList" class="list"></div>
-  </div>
-  <div class="col">
-    <h2 class="title ano">Another Shot!</h2>
+  </section>
+  <section class="col">
+    <h1 class="title ano">Another Shot!</h1>
     <div id="anoList" class="list"></div>
-  </div>
+  </section>
 </div>
 
 <script>
 const GET_URL='/assets/get_state.php';
 const $=s=>document.querySelector(s);
 
-async function tick(){
+async function fetchState(){
   const r=await fetch(GET_URL,{cache:'no-store'});
   const st=await r.json();
-  const enc = st?.winners?.encore  ?? [];
-  const ano = st?.winners?.another ?? [];
-  render('#encList', enc);
-  render('#anoList', ano);
-}
-function render(sel, arr){
-  const box=$(sel); box.innerHTML='';
-  arr.forEach(x=>{
-    const row=document.createElement('div'); row.className='pill';
-    const left=document.createElement('div');
-    const name=document.createElement('div'); name.className='name'; name.textContent=x.name||'—';
-    const song=document.createElement('div'); song.className='song'; song.textContent=x.song||'';
-    left.append(name,song);
-    const when=document.createElement('div'); when.textContent=new Date(x.when||Date.now()).toLocaleTimeString();
-    row.append(left,when); box.append(row);
-  });
-}
-setInterval(tick, 1500); tick();
-</script>
+  const enc = st?.winners?.encore || [];
+  const ano = st?.winners?.another || [];
 
+  function render(listEl, arr){
+    listEl.innerHTML = arr.length ? arr.map(it=>`<div class="row">${escapeHtml(it.name||'—')} <span class="sub">${escapeHtml(it.song||'')}</span></div>`).join('') : '<div class="row" style="opacity:.5">—</div>';
+  }
+  render($('#encList'), enc);
+  render($('#anoList'), ano);
+}
+function escapeHtml(s){return String(s||'').replace(/[&<>"']/g,m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+setInterval(fetchState, 1500); fetchState();
+</script>
+</body>
+</html>
 <!-- FILE: /board/index.html -->
