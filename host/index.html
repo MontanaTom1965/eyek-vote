@@ -9,11 +9,12 @@
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700;800&display=swap" rel="stylesheet">
 <style>
   :root{
-    --purple:#2F0658; --bg:#2F0658; --card:#1b0930; --card2:#16072a; --line:#6f52a8; --txt:#eef3ff; --muted:#cdbff0; --accent:#b692ff;
+    --bgDeep1:#1B0930; --bgDeep2:#16072A; /* Unified deep background */
+    --card:#1b0930; --card2:#16072a; --line:#6f52a8; --txt:#eef3ff; --muted:#cdbff0; --accent:#b692ff;
     --green:#25d366; --yellow:#f6c945; --red:#ff5e6c; --ink:#1a1030;
   }
   *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--txt);font:15px/1.45 "Montserrat",system-ui}
+  body{margin:0;background:linear-gradient(180deg,var(--bgDeep1),var(--bgDeep2));color:var(--txt);font:15px/1.45 "Montserrat",system-ui}
   .page{min-height:100svh;display:grid;grid-template-columns:320px 1fr 280px;gap:16px;padding:18px}
   .card{background:linear-gradient(180deg,var(--card),var(--card2));border:1px solid var(--line);border-radius:16px;box-shadow:0 10px 40px rgba(0,0,0,.35)}
   .left,.mid,.right{min-height:0}
@@ -102,7 +103,7 @@
             <datalist id="venuesList"></datalist>
           </div>
           <div>
-            <div class="sublabel">Public Venue Name (Screen) – e.g. “the Venue!”</div>
+            <div class="sublabel">Public Venue Name (Screen) – e.g. “Public Venue Name”</div>
             <input id="venuePublic" list="venuesPublicList" placeholder="Public Venue Name" />
             <datalist id="venuesPublicList"></datalist>
           </div>
@@ -265,23 +266,26 @@
 
 <script src="/assets/js/auth.js"></script>
 <script>
+/* Optional guard – safe to leave if auth.js not present */
 (function guardHost(){
   try{
-    if (!window.Auth) { console.warn('Auth not loaded; skipping guard.'); return; }
+    if (!window.Auth) { return; }
     const me = Auth.current();
     if (!me) { location.href = '/auth/login.html?next=' + encodeURIComponent('/host/index.html'); return; }
     if (me.role !== 'host') { alert('Hosts only.'); location.href='/'; return; }
     if (!Auth.isLicensed()) { location.href = '/auth/access.html?next=' + encodeURIComponent('/host/index.html'); return; }
-  }catch(e){ console.error('host guard error', e); }
+  }catch(e){}
 })();
 </script>
 
 <script>
+/* ------------------- Endpoints ------------------- */
 const GET_URL  = '/assets/get_state.php';
 const POST_URL = '/assets/state.php';
 const VOTE_URL = '/assets/vote.php';
 const PERF_URL = '/assets/submit_performance.php';
 
+/* ------------------- Helpers ------------------- */
 function debounce(fn, wait=300){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a),wait); }; }
 const $=s=>document.querySelector(s);
 const digitsOnly = s => (s||'').replace(/\D+/g,'');
@@ -290,20 +294,24 @@ let clockOffset = 0;
 function nowMs(){ return Date.now() + clockOffset; }
 function smoothOffset(observed){ if(!isFinite(observed)) return; clockOffset = 0.9*clockOffset + 0.1*observed; }
 
+/* ----- State & polling control ----- */
 let state=null, poll=null;
-
 const lastEdit = Object.create(null);
 const RECENT_MS = 12000;
 function markEdit(id){ lastEdit[id] = Date.now(); }
-function canUpdateField(el, id){ if(document.activeElement === el) return false; if((lastEdit[id]||0) > Date.now()-RECENT_MS) return false; return true; }
+function canUpdateField(el, id){
+  if(document.activeElement === el) return false;
+  if((lastEdit[id]||0) > Date.now()-RECENT_MS) return false;
+  return true;
+}
 let pollPaused=false, resumeTimer=null;
 function pausePolling(){ pollPaused=true; clearTimeout(resumeTimer); }
 function resumePollingSoon(){ clearTimeout(resumeTimer); resumeTimer=setTimeout(()=>{ pollPaused=false; }, 1800); }
-
 let suppressEventRenderUntil = 0;
 function suppressEventRender(ms=1200){ suppressEventRenderUntil = Date.now() + ms; }
 function mayRenderEventInputs(){ return Date.now() > suppressEventRenderUntil; }
 
+/* ----- Elements ----- */
 const venue=$('#venue'), venuePublic=$('#venuePublic'), eventDate=$('#eventDate'), kj=$('#kj'), hostName=$('#hostName'), pin=$('#pin');
 const venuesList=document.getElementById('venuesList'), kjsList=document.getElementById('kjsList');
 const singerName=$('#singerName'), songArtist=$('#songArtist');
@@ -312,12 +320,14 @@ const currentName=$('#currentName'), currentSongArtist=$('#currentSongArtist');
 const timerEl=$('#timer'), cE=$('#c_encore'), cA=$('#c_another'), cM=$('#c_maybe'), resultTag=$('#resultTag');
 const pinSaved=$('#pinSaved'); const togglePin=$('#togglePin');
 
+/* ----- Focus handling to stop flicker while typing ----- */
 [venue, venuePublic, eventDate, kj, hostName, pin].forEach(el=>{
   el.addEventListener('focusin', ()=>{ pausePolling(); markEdit(el.id); });
   el.addEventListener('focusout', resumePollingSoon);
   el.addEventListener('input', ()=>{ markEdit(el.id); pausePolling(); });
 });
 
+/* ----- Mini vote visualizer ----- */
 function spawnMini(containerSel, kind, n=1){
   const box=$(containerSel); if(!box) return;
   const cls = kind==='encore'?'g':kind==='another'?'y':'r';
@@ -338,6 +348,7 @@ function spawnMini(containerSel, kind, n=1){
   }
 }
 
+/* ----- Fetch / Post state ----- */
 let lastCounts = { encore:0, another:0, maybe:0 };
 
 async function fetchState(){
@@ -355,8 +366,12 @@ async function fetchState(){
   state.winners ||= {encore:[], another:[]};
 }
 async function postState(){ await fetch('/assets/state.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(state)}); await fetchState(); }
-const postStateDebounced = debounce(async ()=>{ await fetch('/assets/state.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(state)}); await fetchState(); render(); }, 220);
+const postStateDebounced = debounce(async ()=>{
+  await fetch('/assets/state.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(state)});
+  await fetchState(); render();
+}, 220);
 
+/* ----- Saved lists (local merge) ----- */
 function updateDatalistsImmediate(){
   const Lvenues = JSON.parse(localStorage.getItem('eyek_saved_venues') || '[]');
   const Lpub    = JSON.parse(localStorage.getItem('eyek_saved_venues_public') || '[]');
@@ -368,7 +383,6 @@ function updateDatalistsImmediate(){
   document.getElementById('venuesPublicList').innerHTML = pubs.map(v=>`<option value="${v.replace(/"/g,'&quot;')}">`).join('');
   kjsList.innerHTML    = kjs.map(v=>`<option value="${v.replace(/"/g,'&quot;')}">`).join('');
 }
-
 function pushLocalList(key, val){
   val=(val||'').trim(); if(!val) return;
   const k = key==='venue' ? 'eyek_saved_venues'
@@ -380,6 +394,7 @@ function pushLocalList(key, val){
   updateDatalistsImmediate();
 }
 
+/* ----- Render ----- */
 function render(){
   if(!state) return;
   updateDatalistsImmediate();
@@ -445,6 +460,7 @@ function announce(w){
   else { resultTag.textContent='Maybe Next Time'; resultTag.className='resultTag r-maybe'; }
 }
 
+/* ----- Bind event inputs live ----- */
 function bindLive(el, key, transform=(x)=>x, immediate=false){
   const handler = async ()=>{
     if(!state?.event) return;
@@ -469,6 +485,7 @@ bindLive(pin,         'pin', digitsOnly, true);
 function showPinSaved(key){ if(key!=='pin') return; pinSaved.textContent='PIN saved'; setTimeout(()=>pinSaved.textContent='',1200); }
 togglePin.onclick = ()=>{ pin.type = (pin.type==='password'?'text':'password'); togglePin.textContent = (pin.type==='password'?'Show':'Hide'); };
 
+/* ----- Setup actions ----- */
 document.getElementById('saveEvent').onclick = async ()=>{
   pushLocalList('venue', venue.value);
   pushLocalList('venuePublic', venuePublic.value);
@@ -492,6 +509,7 @@ document.getElementById('resetEvent').onclick = async ()=>{
   await postState();
 };
 
+/* ----- Singer actions ----- */
 document.getElementById('addSinger').onclick = async ()=>{
   const name=singerName.value.trim(); if(!name){ alert('Enter a singer name.'); return;}
   const id='s_'+Math.random().toString(36).slice(2,9);
@@ -511,8 +529,11 @@ function setCurrent(id){
   postState();
   logPerformance('set_current');
 }
-function removeSinger(id){ state.singers=state.singers.filter(x=>x.id!==id); if(state.current.id===id){ state.current={id:null,name:'',songArtist:''}; } postState(); }
-
+function removeSinger(id){
+  state.singers=state.singers.filter(x=>x.id!==id);
+  if(state.current.id===id){ state.current={id:null,name:'',songArtist:''}; }
+  postState();
+}
 currentSongArtist.addEventListener('input', async ()=>{
   if(!state.current.id) return;
   state.current.songArtist=currentSongArtist.value.trim();
@@ -520,6 +541,7 @@ currentSongArtist.addEventListener('input', async ()=>{
   await postState();
 });
 
+/* ----- Vote control ----- */
 document.getElementById('startVote').onclick = async ()=>{
   if(!state.current.id){ alert('Set a current singer first.'); return; }
   const t=nowMs();
@@ -528,20 +550,29 @@ document.getElementById('startVote').onclick = async ()=>{
   await postState();
   logPerformance('start_round');
 };
-document.getElementById('extendVote').onclick = async ()=>{ if(!state.voting.open) return; state.voting.endsAt+=15000; state.voting.extendCount++; await postState(); };
+document.getElementById('extendVote').onclick = async ()=>{
+  if(!state.voting.open) return;
+  state.voting.endsAt+=15000; state.voting.extendCount++;
+  await postState();
+};
 document.getElementById('endVote').onclick = async ()=>{ await concludeVoting(); };
 
+/* ----- Host quick vote (one per device per round) ----- */
 function deviceId(){ let id=localStorage.getItem('eyek_device_id'); if(!id){ id=crypto.randomUUID(); localStorage.setItem('eyek_device_id', id);} return id; }
 async function hostVote(kind){
   if(!state?.voting?.open) return;
   const res=await fetch(VOTE_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({choice:kind, deviceId:deviceId()})});
   await fetchState(); render();
-  if(!res.ok){ const e=await res.json().catch(()=>({error:'vote_failed'})); if(e.error==='already_voted'){ alert('Only one vote per device per singer/song on this device.'); } }
+  if(!res.ok){
+    const e=await res.json().catch(()=>({error:'vote_failed'}));
+    if(e.error==='already_voted'){ alert('Only one vote per device per singer/song on this device.'); }
+  }
 }
 document.getElementById('hv_encore').onclick = ()=>hostVote('encore');
 document.getElementById('hv_another').onclick = ()=>hostVote('another');
 document.getElementById('hv_maybe').onclick  = ()=>hostVote('maybe');
 
+/* ----- Conclude voting ----- */
 async function concludeVoting(){
   if(!state.voting.open){ announce(state.voting.lastResult); return; }
   state.voting.open=false; state.voting.endsAt=0;
@@ -572,6 +603,7 @@ async function concludeVoting(){
   else if (winner === 'maybe') setTimeout(()=>sfx.playLoser(),120);
 }
 
+/* ----- Polling loop (prep → open, timer, auto-close) ----- */
 function loop(){
   if(poll) clearInterval(poll);
   poll=setInterval(async ()=>{
@@ -594,7 +626,7 @@ function loop(){
   }, 1000);
 }
 
-/* Audio: Enable/Disable with hardened loop start */
+/* ----- Audio: enable/disable + robust voting loop ----- */
 const sfx = (function(){
   let enabled=false;
 
@@ -639,7 +671,9 @@ const sfx = (function(){
       }catch{
         if(!triedWavFallback){
           triedWavFallback=true; aOpen.src='/assets/voting_open.wav';
-          try{ aOpen.load(); aOpen.currentTime=0; await aOpen.play(); setLoop(true); setTimeout(()=>{ try{ aOpen.pause(); aOpen.currentTime=0; setLoop(false);}catch{} }, 400);}catch{}
+          try{ aOpen.load(); aOpen.currentTime=0; await aOpen.play(); setLoop(true);
+               setTimeout(()=>{ try{ aOpen.pause(); aOpen.currentTime=0; setLoop(false);}catch{} }, 400);
+          }catch{}
         }
       }
     }else{
@@ -692,10 +726,12 @@ const sfx = (function(){
   };
 })();
 
+/* ----- Sound test buttons ----- */
 document.getElementById('play_open').onclick   = async ()=>{ document.getElementById('enableSound').click(); setTimeout(()=>{ sfx.startLoop(); setTimeout(()=>sfx.stopOpen(), 900); }, 50); };
 document.getElementById('play_encore').onclick = async ()=>{ document.getElementById('enableSound').click(); setTimeout(()=>sfx.playEncore(),50); };
 document.getElementById('play_loser').onclick  = async ()=>{ document.getElementById('enableSound').click(); setTimeout(()=>sfx.playLoser(),50); };
 
+/* ----- Init ----- */
 (async function init(){ await fetchState(); render(); loop(); })();
 </script>
 </body>
