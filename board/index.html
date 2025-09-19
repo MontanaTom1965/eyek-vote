@@ -19,10 +19,27 @@
   .ano{color:var(--yellow); text-shadow:0 0 24px rgba(246,201,69,.35)}
   .list{flex:1;display:flex;flex-direction:column;gap:14px;overflow:hidden}
   .row{font-size:40px;padding:10px 14px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1)}
-  .sub{font-size:20px;color:var(--muted);margin-left:8px}
+
+  /* --- Heartbeat: invisible animator to keep compositing active --- */
+  #heartbeat {
+    position: fixed;
+    width: 1px; height: 1px;
+    left: -10px; top: -10px;        /* fully off-screen */
+    background: transparent;
+    transform: translateX(0);
+    will-change: transform;
+    animation: hb 2s linear infinite;
+  }
+  @keyframes hb {
+    0%   { transform: translateX(0) }
+    50%  { transform: translateX(1px) }
+    100% { transform: translateX(0) }
+  }
 </style>
 </head>
 <body>
+<div id="heartbeat" aria-hidden="true"></div>
+
 <div class="wrap">
   <section class="col">
     <h1 class="title enc">Encore!</h1>
@@ -38,20 +55,58 @@
 const GET_URL='/assets/get_state.php';
 const $=s=>document.querySelector(s);
 
-async function fetchState(){
-  const r=await fetch(GET_URL,{cache:'no-store'});
-  const st=await r.json();
-  const enc = st?.winners?.encore || [];
-  const ano = st?.winners?.another || [];
-
-  function render(listEl, arr){
-    listEl.innerHTML = arr.length ? arr.map(it=>`<div class="row">${escapeHtml(it.name||'—')} <span class="sub">${escapeHtml(it.song||'')}</span></div>`).join('') : '<div class="row" style="opacity:.5">—</div>';
+/* -------- Wake Lock (keep screen on) -------- */
+let wakeLock = null;
+async function requestWakeLock(){
+  try{
+    if('wakeLock' in navigator){
+      wakeLock = await navigator.wakeLock.request('screen');
+      wakeLock.addEventListener('release', ()=>{ /* released */ });
+      // console.log('Wake lock acquired');
+    }
+  }catch(e){
+    // console.warn('Wake lock failed', e);
   }
-  render($('#encList'), enc);
-  render($('#anoList'), ano);
 }
-function escapeHtml(s){return String(s||'').replace(/[&<>"']/g,m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
-setInterval(fetchState, 1500); fetchState();
+document.addEventListener('visibilitychange', ()=>{
+  if (document.visibilityState === 'visible') requestWakeLock();
+});
+window.addEventListener('focus', requestWakeLock);
+requestWakeLock();
+
+/* -------- Tiny RAF loop (extra insurance for stubborn TVs) -------- */
+let rafId;
+function tick(){
+  // Toggle a CSS custom prop every few seconds to force a trivial paint.
+  if (performance.now() % 3000 < 16) {
+    document.body.style.setProperty('--nudge', String(Math.random()));
+  }
+  rafId = requestAnimationFrame(tick);
+}
+rafId = requestAnimationFrame(tick);
+
+/* -------- Data render -------- */
+async function fetchState(){
+  try{
+    const r=await fetch(GET_URL,{cache:'no-store'});
+    const st=await r.json();
+    const enc = st?.winners?.encore || [];
+    const ano = st?.winners?.another || [];
+
+    function escapeHtml(s){return String(s||'').replace(/[&<>"']/g,m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+    function render(listEl, arr){
+      listEl.innerHTML = arr.length
+        ? arr.map(it=>`<div class="row">${escapeHtml(it.name||'—')} <span style="font-size:20px;color:var(--muted);margin-left:8px">${escapeHtml(it.song||'')}</span></div>`).join('')
+        : '<div class="row" style="opacity:.5">—</div>';
+    }
+    render($('#encList'), enc);
+    render($('#anoList'), ano);
+  }catch(e){
+    // ignore transient errors
+  }
+}
+setInterval(fetchState, 1500);
+fetchState();
 </script>
 </body>
 </html>
