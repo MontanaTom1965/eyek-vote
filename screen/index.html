@@ -7,9 +7,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@600;800&display=swap" rel="stylesheet">
 
 <style>
-  :root{ --bg:#2F0658; --card:#1b0930; --line:#5b3d87; --txt:#eaf2ff; --muted:#b9c6ff; --green:#25d366; --yellow:#f6c945; --red:#ff5e6c; }
+  :root{ --bg:#2F0658; --card:#1b0930; --line:#6f52a8; --txt:#eaf2ff; --green:#25d366; --yellow:#f6c945; --red:#ff5e6c; }
   *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--txt);font:20px system-ui,Segoe UI,Roboto,Helvetica,Arial}
+  body{margin:0;background:var(--bg);color:var(--txt);font:20px system-ui}
   .wrap{display:grid;place-items:center;min-height:100svh;text-align:center;padding:4vmin;position:relative;overflow:hidden}
   .title{font-family:"Bebas Neue"; font-size:9vmin; letter-spacing:.5vmin; margin:0 0 1.2vmin; color:#fff}
   .venue{font-family:"Montserrat"; font-weight:800; font-size:6vmin; color:#ffd6ff; margin:0 0 1vmin; text-shadow:0 6px 24px rgba(0,0,0,.45); max-width:95vw; overflow-wrap:anywhere}
@@ -287,7 +287,7 @@ function fmt(ms){ const s=Math.ceil(ms/1000); const m=Math.floor(s/60), r=s%60; 
 setInterval(tick, 1000);
 tick();
 
-// Wake lock
+// Wake lock to keep TV awake
 let wakeLock=null;
 async function requestWakeLock(){ try{ if('wakeLock' in navigator){ wakeLock = await navigator.wakeLock.request('screen'); } }catch(e){} }
 document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') requestWakeLock(); });
