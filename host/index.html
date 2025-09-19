@@ -75,16 +75,9 @@
   details.setup .body{padding:12px 16px 16px}
   .right .tinyPad{margin-top:6px}
 
-  /* Sounds list */
   .soundList{display:grid;grid-template-columns:1fr;gap:8px}
-
-  /* pulsing enable sound */
   .callout{animation:pulse 1.2s ease-in-out infinite;box-shadow:0 0 0 0 rgba(37,211,102,.55)}
-  @keyframes pulse{
-    0%{ box-shadow:0 0 0 0 rgba(37,211,102,.55); transform:scale(1.00);}
-    70%{ box-shadow:0 0 0 18px rgba(37,211,102,0); transform:scale(1.02);}
-    100%{ box-shadow:0 0 0 0 rgba(37,211,102,0); transform:scale(1.00);}
-  }
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(37,211,102,.55);transform:scale(1)}70%{box-shadow:0 0 0 18px rgba(37,211,102,0);transform:scale(1.02)}100%{box-shadow:0 0 0 0 rgba(37,211,102,0);transform:scale(1)}}
 </style>
 </head>
 <body>
@@ -270,12 +263,11 @@
   </aside>
 </div>
 
-<!-- DEMO AUTH (guard safe) -->
 <script src="/assets/js/auth.js"></script>
 <script>
 (function guardHost(){
   try{
-    if (!window.Auth) { console.warn('Auth not loaded; skipping guard to avoid blank page.'); return; }
+    if (!window.Auth) { console.warn('Auth not loaded; skipping guard.'); return; }
     const me = Auth.current();
     if (!me) { location.href = '/auth/login.html?next=' + encodeURIComponent('/host/index.html'); return; }
     if (me.role !== 'host') { alert('Hosts only.'); location.href='/'; return; }
@@ -284,7 +276,6 @@
 })();
 </script>
 
-<!-- HOST APP -->
 <script>
 const GET_URL  = '/assets/get_state.php';
 const POST_URL = '/assets/state.php';
@@ -295,14 +286,12 @@ function debounce(fn, wait=300){ let t; return (...a)=>{ clearTimeout(t); t=setT
 const $=s=>document.querySelector(s);
 const digitsOnly = s => (s||'').replace(/\D+/g,'');
 
-// ---- time sync ----
 let clockOffset = 0;
 function nowMs(){ return Date.now() + clockOffset; }
 function smoothOffset(observed){ if(!isFinite(observed)) return; clockOffset = 0.9*clockOffset + 0.1*observed; }
 
 let state=null, poll=null;
 
-// pause polling while typing / choosing
 const lastEdit = Object.create(null);
 const RECENT_MS = 12000;
 function markEdit(id){ lastEdit[id] = Date.now(); }
@@ -315,7 +304,6 @@ let suppressEventRenderUntil = 0;
 function suppressEventRender(ms=1200){ suppressEventRenderUntil = Date.now() + ms; }
 function mayRenderEventInputs(){ return Date.now() > suppressEventRenderUntil; }
 
-// inputs
 const venue=$('#venue'), venuePublic=$('#venuePublic'), eventDate=$('#eventDate'), kj=$('#kj'), hostName=$('#hostName'), pin=$('#pin');
 const venuesList=document.getElementById('venuesList'), kjsList=document.getElementById('kjsList');
 const singerName=$('#singerName'), songArtist=$('#songArtist');
@@ -330,7 +318,6 @@ const pinSaved=$('#pinSaved'); const togglePin=$('#togglePin');
   el.addEventListener('input', ()=>{ markEdit(el.id); pausePolling(); });
 });
 
-// host mini-dot physics (white boxes)
 function spawnMini(containerSel, kind, n=1){
   const box=$(containerSel); if(!box) return;
   const cls = kind==='encore'?'g':kind==='another'?'y':'r';
@@ -357,12 +344,10 @@ async function fetchState(){
   const r=await fetch(GET_URL,{cache:'no-store'});
   const serverFetchedAt = Date.now();
   state=await r.json();
-
   if(state && typeof state.serverNow === 'number'){
     const observed = state.serverNow - serverFetchedAt;
     if(clockOffset === 0) clockOffset = observed; else smoothOffset(observed);
   }
-
   state.event   ||= {venue:'',venuePublic:'',date:new Date().toISOString().slice(0,10),kj:'',hostName:'',pin:'',locked:false};
   state.saved   ||= {venues:[], venuesPublic:[], kjs:[]};
   state.singers ||= []; state.current ||= {id:null,name:'',songArtist:''};
@@ -383,6 +368,7 @@ function updateDatalistsImmediate(){
   document.getElementById('venuesPublicList').innerHTML = pubs.map(v=>`<option value="${v.replace(/"/g,'&quot;')}">`).join('');
   kjsList.innerHTML    = kjs.map(v=>`<option value="${v.replace(/"/g,'&quot;')}">`).join('');
 }
+
 function pushLocalList(key, val){
   val=(val||'').trim(); if(!val) return;
   const k = key==='venue' ? 'eyek_saved_venues'
@@ -409,9 +395,8 @@ function render(){
   [venue,venuePublic,eventDate,kj,hostName,pin].forEach(el=>el.disabled=disabled);
 
   document.getElementById('lockEvent').textContent = disabled ? 'Unlock' : 'Lock';
-  document.getElementById('setupPanel').open = !disabled; // collapse when locked
+  document.getElementById('setupPanel').open = !disabled;
 
-  // rotation list
   singerList.innerHTML='';
   (state.singers||[]).forEach(s=>{
     const row=document.createElement('div'); row.className='pill';
@@ -460,7 +445,6 @@ function announce(w){
   else { resultTag.textContent='Maybe Next Time'; resultTag.className='resultTag r-maybe'; }
 }
 
-/* Bindings */
 function bindLive(el, key, transform=(x)=>x, immediate=false){
   const handler = async ()=>{
     if(!state?.event) return;
@@ -485,7 +469,6 @@ bindLive(pin,         'pin', digitsOnly, true);
 function showPinSaved(key){ if(key!=='pin') return; pinSaved.textContent='PIN saved'; setTimeout(()=>pinSaved.textContent='',1200); }
 togglePin.onclick = ()=>{ pin.type = (pin.type==='password'?'text':'password'); togglePin.textContent = (pin.type==='password'?'Show':'Hide'); };
 
-/* Event actions */
 document.getElementById('saveEvent').onclick = async ()=>{
   pushLocalList('venue', venue.value);
   pushLocalList('venuePublic', venuePublic.value);
@@ -509,7 +492,6 @@ document.getElementById('resetEvent').onclick = async ()=>{
   await postState();
 };
 
-/* Singer actions */
 document.getElementById('addSinger').onclick = async ()=>{
   const name=singerName.value.trim(); if(!name){ alert('Enter a singer name.'); return;}
   const id='s_'+Math.random().toString(36).slice(2,9);
@@ -522,7 +504,6 @@ async function logPerformance(action){
 }
 function setCurrent(id){
   const s = state.singers.find(x=>x.id===id); if(!s) return;
-  // Reset vote counts & set new current
   state.voting = { open:false, prepUntil:0, endsAt:0, extendCount:0,
                    counts:{encore:0,another:0,maybe:0}, lastResult:null, voters:{} };
   lastCounts = {encore:0,another:0,maybe:0};
@@ -532,7 +513,6 @@ function setCurrent(id){
 }
 function removeSinger(id){ state.singers=state.singers.filter(x=>x.id!==id); if(state.current.id===id){ state.current={id:null,name:'',songArtist:''}; } postState(); }
 
-/* Now Singing text */
 currentSongArtist.addEventListener('input', async ()=>{
   if(!state.current.id) return;
   state.current.songArtist=currentSongArtist.value.trim();
@@ -540,7 +520,6 @@ currentSongArtist.addEventListener('input', async ()=>{
   await postState();
 });
 
-/* Voting with 5s prep */
 document.getElementById('startVote').onclick = async ()=>{
   if(!state.current.id){ alert('Set a current singer first.'); return; }
   const t=nowMs();
@@ -552,7 +531,6 @@ document.getElementById('startVote').onclick = async ()=>{
 document.getElementById('extendVote').onclick = async ()=>{ if(!state.voting.open) return; state.voting.endsAt+=15000; state.voting.extendCount++; await postState(); };
 document.getElementById('endVote').onclick = async ()=>{ await concludeVoting(); };
 
-/* Host quick vote -> server */
 function deviceId(){ let id=localStorage.getItem('eyek_device_id'); if(!id){ id=crypto.randomUUID(); localStorage.setItem('eyek_device_id', id);} return id; }
 async function hostVote(kind){
   if(!state?.voting?.open) return;
@@ -583,7 +561,7 @@ async function concludeVoting(){
     state.winners[winner]=state.winners[winner].slice(0,50);
   }
 
-  // Clear current singer after results (per your request)
+  // Clear current singer after results
   state.current = { id:null, name:'', songArtist:'' };
 
   await postState(); announce(winner);
@@ -594,23 +572,19 @@ async function concludeVoting(){
   else if (winner === 'maybe') setTimeout(()=>sfx.playLoser(),120);
 }
 
-/* Loop */
 function loop(){
   if(poll) clearInterval(poll);
   poll=setInterval(async ()=>{
     if(pollPaused) return;
     await fetchState();
     const t=nowMs();
-
-    // flip to OPEN after prep
     if(!state.voting.open && (state.voting.prepUntil||0) > 0 && t >= state.voting.prepUntil){
       state.voting.open = true;
       state.voting.prepUntil = 0;
       state.voting.endsAt = t + 30000;
       await postState();
-      sfx.startLoop(); // start loop when voting opens
+      sfx.startLoop();
     }
-
     if(state?.voting?.open && t>=state.voting.endsAt){
       await concludeVoting();
     } else {
@@ -620,7 +594,7 @@ function loop(){
   }, 1000);
 }
 
-/* Audio: host-only with Enable/Disable toggle */
+/* Audio: Enable/Disable with hardened loop start */
 const sfx = (function(){
   let enabled=false;
 
@@ -656,28 +630,39 @@ const sfx = (function(){
   }
 
   btn.addEventListener('click', async ()=>{
-    if(!enabled){ await enable(); try{ aOpen.currentTime=0; await aOpen.play(); setLoop(true); setTimeout(()=>{ try{ aOpen.pause(); aOpen.currentTime=0; setLoop(false);}catch{} }, 400); }catch{ if(!triedWavFallback){ triedWavFallback=true; aOpen.src='/assets/voting_open.wav'; try{ await aOpen.play(); setLoop(true); setTimeout(()=>{ try{ aOpen.pause(); aOpen.currentTime=0; setLoop(false);}catch{} }, 400);}catch{} } } }
-    else{ disable(); }
+    if(!enabled){
+      await enable();
+      try{
+        aOpen.load(); aOpen.currentTime=0;
+        await aOpen.play(); setLoop(true);
+        setTimeout(()=>{ try{ aOpen.pause(); aOpen.currentTime=0; setLoop(false);}catch{} }, 400);
+      }catch{
+        if(!triedWavFallback){
+          triedWavFallback=true; aOpen.src='/assets/voting_open.wav';
+          try{ aOpen.load(); aOpen.currentTime=0; await aOpen.play(); setLoop(true); setTimeout(()=>{ try{ aOpen.pause(); aOpen.currentTime=0; setLoop(false);}catch{} }, 400);}catch{}
+        }
+      }
+    }else{
+      disable();
+    }
   });
 
-  // backup: enable on first gesture if they forget to click
   function firstGesture(){ if(!enabled) enable(); window.removeEventListener('pointerdown', firstGesture, {passive:true}); }
   window.addEventListener('pointerdown', firstGesture, {passive:true});
 
   function safePlay(a){ if(!enabled) return; a.play().then(()=>setLoop(!a.paused)).catch(()=>setLoop(false)); }
   function stopOpen(){ try{ aOpen.pause(); aOpen.currentTime=0; setLoop(false);}catch{} }
 
-  // keepalive for loop
   setInterval(async ()=>{
     if(!enabled) return;
     if(state?.voting?.open){
       if(aOpen.paused){
-        try{ await aOpen.play(); setLoop(true); }
+        try{ aOpen.load(); aOpen.currentTime=0; await aOpen.play(); setLoop(true); }
         catch{
           if(!triedWavFallback){
             triedWavFallback=true; aOpen.src='/assets/voting_open.wav';
-            try{ await aOpen.play(); setLoop(true);}catch{ setLoop(false); }
-          }else{ setLoop(false); }
+            try{ aOpen.load(); aOpen.currentTime=0; await aOpen.play(); setLoop(true);}catch{ setLoop(false); }
+          } else setLoop(false);
         }
       } else setLoop(true);
     }
@@ -688,18 +673,18 @@ const sfx = (function(){
   async function ensureLoop(){
     if(!enabled || !state?.voting?.open) return setLoop(false);
     if(aOpen.paused){
-      try{ await aOpen.play(); setLoop(true); }
+      try{ aOpen.load(); aOpen.currentTime=0; await aOpen.play(); setLoop(true); }
       catch{
         if(!triedWavFallback){
           triedWavFallback=true; aOpen.src='/assets/voting_open.wav';
-          try{ await aOpen.play(); setLoop(true);}catch{ setLoop(false); }
+          try{ aOpen.load(); aOpen.currentTime=0; await aOpen.play(); setLoop(true);}catch{ setLoop(false); }
         } else setLoop(false);
       }
     } else setLoop(true);
   }
 
   return {
-    startLoop(){ if(!enabled) return; aOpen.currentTime=0; aOpen.play().then(()=>setLoop(true)).catch(()=>setLoop(false)); },
+    startLoop(){ if(!enabled) return; aOpen.load(); aOpen.currentTime=0; aOpen.play().then(()=>setLoop(true)).catch(()=>setLoop(false)); },
     stopOpen,
     ensureLoop,
     playEncore(){ safePlay(aEncore); },
@@ -707,14 +692,12 @@ const sfx = (function(){
   };
 })();
 
-// Sound test buttons
 document.getElementById('play_open').onclick   = async ()=>{ document.getElementById('enableSound').click(); setTimeout(()=>{ sfx.startLoop(); setTimeout(()=>sfx.stopOpen(), 900); }, 50); };
 document.getElementById('play_encore').onclick = async ()=>{ document.getElementById('enableSound').click(); setTimeout(()=>sfx.playEncore(),50); };
 document.getElementById('play_loser').onclick  = async ()=>{ document.getElementById('enableSound').click(); setTimeout(()=>sfx.playLoser(),50); };
 
 (async function init(){ await fetchState(); render(); loop(); })();
 </script>
-
 </body>
 </html>
 <!-- FILE: /host/index.html -->
