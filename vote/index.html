@@ -1,120 +1,182 @@
 <!doctype html>
-<meta charset="utf-8"><title>Encore! • Vote</title>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Encore! • Vote</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700;800&display=swap" rel="stylesheet">
 <style>
-  :root{--bg:#0f1526;--card:#0d1428;--line:#2b3c62;--txt:#eaf2ff;--muted:#a9b6d9;--green:#25d366;--yellow:#f6c945;--red:#ff5e6c}
-  body{margin:0;background:var(--bg);color:var(--txt);font:16px system-ui}
-  .wrap{max-width:640px;margin:24px auto;padding:16px}
-  h1{font-family:"Bebas Neue"; font-size:44px; margin:0 0 4px}
-  .venue{font-family:"Montserrat"; font-weight:700; font-size:22px; color:#ffd6ff; margin:0 0 16px; overflow-wrap:anywhere}
-  .sub{font-size:14px;color:var(--muted);margin-top:2px}
-  input,button{font:inherit}
-  input{width:100%;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--txt)}
-  .row{display:flex;gap:10px;align-items:center}
-  .btn{flex:1;padding:14px;border:0;border-radius:12px;cursor:pointer}
-  .good{background:#25d366;color:#06120a}.warn{background:#f6c945;color:#231a04}.bad{background:#ff5e6c}
-  .mini{font-size:12px;color:var(--muted)}
-  .nowVoting{font-family:"Montserrat"; font-weight:700; margin:10px 0 6px; font-size:14px; color:#cfe0ff}
-  .who{font-family:"Bebas Neue"; font-size:36px; margin:0 0 6px; overflow-wrap:anywhere}
-  .song{font-size:14px;color:#c9d6ff;margin:0 0 12px; overflow-wrap:anywhere}
-  .ok{color:#8edbff}
-  .err{color:#ff9a9a}
+  :root{--purple:#2F0658;--bg:#0f1526;--card:#0d1428;--line:#2b3c62;--txt:#eef3ff;--muted:#aab2d6;--green:#25d366;--yellow:#f6c945;--red:#ff5e6c}
+  *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--txt);font:16px/1.45 "Montserrat",system-ui}
+  .wrap{min-height:100svh;display:grid;place-items:center;padding:18px}
+  .card{width:min(780px,95vw);background:linear-gradient(180deg,var(--card),#0e0e22);border:1px solid var(--line);border-radius:16px;box-shadow:0 12px 42px rgba(0,0,0,.4);padding:16px}
+  h1{margin:6px 0 4px;font-weight:900}
+  .muted{color:var(--muted)}
+  .row{display:grid;grid-template-columns:1fr auto;gap:10px}
+  input{width:100%;padding:12px;border-radius:12px;border:1px solid #223153;background:#0c1328;color:var(--txt)}
+  .btn{padding:12px;border:1px solid #2f4478;background:#19264a;color:#eaf2ff;border-radius:10px;cursor:pointer}
+  .btn.pri{background:#7aa2ff;color:#061028;border:0;font-weight:800}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:12px}
+  .option{padding:16px;border-radius:14px;text-align:center;font-weight:800;font-size:18px;cursor:pointer;border:2px solid #2a3a6b}
+  .g{background:rgba(37,211,102,.12); border-color:rgba(37,211,102,.5)} 
+  .y{background:rgba(246,201,69,.12); border-color:rgba(246,201,69,.5)}
+  .r{background:rgba(255,94,108,.12);  border-color:rgba(255,94,108,.5)}
+  .disabled{opacity:.5;pointer-events:none}
+  .tally{display:flex;gap:10px;justify-content:center;margin-top:12px}
+  .chip{padding:10px 14px;background:#0a1124;border:1px solid #223153;border-radius:999px}
+  .header{display:flex;justify-content:space-between;align-items:center;gap:10px}
+  .title{font-size:20px}
+  .timer{font-size:22px;font-weight:900}
+  .strip{display:none;background:#192349;color:#eaf2ff;padding:10px 14px;font:14px/1.2 system-ui;margin-bottom:10px;border-radius:10px}
+  a{color:#a9d4ff}
 </style>
+</head>
+<body>
+
+<div id="signinStrip" class="strip">
+  <b>Welcome!</b> Please <a href="/auth/login.html?next=%2Fvote%2Findex.html">sign in</a> or
+  <a href="/auth/register.html?next=%2Fvote%2Findex.html">create an account</a> to vote.
+</div>
+
 <div class="wrap">
-  <h1>Encore! Vote</h1>
-  <div id="venue" class="venue">Welcome to —</div>
-
-  <div id="join">
-    <p class="mini">Enter the event PIN from the screen:</p>
-    <div class="row"><input id="pin" placeholder="PIN" inputmode="numeric" autocomplete="off"><button class="btn" id="joinBtn">Join</button></div>
-    <div id="pinStatus" class="mini"></div>
-  </div>
-
-  <div id="panel" style="display:none">
-    <div class="nowVoting">Now voting:</div>
-    <div id="singer" class="who">—</div>
-    <div id="song" class="song">—</div>
-
-    <div class="row" style="margin-top:12px">
-      <button class="btn good"  id="v_encore">Encore!</button>
-      <button class="btn warn"  id="v_another">Another Shot!</button>
-      <button class="btn bad"   id="v_maybe">Maybe Next Time</button>
+  <div class="card">
+    <div class="header">
+      <div>
+        <div class="title">Welcome to <span id="venue">—</span></div>
+        <div class="muted">Now voting for: <b id="who">—</b></div>
+      </div>
+      <div class="timer" id="timer">00:00</div>
     </div>
-    <div id="note" class="mini sub">Voting closed…</div>
+
+    <div style="margin:10px 0" class="muted">
+      Enter the event PIN to join voting. One vote per device per round.
+    </div>
+
+    <div class="row">
+      <input id="pin" inputmode="numeric" placeholder="Event PIN" />
+      <button id="join" class="btn pri">Join</button>
+    </div>
+    <div id="joinMsg" class="muted" style="height:18px;margin-top:6px"></div>
+
+    <div class="grid3" style="margin-top:10px">
+      <div id="opt_encore"  class="option g disabled">Encore!</div>
+      <div id="opt_another" class="option y disabled">Another Shot!</div>
+      <div id="opt_maybe"   class="option r disabled">Maybe Next Time!</div>
+    </div>
+
+    <div class="tally">
+      <div class="chip">Encore: <b id="cE">0</b></div>
+      <div class="chip">Another: <b id="cA">0</b></div>
+      <div class="chip">Maybe: <b id="cM">0</b></div>
+    </div>
   </div>
 </div>
-<script>
-const GET_URL='/assets/get_state.php', VOTE_URL='/assets/vote.php';
-const $=s=>document.querySelector(s);
-const digitsOnly = s => (s||'').replace(/\D+/g,'');
-let state=null, poll=null, eventPin=null;
 
-// time sync
-let clockOffset=0; function nowMs(){ return Date.now()+clockOffset; }
-function smoothOffset(obs){ if(!isFinite(obs)) return; clockOffset=0.9*clockOffset+0.1*obs; }
+<!-- DEMO AUTH (guard) -->
+<script src="/assets/js/auth.js"></script>
+<script>
+(function guardVote(){
+  try{
+    if (!window.Auth) { console.warn('Auth not loaded; skipping guard.'); return; }
+    const me = Auth.current();
+    if (!me) {
+      const next = encodeURIComponent('/vote/index.html');
+      document.getElementById('signinStrip').style.display = 'block';
+      // Also redirect automatically:
+      location.href = '/auth/login.html?next=' + next;
+      return;
+    }
+  }catch(e){ console.error('vote guard error', e); }
+})();
+</script>
+
+<script>
+const GET_URL='/assets/get_state.php';
+const VOTE_URL='/assets/vote.php';
+
+const $=s=>document.querySelector(s);
+let state=null, joined=false, pinOK=false;
+
+function deviceId(){ let id=localStorage.getItem('eyek_device_id'); if(!id){ id=crypto.randomUUID(); localStorage.setItem('eyek_device_id', id);} return id; }
+function fmt(ms){ const s=Math.ceil(ms/1000); const m=Math.floor(s/60), r=s%60; return `${String(m).padStart(2,'0')}:${String(r).padStart(2,'0')}` }
 
 async function fetchState(){
   const r=await fetch(GET_URL,{cache:'no-store'});
-  const fetchedAt=Date.now();
   state=await r.json();
-  if(state && typeof state.serverNow==='number'){
-    const obs = state.serverNow - fetchedAt;
-    if(clockOffset===0) clockOffset=obs; else smoothOffset(obs);
-  }
 }
 function render(){
-  if(!state) return;
-  const publicVenue = (state.event?.venuePublic || '').trim();
-  document.getElementById('venue').textContent = `Welcome to ${publicVenue || '—'}`;
-  const pinHost = digitsOnly(state.event?.pin || '');
+  const publicOnly = (state?.event?.venuePublic||'').trim();
+  $('#venue').textContent = publicOnly || '—';
+  $('#who').textContent   = state?.current?.name || '—';
 
-  if(!eventPin){
-    document.getElementById('join').style.display='block'; document.getElementById('panel').style.display='none';
-    document.getElementById('pinStatus').textContent = pinHost ? 'Enter PIN to join.' : 'Host has no PIN set (join disabled).';
-    document.getElementById('pinStatus').className = 'mini ' + (pinHost?'ok':'err');
-    return;
+  // timer + phase
+  const now = Date.now() + (state?.serverNow? (state.serverNow - Date.now()) : 0);
+  const open = !!state?.voting?.open;
+  const prep = !open && (state?.voting?.prepUntil||0) > now;
+
+  if(prep){
+    $('#timer').textContent = 'Get ready: ' + fmt((state.voting.prepUntil||0)-now);
+  }else if(open){
+    $('#timer').textContent = fmt((state.voting.endsAt||0)-now);
+  }else{
+    $('#timer').textContent = '00:00';
   }
-  if(digitsOnly(eventPin)!==pinHost){
-    document.getElementById('pinStatus').textContent='Wrong PIN for this event.';
-    document.getElementById('pinStatus').className='mini err';
-    document.getElementById('join').style.display='block'; document.getElementById('panel').style.display='none';
-    return;
-  }
 
-  document.getElementById('pinStatus').textContent='PIN accepted. Connected to event.';
-  document.getElementById('pinStatus').className='mini ok';
-  document.getElementById('join').style.display='none'; document.getElementById('panel').style.display='block';
-  document.getElementById('singer').textContent = state.current?.name || '—';
-  document.getElementById('song').textContent   = state.current?.songArtist || '—';
+  // counts (read-only for voter)
+  const ce=state?.voting?.counts?.encore  ?? 0;
+  const ca=state?.voting?.counts?.another ?? 0;
+  const cm=state?.voting?.counts?.maybe   ?? 0;
+  $('#cE').textContent=ce; $('#cA').textContent=ca; $('#cM').textContent=cm;
 
-  const t=nowMs();
-  const open = !!state.voting?.open;
-  const inPrep = (!open && (state.voting?.prepUntil||0) > t);
-  const enable = open && !inPrep;
-  ['v_encore','v_another','v_maybe'].forEach(id=>{ const b=document.getElementById(id); b.disabled=!enable; b.style.opacity=enable?1:.6; });
-  document.getElementById('note').textContent = enable ? 'Voting is OPEN — make your choice!' : (inPrep ? 'Get ready to vote…' : 'Voting closed…');
+  // buttons enabled only if joined + open
+  const enabled = joined && open;
+  ['encore','another','maybe'].forEach(k=>{
+    const el = $('#opt_'+k);
+    el.classList.toggle('disabled', !enabled);
+  });
 }
 
-async function vote(kind){
-  if(!state?.voting?.open) return;
-  const res = await fetch(VOTE_URL, {method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({choice:kind, deviceId: deviceId()})});
-  await fetchState(); render();
-  if(!res.ok){ const e=await res.json().catch(()=>({error:'vote_failed'})); if(e.error==='already_voted'){ alert('You already voted for this singer/song on this device.'); } }
+async function tick(){
+  await fetchState();
+  render();
 }
-function deviceId(){ let id=localStorage.getItem('eyek_device_id'); if(!id){ id=crypto.randomUUID(); localStorage.setItem('eyek_device_id', id);} return id; }
+setInterval(tick, 1000); tick();
 
-document.getElementById('joinBtn').onclick = ()=>{ eventPin = digitsOnly(document.getElementById('pin').value.trim()); render(); };
-document.getElementById('pin').addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ eventPin = digitsOnly(document.getElementById('pin').value.trim()); render(); }});
-document.getElementById('pin').addEventListener('input', ()=>{ if(eventPin){ eventPin = digitsOnly(document.getElementById('pin').value.trim()); render(); }});
+$('#join').addEventListener('click', async ()=>{
+  const entered = $('#pin').value.trim();
+  await fetchState();
+  const real = (state?.event?.pin||'').trim();
+  if(!entered){ $('#joinMsg').textContent='Enter the event PIN.'; return; }
+  if(entered !== real){ $('#joinMsg').textContent='Wrong PIN. Try again.'; joined=false; pinOK=false; return; }
+  localStorage.setItem('eyek_joined','yes');
+  joined=true; pinOK=true;
+  $('#joinMsg').textContent='PIN accepted. You can vote when the host opens voting.';
+  render();
+});
 
-document.getElementById('v_encore').onclick = ()=> vote('encore');
-document.getElementById('v_another').onclick = ()=> vote('another');
-document.getElementById('v_maybe').onclick  = ()=> vote('maybe');
-
-(async function init(){ await fetchState(); render(); poll=setInterval(async ()=>{ await fetchState(); render(); }, 1100); })();
+async function cast(choice){
+  if(!joined || !pinOK){ $('#joinMsg').textContent='Join with the correct PIN first.'; return; }
+  if(!state?.voting?.open){ $('#joinMsg').textContent='Voting is not open.'; return; }
+  try{
+    const res=await fetch(VOTE_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({choice, deviceId:deviceId()})});
+    if(!res.ok){
+      const e=await res.json().catch(()=>({error:'vote_failed'}));
+      if(e.error==='already_voted'){ $('#joinMsg').textContent='You already voted this round on this device.'; return; }
+      $('#joinMsg').textContent='Vote failed. Please try again.';
+      return;
+    }
+    $('#joinMsg').textContent='Vote received!';
+  }catch(e){
+    $('#joinMsg').textContent='Network error. Try again.';
+  }
+}
+$('#opt_encore').onclick  = ()=>cast('encore');
+$('#opt_another').onclick = ()=>cast('another');
+$('#opt_maybe').onclick   = ()=>cast('maybe');
 </script>
 
+</body>
+</html>
 <!-- FILE: /vote/index.html -->
