@@ -25,10 +25,14 @@
     width:100%;padding:12px;border-radius:12px;border:1px solid var(--line);background:#220d3f;color:var(--txt)
   }
   .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .row-60-40{display:grid;grid-template-columns:3fr 2fr;gap:14px} /* longer singer fields */
   .btn{padding:10px 12px;border:1px solid var(--line);background:#3a2166;color:#eaf2ff;border-radius:10px;cursor:pointer}
   .btn.pri{background:var(--accent);color:#1a1030;border:0;font-weight:800}
   .btn.warn{background:#ff8a6b;border:0;color:#1a0d0d}
   .btn.ghost{background:transparent;border:1px dashed var(--line)}
+  .btn.start{background:#1f9d55;border-color:#1f9d55;color:#08150d;font-weight:800}
+  .btn.extend{background:#f6c945;border-color:#f6c945;color:#3a2c00;font-weight:800}
+  .btn.end{background:#ff5e6c;border-color:#ff5e6c;color:#2b0e12;font-weight:800}
   .stack{display:flex;gap:8px;flex-wrap:wrap}
   .pill{display:flex;align-items:center;gap:10px;background:#220d3f;border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:8px}
   .dot{width:10px;height:10px;border-radius:999px;background:#999;flex:0 0 10px}
@@ -41,11 +45,20 @@
   .xl{font-size:28px}
   .currentBox{background:#220d3f;border:1px solid var(--line);border-radius:14px;padding:12px;margin-top:8px}
   .currentBox .big{font-weight:900;font-size:30px}
-  .mini{height:80px;border-radius:10px;border:1px dashed var(--line);background:#1c0b34;position:relative;overflow:hidden}
-  .mdot{position:absolute;width:8px;height:8px;border-radius:50%}
+
+  /* Public Vote (host mini visualizer) */
+  .miniWhite{height:94px;border-radius:10px;border:1px solid #ddd;background:#fff;position:relative;overflow:hidden}
+  .mdot{position:absolute;width:10px;height:10px;border-radius:50%}
   .mdot.g{background:var(--green)} .mdot.y{background:var(--yellow)} .mdot.r{background:var(--red)}
-  .miniRow{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
-  .miniLbl{font-size:12px;color:#e9dbff;margin:6px 0 4px}
+  .miniRow{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+  .miniLbl{font-size:13px;color:#e9dbff;margin:6px 0 4px}
+
+  .tally{display:flex;gap:12px;justify-content:center;margin-top:12px;flex-wrap:wrap}
+  .chip{padding:10px 18px;border-radius:999px;font-weight:900;border:2px solid rgba(0,0,0,.15)}
+  .chip.enc{background:var(--green); color:#072a14}
+  .chip.ano{background:var(--yellow); color:#352600}
+  .chip.may{background:var(--red);   color:#2b0e12}
+
   .resultTag{padding:6px 10px;border-radius:999px;border:1px solid var(--line);display:inline-block;background:#200a3a}
   .r-encore{border-color:rgba(37,211,102,.7);color:var(--green)}
   .r-another{border-color:rgba(246,201,69,.7);color:var(--yellow)}
@@ -72,10 +85,11 @@
     <div class="body" id="singerList"></div>
   </aside>
 
-  <!-- MIDDLE: SHOW CONTROL + COLLAPSIBLE SETUP -->
+  <!-- MIDDLE: SETUP + SINGER CONTROL + PUBLIC VOTE -->
   <main class="mid">
+    <!-- Event Setup (collapsible) -->
     <details class="setup" id="setupPanel" open>
-      <summary>Event / KJ Setup</summary>
+      <summary>Event Setup</summary>
       <div class="body">
         <div class="row">
           <div>
@@ -126,77 +140,92 @@
       </div>
     </details>
 
+    <!-- Singer Control -->
     <div class="card" style="margin-top:16px">
-      <h2>Show Control</h2>
+      <h2>Singer Control</h2>
       <div class="body">
-        <div class="row">
+        <div class="row-60-40">
+          <!-- Left: Add Singer -->
           <div>
-            <div class="sublabel">Singer Name</div>
-            <input id="singerName" placeholder="e.g., Lisa H." />
-          </div>
-          <div>
-            <div class="sublabel">Song / Artist</div>
-            <input id="songArtist" placeholder="e.g., Lovin' Every Minute of It — Loverboy" />
-          </div>
-        </div>
-
-        <div class="stack" style="margin-top:8px">
-          <button id="addSinger" class="btn pri">Add Singer</button>
-        </div>
-
-        <div class="currentBox">
-          <div class="sectionTitle" style="margin-top:0">Current & Voting</div>
-          <div class="big" id="currentName">—</div>
-          <div style="margin-top:6px">
-            <div class="sublabel">Now Singing — Song / Artist (for record)</div>
-            <input id="currentSongArtist" placeholder="Type song — artist" />
-          </div>
-
-          <div class="kv" style="margin-top:10px;align-items:center">
-            <div>
-              <div class="sublabel">Timer</div>
-              <div id="timer" class="xl">00:00</div>
-              <div id="resultTag" class="resultTag" style="margin-top:6px">—</div>
+            <div class="sectionTitle" style="margin-top:0">Add Singer</div>
+            <div class="row" style="grid-template-columns:1fr 1fr">
+              <div>
+                <div class="sublabel">Singer Name</div>
+                <input id="singerName" placeholder="e.g., Lisa H." />
+              </div>
+              <div>
+                <div class="sublabel">Song / Artist</div>
+                <input id="songArtist" placeholder="e.g., Lovin' Every Minute of It — Loverboy" />
+              </div>
             </div>
-            <div>
-              <div class="sublabel">Vote Controls</div>
-              <div class="stack">
-                <button id="startVote" class="btn pri">Start (5s prep → 30s)</button>
-                <button id="extendVote" class="btn">Extend +15s</button>
-                <button id="endVote" class="btn warn">End</button>
+            <div class="stack" style="margin-top:10px">
+              <button id="addSinger" class="btn pri">Add Singer</button>
+            </div>
+          </div>
+
+          <!-- Right: Current Singer (incl. timers/buttons) -->
+          <div>
+            <div class="currentBox">
+              <div class="sectionTitle" style="margin-top:0">Current Singer</div>
+              <div class="big" id="currentName">—</div>
+              <div style="margin-top:6px">
+                <div class="sublabel">Now Singing — Song / Artist (for record)</div>
+                <input id="currentSongArtist" placeholder="Type song — artist" />
+              </div>
+
+              <div class="kv" style="margin-top:10px;align-items:center">
+                <div>
+                  <div class="sublabel">Timer</div>
+                  <div id="timer" class="xl">00:00</div>
+                  <div id="resultTag" class="resultTag" style="margin-top:6px">—</div>
+                </div>
+                <div>
+                  <div class="sublabel">Vote Controls</div>
+                  <div class="stack">
+                    <button id="startVote" class="btn start">Start (5s prep → 30s)</button>
+                    <button id="extendVote" class="btn extend">Extend +15s</button>
+                    <button id="endVote" class="btn end">End</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="divider"></div>
+
+              <div class="sectionTitle">Host Voting</div>
+              <div class="stack" style="margin-top:6px">
+                <button id="hv_encore" class="btn">Host Vote: Encore</button>
+                <button id="hv_another" class="btn">Host Vote: Another</button>
+                <button id="hv_maybe" class="btn">Host Vote: Maybe</button>
               </div>
             </div>
           </div>
+        </div> <!-- /row-60-40 -->
+      </div>
+    </div>
 
-          <div class="divider"></div>
-
-          <div class="sectionTitle">Host Voting</div>
-          <div class="stack" style="margin-top:6px">
-            <button id="hv_encore" class="btn">Host Vote: Encore</button>
-            <button id="hv_another" class="btn">Host Vote: Another</button>
-            <button id="hv_maybe" class="btn">Host Vote: Maybe</button>
+    <!-- Public Vote (mini visual + centered tally) -->
+    <div class="card" style="margin-top:16px">
+      <h2>Public Vote</h2>
+      <div class="body">
+        <div class="miniRow">
+          <div>
+            <div class="miniLbl">Encore!</div>
+            <div id="miniE" class="miniWhite"></div>
           </div>
-
-          <div class="miniRow" style="margin-top:12px">
-            <div>
-              <div class="miniLbl">Encore</div>
-              <div id="miniE" class="mini"></div>
-            </div>
-            <div>
-              <div class="miniLbl">Another Shot</div>
-              <div id="miniA" class="mini"></div>
-            </div>
-            <div>
-              <div class="miniLbl">Maybe Next Time</div>
-              <div id="miniM" class="mini"></div>
-            </div>
+          <div>
+            <div class="miniLbl">Another Shot!</div>
+            <div id="miniA" class="miniWhite"></div>
           </div>
-
-          <div class="stack" style="margin-top:12px">
-            <div class="pill">Encore: <b id="c_encore" style="margin-left:6px">0</b></div>
-            <div class="pill">Another: <b id="c_another" style="margin-left:6px">0</b></div>
-            <div class="pill">Maybe: <b id="c_maybe" style="margin-left:6px">0</b></div>
+          <div>
+            <div class="miniLbl">Maybe Next Time!</div>
+            <div id="miniM" class="miniWhite"></div>
           </div>
+        </div>
+
+        <div class="tally">
+          <div class="chip enc">Encore! <b id="c_encore" style="margin-left:8px">0</b></div>
+          <div class="chip ano">Another Shot! <b id="c_another" style="margin-left:8px">0</b></div>
+          <div class="chip may">Maybe Next Time! <b id="c_maybe" style="margin-left:8px">0</b></div>
         </div>
       </div>
     </div>
@@ -287,24 +316,24 @@ const pinSaved=$('#pinSaved'); const togglePin=$('#togglePin');
   el.addEventListener('input', ()=>{ markEdit(el.id); pausePolling(); });
 });
 
-// mini-dot physics
+// host mini-dot physics (white boxes)
 function spawnMini(containerSel, kind, n=1){
   const box=$(containerSel); if(!box) return;
   const cls = kind==='encore'?'g':kind==='another'?'y':'r';
   const W=box.clientWidth, H=box.clientHeight;
   for(let i=0;i<n;i++){
     const d=document.createElement('div'); d.className='mdot '+cls;
-    d.style.left=(Math.random()*W|0)+'px'; d.style.top='-6px';
+    d.style.left=(Math.random()*W|0)+'px'; d.style.top='-8px';
     box.appendChild(d);
-    let x=parseFloat(d.style.left), y=-6, vx=(Math.random()*1.6-0.8), vy=(Math.random()*1.2+0.6);
+    let x=parseFloat(d.style.left), y=-8, vx=(Math.random()*1.6-0.8), vy=(Math.random()*1.2+0.6);
     const g=0.25, fr=0.82, dt=16;
     const id=setInterval(()=>{
       vy+=g; x+=vx*dt/16; y+=vy*dt/16;
-      if(x<6){x=6;vx*=-fr} if(x>W-6){x=W-6;vx*=-fr}
-      if(y>H-6){y=H-6; vy*=-fr; if(Math.abs(vy)<0.25){clearInterval(id);} }
+      if(x<8){x=8;vx*=-fr} if(x>W-8){x=W-8;vx*=-fr}
+      if(y>H-8){y=H-8; vy*=-fr; if(Math.abs(vy)<0.25){clearInterval(id);} }
       d.style.left=x+'px'; d.style.top=y+'px';
     }, dt);
-    if(box.childNodes.length>90){ box.removeChild(box.firstChild); }
+    if(box.childNodes.length>120){ box.removeChild(box.firstChild); }
   }
 }
 
@@ -508,7 +537,7 @@ document.getElementById('startVote').onclick = async ()=>{
 document.getElementById('extendVote').onclick = async ()=>{ if(!state.voting.open) return; state.voting.endsAt+=15000; state.voting.extendCount++; await postState(); };
 document.getElementById('endVote').onclick = async ()=>{ await concludeVoting(); };
 
-/* Host “quick” vote */
+/* Host quick vote -> server */
 function deviceId(){ let id=localStorage.getItem('eyek_device_id'); if(!id){ id=crypto.randomUUID(); localStorage.setItem('eyek_device_id', id);} return id; }
 async function hostVote(kind){
   if(!state?.voting?.open) return;
@@ -572,12 +601,15 @@ function loop(){
   }, 1000);
 }
 
-/* Audio: host-only with keepalive */
+/* Audio: host-only with MP3→WAV fallback + keepalive */
 const sfx = (function(){
   let enabled=false;
+
+  // try mp3 first; if it fails to play, we will switch to wav dynamically
   const aOpen   = new Audio('/assets/voting_open.mp3'); aOpen.loop = true; aOpen.preload='auto';
   const aEncore = new Audio('/assets/encore.mp3');      aEncore.preload='auto';
   const aLoser  = new Audio('/assets/loser.wav');       aLoser.preload='auto';
+  let triedWavFallback=false;
 
   const statusEl=document.getElementById('soundStatus');
   const loopEl  =document.getElementById('loopStatus');
@@ -594,7 +626,19 @@ const sfx = (function(){
   }
   document.getElementById('enableSound').addEventListener('click', async ()=>{
     await unlockAll();
-    try{ aOpen.currentTime=0; await aOpen.play(); setLoop(true); setTimeout(()=>{ try{ aOpen.pause(); aOpen.currentTime=0; setLoop(false);}catch{} }, 800); }catch{}
+    try{
+      aOpen.currentTime=0;
+      await aOpen.play();
+      setLoop(true);
+      setTimeout(()=>{ try{ aOpen.pause(); aOpen.currentTime=0; setLoop(false);}catch{} }, 800);
+    }catch{
+      // fallback to wav if present
+      if(!triedWavFallback){
+        triedWavFallback=true;
+        aOpen.src='/assets/voting_open.wav';
+        try{ await aOpen.play(); setLoop(true); setTimeout(()=>{ try{ aOpen.pause(); aOpen.currentTime=0; setLoop(false);}catch{} }, 800);}catch{}
+      }
+    }
   });
   function firstGesture(){ unlockAll(); window.removeEventListener('pointerdown', firstGesture, {passive:true}); }
   window.addEventListener('pointerdown', firstGesture, {passive:true});
@@ -602,22 +646,36 @@ const sfx = (function(){
   function safePlay(a){ if(!enabled) return; a.play().then(()=>setLoop(!a.paused)).catch(()=>setLoop(false)); }
   function safeStop(a){ try{ a.pause(); a.currentTime=0; setLoop(false);}catch{} }
 
-  // Keep the loop alive while open
-  setInterval(()=>{ 
+  // Keep the loop alive while open; retry wav fallback if mp3 can’t start
+  setInterval(async ()=>{
     if(!enabled) return;
     if(state?.voting?.open){
-      if(aOpen.paused){ aOpen.play().then(()=>setLoop(true)).catch(()=>setLoop(false)); }
-      else setLoop(true);
+      if(aOpen.paused){
+        try{ await aOpen.play(); setLoop(true); }
+        catch{
+          if(!triedWavFallback){
+            triedWavFallback=true; aOpen.src='/assets/voting_open.wav';
+            try{ await aOpen.play(); setLoop(true);}catch{ setLoop(false); }
+          }else{ setLoop(false); }
+        }
+      } else setLoop(true);
     }
   }, 1500);
 
   document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') ensureLoop(); });
 
-  function ensureLoop(){
+  async function ensureLoop(){
     if(!enabled) return setLoop(false);
     if(!state?.voting?.open) return setLoop(false);
-    if(aOpen.paused){ aOpen.play().then(()=>setLoop(true)).catch(()=>setLoop(false)); }
-    else setLoop(true);
+    if(aOpen.paused){
+      try{ await aOpen.play(); setLoop(true); }
+      catch{
+        if(!triedWavFallback){
+          triedWavFallback=true; aOpen.src='/assets/voting_open.wav';
+          try{ await aOpen.play(); setLoop(true);}catch{ setLoop(false); }
+        } else setLoop(false);
+      }
+    } else setLoop(true);
   }
 
   return {
@@ -629,7 +687,7 @@ const sfx = (function(){
   };
 })();
 
-// test buttons
+// test buttons (left inert but wired if you want to try)
 document.getElementById('play_open').onclick  = ()=>{};
 document.getElementById('play_encore').onclick= ()=>{};
 document.getElementById('play_loser').onclick = ()=>{};
