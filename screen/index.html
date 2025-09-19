@@ -7,17 +7,20 @@
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@700;800&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#1b0930; /* darker, bar-friendly */
+    --bg:#2F0658;           /* LOCKED background */
     --txt:#ffffff; --muted:#d8c7ff; --line:#6f52a8;
     --green:#25d366; --yellow:#f6c945; --red:#ff5e6c;
   }
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--txt);font:18px/1.35 "Montserrat",system-ui}
   .wrap{min-height:100svh;display:flex;flex-direction:column;gap:16px;padding:24px}
+
   .head{text-align:center}
-  .venue{font-family:"Bebas Neue";font-size:96px;letter-spacing:1px;margin:0}
-  .host{font-size:34px;margin:0;color:var(--muted)}
-  .now{margin-top:26px;text-align:center}
+  .welcome{font-size:36px;margin:0;color:#ffe8ff;opacity:.95} /* smaller "Welcome to" */
+  .venue{font-family:"Bebas Neue";font-size:96px;letter-spacing:1px;margin:2px 0 0}
+  .host{font-size:34px;margin:4px 0 0;color:var(--muted)}
+
+  .now{margin-top:36px;text-align:center} /* extra spacing down */
   .nowLbl{font-family:"Bebas Neue";font-size:52px;margin:0;color:#ffe8ff}
   .nowName{font-family:"Bebas Neue";font-size:84px;margin:10px 0 0}
 
@@ -49,14 +52,20 @@
 
   /* confetti */
   #confetti{position:fixed;inset:0;pointer-events:none;display:none}
+
+  /* Heartbeat to deter TV sleep (invisible) */
+  #heartbeat{position:fixed;width:1px;height:1px;left:-10px;top:-10px;background:transparent;transform:translateX(0);will-change:transform;animation:hb 2s linear infinite}
+  @keyframes hb{0%{transform:translateX(0)}50%{transform:translateX(1px)}100%{transform:translateX(0)}}
 </style>
 </head>
 <body>
 <canvas id="confetti"></canvas>
+<div id="heartbeat" aria-hidden="true"></div>
 
 <div class="wrap" id="root">
   <header class="head">
-    <h1 id="venue" class="venue">Welcome to —</h1>
+    <p id="welcome" class="welcome">Welcome to</p>
+    <h1 id="venue" class="venue">—</h1>
     <p id="hostBy" class="host">Hosted by —</p>
   </header>
 
@@ -98,7 +107,21 @@
 const GET_URL='/assets/get_state.php';
 const $=s=>document.querySelector(s);
 
-let state=null,lastCounts={encore:0,another:0,maybe:0},clockOffset=0,overlayHideAt=0,overlaySingerId=null;
+// Wake Lock to prevent sleep
+let wakeLock=null;
+async function requestWakeLock(){ try{ if('wakeLock' in navigator){ wakeLock=await navigator.wakeLock.request('screen'); } }catch(e){} }
+document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') requestWakeLock(); });
+window.addEventListener('focus', requestWakeLock);
+requestWakeLock();
+
+// Tiny RAF nudge (extra insurance)
+let rafId; function tick(){ if (performance.now()%3000 < 16){ document.body.style.setProperty('--nudge', String(Math.random())); } rafId=requestAnimationFrame(tick); }
+rafId=requestAnimationFrame(tick);
+
+// Time sync, state
+let state=null,lastCounts={encore:0,another:0,maybe:0},clockOffset=0;
+let overlayHideAt=0, cachedWinnerName='', cachedWinnerKind=null;
+
 function nowMs(){return Date.now()+clockOffset}
 function smoothOffset(o){if(!isFinite(o))return;clockOffset=0.9*clockOffset+0.1*o}
 
@@ -113,11 +136,13 @@ setInterval(fetchState,1000); fetchState();
 function fmt(ms){ const s=Math.ceil(ms/1000); const m=Math.floor(s/60), r=s%60; return `${String(m).padStart(2,'0')}:${String(r).padStart(2,'0')}` }
 
 function setHeader(){
-  $('#venue').textContent = (state?.event?.venuePublic ? `Welcome to ${state.event.venuePublic}` : 'Welcome to —');
-  $('#hostBy').textContent = (state?.event?.kj ? `Hosted by ${state.event.kj}` : 'Hosted by —');
+  $('#welcome').textContent = 'Welcome to';
+  $('#venue').textContent   = (state?.event?.venuePublic||'').trim() || '—';
+  $('#hostBy').textContent  = (state?.event?.kj ? `Hosted by ${state.event.kj}` : 'Hosted by —');
 }
 function setNow(name){ $('#nowName').textContent = name || '—'; }
 
+// Balls
 function spawn(col, kind, n=1){
   const el=$(col); const W=el.clientWidth, H=el.clientHeight;
   const cls = kind==='encore'?'g':kind==='another'?'y':'r';
@@ -143,7 +168,7 @@ let confettiRunning=false, confettiTs=0, confettiParts=[];
 function startConfetti(){
   resize(); confettiCanvas.style.display='block'; confettiRunning=true; confettiTs=Date.now(); confettiParts=[];
   for(let i=0;i<240;i++){
-    confettiParts.push({x:Math.random()*innerWidth,y:Math.random()*-innerHeight,vx:(Math.random()*2-1)*2,vy:Math.random()*3+2,size:Math.random()*6+4,color:['#25d366','#f6c945','#ff5e6c'][Math.floor(Math.random()*3)],rot:Math.random()*Math.PI,vr:(Math.random()*0.1-0.05)});
+    confettiParts.push({x:Math.random()*innerWidth,y:Math.random()*-innerHeight,vx:(Math.random()*2-1)*2,vy:(Math.random()*3+2),size:Math.random()*6+4,color:['#25d366','#f6c945','#ff5e6c'][Math.floor(Math.random()*3)],rot:Math.random()*Math.PI,vr:(Math.random()*0.1-0.05)});
   }
   requestAnimationFrame(stepConfetti);
 }
@@ -168,16 +193,20 @@ function showOverlay(kind, name){
   const ov=$('#overlay'), card=$('#ovCard'), title=$('#ovTitle'), sub=$('#ovSub');
   card.className='ovCard '+(kind==='encore'?'ov-enc':kind==='another'?'ov-ano':'ov-may');
   title.textContent = kind==='encore' ? 'Encore!' : (kind==='another' ? 'Another Shot!' : 'Maybe Next Time!');
-  // avoid double period if name ends with .
-  const cleanName = (name||'').replace(/\.\s*$/,'');
-  sub.textContent = kind==='maybe' ? `Thanks, ${cleanName||'singer'}!` : `Congratulations, ${cleanName||'singer'}!`;
-  ov.style.display='flex';
-  overlayHideAt = Date.now()+30000;
-  overlaySingerId = state?.current?.id || null;
 
+  // Cache name at the moment result is decided (avoid double period and persist 15s)
+  const cleanName = String(name||'').replace(/\.\s*$/,'');
+  cachedWinnerName = cleanName;
+  cachedWinnerKind = kind;
+
+  sub.textContent = (kind==='maybe')
+    ? (cleanName ? `Thanks, ${cleanName}!` : 'Thanks for singing!')
+    : (cleanName ? `Congratulations, ${cleanName}!` : 'Congratulations!');
+  ov.style.display='flex';
+  overlayHideAt = Date.now()+15000;  // show for >= 15s
   if(kind==='encore') startConfetti();
 }
-function hideOverlay(){ $('#overlay').style.display='none'; stopConfetti(); overlayHideAt=0; }
+function hideOverlay(){ $('#overlay').style.display='none'; stopConfetti(); overlayHideAt=0; cachedWinnerKind=null; }
 
 function render(){
   setHeader();
@@ -187,29 +216,20 @@ function render(){
   const prep = (!open && (state?.voting?.prepUntil||0) > t);
   const endsAt = state?.voting?.endsAt || 0;
   const curName = (state?.current?.name||'').trim();
-  const curId   = state?.current?.id || null;
 
-  // If overlay showing, auto-hide after 30s or if singer changed
-  if(overlayHideAt && (Date.now()>overlayHideAt || (overlaySingerId && overlaySingerId!==curId))){
-    hideOverlay();
-  }
-
-  // Update "Now Singing" (blank after results or when no singer)
-  if(open || prep){
-    setNow(curName);
-  } else {
-    // when closed, keep blank until new singer Set (host will clear current singer)
-    setNow('');
-  }
+  // Keep Now Singing blank except during prep/open; host clears after round end
+  if(open || prep){ setNow(curName); } else { setNow(''); }
 
   const votingArea=$('#votingArea');
+
+  // Handle overlay persistence (time-based, not tied to current singer)
+  if(overlayHideAt && Date.now()>overlayHideAt){ hideOverlay(); }
 
   if(prep){
     votingArea.style.display='block';
     $('#voteNow').textContent = curName ? `Get ready to vote for: ${curName}` : 'Get ready to vote…';
     $('#timer').textContent = fmt(Math.max(0,(state.voting.prepUntil||0) - t));
     $('#tally').style.display='none';
-    // clear columns
     ['#colE','#colA','#colM'].forEach(s=>$(s).innerHTML = '<div class="label">'+(s==='#colE'?'Encore!':s==='#colA'?'Another Shot!':'Maybe Next Time!')+'</div>');
   } else if(open){
     votingArea.style.display='block';
@@ -228,10 +248,10 @@ function render(){
     votingArea.style.display='none';
     lastCounts={encore:0,another:0,maybe:0};
 
-    // if a result exists and overlay not yet shown, show it
+    // If a result exists and overlay not yet shown in this cycle, show it with the cached name mechanism
     const res = state?.voting?.lastResult || null;
     if(res && $('#overlay').style.display!=='flex'){
-      showOverlay(res, curName);
+      showOverlay(res, curName || cachedWinnerName);
     }
   }
 }
