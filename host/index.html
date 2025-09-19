@@ -9,81 +9,63 @@
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700;800&display=swap" rel="stylesheet">
 <style>
   :root{
-    --purple:#2F0658; --bg:#0f1526; --card:#0d1428; --soft:#151a34; --line:#2b3c62; --txt:#eef3ff; --muted:#aab2d6; --accent:#7aa2ff;
+    --purple:#2F0658; --bg:#2F0658; --card:#1b0930; --soft:#251142; --line:#5b3d87; --txt:#eef3ff; --muted:#cdbff0; --accent:#b692ff;
     --green:#25d366; --yellow:#f6c945; --red:#ff5e6c;
   }
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--txt);font:15px/1.45 "Montserrat",system-ui}
-  .page{min-height:100svh;display:grid;grid-template-columns:280px 1fr 300px;gap:16px;padding:18px}
-  .card{background:linear-gradient(180deg,var(--card),#0e0e22);border:1px solid var(--line);border-radius:16px;box-shadow:0 10px 40px rgba(0,0,0,.35)}
+  .page{min-height:100svh;display:grid;grid-template-columns:320px 1fr 280px;gap:16px;padding:18px}
+  .card{background:linear-gradient(180deg,var(--card),#16072a);border:1px solid var(--line);border-radius:16px;box-shadow:0 10px 40px rgba(0,0,0,.35)}
   .left,.mid,.right{min-height:0}
   .card h2{margin:0 0 10px;padding:14px 16px 0;font-weight:800}
   .body{padding:12px 16px 16px}
   .muted{color:var(--muted)}
   input,select,button{font:inherit}
   input[type="text"],input[type="date"],input[type="password"],input[type="number"],datalist{
-    width:100%;padding:12px;border-radius:12px;border:1px solid #223153;background:#0c1328;color:var(--txt)
+    width:100%;padding:12px;border-radius:12px;border:1px solid #6f52a8;background:#220d3f;color:var(--txt)
   }
   .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-  .btn{padding:10px 12px;border:1px solid #2f4478;background:#19264a;color:#eaf2ff;border-radius:10px;cursor:pointer}
-  .btn.pri{background:var(--accent);color:#061028;border:0;font-weight:800}
+  .btn{padding:10px 12px;border:1px solid #7a5cc0;background:#3a2166;color:#eaf2ff;border-radius:10px;cursor:pointer}
+  .btn.pri{background:var(--accent);color:#1a1030;border:0;font-weight:800}
   .btn.warn{background:#ff8a6b;border:0;color:#1a0d0d}
-  .btn.ghost{background:transparent;border:1px dashed #395191}
+  .btn.ghost{background:transparent;border:1px dashed #7a5cc0}
   .stack{display:flex;gap:8px;flex-wrap:wrap}
-  .pill{display:flex;align-items:center;gap:10px;background:#0b1123;border:1px solid #1b2b4a;border-radius:12px;padding:10px 12px}
+  .pill{display:flex;align-items:center;gap:10px;background:#220d3f;border:1px solid #6f52a8;border-radius:12px;padding:10px 12px}
   .dot{width:10px;height:10px;border-radius:999px;background:#999}
   .dot.green{background:var(--green)} .dot.yellow{background:var(--yellow)}
   .kv{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   .sectionTitle{font-size:18px;font-weight:900;margin:6px 0 10px}
-  .divider{height:1px;background:#25325a;margin:10px 0}
-  .sublabel{font-size:12px;color:#c9d6ff;margin-top:6px}
+  .divider{height:1px;background:#5b3d87;margin:10px 0;opacity:.7}
+  .sublabel{font-size:12px;color:#e9dbff;margin-top:6px}
   .lg{font-size:22px}
   .xl{font-size:28px}
-  .currentBox{background:#101731;border:1px solid #2a3a6b;border-radius:14px;padding:12px;margin-top:8px}
-  .currentBox .big{font-weight:900;font-size:28px}
-  .mini{height:80px;border-radius:10px;border:1px dashed #2a3a6b;background:#0a1124;position:relative;overflow:hidden}
+  .currentBox{background:#220d3f;border:1px solid #6f52a8;border-radius:14px;padding:12px;margin-top:8px}
+  .currentBox .big{font-weight:900;font-size:30px}
+  .mini{height:80px;border-radius:10px;border:1px dashed #6f52a8;background:#1c0b34;position:relative;overflow:hidden}
   .mdot{position:absolute;width:8px;height:8px;border-radius:50%}
   .mdot.g{background:var(--green)} .mdot.y{background:var(--yellow)} .mdot.r{background:var(--red)}
   .miniRow{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
-  .miniLbl{font-size:12px;color:#aab2d6;margin:6px 0 4px}
-  .resultTag{padding:6px 10px;border-radius:999px;border:1px solid #2a3a6b;display:inline-block}
-  .r-encore{border-color:rgba(37,211,102,.6);color:var(--green)}
-  .r-another{border-color:rgba(246,201,69,.6);color:var(--yellow)}
-  .r-maybe{border-color:rgba(255,94,108,.7);color:var(--red)}
+  .miniLbl{font-size:12px;color:#e9dbff;margin:6px 0 4px}
+  .resultTag{padding:6px 10px;border-radius:999px;border:1px solid #6f52a8;display:inline-block;background:#200a3a}
+  .r-encore{border-color:rgba(37,211,102,.7);color:var(--green)}
+  .r-another{border-color:rgba(246,201,69,.7);color:var(--yellow)}
+  .r-maybe{border-color:rgba(255,94,108,.8);color:var(--red)}
   .footlinks{display:flex;flex-wrap:wrap;gap:10px}
-  a.link{color:#a9d4ff;text-decoration:none}
-  .tiny{font-size:12px;color:#9fb3ff}
+  a.link{color:#d8c7ff;text-decoration:none}
+  .tiny{font-size:12px;color:#d9cdff}
   .sticky{position:sticky;top:16px}
 </style>
 </head>
 <body>
 <div class="page">
 
-  <!-- LEFT -->
+  <!-- LEFT: ROTATION -->
   <aside class="left card sticky">
-    <h2>Quick Links</h2>
-    <div class="body">
-      <div class="footlinks">
-        <a class="link" target="_blank" href="/host/index.html">Host</a>
-        <a class="link" target="_blank" href="/screen/index.html">Screen</a>
-        <a class="link" target="_blank" href="/board/index.html">Board</a>
-        <a class="link" target="_blank" href="/vote/index.html">Vote</a>
-      </div>
-      <div class="divider"></div>
-      <button id="enableSound" class="btn ghost" style="width:100%">Enable sound</button>
-      <div class="tiny" id="soundStatus" style="margin-top:6px">Sound: <b>off</b></div>
-      <div class="tiny" id="loopStatus">Loop: <b>stopped</b></div>
-      <div class="divider"></div>
-      <div class="tiny"><b>Tools</b></div>
-      <div class="stack" style="margin-top:6px">
-        <button id="play_open" class="btn">Play Voting_Open</button>
-        <button id="play_encore" class="btn">Play Encore</button>
-        <button id="play_loser" class="btn">Play Maybe</button>
-      </div>
-    </div>
+    <h2>Rotation</h2>
+    <div class="body" id="singerList"></div>
   </aside>
 
-  <!-- MIDDLE -->
+  <!-- MIDDLE: SHOW CONTROL -->
   <main class="mid card">
     <h2>Event / KJ Setup</h2>
     <div class="body">
@@ -207,10 +189,28 @@
     </div>
   </main>
 
-  <!-- RIGHT -->
-  <aside class="right card">
-    <h2>Rotation</h2>
-    <div class="body" id="singerList"></div>
+  <!-- RIGHT: QUICK LINKS + SOUND -->
+  <aside class="right card sticky">
+    <h2>Quick Links</h2>
+    <div class="body">
+      <div class="footlinks">
+        <a class="link" target="_blank" href="/host/index.html">Host</a>
+        <a class="link" target="_blank" href="/screen/index.html">Screen</a>
+        <a class="link" target="_blank" href="/board/index.html">Board</a>
+        <a class="link" target="_blank" href="/vote/index.html">Vote</a>
+      </div>
+      <div class="divider"></div>
+      <button id="enableSound" class="btn ghost" style="width:100%">Enable sound</button>
+      <div class="tiny" id="soundStatus" style="margin-top:6px">Sound: <b>off</b></div>
+      <div class="tiny" id="loopStatus">Loop: <b>stopped</b></div>
+      <div class="divider"></div>
+      <div class="tiny"><b>Sound test</b></div>
+      <div class="stack" style="margin-top:6px">
+        <button id="play_open" class="btn">Play Voting_Open</button>
+        <button id="play_encore" class="btn">Play Encore</button>
+        <button id="play_loser" class="btn">Play Maybe</button>
+      </div>
+    </div>
   </aside>
 </div>
 
@@ -246,7 +246,7 @@ function smoothOffset(observed){ if(!isFinite(observed)) return; clockOffset = 0
 
 let state=null, poll=null;
 
-// overwrite guard + pause polling while choosing from datalists
+// overwrite guard + pause polling while typing
 const lastEdit = Object.create(null);
 const RECENT_MS = 12000;
 function markEdit(id){ lastEdit[id] = Date.now(); }
@@ -265,7 +265,6 @@ const singerName=$('#singerName'), songArtist=$('#songArtist');
 const singerList=$('#singerList');
 const currentName=$('#currentName'), currentSongArtist=$('#currentSongArtist');
 const timerEl=$('#timer'), cE=$('#c_encore'), cA=$('#c_another'), cM=$('#c_maybe'), resultTag=$('#resultTag');
-const lockBtn=document.getElementById('lockEvent');
 const pinSaved=$('#pinSaved'); const togglePin=$('#togglePin');
 
 [venue, venuePublic, eventDate, kj, hostName, pin].forEach(el=>{
@@ -308,7 +307,7 @@ async function fetchState(){
   }
 
   state.event   ||= {venue:'',venuePublic:'',date:new Date().toISOString().slice(0,10),kj:'',hostName:'',pin:'',locked:false};
-  state.saved   ||= {venues:[], kjs:[]};
+  state.saved   ||= {venues:[], venuesPublic:[], kjs:[]};
   state.singers ||= []; state.current ||= {id:null,name:'',songArtist:''};
   state.voting  ||= {open:false,prepUntil:0,endsAt:0,extendCount:0,counts:{encore:0,another:0,maybe:0},lastResult:null,voters:{}};
   state.winners ||= {encore:[], another:[]};
@@ -361,7 +360,7 @@ function render(){
     const name=document.createElement('div'); name.textContent=s.name; name.style.fontWeight='600'; name.style.overflow='hidden'; name.style.textOverflow='ellipsis'; name.style.whiteSpace='nowrap';
     const actions=document.createElement('div'); actions.style.display='flex'; actions.style.gap='6px';
     const setB=document.createElement('button'); setB.className='btn'; setB.textContent='Set'; setB.onclick=()=>setCurrent(s.id);
-    const rmB=document.createElement('button'); rmB.className='btn'; rmB.textContent='Remove'; rmB.onclick=()=>removeSinger(s.id);
+    const rmB=document.createElement('button'); rmB.className='btn warn'; rmB.textContent='Remove'; rmB.onclick=()=>removeSinger(s.id);
     actions.append(setB,rmB); row.append(dot,name,actions); singerList.append(row);
   });
 
@@ -522,13 +521,13 @@ async function concludeVoting(){
   }
   await postState(); announce(winner);
 
-  // Sounds: loop stops; Encore plays; Maybe plays "loser"; Another = silent (no asset yet)
+  // Sounds
   sfx.stopOpen();
   if (winner === 'encore') setTimeout(()=>sfx.playEncore(),120);
   else if (winner === 'maybe') setTimeout(()=>sfx.playLoser(),120);
 }
 
-/* Loop + sound keepalive */
+/* Loop */
 function loop(){
   if(poll) clearInterval(poll);
   poll=setInterval(async ()=>{
@@ -574,7 +573,11 @@ const sfx = (function(){
     const ok = waPing() | await warm(aEncore) | await warm(aLoser) | await warm(aOpen);
     enabled = !!ok; setStatus();
   }
-  document.getElementById('enableSound').addEventListener('click', unlockAll);
+  document.getElementById('enableSound').addEventListener('click', async ()=>{
+    await unlockAll();
+    // Give immediate feedback: play the loop for ~1s then stop
+    try{ aOpen.currentTime=0; await aOpen.play(); setLoop(true); setTimeout(()=>{ try{ aOpen.pause(); aOpen.currentTime=0; setLoop(false);}catch{} }, 1000); }catch{}
+  });
   function firstGesture(){ unlockAll(); window.removeEventListener('pointerdown', firstGesture, {passive:true}); }
   window.addEventListener('pointerdown', firstGesture, {passive:true});
 
@@ -609,9 +612,9 @@ const sfx = (function(){
 })();
 
 // quick test buttons
-document.getElementById('play_open').onclick  = ()=>{ sfx.ensureLoop(); };
-document.getElementById('play_encore').onclick= ()=>{ sfx.playEncore(); };
-document.getElementById('play_loser').onclick = ()=>{ sfx.playLoser(); };
+document.getElementById('play_open').onclick  = ()=>{ /* manual test */ };
+document.getElementById('play_encore').onclick= ()=>{ /* manual test */ };
+document.getElementById('play_loser').onclick = ()=>{ /* manual test */ };
 
 (async function init(){ await fetchState(); render(); loop(); })();
 </script>
