@@ -7,21 +7,19 @@
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@600;800&display=swap" rel="stylesheet">
 
 <style>
-  :root{ --bg:#0f1526; --card:#0d1428; --line:#2b3c62; --txt:#eaf2ff; --muted:#b9c6ff; --green:#25d366; --yellow:#f6c945; --red:#ff5e6c; --purple:#2F0658; }
+  :root{ --bg:#2F0658; --card:#1b0930; --line:#5b3d87; --txt:#eaf2ff; --muted:#b9c6ff; --green:#25d366; --yellow:#f6c945; --red:#ff5e6c; }
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--txt);font:20px system-ui,Segoe UI,Roboto,Helvetica,Arial}
   .wrap{display:grid;place-items:center;min-height:100svh;text-align:center;padding:4vmin;position:relative;overflow:hidden}
   .title{font-family:"Bebas Neue"; font-size:9vmin; letter-spacing:.5vmin; margin:0 0 1.2vmin; color:#fff}
-  .venue{font-family:"Montserrat"; font-weight:800; font-size:6vmin; color:#ffd6ff; margin:0 0 1vmin; text-shadow:0 6px 24px rgba(47,6,88,.45); max-width:95vw; overflow-wrap:anywhere}
-  .kj{font-family:"Montserrat"; font-weight:600; font-size:2.6vmin; color:#c9d6ff; margin:0 0 2.5vmin; opacity:.9; max-width:95vw; overflow-wrap:anywhere}
+  .venue{font-family:"Montserrat"; font-weight:800; font-size:6vmin; color:#ffd6ff; margin:0 0 1vmin; text-shadow:0 6px 24px rgba(0,0,0,.45); max-width:95vw; overflow-wrap:anywhere}
+  .kj{font-family:"Montserrat"; font-weight:600; font-size:2.6vmin; color:#e9dbff; margin:0 0 2.5vmin; opacity:.95; max-width:95vw; overflow-wrap:anywhere}
 
-  /* Now/Prep bar (welcome view only) */
   .nowBar{margin-top:1.5vmin}
   .nowTitle{font-family:"Montserrat"; font-weight:800; font-size:4.8vmin; margin:.6vmin 0 .2vmin; color:#ffffff}
   .nowName{font-family:"Bebas Neue"; font-size:9vmin; margin:0 0 .2vmin}
   .prep{font-family:"Montserrat"; font-size:3.8vmin; color:#cfe0ff; margin:.8vmin 0 0}
 
-  /* Voting fullscreen section */
   .voteView{display:none; position:relative}
   .hud{position:absolute; top:2vmin; left:2vmin; right:2vmin; display:flex; justify-content:space-between; align-items:flex-start; pointer-events:none}
   .hud .left{font-family:"Montserrat"; font-weight:800; font-size:4.6vmin; text-align:left}
@@ -39,14 +37,13 @@
   .chip{padding:1.2vmin 2.8vmin;border-radius:14px;border:2px solid var(--line);background:var(--card); font-size:5vmin}
   .enc{color:var(--green)} .ano{color:var(--yellow)} .may{color:var(--red)}
 
-  /* Result Overlays (15s) */
   .overlay{position:fixed; inset:0; background:rgba(0,0,0,.92); display:none; align-items:center; justify-content:center; z-index:10}
   .panel{text-align:center; padding:2vmin 4vmin}
   .ovTitle{font-family:"Bebas Neue"; font-size:20vmin; margin:0 0 1.2vmin}
   .ovMsg{font-family:"Montserrat"; font-weight:800; font-size:7vmin; margin:0 0 .6vmin; color:#cfe0ff}
 
   #confetti{position:absolute; inset:0; pointer-events:none}
-  .flashEncore{position:absolute; top:3vmin; left:50%; transform:translateX(-50%); background:#10152b; border:2px solid rgba(37,211,102,.5); color:#25d366; padding:1vmin 3vmin; border-radius:999px; font-weight:800; font-size:4vmin; box-shadow:0 10px 40px rgba(37,211,102,.35); display:none}
+  .flashEncore{position:absolute; top:3vmin; left:50%; transform:translateX(-50%); background:#1b0930; border:2px solid rgba(37,211,102,.5); color:#25d366; padding:1vmin 3vmin; border-radius:999px; font-weight:800; font-size:4vmin; box-shadow:0 10px 40px rgba(37,211,102,.35); display:none}
 
   .heartbeat{animation:hb 6s infinite ease-in-out}
   @keyframes hb{0%,100%{opacity:1}50%{opacity:.995}}
@@ -56,7 +53,6 @@
   <canvas id="confetti"></canvas>
   <div id="flash" class="flashEncore">Encore! 🎉</div>
 
-  <!-- Main welcome view (hidden while voting) -->
   <div id="welcome">
     <h1 class="title">Welcome to</h1>
     <div id="venue" class="venue">—</div>
@@ -69,7 +65,6 @@
     </div>
   </div>
 
-  <!-- Voting fullscreen view -->
   <div id="voteView" class="voteView">
     <div class="hud">
       <div class="left">
@@ -92,7 +87,6 @@
     </div>
   </div>
 
-  <!-- 15s result overlay -->
   <div id="overlay" class="overlay">
     <div class="panel">
       <div id="ovTitle" class="ovTitle">Encore!</div>
@@ -105,16 +99,14 @@
 const GET_URL='/assets/get_state.php';
 const $=s=>document.querySelector(s);
 
-// time sync
-let clockOffset=0;
-function nowMs(){ return Date.now()+clockOffset; }
+let clockOffset=0; function nowMs(){ return Date.now()+clockOffset; }
 function smoothOffset(observed){ if(!isFinite(observed)) return; clockOffset=0.9*clockOffset+0.1*observed; }
 
 let state=null, prevOpen=false, lastCounts={encore:0, another:0, maybe:0};
 let overlayTimer=null, overlaySingerId=null;
 let tallyUntil=0;
 
-/* Confetti */
+/* Confetti + flash */
 const confetti=(function(){
   const cv=document.getElementById('confetti'), cx=cv.getContext('2d');
   let W=0,H=0, parts=[], running=false;
@@ -146,17 +138,16 @@ function showEncoreFlash(){
   setTimeout(()=>{ el.animate([{opacity:1},{opacity:0}],{duration:800,easing:'ease-in'}).onfinish=()=>{ el.style.display='none'; }; }, 1300);
 }
 
-/* Spawn into lanes */
+/* Balls */
 function spawnBalls(kind, n){
   const lane = kind==='encore' ? $('#laneE') : kind==='another' ? $('#laneA') : $('#laneM');
   const W=lane.clientWidth, H=lane.clientHeight;
   const cls = kind==='encore'?'g':kind==='another'?'y':'r';
-
   for(let i=0;i<n;i++){
     const b=document.createElement('div'); b.className='ball '+cls;
     let x=12+Math.random()*(W-24), y=12, vx=(Math.random()*2-1)*0.9, vy=(Math.random()*1.5+0.9);
     b.style.left=x+'px'; b.style.top=y+'px'; lane.appendChild(b);
-    const g=0.22, fr=0.86, dt=16, R=3; // tuned for 6vmin ball
+    const g=0.22, fr=0.86, dt=16, R=3;
     const id=setInterval(()=>{
       vy+=g; x+=vx*dt/16; y+=vy*dt/16;
       if(x<R*2){x=R*2;vx*=-fr} if(x>W-R*2){x=W-R*2;vx*=-fr}
@@ -167,7 +158,7 @@ function spawnBalls(kind, n){
   }
 }
 
-/* Overlay show/hide for ~15s or until singer changes */
+/* Overlay */
 function showOverlay(kind){
   const ov=document.getElementById('overlay'),
         t=document.getElementById('ovTitle'),
@@ -220,7 +211,6 @@ async function tick(){
   const timerEl   = document.getElementById('timer');
   const tally     = document.getElementById('tally');
 
-  // Welcome view basics
   const publicOnly = (state.event?.venuePublic||'').trim();
   document.getElementById('venue').textContent = publicOnly ? publicOnly : '—';
   const kjName = state.event?.kj || '';
@@ -232,7 +222,6 @@ async function tick(){
   const result = state.voting?.lastResult || null;
   const hasCurrent = !!state.current?.id;
 
-  // Now/Prep panel (only in welcome)
   const nowBar = document.getElementById('nowBar');
   const nowName= document.getElementById('nowName');
   const prepEl = document.getElementById('prep');
@@ -256,17 +245,13 @@ async function tick(){
       prepEl.style.display='none';
     }
 
-    // Tally only for 15s after close
     tally.style.display = (t < tallyUntil) ? 'flex' : 'none';
-
-    // clear lanes after close
     ['#laneE','#laneA','#laneM'].forEach(sel=>{ const el=$(sel); if(el) el.innerHTML=''; });
     lastCounts = {encore:0,another:0,maybe:0};
     document.getElementById('cE').textContent = 0;
     document.getElementById('cA').textContent = 0;
     document.getElementById('cM').textContent = 0;
   } else {
-    // Voting fullscreen view
     welcome.style.display='none';
     voteView.style.display='block';
     whoEl.textContent = state.current?.name || '—';
@@ -275,7 +260,6 @@ async function tick(){
     const ca = state.voting?.counts?.another ?? 0;
     const cm = state.voting?.counts?.maybe   ?? 0;
 
-    // Spawn new balls as counts rise per lane
     if(ce>lastCounts.encore)  spawnBalls('encore',  ce-lastCounts.encore);
     if(ca>lastCounts.another) spawnBalls('another', ca-lastCounts.another);
     if(cm>lastCounts.maybe)   spawnBalls('maybe',   cm-lastCounts.maybe);
@@ -284,21 +268,18 @@ async function tick(){
     const ms=Math.max(0,(state.voting.endsAt||0)-t);
     timerEl.textContent=fmt(ms);
 
-    // live tally visible during open
     document.getElementById('cE').textContent = ce;
     document.getElementById('cA').textContent = ca;
     document.getElementById('cM').textContent = cm;
     tally.style.display='flex';
   }
 
-  // Transition: open -> closed
   if(prevOpen && !open){
-    tallyUntil = t + 15000; // show tally 15s after close
+    tallyUntil = t + 15000;
     if(result){ showOverlay(result); }
   }
   prevOpen = open;
 
-  // Hide overlay early if host sets a new singer
   hideOverlayIfSingerChanged();
 }
 function fmt(ms){ const s=Math.ceil(ms/1000); const m=Math.floor(s/60), r=s%60; return `${String(m).padStart(2,'0')}:${String(r).padStart(2,'0')}` }
@@ -306,7 +287,7 @@ function fmt(ms){ const s=Math.ceil(ms/1000); const m=Math.floor(s/60), r=s%60; 
 setInterval(tick, 1000);
 tick();
 
-// Wake-lock + heartbeat to keep TVs awake
+// Wake lock
 let wakeLock=null;
 async function requestWakeLock(){ try{ if('wakeLock' in navigator){ wakeLock = await navigator.wakeLock.request('screen'); } }catch(e){} }
 document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') requestWakeLock(); });
