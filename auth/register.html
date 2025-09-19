@@ -1,0 +1,118 @@
+<!doctype html>
+<meta charset="utf-8" />
+<title>Encore! • Register</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{--purple:#2F0658;--card:#0d1428;--soft:#151a34;--line:#2b3c62;--txt:#eef3ff;--muted:#aab2d6;--accent:#7aa2ff}
+  *{box-sizing:border-box} body{margin:0;background:var(--purple);color:var(--txt);font:15px/1.45 "Montserrat",system-ui}
+  .wrap{min-height:100svh;display:grid;place-items:center;padding:24px}
+  .card{width:min(760px,94vw);background:linear-gradient(180deg,var(--card),#0e0e22);border:1px solid var(--line);border-radius:16px;padding:20px 18px;box-shadow:0 10px 40px rgba(0,0,0,.4)}
+  h1{margin:0 0 6px;font-size:26px} .sub{color:var(--muted);margin:0 0 14px}
+  label{display:block;font-size:12px;color:var(--muted);margin:10px 0 6px}
+  input,select{width:100%;padding:12px;border-radius:12px;border:1px solid #223153;background:#0c1328;color:var(--txt)}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .btn{margin-top:14px;width:100%;padding:12px 14px;border:0;border-radius:12px;background:var(--accent);color:#061028;font-weight:800;cursor:pointer}
+  .foot{display:flex;justify-content:space-between;align-items:center;margin-top:10px;color:var(--muted)}
+  a{color:#a9d4ff} .check{display:flex;gap:8px;align-items:center;margin-top:10px}
+  .err{color:#ff8592;font-size:13px;margin-top:6px;display:none}
+</style>
+<div class="wrap">
+  <div class="card">
+    <h1>Create your account</h1>
+    <p class="sub">Use this for both <b>Hosts</b> and <b>Guests/Singers</b>. You can log in at any Encore! event.</p>
+
+    <form id="regForm">
+      <label>Full name</label>
+      <input id="name" required placeholder="Your name">
+
+      <div class="row">
+        <div>
+          <label>Email</label>
+          <input id="email" type="email" required placeholder="you@example.com">
+        </div>
+        <div>
+          <label>Password</label>
+          <input id="password" type="password" required placeholder="At least 6 characters" minlength="6">
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label>City</label>
+          <input id="city" placeholder="City">
+        </div>
+        <div>
+          <label>State</label>
+          <input id="state" placeholder="State">
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label>Year of birth</label>
+          <input id="yob" inputmode="numeric" placeholder="e.g. 1985">
+        </div>
+        <div>
+          <label>How did you hear about us?</label>
+          <select id="heard">
+            <option value="">Choose one…</option>
+            <option>Website</option>
+            <option>Facebook</option>
+            <option>Instagram</option>
+            <option>YouTube</option>
+            <option>Karaoke Company</option>
+            <option>Venue/Event</option>
+            <option>Friend</option>
+            <option>Other</option>
+          </select>
+        </div>
+      </div>
+
+      <label class="check">
+        <input id="isHost" type="checkbox"> I’m a Host (KJ)
+      </label>
+
+      <div id="err" class="err"></div>
+      <button class="btn" type="submit">Create account</button>
+    </form>
+
+    <div class="foot">
+      <div>Already have an account?</div>
+      <div><a href="/auth/login.html">Sign in</a></div>
+    </div>
+  </div>
+</div>
+
+<script src="/assets/js/auth.js"></script>
+<script>
+  const $=s=>document.querySelector(s);
+  const next = new URLSearchParams(location.search).get('next') || '/host/index.html';
+
+  $('#regForm').addEventListener('submit', (e)=>{
+    e.preventDefault();
+    const user = {
+      name: $('#name').value.trim(),
+      email: $('#email').value.trim().toLowerCase(),
+      password: $('#password').value,
+      city: $('#city').value.trim(),
+      state: $('#state').value.trim(),
+      yob: $('#yob').value.trim(),
+      heard: $('#heard').value,
+      role: $('#isHost').checked ? 'host' : 'guest',
+    };
+    const r = Auth.register(user);
+    if(!r.ok){ const el=$('#err'); el.textContent=r.error; el.style.display='block'; return; }
+    // Hosts: go to access code entry first; Guests: go to vote page
+    if(user.role==='host'){
+      location.href = '/auth/access.html?next='+encodeURIComponent('/host/index.html');
+    }else{
+      const back = new URLSearchParams(location.search).get('next') || '/vote/index.html';
+      location.href = back;
+    }
+  });
+</script>
+
+<!-- FILE: /auth/register.html -->
