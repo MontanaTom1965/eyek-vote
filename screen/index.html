@@ -7,8 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@600;800&display=swap" rel="stylesheet">
 
 <style>
-  :root{ --bg:#0f1526; --card:#0d1428; --line:#2b3c62; --txt:#eaf2ff; --muted:#b9c6ff;
-         --green:#25d366; --yellow:#f6c945; --red:#ff5e6c; --purple:#2F0658; }
+  :root{ --bg:#0f1526; --card:#0d1428; --line:#2b3c62; --txt:#eaf2ff; --muted:#b9c6ff; --green:#25d366; --yellow:#f6c945; --red:#ff5e6c; --purple:#2F0658; }
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--txt);font:20px system-ui,Segoe UI,Roboto,Helvetica,Arial}
   .wrap{display:grid;place-items:center;min-height:100svh;text-align:center;padding:4vmin;position:relative;overflow:hidden}
@@ -29,11 +28,11 @@
   .hud .right{font-family:"Bebas Neue"; font-size:10vmin; letter-spacing:.3vmin}
   .who{font-family:"Bebas Neue"; font-size:9vmin; margin-top:.4vmin}
 
-  .pit{position:relative; width:min(110vmin,92vw); height:44vmin; margin:10vmin auto 1.5vmin;
+  .pit{position:relative; width:min(110vmin,92vw); height:38vmin; margin:10vmin auto 1.5vmin;
         border-radius:22px; border:3px solid rgba(255,255,255,.22); background:rgba(0,0,0,.18); overflow:hidden; display:grid; grid-template-columns:1fr 1fr 1fr}
   .lane{position:relative; border-right:2px dashed rgba(255,255,255,.18)}
   .lane:last-child{border-right:none}
-  .ball{position:absolute; width:8.4vmin; height:8.4vmin; border-radius:50%; opacity:.95; box-shadow:0 0 12px rgba(0,0,0,.35)}
+  .ball{position:absolute; width:6vmin; height:6vmin; border-radius:50%; opacity:.95; box-shadow:0 0 12px rgba(0,0,0,.35)}
   .ball.g{background:#25d366} .ball.y{background:#f6c945} .ball.r{background:#ff5e6c}
 
   .tally{display:none; gap:3vmin; justify-content:center; margin-top:1vmin}
@@ -49,9 +48,8 @@
   #confetti{position:absolute; inset:0; pointer-events:none}
   .flashEncore{position:absolute; top:3vmin; left:50%; transform:translateX(-50%); background:#10152b; border:2px solid rgba(37,211,102,.5); color:#25d366; padding:1vmin 3vmin; border-radius:999px; font-weight:800; font-size:4vmin; box-shadow:0 10px 40px rgba(37,211,102,.35); display:none}
 
-  /* subtle heartbeat to keep panels “active” */
-  .heartbeat{animation:hb 6s infinite ease-in-out; }
-  @keyframes hb{ 0%,100%{opacity:1} 50%{opacity:.995} }
+  .heartbeat{animation:hb 6s infinite ease-in-out}
+  @keyframes hb{0%,100%{opacity:1}50%{opacity:.995}}
 </style>
 
 <div class="wrap heartbeat">
@@ -122,7 +120,7 @@ const confetti=(function(){
   let W=0,H=0, parts=[], running=false;
   function resize(){ W=cv.width=window.innerWidth; H=cv.height=window.innerHeight; }
   function rand(a,b){ return a+Math.random()*(b-a); }
-  function burst(n=280){
+  function burst(n=240){
     for(let i=0;i<n;i++){
       parts.push({x: W/2, y: H*0.25, r: rand(2,4), vx: rand(-6,6), vy: rand(-2,8), g: 0.18, life: rand(60,140), color: `hsl(${Math.floor(rand(0,360))} 90% 60%)`});
     }
@@ -156,9 +154,9 @@ function spawnBalls(kind, n){
 
   for(let i=0;i<n;i++){
     const b=document.createElement('div'); b.className='ball '+cls;
-    let x=16+Math.random()*(W-32), y=16, vx=(Math.random()*2-1)*0.9, vy=(Math.random()*1.5+0.9);
+    let x=12+Math.random()*(W-24), y=12, vx=(Math.random()*2-1)*0.9, vy=(Math.random()*1.5+0.9);
     b.style.left=x+'px'; b.style.top=y+'px'; lane.appendChild(b);
-    const g=0.22, fr=0.86, dt=16, R=4.2; // radius half-size
+    const g=0.22, fr=0.86, dt=16, R=3; // tuned for 6vmin ball
     const id=setInterval(()=>{
       vy+=g; x+=vx*dt/16; y+=vy*dt/16;
       if(x<R*2){x=R*2;vx*=-fr} if(x>W-R*2){x=W-R*2;vx*=-fr}
@@ -181,7 +179,7 @@ function showOverlay(kind){
     t.textContent='Encore!';
     t.style.color='#25d366';
     msg.textContent = `Congratulations, ${name}!`;
-    confetti.burst(300); showEncoreFlash();
+    confetti.burst(260); showEncoreFlash();
   } else if(kind==='another'){
     t.textContent='Another Shot!';
     t.style.color='#f6c945';
