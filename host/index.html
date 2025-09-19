@@ -245,7 +245,7 @@
     </div>
   </main>
 
-  <!-- RIGHT: QUICK LINKS + ENABLE SOUND -->
+  <!-- RIGHT: QUICK LINKS + ENABLE/DISABLE SOUND -->
   <aside class="right card sticky">
     <h2>Quick Links</h2>
     <div class="body">
@@ -409,9 +409,9 @@ function render(){
   [venue,venuePublic,eventDate,kj,hostName,pin].forEach(el=>el.disabled=disabled);
 
   document.getElementById('lockEvent').textContent = disabled ? 'Unlock' : 'Lock';
-  document.getElementById('setupPanel').open = !disabled;
+  document.getElementById('setupPanel').open = !disabled; // collapse when locked
 
-  // rotation
+  // rotation list
   singerList.innerHTML='';
   (state.singers||[]).forEach(s=>{
     const row=document.createElement('div'); row.className='pill';
@@ -434,7 +434,9 @@ function render(){
     if(ce>lastCounts.encore)  spawnMini('#miniE','encore',  ce-lastCounts.encore);
     if(ca>lastCounts.another) spawnMini('#miniA','another', ca-lastCounts.another);
     if(cm>lastCounts.maybe)   spawnMini('#miniM','maybe',   cm-lastCounts.maybe);
-  } else { ['#miniE','#miniA','#miniM'].forEach(sel=>$(sel).innerHTML=''); }
+  } else {
+    ['#miniE','#miniA','#miniM'].forEach(sel=>$(sel).innerHTML='');
+  }
   lastCounts = {encore:ce, another:ca, maybe:cm};
 
   const tNow = nowMs();
@@ -520,6 +522,7 @@ async function logPerformance(action){
 }
 function setCurrent(id){
   const s = state.singers.find(x=>x.id===id); if(!s) return;
+  // Reset vote counts & set new current
   state.voting = { open:false, prepUntil:0, endsAt:0, extendCount:0,
                    counts:{encore:0,another:0,maybe:0}, lastResult:null, voters:{} };
   lastCounts = {encore:0,another:0,maybe:0};
@@ -579,6 +582,10 @@ async function concludeVoting(){
     state.winners[winner].unshift({when:new Date().toISOString(), name:state.current.name, song:state.current.songArtist||''});
     state.winners[winner]=state.winners[winner].slice(0,50);
   }
+
+  // Clear current singer after results (per your request)
+  state.current = { id:null, name:'', songArtist:'' };
+
   await postState(); announce(winner);
 
   // Sounds
@@ -601,7 +608,7 @@ function loop(){
       state.voting.prepUntil = 0;
       state.voting.endsAt = t + 30000;
       await postState();
-      sfx.startLoop(); // robust start
+      sfx.startLoop(); // start loop when voting opens
     }
 
     if(state?.voting?.open && t>=state.voting.endsAt){
@@ -613,7 +620,7 @@ function loop(){
   }, 1000);
 }
 
-/* Audio: host-only with unlock pulse */
+/* Audio: host-only with Enable/Disable toggle */
 const sfx = (function(){
   let enabled=false;
 
@@ -622,7 +629,7 @@ const sfx = (function(){
   const aLoser  = new Audio('/assets/loser.wav');       aLoser.preload='auto';
   let triedWavFallback=false;
 
-  const enableBtn = document.getElementById('enableSound');
+  const btn = document.getElementById('enableSound');
   const statusEl  = document.getElementById('soundStatus');
   const loopEl    = document.getElementById('loopStatus');
 
@@ -636,30 +643,31 @@ const sfx = (function(){
   async function enable(){
     const ok = waPing() | await warm(aEncore) | await warm(aLoser) | await warm(aOpen);
     enabled = !!ok; setStatus();
-    if(enabled){ enableBtn.classList.remove('callout'); }
+    if(enabled){
+      btn.classList.remove('callout','start'); btn.classList.add('end');
+      btn.textContent='Disable sound';
+    }
     return enabled;
   }
+  function disable(){
+    enabled=false; setStatus(); stopOpen();
+    btn.classList.remove('end'); btn.classList.add('start','callout');
+    btn.textContent='Enable sound';
+  }
 
-  enableBtn.addEventListener('click', async ()=>{
-    const ok = await enable();
-    if(ok){
-      try{ aOpen.currentTime=0; await aOpen.play(); setLoop(true); setTimeout(()=>{ try{ aOpen.pause(); aOpen.currentTime=0; setLoop(false);}catch{} }, 500); }
-      catch{
-        if(!triedWavFallback){
-          triedWavFallback=true; aOpen.src='/assets/voting_open.wav';
-          try{ await aOpen.play(); setLoop(true); setTimeout(()=>{ try{ aOpen.pause(); aOpen.currentTime=0; setLoop(false);}catch{} }, 500);}catch{}
-        }
-      }
-    }
+  btn.addEventListener('click', async ()=>{
+    if(!enabled){ await enable(); try{ aOpen.currentTime=0; await aOpen.play(); setLoop(true); setTimeout(()=>{ try{ aOpen.pause(); aOpen.currentTime=0; setLoop(false);}catch{} }, 400); }catch{ if(!triedWavFallback){ triedWavFallback=true; aOpen.src='/assets/voting_open.wav'; try{ await aOpen.play(); setLoop(true); setTimeout(()=>{ try{ aOpen.pause(); aOpen.currentTime=0; setLoop(false);}catch{} }, 400);}catch{} } } }
+    else{ disable(); }
   });
 
-  // backup: if they interact anywhere
-  function firstGesture(){ enable(); window.removeEventListener('pointerdown', firstGesture, {passive:true}); }
+  // backup: enable on first gesture if they forget to click
+  function firstGesture(){ if(!enabled) enable(); window.removeEventListener('pointerdown', firstGesture, {passive:true}); }
   window.addEventListener('pointerdown', firstGesture, {passive:true});
 
   function safePlay(a){ if(!enabled) return; a.play().then(()=>setLoop(!a.paused)).catch(()=>setLoop(false)); }
-  function safeStop(a){ try{ a.pause(); a.currentTime=0; setLoop(false);}catch{} }
+  function stopOpen(){ try{ aOpen.pause(); aOpen.currentTime=0; setLoop(false);}catch{} }
 
+  // keepalive for loop
   setInterval(async ()=>{
     if(!enabled) return;
     if(state?.voting?.open){
@@ -678,8 +686,7 @@ const sfx = (function(){
   document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') ensureLoop(); });
 
   async function ensureLoop(){
-    if(!enabled) return setLoop(false);
-    if(!state?.voting?.open) return setLoop(false);
+    if(!enabled || !state?.voting?.open) return setLoop(false);
     if(aOpen.paused){
       try{ await aOpen.play(); setLoop(true); }
       catch{
@@ -693,7 +700,7 @@ const sfx = (function(){
 
   return {
     startLoop(){ if(!enabled) return; aOpen.currentTime=0; aOpen.play().then(()=>setLoop(true)).catch(()=>setLoop(false)); },
-    stopOpen(){ safeStop(aOpen); },
+    stopOpen,
     ensureLoop,
     playEncore(){ safePlay(aEncore); },
     playLoser(){ safePlay(aLoser); }
@@ -701,9 +708,9 @@ const sfx = (function(){
 })();
 
 // Sound test buttons
-document.getElementById('play_open').onclick   = async ()=>{ await sfx.enable?.(); sfx.startLoop(); setTimeout(()=>sfx.stopOpen(), 900); };
-document.getElementById('play_encore').onclick = async ()=>{ await sfx.enable?.(); sfx.playEncore(); };
-document.getElementById('play_loser').onclick  = async ()=>{ await sfx.enable?.(); sfx.playLoser(); };
+document.getElementById('play_open').onclick   = async ()=>{ document.getElementById('enableSound').click(); setTimeout(()=>{ sfx.startLoop(); setTimeout(()=>sfx.stopOpen(), 900); }, 50); };
+document.getElementById('play_encore').onclick = async ()=>{ document.getElementById('enableSound').click(); setTimeout(()=>sfx.playEncore(),50); };
+document.getElementById('play_loser').onclick  = async ()=>{ document.getElementById('enableSound').click(); setTimeout(()=>sfx.playLoser(),50); };
 
 (async function init(){ await fetchState(); render(); loop(); })();
 </script>
