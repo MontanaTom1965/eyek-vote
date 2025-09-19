@@ -8,29 +8,29 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700;800&display=swap" rel="stylesheet">
 <style>
-  :root{--purple:#2F0658;--bg:#0f1526;--card:#0d1428;--line:#2b3c62;--txt:#eef3ff;--muted:#aab2d6;--green:#25d366;--yellow:#f6c945;--red:#ff5e6c}
+  :root{--bg:#2F0658;--card:#1b0930;--line:#5b3d87;--txt:#eef3ff;--muted:#cdbff0;--green:#25d366;--yellow:#f6c945;--red:#ff5e6c}
   *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--txt);font:16px/1.45 "Montserrat",system-ui}
   .wrap{min-height:100svh;display:grid;place-items:center;padding:18px}
-  .card{width:min(780px,95vw);background:linear-gradient(180deg,var(--card),#0e0e22);border:1px solid var(--line);border-radius:16px;box-shadow:0 12px 42px rgba(0,0,0,.4);padding:16px}
+  .card{width:min(780px,95vw);background:linear-gradient(180deg,var(--card),#16072a);border:1px solid var(--line);border-radius:16px;box-shadow:0 12px 42px rgba(0,0,0,.4);padding:16px}
   h1{margin:6px 0 4px;font-weight:900}
   .muted{color:var(--muted)}
   .row{display:grid;grid-template-columns:1fr auto;gap:10px}
-  input{width:100%;padding:12px;border-radius:12px;border:1px solid #223153;background:#0c1328;color:var(--txt)}
-  .btn{padding:12px;border:1px solid #2f4478;background:#19264a;color:#eaf2ff;border-radius:10px;cursor:pointer}
-  .btn.pri{background:#7aa2ff;color:#061028;border:0;font-weight:800}
+  input{width:100%;padding:12px;border-radius:12px;border:1px solid #6f52a8;background:#220d3f;color:var(--txt)}
+  .btn{padding:12px;border:1px solid #7a5cc0;background:#3a2166;color:#eaf2ff;border-radius:10px;cursor:pointer}
+  .btn.pri{background:#b692ff;color:#1a1030;border:0;font-weight:800}
   .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:12px}
-  .option{padding:16px;border-radius:14px;text-align:center;font-weight:800;font-size:18px;cursor:pointer;border:2px solid #2a3a6b}
-  .g{background:rgba(37,211,102,.12); border-color:rgba(37,211,102,.5)} 
-  .y{background:rgba(246,201,69,.12); border-color:rgba(246,201,69,.5)}
-  .r{background:rgba(255,94,108,.12);  border-color:rgba(255,94,108,.5)}
+  .option{padding:16px;border-radius:14px;text-align:center;font-weight:800;font-size:18px;cursor:pointer;border:2px solid #6f52a8}
+  .g{background:rgba(37,211,102,.12); border-color:rgba(37,211,102,.6)} 
+  .y{background:rgba(246,201,69,.12); border-color:rgba(246,201,69,.6)}
+  .r{background:rgba(255,94,108,.12);  border-color:rgba(255,94,108,.7)}
   .disabled{opacity:.5;pointer-events:none}
   .tally{display:flex;gap:10px;justify-content:center;margin-top:12px}
-  .chip{padding:10px 14px;background:#0a1124;border:1px solid #223153;border-radius:999px}
+  .chip{padding:10px 14px;background:#1c0b34;border:1px solid #6f52a8;border-radius:999px}
   .header{display:flex;justify-content:space-between;align-items:center;gap:10px}
   .title{font-size:20px}
   .timer{font-size:22px;font-weight:900}
-  .strip{display:none;background:#192349;color:#eaf2ff;padding:10px 14px;font:14px/1.2 system-ui;margin-bottom:10px;border-radius:10px}
-  a{color:#a9d4ff}
+  .strip{display:none;background:#3a2166;color:#eaf2ff;padding:10px 14px;font:14px/1.2 system-ui;margin-bottom:10px;border-radius:10px}
+  a{color:#d8c7ff}
 </style>
 </head>
 <body>
@@ -74,7 +74,6 @@
   </div>
 </div>
 
-<!-- DEMO AUTH (guard) -->
 <script src="/assets/js/auth.js"></script>
 <script>
 (function guardVote(){
@@ -84,7 +83,6 @@
     if (!me) {
       const next = encodeURIComponent('/vote/index.html');
       document.getElementById('signinStrip').style.display = 'block';
-      // Also redirect automatically:
       location.href = '/auth/login.html?next=' + next;
       return;
     }
@@ -130,7 +128,6 @@ function render(){
   const cm=state?.voting?.counts?.maybe   ?? 0;
   $('#cE').textContent=ce; $('#cA').textContent=ca; $('#cM').textContent=cm;
 
-  // buttons enabled only if joined + open
   const enabled = joined && open;
   ['encore','another','maybe'].forEach(k=>{
     const el = $('#opt_'+k);
