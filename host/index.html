@@ -9,29 +9,29 @@
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700;800&display=swap" rel="stylesheet">
 <style>
   :root{
-    --purple:#2F0658; --bg:#2F0658; --card:#1b0930; --soft:#251142; --line:#5b3d87; --txt:#eef3ff; --muted:#cdbff0; --accent:#b692ff;
+    --purple:#2F0658; --bg:#2F0658; --card:#1b0930; --card2:#16072a; --line:#6f52a8; --txt:#eef3ff; --muted:#cdbff0; --accent:#b692ff;
     --green:#25d366; --yellow:#f6c945; --red:#ff5e6c;
   }
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--txt);font:15px/1.45 "Montserrat",system-ui}
   .page{min-height:100svh;display:grid;grid-template-columns:320px 1fr 280px;gap:16px;padding:18px}
-  .card{background:linear-gradient(180deg,var(--card),#16072a);border:1px solid var(--line);border-radius:16px;box-shadow:0 10px 40px rgba(0,0,0,.35)}
+  .card{background:linear-gradient(180deg,var(--card),var(--card2));border:1px solid var(--line);border-radius:16px;box-shadow:0 10px 40px rgba(0,0,0,.35)}
   .left,.mid,.right{min-height:0}
   .card h2{margin:0 0 10px;padding:14px 16px 0;font-weight:800}
   .body{padding:12px 16px 16px}
   .muted{color:var(--muted)}
   input,select,button{font:inherit}
   input[type="text"],input[type="date"],input[type="password"],input[type="number"],datalist{
-    width:100%;padding:12px;border-radius:12px;border:1px solid #6f52a8;background:#220d3f;color:var(--txt)
+    width:100%;padding:12px;border-radius:12px;border:1px solid var(--line);background:#220d3f;color:var(--txt)
   }
   .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-  .btn{padding:10px 12px;border:1px solid #7a5cc0;background:#3a2166;color:#eaf2ff;border-radius:10px;cursor:pointer}
+  .btn{padding:10px 12px;border:1px solid var(--line);background:#3a2166;color:#eaf2ff;border-radius:10px;cursor:pointer}
   .btn.pri{background:var(--accent);color:#1a1030;border:0;font-weight:800}
   .btn.warn{background:#ff8a6b;border:0;color:#1a0d0d}
-  .btn.ghost{background:transparent;border:1px dashed #7a5cc0}
+  .btn.ghost{background:transparent;border:1px dashed var(--line)}
   .stack{display:flex;gap:8px;flex-wrap:wrap}
-  .pill{display:flex;align-items:center;gap:10px;background:#220d3f;border:1px solid #6f52a8;border-radius:12px;padding:10px 12px}
-  .dot{width:10px;height:10px;border-radius:999px;background:#999}
+  .pill{display:flex;align-items:center;gap:10px;background:#220d3f;border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:8px}
+  .dot{width:10px;height:10px;border-radius:999px;background:#999;flex:0 0 10px}
   .dot.green{background:var(--green)} .dot.yellow{background:var(--yellow)}
   .kv{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   .sectionTitle{font-size:18px;font-weight:900;margin:6px 0 10px}
@@ -39,14 +39,14 @@
   .sublabel{font-size:12px;color:#e9dbff;margin-top:6px}
   .lg{font-size:22px}
   .xl{font-size:28px}
-  .currentBox{background:#220d3f;border:1px solid #6f52a8;border-radius:14px;padding:12px;margin-top:8px}
+  .currentBox{background:#220d3f;border:1px solid var(--line);border-radius:14px;padding:12px;margin-top:8px}
   .currentBox .big{font-weight:900;font-size:30px}
-  .mini{height:80px;border-radius:10px;border:1px dashed #6f52a8;background:#1c0b34;position:relative;overflow:hidden}
+  .mini{height:80px;border-radius:10px;border:1px dashed var(--line);background:#1c0b34;position:relative;overflow:hidden}
   .mdot{position:absolute;width:8px;height:8px;border-radius:50%}
   .mdot.g{background:var(--green)} .mdot.y{background:var(--yellow)} .mdot.r{background:var(--red)}
   .miniRow{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
   .miniLbl{font-size:12px;color:#e9dbff;margin:6px 0 4px}
-  .resultTag{padding:6px 10px;border-radius:999px;border:1px solid #6f52a8;display:inline-block;background:#200a3a}
+  .resultTag{padding:6px 10px;border-radius:999px;border:1px solid var(--line);display:inline-block;background:#200a3a}
   .r-encore{border-color:rgba(37,211,102,.7);color:var(--green)}
   .r-another{border-color:rgba(246,201,69,.7);color:var(--yellow)}
   .r-maybe{border-color:rgba(255,94,108,.8);color:var(--red)}
@@ -54,6 +54,13 @@
   a.link{color:#d8c7ff;text-decoration:none}
   .tiny{font-size:12px;color:#d9cdff}
   .sticky{position:sticky;top:16px}
+
+  /* collapsible details */
+  details.setup{border-radius:14px;border:1px solid var(--line);background:linear-gradient(180deg,#231043,#1c0c37);overflow:hidden}
+  details.setup > summary{list-style:none;padding:14px 16px;cursor:pointer;font-weight:800;background:rgba(255,255,255,.03)}
+  details.setup[open] > summary{border-bottom:1px solid #533b87}
+  details.setup .body{padding:12px 16px 16px}
+  .right .tinyPad{margin-top:6px}
 </style>
 </head>
 <body>
@@ -65,131 +72,137 @@
     <div class="body" id="singerList"></div>
   </aside>
 
-  <!-- MIDDLE: SHOW CONTROL -->
-  <main class="mid card">
-    <h2>Event / KJ Setup</h2>
-    <div class="body">
-      <div class="row">
-        <div>
-          <div class="sublabel">Venue (Internal) – e.g. “Venue - City”</div>
-          <input id="venue" list="venuesList" placeholder="Venue - City" />
-          <datalist id="venuesList"></datalist>
-        </div>
-        <div>
-          <div class="sublabel">Public Venue Name (Screen) – e.g. “the Venue!”</div>
-          <input id="venuePublic" list="venuesPublicList" placeholder="Public Venue Name" />
-          <datalist id="venuesPublicList"></datalist>
-        </div>
-      </div>
-
-      <div class="row" style="margin-top:8px">
-        <div>
-          <div class="sublabel">KJ Company</div>
-          <input id="kj" list="kjsList" placeholder="Karaoke Company" />
-          <datalist id="kjsList"></datalist>
-        </div>
-        <div>
-          <div class="sublabel">KJ Host Name</div>
-          <input id="hostName" placeholder="KJ Host Name" />
-        </div>
-      </div>
-
-      <div class="row" style="margin-top:8px">
-        <div>
-          <div class="sublabel">Event Date</div>
-          <input id="eventDate" type="date" />
-        </div>
-        <div>
-          <div class="sublabel">Event PIN</div>
-          <div class="row" style="grid-template-columns:1fr auto;gap:8px">
-            <input id="pin" type="password" inputmode="numeric" placeholder="4–6 digits" />
-            <button id="togglePin" class="btn">Show</button>
-          </div>
-          <div id="pinSaved" class="tiny" style="height:16px;margin-top:4px"></div>
-        </div>
-      </div>
-
-      <div class="stack" style="margin-top:10px">
-        <button id="saveEvent" class="btn pri">Save</button>
-        <button id="lockEvent" class="btn">Lock</button>
-        <button id="resetEvent" class="btn warn">Reset</button>
-        <div id="eventSavedMsg" class="tiny"></div>
-      </div>
-
-      <div class="divider"></div>
-
-      <div class="sectionTitle lg">Show Control</div>
-
-      <div class="row">
-        <div>
-          <div class="sublabel">Singer Name</div>
-          <input id="singerName" placeholder="e.g., Lisa H." />
-        </div>
-        <div>
-          <div class="sublabel">Song / Artist</div>
-          <input id="songArtist" placeholder="e.g., Lovin' Every Minute of It — Loverboy" />
-        </div>
-      </div>
-
-      <div class="stack" style="margin-top:8px">
-        <button id="addSinger" class="btn pri">Add Singer</button>
-      </div>
-
-      <div class="currentBox">
-        <div class="sectionTitle" style="margin-top:0">Current & Voting</div>
-        <div class="big" id="currentName">—</div>
-        <div style="margin-top:6px">
-          <div class="sublabel">Now Singing — Song / Artist (for record)</div>
-          <input id="currentSongArtist" placeholder="Type song — artist" />
-        </div>
-
-        <div class="kv" style="margin-top:10px;align-items:center">
+  <!-- MIDDLE: SHOW CONTROL + COLLAPSIBLE SETUP -->
+  <main class="mid">
+    <details class="setup" id="setupPanel" open>
+      <summary>Event / KJ Setup</summary>
+      <div class="body">
+        <div class="row">
           <div>
-            <div class="sublabel">Timer</div>
-            <div id="timer" class="xl">00:00</div>
-            <div id="resultTag" class="resultTag" style="margin-top:6px">—</div>
+            <div class="sublabel">Venue (Internal) – e.g. “Venue - City”</div>
+            <input id="venue" list="venuesList" placeholder="Venue - City" />
+            <datalist id="venuesList"></datalist>
           </div>
           <div>
-            <div class="sublabel">Vote Controls</div>
-            <div class="stack">
-              <button id="startVote" class="btn pri">Start (5s prep → 30s)</button>
-              <button id="extendVote" class="btn">Extend +15s</button>
-              <button id="endVote" class="btn warn">End</button>
+            <div class="sublabel">Public Venue Name (Screen) – e.g. “the Venue!”</div>
+            <input id="venuePublic" list="venuesPublicList" placeholder="Public Venue Name" />
+            <datalist id="venuesPublicList"></datalist>
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:8px">
+          <div>
+            <div class="sublabel">KJ Company</div>
+            <input id="kj" list="kjsList" placeholder="Karaoke Company" />
+            <datalist id="kjsList"></datalist>
+          </div>
+          <div>
+            <div class="sublabel">KJ Host Name</div>
+            <input id="hostName" placeholder="KJ Host Name" />
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:8px">
+          <div>
+            <div class="sublabel">Event Date</div>
+            <input id="eventDate" type="date" />
+          </div>
+          <div>
+            <div class="sublabel">Event PIN</div>
+            <div class="row" style="grid-template-columns:1fr auto;gap:8px">
+              <input id="pin" type="password" inputmode="numeric" placeholder="4–6 digits" />
+              <button id="togglePin" class="btn">Show</button>
             </div>
-          </div>
-        </div>
-
-        <div class="miniRow" style="margin-top:8px">
-          <div>
-            <div class="miniLbl">Encore</div>
-            <div id="miniE" class="mini"></div>
-          </div>
-          <div>
-            <div class="miniLbl">Another Shot</div>
-            <div id="miniA" class="mini"></div>
-          </div>
-          <div>
-            <div class="miniLbl">Maybe Next Time</div>
-            <div id="miniM" class="mini"></div>
+            <div id="pinSaved" class="tiny" style="height:16px;margin-top:4px"></div>
           </div>
         </div>
 
         <div class="stack" style="margin-top:10px">
-          <button id="hv_encore" class="btn">Host Vote: Encore</button>
-          <button id="hv_another" class="btn">Host Vote: Another</button>
-          <button id="hv_maybe" class="btn">Host Vote: Maybe</button>
+          <button id="saveEvent" class="btn pri">Save</button>
+          <button id="lockEvent" class="btn">Lock</button>
+          <button id="resetEvent" class="btn warn">Reset</button>
+          <div id="eventSavedMsg" class="tiny"></div>
+        </div>
+      </div>
+    </details>
+
+    <div class="card" style="margin-top:16px">
+      <h2>Show Control</h2>
+      <div class="body">
+        <div class="row">
+          <div>
+            <div class="sublabel">Singer Name</div>
+            <input id="singerName" placeholder="e.g., Lisa H." />
+          </div>
+          <div>
+            <div class="sublabel">Song / Artist</div>
+            <input id="songArtist" placeholder="e.g., Lovin' Every Minute of It — Loverboy" />
+          </div>
         </div>
 
-        <div class="stack" style="margin-top:12px">
-          <div class="pill">Encore: <b id="c_encore" style="margin-left:6px">0</b></div>
-          <div class="pill">Another: <b id="c_another" style="margin-left:6px">0</b></div>
-          <div class="pill">Maybe: <b id="c_maybe" style="margin-left:6px">0</b></div>
+        <div class="stack" style="margin-top:8px">
+          <button id="addSinger" class="btn pri">Add Singer</button>
+        </div>
+
+        <div class="currentBox">
+          <div class="sectionTitle" style="margin-top:0">Current & Voting</div>
+          <div class="big" id="currentName">—</div>
+          <div style="margin-top:6px">
+            <div class="sublabel">Now Singing — Song / Artist (for record)</div>
+            <input id="currentSongArtist" placeholder="Type song — artist" />
+          </div>
+
+          <div class="kv" style="margin-top:10px;align-items:center">
+            <div>
+              <div class="sublabel">Timer</div>
+              <div id="timer" class="xl">00:00</div>
+              <div id="resultTag" class="resultTag" style="margin-top:6px">—</div>
+            </div>
+            <div>
+              <div class="sublabel">Vote Controls</div>
+              <div class="stack">
+                <button id="startVote" class="btn pri">Start (5s prep → 30s)</button>
+                <button id="extendVote" class="btn">Extend +15s</button>
+                <button id="endVote" class="btn warn">End</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="sectionTitle">Host Voting</div>
+          <div class="stack" style="margin-top:6px">
+            <button id="hv_encore" class="btn">Host Vote: Encore</button>
+            <button id="hv_another" class="btn">Host Vote: Another</button>
+            <button id="hv_maybe" class="btn">Host Vote: Maybe</button>
+          </div>
+
+          <div class="miniRow" style="margin-top:12px">
+            <div>
+              <div class="miniLbl">Encore</div>
+              <div id="miniE" class="mini"></div>
+            </div>
+            <div>
+              <div class="miniLbl">Another Shot</div>
+              <div id="miniA" class="mini"></div>
+            </div>
+            <div>
+              <div class="miniLbl">Maybe Next Time</div>
+              <div id="miniM" class="mini"></div>
+            </div>
+          </div>
+
+          <div class="stack" style="margin-top:12px">
+            <div class="pill">Encore: <b id="c_encore" style="margin-left:6px">0</b></div>
+            <div class="pill">Another: <b id="c_another" style="margin-left:6px">0</b></div>
+            <div class="pill">Maybe: <b id="c_maybe" style="margin-left:6px">0</b></div>
+          </div>
         </div>
       </div>
     </div>
   </main>
 
-  <!-- RIGHT: QUICK LINKS + SOUND -->
+  <!-- RIGHT: QUICK LINKS + ENABLE SOUND -->
   <aside class="right card sticky">
     <h2>Quick Links</h2>
     <div class="body">
@@ -201,7 +214,7 @@
       </div>
       <div class="divider"></div>
       <button id="enableSound" class="btn ghost" style="width:100%">Enable sound</button>
-      <div class="tiny" id="soundStatus" style="margin-top:6px">Sound: <b>off</b></div>
+      <div class="tiny tinyPad" id="soundStatus">Sound: <b>off</b></div>
       <div class="tiny" id="loopStatus">Loop: <b>stopped</b></div>
       <div class="divider"></div>
       <div class="tiny"><b>Sound test</b></div>
@@ -246,7 +259,7 @@ function smoothOffset(observed){ if(!isFinite(observed)) return; clockOffset = 0
 
 let state=null, poll=null;
 
-// overwrite guard + pause polling while typing
+// pause polling while typing / choosing
 const lastEdit = Object.create(null);
 const RECENT_MS = 12000;
 function markEdit(id){ lastEdit[id] = Date.now(); }
@@ -259,6 +272,7 @@ let suppressEventRenderUntil = 0;
 function suppressEventRender(ms=1200){ suppressEventRenderUntil = Date.now() + ms; }
 function mayRenderEventInputs(){ return Date.now() > suppressEventRenderUntil; }
 
+// inputs
 const venue=$('#venue'), venuePublic=$('#venuePublic'), eventDate=$('#eventDate'), kj=$('#kj'), hostName=$('#hostName'), pin=$('#pin');
 const venuesList=document.getElementById('venuesList'), kjsList=document.getElementById('kjsList');
 const singerName=$('#singerName'), songArtist=$('#songArtist');
@@ -348,9 +362,11 @@ function render(){
   if (canPaint && canUpdateField(kj,'kj'))                      kj.value          = state.event.kj || '';
   if (canPaint && canUpdateField(hostName,'hostName'))          hostName.value    = state.event.hostName || '';
   if (canPaint && canUpdateField(pin,'pin'))                    pin.value         = state.event.pin || '';
-  [venue,venuePublic,eventDate,kj,hostName,pin].forEach(el=>el.disabled=state.event.locked);
+  const disabled = state.event.locked;
+  [venue,venuePublic,eventDate,kj,hostName,pin].forEach(el=>el.disabled=disabled);
 
-  document.getElementById('lockEvent').textContent = state.event.locked ? 'Unlock' : 'Lock';
+  document.getElementById('lockEvent').textContent = disabled ? 'Unlock' : 'Lock';
+  document.getElementById('setupPanel').open = !disabled; // collapse when locked
 
   // rotation list
   singerList.innerHTML='';
@@ -433,7 +449,10 @@ document.getElementById('saveEvent').onclick = async ()=>{
   pushLocalList('kj', kj.value);
   await postState(); const m=document.getElementById('eventSavedMsg'); m.textContent='Saved!'; setTimeout(()=>m.textContent='',1400);
 };
-document.getElementById('lockEvent').onclick = async ()=>{ state.event.locked = !state.event.locked; await postState(); };
+document.getElementById('lockEvent').onclick = async ()=>{
+  state.event.locked = !state.event.locked;
+  await postState();
+};
 document.getElementById('resetEvent').onclick = async ()=>{
   if(state.event.locked){ alert('Unlock to reset.'); return;}
   if(!confirm('Reset this event? This clears singers & votes.')) return;
@@ -489,7 +508,7 @@ document.getElementById('startVote').onclick = async ()=>{
 document.getElementById('extendVote').onclick = async ()=>{ if(!state.voting.open) return; state.voting.endsAt+=15000; state.voting.extendCount++; await postState(); };
 document.getElementById('endVote').onclick = async ()=>{ await concludeVoting(); };
 
-/* Host vote -> server */
+/* Host “quick” vote */
 function deviceId(){ let id=localStorage.getItem('eyek_device_id'); if(!id){ id=crypto.randomUUID(); localStorage.setItem('eyek_device_id', id);} return id; }
 async function hostVote(kind){
   if(!state?.voting?.open) return;
@@ -553,7 +572,7 @@ function loop(){
   }, 1000);
 }
 
-/* Audio: host-only with extra keepalive */
+/* Audio: host-only with keepalive */
 const sfx = (function(){
   let enabled=false;
   const aOpen   = new Audio('/assets/voting_open.mp3'); aOpen.loop = true; aOpen.preload='auto';
@@ -575,8 +594,7 @@ const sfx = (function(){
   }
   document.getElementById('enableSound').addEventListener('click', async ()=>{
     await unlockAll();
-    // Give immediate feedback: play the loop for ~1s then stop
-    try{ aOpen.currentTime=0; await aOpen.play(); setLoop(true); setTimeout(()=>{ try{ aOpen.pause(); aOpen.currentTime=0; setLoop(false);}catch{} }, 1000); }catch{}
+    try{ aOpen.currentTime=0; await aOpen.play(); setLoop(true); setTimeout(()=>{ try{ aOpen.pause(); aOpen.currentTime=0; setLoop(false);}catch{} }, 800); }catch{}
   });
   function firstGesture(){ unlockAll(); window.removeEventListener('pointerdown', firstGesture, {passive:true}); }
   window.addEventListener('pointerdown', firstGesture, {passive:true});
@@ -584,7 +602,7 @@ const sfx = (function(){
   function safePlay(a){ if(!enabled) return; a.play().then(()=>setLoop(!a.paused)).catch(()=>setLoop(false)); }
   function safeStop(a){ try{ a.pause(); a.currentTime=0; setLoop(false);}catch{} }
 
-  // Extra keepalive
+  // Keep the loop alive while open
   setInterval(()=>{ 
     if(!enabled) return;
     if(state?.voting?.open){
@@ -611,10 +629,10 @@ const sfx = (function(){
   };
 })();
 
-// quick test buttons
-document.getElementById('play_open').onclick  = ()=>{ /* manual test */ };
-document.getElementById('play_encore').onclick= ()=>{ /* manual test */ };
-document.getElementById('play_loser').onclick = ()=>{ /* manual test */ };
+// test buttons
+document.getElementById('play_open').onclick  = ()=>{};
+document.getElementById('play_encore').onclick= ()=>{};
+document.getElementById('play_loser').onclick = ()=>{};
 
 (async function init(){ await fetchState(); render(); loop(); })();
 </script>
