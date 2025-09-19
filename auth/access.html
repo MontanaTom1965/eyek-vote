@@ -1,0 +1,51 @@
+<!doctype html>
+<meta charset="utf-8" />
+<title>Encore! • Access Code</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{--purple:#2F0658;--card:#0d1428;--soft:#151a34;--line:#2b3c62;--txt:#eef3ff;--muted:#aab2d6;--accent:#7aa2ff;--good:#25d366}
+  *{box-sizing:border-box} body{margin:0;background:var(--purple);color:var(--txt);font:15px/1.45 "Montserrat",system-ui}
+  .wrap{min-height:100svh;display:grid;place-items:center;padding:24px}
+  .card{width:min(560px,94vw);background:linear-gradient(180deg,var(--card),#0e0e22);border:1px solid var(--line);border-radius:16px;padding:20px 18px;box-shadow:0 10px 40px rgba(0,0,0,.4)}
+  h1{margin:0 0 6px;font-size:26px} .sub{color:var(--muted);margin:0 0 14px}
+  label{display:block;font-size:12px;color:var(--muted);margin:10px 0 6px}
+  input{width:100%;padding:12px;border-radius:12px;border:1px solid #223153;background:#0c1328;color:var(--txt)}
+  .btn{margin-top:14px;width:100%;padding:12px 14px;border:0;border-radius:12px;background:var(--accent);color:#061028;font-weight:800;cursor:pointer}
+  .ok{display:none;margin-top:8px;color:var(--good);font-weight:700}
+  .err{color:#ff8592;font-size:13px;margin-top:6px;display:none}
+</style>
+<div class="wrap">
+  <div class="card">
+    <h1>Enter company access code</h1>
+    <p class="sub">For the demo, valid codes are: <b>1234</b>, <b>5867</b>, <b>0000</b>.</p>
+    <form id="f">
+      <label>Access code</label>
+      <input id="code" placeholder="Enter code (e.g., 1234)" autofocus>
+      <div id="ok" class="ok">Code accepted. Redirecting…</div>
+      <div id="err" class="err"></div>
+      <button class="btn" type="submit">Continue</button>
+    </form>
+  </div>
+</div>
+
+<script src="/assets/js/auth.js"></script>
+<script>
+  const $=s=>document.querySelector(s);
+  const next = new URLSearchParams(location.search).get('next') || '/host/index.html';
+
+  if(!Auth.current() || Auth.current().role!=='host'){ location.href='/auth/login.html?next='+encodeURIComponent(next); }
+
+  $('#f').addEventListener('submit', (e)=>{
+    e.preventDefault();
+    const code = $('#code').value.trim();
+    const r = Auth.applyAccessCode(code); // validates against 1234, 5867, 0000 (demo)
+    if(!r.ok){ const el=$('#err'); el.textContent=r.error; el.style.display='block'; return; }
+    $('#ok').style.display='block';
+    setTimeout(()=>location.href=next, 700);
+  });
+</script>
+
+<!-- FILE: /auth/access.html -->
