@@ -1,0 +1,63 @@
+<!doctype html>
+<meta charset="utf-8" />
+<title>Encore! • Login</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{--purple:#2F0658;--card:#0d1428;--soft:#151a34;--line:#2b3c62;--txt:#eef3ff;--muted:#aab2d6;--accent:#7aa2ff}
+  *{box-sizing:border-box} body{margin:0;background:var(--purple);color:var(--txt);font:15px/1.45 "Montserrat",system-ui}
+  .wrap{min-height:100svh;display:grid;place-items:center;padding:24px}
+  .card{width:min(560px,94vw);background:linear-gradient(180deg,var(--card),#0e0e22);border:1px solid var(--line);border-radius:16px;padding:20px 18px;box-shadow:0 10px 40px rgba(0,0,0,.4)}
+  h1{margin:0 0 6px;font-size:26px} .sub{color:var(--muted);margin:0 0 14px}
+  label{display:block;font-size:12px;color:var(--muted);margin:10px 0 6px}
+  input{width:100%;padding:12px;border-radius:12px;border:1px solid #223153;background:#0c1328;color:var(--txt)}
+  .btn{margin-top:14px;width:100%;padding:12px 14px;border:0;border-radius:12px;background:var(--accent);color:#061028;font-weight:800;cursor:pointer}
+  .foot{display:flex;justify-content:space-between;align-items:center;margin-top:10px;color:var(--muted)}
+  a{color:#a9d4ff}
+  .err{color:#ff8592;font-size:13px;margin-top:6px;display:none}
+</style>
+<div class="wrap">
+  <div class="card">
+    <h1>Sign in</h1>
+    <p class="sub">Use the email and password you registered with.</p>
+    <form id="loginForm">
+      <label>Email</label>
+      <input id="email" type="email" required placeholder="you@example.com">
+      <label>Password</label>
+      <input id="password" type="password" required placeholder="Your password">
+      <div id="err" class="err"></div>
+      <button class="btn" type="submit">Log in</button>
+    </form>
+    <div class="foot">
+      <div>New here?</div>
+      <div><a href="/auth/register.html">Create an account</a></div>
+    </div>
+  </div>
+</div>
+
+<script src="/assets/js/auth.js"></script>
+<script>
+  const $=s=>document.querySelector(s);
+  const next = new URLSearchParams(location.search).get('next') || '/host/index.html';
+
+  $('#loginForm').addEventListener('submit', (e)=>{
+    e.preventDefault();
+    const email = $('#email').value.trim().toLowerCase();
+    const pw = $('#password').value;
+    const r = Auth.login(email, pw);
+    if(!r.ok){ const el=$('#err'); el.textContent=r.error; el.style.display='block'; return; }
+
+    const me = Auth.current();
+    if(me.role==='host'){
+      if(!Auth.isLicensed()){ location.href = '/auth/access.html?next='+encodeURIComponent('/host/index.html'); return; }
+      location.href = next || '/host/index.html';
+    }else{
+      const back = new URLSearchParams(location.search).get('next') || '/vote/index.html';
+      location.href = back;
+    }
+  });
+</script>
+
+<!-- FILE: /auth/login.html -->
