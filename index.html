@@ -1,79 +1,33 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Earn Your Encore Karaoke</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: linear-gradient(135deg, #3b0066, #5b0099);
-      color: white;
-      text-align: center;
-      margin: 0;
-      padding: 0;
-    }
-    header {
-      padding: 30px 20px 10px;
-    }
-    header h1 {
-      margin: 0;
-      font-size: 2.5rem;
-    }
-    header h2 {
-      margin: 10px 0 0;
-      font-weight: 400;
-      font-size: 1.2rem;
-      color: #ffcc00;
-    }
-    .menu {
-      margin-top: 50px;
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-      align-items: center;
-    }
-    .menu a {
-      display: inline-block;
-      padding: 15px 30px;
-      font-size: 1.2rem;
-      font-weight: bold;
-      color: white;
-      background: #ff6600;
-      border-radius: 10px;
-      text-decoration: none;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-      transition: transform 0.2s, background 0.2s;
-    }
-    .menu a:hover {
-      background: #ff8533;
-      transform: scale(1.05);
-    }
-    footer {
-      margin-top: 60px;
-      padding: 15px;
-      font-size: 0.9rem;
-      color: #ccc;
-    }
-  </style>
+<meta charset="utf-8">
+<title>Encore! • Links</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@700;800&display=swap" rel="stylesheet">
+<style>
+  :root{ --bgDeep1:#1B0930; --bgDeep2:#16072A; --txt:#fff; --muted:#d8c7ff; --accent:#b692ff; }
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100svh;background:linear-gradient(180deg,var(--bgDeep1),var(--bgDeep2));color:var(--txt);font:18px/1.35 "Montserrat",system-ui;display:flex;align-items:center;justify-content:center;padding:24px}
+  .card{max-width:780px;width:100%;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.15);border-radius:18px;padding:26px;text-align:center}
+  h1{font-family:"Bebas Neue";font-size:72px;margin:0 0 8px}
+  p{margin:6px 0 18px;color:var(--muted)}
+  .links{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  a{display:block;padding:16px;border-radius:12px;text-decoration:none;font-weight:800;color:#120d1f;background:#d9cbff}
+  a:hover{filter:brightness(0.96)}
+</style>
 </head>
 <body>
-  <header>
-    <h1>🎤 Earn Your Encore Karaoke</h1>
-    <h2>Select a Page Below</h2>
-  </header>
-
-  <div class="menu">
-    <a href="host/index.html">Host Page</a>
-    <a href="screen/index.html">Screen Display</a>
-    <a href="board/index.html">Encore Board</a>
-    <a href="vote/index.html">Voting Page</a>
-    <a href="reports/index.html">Reports</a>
-    <a href="assets/">Assets Folder</a>
+  <div class="card">
+    <h1>Encore!</h1>
+    <p>Quick links for your demo setup</p>
+    <div class="links">
+      <a href="/host/index.html"  target="_blank">Host</a>
+      <a href="/screen/index.html" target="_blank">Screen</a>
+      <a href="/board/index.html" target="_blank">Board</a>
+      <a href="/vote/index.html"   target="_blank">Vote</a>
+    </div>
   </div>
-
-  <footer>
-    &copy; 2025 Earn Your Encore Karaoke
-  </footer>
 </body>
 </html>
+<!-- FILE: /index.html -->
