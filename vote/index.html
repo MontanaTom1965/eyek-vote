@@ -23,7 +23,7 @@
   .timer{font-family:"Bebas Neue";font-size:48px;letter-spacing:1px;text-align:center;margin:8px 0 16px}
 
   .pinGate{display:grid;gap:10px;justify-items:center;margin:14px 0 8px}
-  .pinGate input{font:inherit;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:#220d3f;color:var(--txt);width:220px;text-align:center;letter-spacing:2px}
+  .pinGate input{font:inherit;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:#220d3f;color:#eef3ff;width:220px;text-align:center;letter-spacing:2px}
   .btn{font:inherit;padding:12px 16px;border-radius:12px;border:1px solid var(--line);background:#3a2166;color:#fff;cursor:pointer}
   .btn:disabled{opacity:.6;cursor:not-allowed}
 
@@ -43,7 +43,14 @@
   .ok{color:#b7ffcf}
   .err{color:#ffd0d6}
 
-  .footer{margin-top:14px;text-align:center;font-size:12px;color:#cdbff0}
+  /* Full-screen result overlay */
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;z-index:50}
+  .ovCard{width:min(900px,92vw);text-align:center;border-radius:18px;padding:30px 20px}
+  .ovTitle{font-family:"Bebas Neue";font-size:78px;margin:0 0 8px}
+  .ovSub{font-size:26px;margin:0}
+  .ov-enc{background:rgba(37,211,102,.12);border:2px solid rgba(37,211,102,.6);color:#caffdf}
+  .ov-ano{background:rgba(246,201,69,.12);border:2px solid rgba(246,201,69,.7);color:#ffeaa6}
+  .ov-may{background:rgba(255,94,108,.12);border:2px solid rgba(255,94,108,.7);color:#ffc2ca}
 </style>
 </head>
 <body>
@@ -80,7 +87,14 @@
     </div>
 
     <div id="msg" class="msg"></div>
-    <div class="footer">FILE: /vote/index.html</div>
+  </div>
+</div>
+
+<!-- Result overlay -->
+<div id="resultOverlay" class="overlay">
+  <div id="ovCard" class="ovCard">
+    <div id="ovTitle" class="ovTitle">Encore!</div>
+    <p id="ovSub" class="ovSub">Congratulations, —</p>
   </div>
 </div>
 
@@ -97,7 +111,7 @@ function smoothOffset(o){ if(!isFinite(o))return; clockOffset=0.9*clockOffset+0.
 function deviceId(){ let id=localStorage.getItem('eyek_device_id'); if(!id){ id=crypto.randomUUID(); localStorage.setItem('eyek_device_id',id);} return id; }
 function currentEventKey(st){ const v=(st.event?.venue||'').trim(); const d=(st.event?.date||'').trim(); return `eyek_pin_ok_${d}_${v}`; }
 
-let state=null, votedChoice=null;
+let state=null, lastResultSeen=null, overlayHideAt=0, overlaySingerId=null;
 
 async function fetchState(){
   const r=await fetch(GET_URL,{cache:'no-store'});
@@ -115,19 +129,45 @@ function hasPinAccess(){
   return localStorage.getItem(k) === (state.event?.pin||'');
 }
 
-function showPinGate(show){
-  document.getElementById('pinGate').style.display = show ? 'grid' : 'none';
+function showPinGate(show){ $('#pinGate').style.display = show ? 'grid' : 'none'; }
+
+function showOverlay(kind, singer){
+  const ov=$('#resultOverlay'), card=$('#ovCard'), title=$('#ovTitle'), sub=$('#ovSub');
+  card.className='ovCard '+(kind==='encore'?'ov-enc':kind==='another'?'ov-ano':'ov-may');
+  title.textContent = kind==='encore' ? 'Encore!' : (kind==='another' ? 'Another Shot!' : 'Maybe Next Time!');
+  sub.textContent = singer ? `Congratulations, ${singer}` : (kind==='maybe' ? 'Thanks for singing!' : 'Congratulations!');
+  ov.style.display='flex';
+  overlayHideAt = Date.now()+30000; // ~30s
+  overlaySingerId = state?.current?.id || null;
 }
+function hideOverlay(){ $('#resultOverlay').style.display='none'; overlayHideAt=0; }
 
 function render(){
   const venueName = (state?.event?.venuePublic||'').trim();
-  document.getElementById('venue').textContent = venueName ? `Welcome to ${venueName}` : 'Welcome to —';
+  $('#venue').textContent = venueName ? `Welcome to ${venueName}` : 'Welcome to —';
 
   const open = !!state?.voting?.open;
   const t = nowMs();
   const prep = (!open && (state?.voting?.prepUntil||0) > t);
   const endsAt = state?.voting?.endsAt || 0;
   const curName = (state?.current?.name||'').trim();
+  const curId   = state?.current?.id || null;
+
+  // auto-hide overlay if 30s passed or singer changed
+  if(overlayHideAt && (Date.now()>overlayHideAt || (overlaySingerId && overlaySingerId!==curId))){
+    hideOverlay();
+  }
+
+  // if a fresh result appears, show overlay
+  const res = state?.voting?.lastResult || null;
+  if(!open && res && res!==lastResultSeen){
+    showOverlay(res, curName);
+    lastResultSeen = res;
+  } else if(open){
+    // if a new round starts, reset the memory
+    lastResultSeen = null;
+    hideOverlay();
+  }
 
   // pin gate
   const needPin = !hasPinAccess();
@@ -135,11 +175,12 @@ function render(){
   const canVote = !needPin && open && !!state.current?.id;
 
   // status headers
-  const status = document.getElementById('status');
-  const prepEl = document.getElementById('prep');
-  const timer  = document.getElementById('timer');
+  const status = $('#status'), prepEl=$('#prep'), timer=$('#timer');
 
-  if(prep){
+  if($('#resultOverlay').style.display==='flex'){
+    // While overlay is up, suppress status lines
+    status.style.display='none'; prepEl.style.display='none'; timer.style.display='none';
+  } else if(prep){
     status.style.display='block';
     status.textContent = curName ? `Get ready to vote for: ${curName}` : 'Get ready to vote…';
     prepEl.style.display='block';
@@ -152,16 +193,16 @@ function render(){
     timer.style.display='block';
     timer.textContent = fmt(Math.max(0, endsAt - t));
   } else {
-    status.style.display=curName?'block':'none';
-    status.textContent = curName ? `Waiting… (${curName} is up)` : 'Waiting…';
+    // After voting ends (and overlay hidden or not yet triggered), show neutral idle
+    status.style.display='block';
+    status.textContent = 'Waiting for the next singer…';
     prepEl.style.display='none';
     timer.style.display='none';
   }
 
-  // vote buttons visibility / enabled
-  const row = document.getElementById('voteRow');
+  // buttons
+  const row = $('#voteRow');
   row.style.display = (!needPin && (open || prep)) ? 'grid' : 'none';
-
   const already = state?.voting?.voters && state.voting.voters[deviceId()];
   const disabled = !canVote || !!already;
   ['bEnc','bAno','bMay'].forEach(id=>{ const b=$( '#'+id ); b.disabled = disabled; });
@@ -170,20 +211,19 @@ function render(){
   const ce = state?.voting?.counts?.encore  ?? 0;
   const ca = state?.voting?.counts?.another ?? 0;
   const cm = state?.voting?.counts?.maybe   ?? 0;
-  document.getElementById('cE').textContent = ce;
-  document.getElementById('cA').textContent = ca;
-  document.getElementById('cM').textContent = cm;
-  document.getElementById('tally').style.display = (!needPin && (open || (!open && (ce+ca+cm)>0))) ? 'flex' : 'none';
+  $('#cE').textContent = ce; $('#cA').textContent = ca; $('#cM').textContent = cm;
+  // show tally during voting, and also while overlay is up (so they can see the totals)
+  $('#tally').style.display = (!needPin && (open || $('#resultOverlay').style.display==='flex')) ? 'flex' : 'none';
 
   // message
-  const msg = document.getElementById('msg');
+  const msg = $('#msg');
   if(needPin){ msg.textContent = ''; }
   else if(already){
     const c = already;
     const nice = c==='encore'?'Encore!':c==='another'?'Another Shot!':'Maybe Next Time!';
     msg.innerHTML = `<span class="ok">Vote recorded</span>: <b>${nice}</b> — thanks!`;
   } else if(!open){
-    msg.textContent = 'Voting is currently closed.';
+    msg.textContent = $('#resultOverlay').style.display==='flex' ? '' : 'Voting is currently closed.';
   } else {
     msg.textContent = '';
   }
@@ -198,21 +238,20 @@ async function sendVote(choice){
       else if(e.error==='already_voted'){ showError('Only one vote per device this round.'); }
       else showError('Could not submit vote.');
     } else {
-      votedChoice = choice;
       await fetchState();
     }
   }catch(e){ showError('Network error.'); }
 }
 function showError(txt){
-  const el=document.getElementById('msg'); el.classList.remove('ok'); el.classList.add('err'); el.textContent=txt;
+  const el=$('#msg'); el.classList.remove('ok'); el.classList.add('err'); el.textContent=txt;
 }
 
-document.getElementById('bEnc').addEventListener('click', ()=>sendVote('encore'));
-document.getElementById('bAno').addEventListener('click', ()=>sendVote('another'));
-document.getElementById('bMay').addEventListener('click', ()=>sendVote('maybe'));
+$('#bEnc').addEventListener('click', ()=>sendVote('encore'));
+$('#bAno').addEventListener('click', ()=>sendVote('another'));
+$('#bMay').addEventListener('click', ()=>sendVote('maybe'));
 
 // PIN flow
-const pinInput=document.getElementById('pinInput'), pinBtn=document.getElementById('pinBtn'), pinMsg=document.getElementById('pinMsg');
+const pinInput=$('#pinInput'), pinBtn=$('#pinBtn'), pinMsg=$('#pinMsg');
 pinBtn.addEventListener('click', ()=>{
   const entered = (pinInput.value||'').replace(/\D+/g,'');
   const actual  = (state?.event?.pin||'').replace(/\D+/g,'');
