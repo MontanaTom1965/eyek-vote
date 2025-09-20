@@ -7,24 +7,23 @@
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@700;800&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#2F0658;           /* LOCKED background */
+    --bgDeep1:#1B0930; --bgDeep2:#16072A; /* deep background matches Board columns */
     --txt:#ffffff; --muted:#d8c7ff; --line:#6f52a8;
     --green:#25d366; --yellow:#f6c945; --red:#ff5e6c;
   }
   *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--txt);font:18px/1.35 "Montserrat",system-ui}
+  body{margin:0;background:linear-gradient(180deg,var(--bgDeep1),var(--bgDeep2));color:var(--txt);font:18px/1.35 "Montserrat",system-ui}
   .wrap{min-height:100svh;display:flex;flex-direction:column;gap:16px;padding:24px}
 
   .head{text-align:center}
-  .welcome{font-size:32px;margin:0;color:#ffe8ff;opacity:.95} /* smaller "Welcome to" */
-  .venue{font-family:"Bebas Neue";font-size:78px;letter-spacing:1px;margin:2px 0 0} /* reduced from 96px */
-  .host{font-size:30px;margin:4px 0 0;color:var(--muted)}
+  .welcome{font-size:32px;margin:0;color:#ffe8ff;opacity:.95}
+  .venue{font-family:"Bebas Neue";font-size:72px;letter-spacing:1px;margin:2px 0 0}
+  .host{font-size:28px;margin:4px 0 0;color:var(--muted)}
 
   .now{margin-top:36px;text-align:center}
-  .nowLbl{font-family:"Bebas Neue";font-size:48px;margin:0;color:#ffe8ff}
-  .nowName{font-family:"Bebas Neue";font-size:74px;margin:10px 0 0} /* a bit smaller for fit */
+  .nowLbl{font-family:"Bebas Neue";font-size:46px;margin:0;color:#ffe8ff}
+  .nowName{font-family:"Bebas Neue";font-size:72px;margin:10px 0 0}
 
-  /* Voting fullscreen state */
   .voteTop{display:flex;justify-content:space-between;align-items:flex-start;margin-top:10px}
   .voteNow{font-family:"Bebas Neue";font-size:54px}
   .timer{font-family:"Bebas Neue";font-size:62px}
@@ -41,7 +40,6 @@
   .ano{background:var(--yellow);color:#352600}
   .may{background:var(--red);color:#2b0e12}
 
-  /* Overlay for result */
   .overlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.78);z-index:50}
   .ovCard{width:min(1200px,92vw);text-align:center;border:3px solid rgba(255,255,255,.18);border-radius:22px;padding:30px}
   .ovTitle{font-family:"Bebas Neue";font-size:130px;margin:0}
@@ -50,10 +48,9 @@
   .ov-ano{background:rgba(246,201,69,.1); border-color: rgba(246,201,69,.55)}
   .ov-may{background:rgba(255,94,108,.1); border-color: rgba(255,94,108,.55)}
 
-  /* confetti */
   #confetti{position:fixed;inset:0;pointer-events:none;display:none}
 
-  /* Heartbeat to deter TV sleep (invisible) */
+  /* Heartbeat (no-sleep) */
   #heartbeat{position:fixed;width:1px;height:1px;left:-10px;top:-10px;background:transparent;transform:translateX(0);will-change:transform;animation:hb 2s linear infinite}
   @keyframes hb{0%{transform:translateX(0)}50%{transform:translateX(1px)}100%{transform:translateX(0)}}
 </style>
@@ -63,18 +60,17 @@
 <div id="heartbeat" aria-hidden="true"></div>
 
 <div class="wrap" id="root">
-  <header class="head">
+  <header class="head" id="header">
     <p id="welcome" class="welcome">Welcome to</p>
     <h1 id="venue" class="venue">—</h1>
     <p id="hostBy" class="host">Hosted by —</p>
   </header>
 
-  <section class="now">
+  <section class="now" id="nowBlock">
     <h2 class="nowLbl" id="nowLbl">Now Singing</h2>
     <div id="nowName" class="nowName">—</div>
   </section>
 
-  <!-- Voting area (appears only during prep/open and shortly after) -->
   <section id="votingArea" style="display:none">
     <div class="voteTop">
       <div id="voteNow" class="voteNow">Now Voting For: —</div>
@@ -95,7 +91,6 @@
   </section>
 </div>
 
-<!-- Results overlay -->
 <div id="overlay" class="overlay">
   <div id="ovCard" class="ovCard">
     <div id="ovTitle" class="ovTitle">Encore!</div>
@@ -121,6 +116,7 @@ rafId=requestAnimationFrame(tick);
 /* Time sync & state */
 let state=null,lastCounts={encore:0,another:0,maybe:0},clockOffset=0;
 let overlayHideAt=0, cachedWinnerName='', cachedWinnerKind=null;
+let prevPhase='idle'; // 'idle' | 'prep' | 'open' | 'result'
 
 function nowMs(){return Date.now()+clockOffset}
 function smoothOffset(o){if(!isFinite(o))return;clockOffset=0.9*clockOffset+0.1*o}
@@ -181,7 +177,7 @@ function stepConfetti(){
     p.vy+=0.02; p.x+=p.vx; p.y+=p.vy; p.rot+=p.vr;
     if(p.y>innerHeight+20){ p.y=-20; p.x=Math.random()*innerWidth; p.vy=Math.random()*3+2; }
     ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.rot);
-    ctx.fillStyle=p.color; ctx.fillRect(-p.size/2,-p.size/2,p.size,p,size);
+    ctx.fillStyle=p.color; ctx.fillRect(-p.size/2,-p.size/2,p.size,p.size); /* FIXED */
     ctx.restore();
   }
   requestAnimationFrame(stepConfetti);
@@ -195,7 +191,7 @@ function showOverlay(kind, name){
   card.className='ovCard '+(kind==='encore'?'ov-enc':kind==='another'?'ov-ano':'ov-may');
   title.textContent = kind==='encore' ? 'Encore!' : (kind==='another' ? 'Another Shot!' : 'Maybe Next Time!');
 
-  const cleanName = String(name||'').replace(/\.\s*$/,''); // avoid double period
+  const cleanName = String(name||'').replace(/\.\s*$/,'');
   cachedWinnerName = cleanName;
   cachedWinnerKind = kind;
 
@@ -208,39 +204,63 @@ function showOverlay(kind, name){
 }
 function hideOverlay(){ $('#overlay').style.display='none'; stopConfetti(); overlayHideAt=0; cachedWinnerKind=null; }
 
-/* === RENDER === */
+/* --- PHASE RENDER --- */
 function render(){
   setHeader();
 
-  const open = !!state?.voting?.open;
   const t = nowMs();
+  const curName = (state?.current?.name||'').trim();
+  const open = !!state?.voting?.open;
   const prep = (!open && (state?.voting?.prepUntil||0) > t);
   const endsAt = state?.voting?.endsAt || 0;
-  const curName = (state?.current?.name||'').trim();
 
-  // Show Now Singing when a singer is set (even when not in prep/open), hide only during the 15s winner overlay.
-  const overlayVisible = ($('#overlay').style.display==='flex');
-  if(curName && !overlayVisible){
-    setNow(curName);
-  }else if(open || prep){
-    setNow(curName);
-  }else{
-    setNow('');
+  // decide phase
+  let phase = 'idle';
+  if(prep) phase='prep';
+  else if(open) phase='open';
+  else if(state?.voting?.lastResult) phase='result';
+
+  // transitions
+  if((phase==='prep' || phase==='open') && $('#overlay').style.display==='flex'){ hideOverlay(); }
+  if(phase==='open' && prevPhase!=='open'){
+    // entering open -> clear columns and reset counters once
+    ['#colE','#colA','#colM'].forEach(s=>$(s).innerHTML = '<div class="label">'+(s==='#colE'?'Encore!':s==='#colA'?'Another Shot!':'Maybe Next Time!')+'</div>');
+    lastCounts={encore:0,another:0,maybe:0};
   }
 
-  // Overlay lifetime
+  // header & now singing visibility
+  const header=$('#header'), nowBlock=$('#nowBlock'), votingArea=$('#votingArea');
+  if(phase==='prep' || phase==='open'){
+    header.style.display='none';
+    nowBlock.style.display='none';
+    votingArea.style.display='block';
+  } else {
+    header.style.display='';
+    nowBlock.style.display='';
+    votingArea.style.display='none';
+  }
+
+  // Now Singing label (cleared outside prep/open)
+  if(phase==='idle' || phase==='result'){
+    $('#nowLbl').textContent = 'Now Singing';
+    setNow(''); // cleared between songs
+  } else {
+    $('#nowLbl').textContent = (phase==='prep') ? 'Get Ready' : 'Now Voting';
+    setNow(curName);
+  }
+
+  // overlay life
   if(overlayHideAt && Date.now()>overlayHideAt){ hideOverlay(); }
 
-  const votingArea=$('#votingArea');
-
-  if(prep){
-    votingArea.style.display='block';
+  if(phase==='prep'){
     $('#voteNow').textContent = curName ? `Get ready to vote for: ${curName}` : 'Get ready to vote…';
     $('#timer').textContent = fmt(Math.max(0,(state.voting.prepUntil||0) - t));
     $('#tally').style.display='none';
-    ['#colE','#colA','#colM'].forEach(s=>$(s).innerHTML = '<div class="label">'+(s==='#colE'?'Encore!':s==='#colA'?'Another Shot!':'Maybe Next Time!')+'</div>');
-  } else if(open){
-    votingArea.style.display='block';
+    if(prevPhase!=='prep'){
+      ['#colE','#colA','#colM'].forEach(s=>$(s).innerHTML = '<div class="label">'+(s==='#colE'?'Encore!':s==='#colA'?'Another Shot!':'Maybe Next Time!')+'</div>');
+      lastCounts={encore:0,another:0,maybe:0};
+    }
+  } else if(phase==='open'){
     $('#voteNow').textContent = curName ? `Now Voting For: ${curName}` : 'Now Voting!';
     $('#timer').textContent = fmt(Math.max(0, endsAt - t));
     $('#tally').style.display='flex';
@@ -252,16 +272,15 @@ function render(){
     if(ca>lastCounts.another) spawn('#colA','another', ca-lastCounts.another);
     if(cm>lastCounts.maybe)   spawn('#colM','maybe',   cm-lastCounts.maybe);
     lastCounts={encore:ce,another:ca,maybe:cm};
-  } else {
-    votingArea.style.display='none';
-    lastCounts={encore:0,another:0,maybe:0};
-
-    const res = state?.voting?.lastResult || null;
-    if(res && !overlayVisible){
-      // use cached name (or current if still set)
-      showOverlay(res, curName || cachedWinnerName);
+  } else if(phase==='result'){
+    if($('#overlay').style.display!=='flex'){
+      const winner = state?.voting?.lastResult;
+      const nameForOverlay = curName || cachedWinnerName;
+      showOverlay(winner, nameForOverlay);
     }
   }
+
+  prevPhase = phase;
 }
 </script>
 </body>
