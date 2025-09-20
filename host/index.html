@@ -9,7 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700;800&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bgDeep1:#1B0930; --bgDeep2:#16072A; /* Unified deep background */
+    --bgDeep1:#1B0930; --bgDeep2:#16072A;
     --card:#1b0930; --card2:#16072a; --line:#6f52a8; --txt:#eef3ff; --muted:#cdbff0; --accent:#b692ff;
     --green:#25d366; --yellow:#f6c945; --red:#ff5e6c; --ink:#1a1030;
   }
@@ -45,20 +45,16 @@
   .xl{font-size:28px}
   .currentBox{background:#220d3f;border:1px solid var(--line);border-radius:14px;padding:12px;margin-top:8px}
   .currentBox .big{font-weight:900;font-size:30px}
-
-  /* Public Vote (host mini visualizer) */
   .miniWhite{height:94px;border-radius:10px;border:1px solid #ddd;background:#fff;position:relative;overflow:hidden}
   .mdot{position:absolute;width:10px;height:10px;border-radius:50%}
   .mdot.g{background:var(--green)} .mdot.y{background:var(--yellow)} .mdot.r{background:var(--red)}
   .miniRow{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
   .miniLbl{font-size:13px;color:#e9dbff;margin:6px 0 4px}
-
   .tally{display:flex;gap:12px;justify-content:center;margin-top:12px;flex-wrap:wrap}
   .chip{padding:10px 18px;border-radius:999px;font-weight:900;border:2px solid rgba(0,0,0,.15)}
   .chip.enc{background:var(--green); color:#072a14}
   .chip.ano{background:var(--yellow); color:#352600}
   .chip.may{background:var(--red);   color:#2b0e12}
-
   .resultTag{padding:6px 10px;border-radius:999px;border:1px solid var(--line);display:inline-block;background:#200a3a}
   .r-encore{border-color:rgba(37,211,102,.7);color:var(--green)}
   .r-another{border-color:rgba(246,201,69,.7);color:var(--yellow)}
@@ -68,14 +64,11 @@
   .tiny{font-size:12px;color:#d9cdff}
   .white{color:#fff}
   .sticky{position:sticky;top:16px}
-
-  /* collapsible details */
   details.setup{border-radius:14px;border:1px solid var(--line);background:linear-gradient(180deg,#231043,#1c0c37);overflow:hidden}
   details.setup > summary{list-style:none;padding:14px 16px;cursor:pointer;font-weight:800;background:rgba(255,255,255,.03)}
   details.setup[open] > summary{border-bottom:1px solid #533b87}
   details.setup .body{padding:12px 16px 16px}
   .right .tinyPad{margin-top:6px}
-
   .soundList{display:grid;grid-template-columns:1fr;gap:8px}
   .callout{animation:pulse 1.2s ease-in-out infinite;box-shadow:0 0 0 0 rgba(37,211,102,.55)}
   @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(37,211,102,.55);transform:scale(1)}70%{box-shadow:0 0 0 18px rgba(37,211,102,0);transform:scale(1.02)}100%{box-shadow:0 0 0 0 rgba(37,211,102,0);transform:scale(1)}}
@@ -84,15 +77,12 @@
 <body>
 <div class="page">
 
-  <!-- LEFT: ROTATION -->
   <aside class="left card sticky">
     <h2>Rotation</h2>
     <div class="body" id="singerList"></div>
   </aside>
 
-  <!-- MIDDLE: SETUP + SINGER CONTROL + PUBLIC VOTE -->
   <main class="mid">
-    <!-- Event Setup (collapsible) -->
     <details class="setup" id="setupPanel" open>
       <summary>Event Setup</summary>
       <div class="body">
@@ -145,12 +135,10 @@
       </div>
     </details>
 
-    <!-- Singer Control -->
     <div class="card" style="margin-top:16px">
       <h2>Singer Control</h2>
       <div class="body">
         <div class="row-60-40">
-          <!-- Add Singer -->
           <div>
             <div class="currentBox">
               <div class="sectionTitle" style="margin-top:0">Add Singer</div>
@@ -170,7 +158,6 @@
             </div>
           </div>
 
-          <!-- Current Singer -->
           <div>
             <div class="currentBox">
               <div class="sectionTitle" style="margin-top:0">Current Singer</div>
@@ -198,9 +185,8 @@
             </div>
           </div>
 
-        </div><!-- /row-60-40 -->
+        </div>
 
-        <!-- Host Voting -->
         <div class="divider"></div>
         <div class="sectionTitle">Host Voting</div>
         <div class="stack" style="margin-top:6px;justify-content:center">
@@ -211,7 +197,6 @@
       </div>
     </div>
 
-    <!-- Public Vote (mini visual + centered tally) -->
     <div class="card" style="margin-top:16px">
       <h2>Public Vote</h2>
       <div class="body">
@@ -239,7 +224,6 @@
     </div>
   </main>
 
-  <!-- RIGHT: QUICK LINKS + ENABLE/DISABLE SOUND -->
   <aside class="right card sticky">
     <h2>Quick Links</h2>
     <div class="body">
@@ -266,15 +250,7 @@
 
 <script src="/assets/js/auth.js"></script>
 <script>
-(function guardHost(){
-  try{
-    if (!window.Auth) { return; }
-    const me = Auth.current();
-    if (!me) { location.href = '/auth/login.html?next=' + encodeURIComponent('/host/index.html'); return; }
-    if (me.role !== 'host') { alert('Hosts only.'); location.href='/'; return; }
-    if (!Auth.isLicensed()) { location.href = '/auth/access.html?next=' + encodeURIComponent('/host/index.html'); return; }
-  }catch(e){}
-})();
+(function guardHost(){try{if (!window.Auth) { return; }const me = Auth.current();if (!me) { location.href = '/auth/login.html?next=' + encodeURIComponent('/host/index.html'); return; }if (me.role !== 'host') { alert('Hosts only.'); location.href='/'; return; }if (!Auth.isLicensed()) { location.href = '/auth/access.html?next=' + encodeURIComponent('/host/index.html'); return; }}catch(e){}})();
 </script>
 
 <script>
@@ -295,11 +271,7 @@ let state=null, poll=null;
 const lastEdit = Object.create(null);
 const RECENT_MS = 12000;
 function markEdit(id){ lastEdit[id] = Date.now(); }
-function canUpdateField(el, id){
-  if(document.activeElement === el) return false;
-  if((lastEdit[id]||0) > Date.now()-RECENT_MS) return false;
-  return true;
-}
+function canUpdateField(el, id){ if(document.activeElement === el) return false; if((lastEdit[id]||0) > Date.now()-RECENT_MS) return false; return true; }
 let pollPaused=false, resumeTimer=null;
 function pausePolling(){ pollPaused=true; clearTimeout(resumeTimer); }
 function resumePollingSoon(){ clearTimeout(resumeTimer); resumeTimer=setTimeout(()=>{ pollPaused=false; }, 1800); }
@@ -355,7 +327,7 @@ async function fetchState(){
   state.saved   ||= {venues:[], venuesPublic:[], kjs:[]};
   state.singers ||= []; state.current ||= {id:null,name:'',songArtist:''};
   state.voting  ||= {open:false,prepUntil:0,endsAt:0,extendCount:0,counts:{encore:0,another:0,maybe:0},lastResult:null,voters:{}};
-  state.winners ||= {encore:[], another:[]};
+  state.winners ||= {encore:[], another:[], maybe:[]}; /* ← ensure maybe list exists */
 }
 async function postState(){ await fetch('/assets/state.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(state)}); await fetchState(); }
 const postStateDebounced = debounce(async ()=>{
@@ -483,7 +455,7 @@ document.getElementById('resetEvent').onclick = async ()=>{
     saved:{venues: state.saved?.venues ?? [], kjs: state.saved?.kjs ?? [], venuesPublic: state.saved?.venuesPublic ?? []},
     singers:[], current:{id:null,name:'',songArtist:''},
     voting:{open:false,prepUntil:0,endsAt:0,extendCount:0,counts:{encore:0,another:0,maybe:0},lastResult:null,voters:{}},
-    winners:{encore:[], another:[]}
+    winners:{encore:[], another:[], maybe:[]}
   };
   await postState();
 };
@@ -557,14 +529,17 @@ async function concludeVoting(){
   state.voting.lastResult=winner;
 
   const cur=state.singers.find(s=>s.id===state.current.id);
+  const nowISO = new Date().toISOString();
   if(cur){
-    if(winner==='maybe'){ state.singers=state.singers.filter(s=>s.id!==cur.id); }
-    else { cur._color=(winner==='encore'?'green':'yellow'); }
-  }
-  state.winners = state.winners || {encore:[], another:[]};
-  if(winner==='encore' || winner==='another'){
-    state.winners[winner].unshift({when:new Date().toISOString(), name:state.current.name, song:state.current.songArtist||''});
-    state.winners[winner]=state.winners[winner].slice(0,50);
+    if(winner==='maybe'){
+      state.singers=state.singers.filter(s=>s.id!==cur.id);
+      state.winners.maybe.unshift({when:nowISO, name:cur.name, song:state.current.songArtist||''});  /* ← record MAYBE */
+      state.winners.maybe = state.winners.maybe.slice(0,200);
+    } else {
+      cur._color=(winner==='encore'?'green':'yellow');
+      state.winners[winner].unshift({when:nowISO, name:state.current.name, song:state.current.songArtist||''});
+      state.winners[winner]=state.winners[winner].slice(0,200);
+    }
   }
 
   state.current = { id:null, name:'', songArtist:'' };
@@ -598,100 +573,36 @@ function loop(){
   }, 1000);
 }
 
-/* --------- AUDIO: robust + test buttons don’t toggle sound ---------- */
+/* ---- Audio (unchanged from your last good version): tests don’t toggle ---- */
 const sfx = (function(){
   let enabled=false;
-
   const aOpen   = new Audio('/assets/voting_open.mp3'); aOpen.loop = true; aOpen.preload='auto';
   const aEncore = new Audio('/assets/encore.mp3');      aEncore.preload='auto';
   const aLoser  = new Audio('/assets/loser.wav');       aLoser.preload='auto';
   let triedWavFallback=false;
-
   const btn = document.getElementById('enableSound');
   const statusEl  = document.getElementById('soundStatus');
   const loopEl    = document.getElementById('loopStatus');
-
   function setStatus(){ statusEl.innerHTML = 'Sound: <b>'+(enabled?'on':'off')+'</b>'; }
   function setLoop(v){ loopEl.innerHTML = 'Loop: <b>'+(v?'playing':'stopped')+'</b>'; }
-
   let ctx=null;
   function waPing(){ try{ if(!ctx) ctx=new (window.AudioContext||window.webkitAudioContext)(); const o=ctx.createOscillator(), g=ctx.createGain(); g.gain.value=0.0001; o.connect(g).connect(ctx.destination); o.start(); o.stop(ctx.currentTime+0.02); return true; }catch{ return false; } }
   async function warm(el){ try{ el.muted=true; await el.play(); el.pause(); el.currentTime=0; el.muted=false; return true; }catch{ return false; } }
-
-  async function enable(){
-    const ok = waPing() | await warm(aEncore) | await warm(aLoser) | await warm(aOpen);
-    enabled = !!ok; setStatus();
-    if(enabled){
-      btn.classList.remove('callout','start'); btn.classList.add('end');
-      btn.textContent='Disable sound';
-    }
-    return enabled;
-  }
-  function disable(){
-    enabled=false; setStatus(); stopOpen();
-    btn.classList.remove('end'); btn.classList.add('start','callout');
-    btn.textContent='Enable sound';
-  }
-
-  // public: used by the button (toggle)
+  async function enable(){ const ok = waPing() | await warm(aEncore) | await warm(aLoser) | await warm(aOpen); enabled = !!ok; setStatus(); if(enabled){ btn.classList.remove('callout','start'); btn.classList.add('end'); btn.textContent='Disable sound'; } return enabled; }
+  function disable(){ enabled=false; setStatus(); stopOpen(); btn.classList.remove('end'); btn.classList.add('start','callout'); btn.textContent='Enable sound'; }
   btn.addEventListener('click', async ()=>{ if(!enabled) await enable(); else disable(); });
-
-  // helper: ensure enabled WITHOUT toggling off
   async function forceEnable(){ if(!enabled) await enable(); }
-
   function safePlay(a){ if(!enabled) return; a.play().then(()=>setLoop(!a.paused)).catch(()=>setLoop(false)); }
   function stopOpen(){ try{ aOpen.pause(); aOpen.currentTime=0; setLoop(false);}catch{} }
-
-  setInterval(async ()=>{
-    if(!enabled) return;
-    if(state?.voting?.open){
-      if(aOpen.paused){
-        try{ aOpen.load(); aOpen.currentTime=0; await aOpen.play(); setLoop(true); }
-        catch{
-          if(!triedWavFallback){
-            triedWavFallback=true; aOpen.src='/assets/voting_open.wav';
-            try{ aOpen.load(); aOpen.currentTime=0; await aOpen.play(); setLoop(true);}catch{ setLoop(false); }
-          } else setLoop(false);
-        }
-      } else setLoop(true);
-    }
-  }, 1500);
-
+  setInterval(async ()=>{ if(!enabled) return; if(state?.voting?.open){ if(aOpen.paused){ try{ aOpen.load(); aOpen.currentTime=0; await aOpen.play(); setLoop(true); }catch{ if(!triedWavFallback){ triedWavFallback=true; aOpen.src='/assets/voting_open.wav'; try{ aOpen.load(); aOpen.currentTime=0; await aOpen.play(); setLoop(true);}catch{ setLoop(false); } } else setLoop(false); } } else setLoop(true); }}, 1500);
   document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') ensureLoop(); });
-
-  async function ensureLoop(){
-    if(!enabled || !state?.voting?.open) return setLoop(false);
-    if(aOpen.paused){
-      try{ aOpen.load(); aOpen.currentTime=0; await aOpen.play(); setLoop(true); }
-      catch{
-        if(!triedWavFallback){
-          triedWavFallback=true; aOpen.src='/assets/voting_open.wav';
-          try{ aOpen.load(); aOpen.currentTime=0; await aOpen.play(); setLoop(true);}catch{ setLoop(false); }
-        } else setLoop(false);
-      }
-    } else setLoop(true);
-  }
-
-  return {
-    startLoop(){ if(!enabled) return; aOpen.load(); aOpen.currentTime=0; aOpen.play().then(()=>setLoop(true)).catch(()=>setLoop(false)); },
-    stopOpen,
-    ensureLoop,
-    playEncore(){ safePlay(aEncore); },
-    playLoser(){ safePlay(aLoser); },
-    forceEnable
-  };
+  async function ensureLoop(){ if(!enabled || !state?.voting?.open) return setLoop(false); if(aOpen.paused){ try{ aOpen.load(); aOpen.currentTime=0; await aOpen.play(); setLoop(true); }catch{ if(!triedWavFallback){ triedWavFallback=true; aOpen.src='/assets/voting_open.wav'; try{ aOpen.load(); aOpen.currentTime=0; await aOpen.play(); setLoop(true);}catch{ setLoop(false); } } else setLoop(false); } } else setLoop(true); }
+  return { startLoop(){ if(!enabled) return; aOpen.load(); aOpen.currentTime=0; aOpen.play().then(()=>setLoop(true)).catch(()=>setLoop(false)); }, stopOpen, ensureLoop, playEncore(){ safePlay(aEncore); }, playLoser(){ safePlay(aLoser); }, forceEnable };
 })();
-
-/* ----- Sound test buttons (no toggle; longer preview) ----- */
-document.getElementById('play_open').onclick   = async ()=>{
-  await sfx.forceEnable();
-  sfx.startLoop();
-  setTimeout(()=>sfx.stopOpen(), 6000); // ~6s preview
-};
+document.getElementById('play_open').onclick   = async ()=>{ await sfx.forceEnable(); sfx.startLoop(); setTimeout(()=>sfx.stopOpen(), 6000); };
 document.getElementById('play_encore').onclick = async ()=>{ await sfx.forceEnable(); sfx.playEncore(); };
 document.getElementById('play_loser').onclick  = async ()=>{ await sfx.forceEnable(); sfx.playLoser(); };
 
-/* ----- Init ----- */
 (async function init(){ await fetchState(); render(); loop(); })();
 </script>
 </body>
