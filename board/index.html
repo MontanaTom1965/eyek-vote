@@ -8,24 +8,19 @@
 <style>
   :root{
     --bg:#2F0658;
-    --deep1:#1B0930; --deep2:#16072A; /* column interior gradient source */
+    --deep1:#1B0930; --deep2:#16072A;
     --txt:#fff; --muted:#d8c7ff;
     --green:#25d366; --yellow:#f6c945;
   }
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--txt);font:18px/1.35 "Montserrat",system-ui}
   .wrap{min-height:100svh;display:grid;grid-template-columns:1fr 1fr;gap:24px;padding:24px}
-  .col{
-    border:2px solid rgba(255,255,255,.15);border-radius:16px;padding:16px;
-    display:flex;flex-direction:column;min-height:calc(100svh - 48px);
-    background:linear-gradient(180deg,var(--deep1),var(--deep2)); /* deep interior */
-  }
+  .col{border:2px solid rgba(255,255,255,.15);border-radius:16px;padding:16px;display:flex;flex-direction:column;min-height:calc(100svh - 48px);background:linear-gradient(180deg,var(--deep1),var(--deep2))}
   .title{font-family:"Bebas Neue";font-size:112px; text-align:center;margin:6px 0 6px}
   .enc{color:var(--green); text-shadow:0 0 24px rgba(37,211,102,.35)}
   .ano{color:var(--yellow); text-shadow:0 0 24px rgba(246,201,69,.35)}
   .list{flex:1;display:flex;flex-direction:column;gap:14px;overflow:hidden}
   .row{font-size:44px;padding:10px 14px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1)}
-
   #heartbeat{position:fixed;width:1px;height:1px;left:-10px;top:-10px;background:transparent;transform:translateX(0);will-change:transform;animation:hb 2s linear infinite}
   @keyframes hb{0%{transform:translateX(0)}50%{transform:translateX(1px)}100%{transform:translateX(0)}}
 </style>
@@ -57,21 +52,48 @@ requestWakeLock();
 let rafId; function tick(){ if (performance.now()%3000 < 16){ document.body.style.setProperty('--nudge', String(Math.random())); } rafId=requestAnimationFrame(tick); }
 rafId=requestAnimationFrame(tick);
 
+function parseWhen(w){ const t=Date.parse(w||''); return isNaN(t)?0:t; }
+
 async function fetchState(){
   try{
     const r=await fetch(GET_URL,{cache:'no-store'});
     const st=await r.json();
+
     const enc = st?.winners?.encore || [];
     const ano = st?.winners?.another || [];
+    const may = st?.winners?.maybe  || []; // ← new stream captured by Host
+
+    // Build a map: latest status per singer name
+    const latest = new Map(); // name -> {kind, when, song}
+    function ingest(arr, kind){
+      for(const it of arr){
+        const name=(it?.name||'').trim(); if(!name) continue;
+        const w=parseWhen(it.when); const prev=latest.get(name);
+        if(!prev || w>prev.when){ latest.set(name, {kind, when:w, song:it?.song||''}); }
+      }
+    }
+    ingest(enc,'encore'); ingest(ano,'another'); ingest(may,'maybe');
+
+    // Split into Encore/Another lists, excluding those whose latest is "maybe"
+    const listEnc=[], listAno=[];
+    for(const [name,info] of latest.entries()){
+      if(info.kind==='maybe') continue; // remove from board
+      if(info.kind==='encore') listEnc.push({name, song:info.song, when:info.when});
+      else if(info.kind==='another') listAno.push({name, song:info.song, when:info.when});
+    }
+
+    // Sort most recent first (optional, looks nice)
+    listEnc.sort((a,b)=>b.when-a.when);
+    listAno.sort((a,b)=>b.when-a.when);
 
     function escapeHtml(s){return String(s||'').replace(/[&<>"']/g,m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
     function render(listEl, arr){
       listEl.innerHTML = arr.length
-        ? arr.map(it=>`<div class="row">${escapeHtml(it.name||'—')} <span style="font-size:20px;color:var(--muted);margin-left:8px">${escapeHtml(it.song||'')}</span></div>`).join('')
+        ? arr.map(it=>`<div class="row">${escapeHtml(it.name)} <span style="font-size:20px;color:var(--muted);margin-left:8px">${escapeHtml(it.song||'')}</span></div>`).join('')
         : '<div class="row" style="opacity:.5">—</div>';
     }
-    render($('#encList'), enc);
-    render($('#anoList'), ano);
+    render($('#encList'), listEnc);
+    render($('#anoList'), listAno);
   }catch(e){}
 }
 setInterval(fetchState, 1500);
