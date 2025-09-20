@@ -7,7 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@700;800&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bgDeep1:#1B0930; --bgDeep2:#16072A; /* deep background matches Board columns */
+    --bgDeep1:#1B0930; --bgDeep2:#16072A;
     --txt:#ffffff; --muted:#d8c7ff; --line:#6f52a8;
     --green:#25d366; --yellow:#f6c945; --red:#ff5e6c;
   }
@@ -16,25 +16,25 @@
   .wrap{min-height:100svh;display:flex;flex-direction:column;gap:16px;padding:24px}
 
   .head{text-align:center}
-  .welcome{font-size:32px;margin:0;color:#ffe8ff;opacity:.95}
-  .venue{font-family:"Bebas Neue";font-size:72px;letter-spacing:1px;margin:2px 0 0}
-  .host{font-size:28px;margin:4px 0 0;color:var(--muted)}
+  .welcome{font-size:28px;margin:0;color:#ffe8ff;opacity:.95}
+  .venue{font-family:"Bebas Neue";font-size:66px;letter-spacing:1px;margin:2px 0 0}
+  .host{font-size:26px;margin:4px 0 0;color:var(--muted)}
 
-  .now{margin-top:36px;text-align:center}
-  .nowLbl{font-family:"Bebas Neue";font-size:46px;margin:0;color:#ffe8ff}
-  .nowName{font-family:"Bebas Neue";font-size:72px;margin:10px 0 0}
+  .now{margin-top:28px;text-align:center}
+  .nowLbl{font-family:"Bebas Neue";font-size:42px;margin:0;color:#ffe8ff}
+  .nowName{font-family:"Bebas Neue";font-size:64px;margin:10px 0 0}
 
   .voteTop{display:flex;justify-content:space-between;align-items:flex-start;margin-top:10px}
-  .voteNow{font-family:"Bebas Neue";font-size:54px}
-  .timer{font-family:"Bebas Neue";font-size:62px}
+  .voteNow{font-family:"Bebas Neue";font-size:50px}
+  .timer{font-family:"Bebas Neue";font-size:56px}
 
-  .box{flex:1;display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:18px 0}
-  .col{background:#140625;border:2px solid rgba(255,255,255,.15);border-radius:18px;min-height:360px;position:relative;overflow:hidden}
+  .box{flex:1;display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:14px 0}
+  .col{background:#140625;border:2px solid rgba(255,255,255,.15);border-radius:18px;min-height:300px;position:relative;overflow:hidden}
   .label{position:absolute;top:10px;left:14px;font-size:20px;color:#cdbff0}
   .ball{position:absolute;width:26px;height:26px;border-radius:50%}
   .g{background:var(--green)} .y{background:var(--yellow)} .r{background:var(--red)}
 
-  .tally{display:flex;justify-content:center;gap:16px;font-size:30px;font-weight:900}
+  .tally{display:flex;justify-content:center;gap:16px;font-size:28px;font-weight:900;margin-bottom:8px}
   .chip{padding:10px 18px;border-radius:999px;border:2px solid rgba(255,255,255,.15)}
   .enc{background:var(--green);color:#072a14}
   .ano{background:var(--yellow);color:#352600}
@@ -42,15 +42,14 @@
 
   .overlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.78);z-index:50}
   .ovCard{width:min(1200px,92vw);text-align:center;border:3px solid rgba(255,255,255,.18);border-radius:22px;padding:30px}
-  .ovTitle{font-family:"Bebas Neue";font-size:130px;margin:0}
-  .ovSub{font-size:46px;margin:10px 0 0}
+  .ovTitle{font-family:"Bebas Neue";font-size:120px;margin:0}
+  .ovSub{font-size:42px;margin:10px 0 0}
   .ov-enc{background:rgba(37,211,102,.1); border-color: rgba(37,211,102,.55)}
   .ov-ano{background:rgba(246,201,69,.1); border-color: rgba(246,201,69,.55)}
   .ov-may{background:rgba(255,94,108,.1); border-color: rgba(255,94,108,.55)}
 
   #confetti{position:fixed;inset:0;pointer-events:none;display:none}
 
-  /* Heartbeat (no-sleep) */
   #heartbeat{position:fixed;width:1px;height:1px;left:-10px;top:-10px;background:transparent;transform:translateX(0);will-change:transform;animation:hb 2s linear infinite}
   @keyframes hb{0%{transform:translateX(0)}50%{transform:translateX(1px)}100%{transform:translateX(0)}}
 </style>
@@ -116,7 +115,8 @@ rafId=requestAnimationFrame(tick);
 /* Time sync & state */
 let state=null,lastCounts={encore:0,another:0,maybe:0},clockOffset=0;
 let overlayHideAt=0, cachedWinnerName='', cachedWinnerKind=null;
-let prevPhase='idle'; // 'idle' | 'prep' | 'open' | 'result'
+let prevPhase='idle';
+let phaseHoldUntil=0; // anti-flicker hold
 
 function nowMs(){return Date.now()+clockOffset}
 function smoothOffset(o){if(!isFinite(o))return;clockOffset=0.9*clockOffset+0.1*o}
@@ -177,7 +177,7 @@ function stepConfetti(){
     p.vy+=0.02; p.x+=p.vx; p.y+=p.vy; p.rot+=p.vr;
     if(p.y>innerHeight+20){ p.y=-20; p.x=Math.random()*innerWidth; p.vy=Math.random()*3+2; }
     ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.rot);
-    ctx.fillStyle=p.color; ctx.fillRect(-p.size/2,-p.size/2,p.size,p.size); /* FIXED */
+    ctx.fillStyle=p.color; ctx.fillRect(-p.size/2,-p.size/2,p.size,p.size);
     ctx.restore();
   }
   requestAnimationFrame(stepConfetti);
@@ -199,12 +199,14 @@ function showOverlay(kind, name){
     ? (cleanName ? `Thanks, ${cleanName}!` : 'Thanks for singing!')
     : (cleanName ? `Congratulations, ${cleanName}!` : 'Congratulations!');
   ov.style.display='flex';
-  overlayHideAt = Date.now()+15000;  // >= 15s
+  overlayHideAt = Date.now()+15000;
   if(kind==='encore') startConfetti();
 }
 function hideOverlay(){ $('#overlay').style.display='none'; stopConfetti(); overlayHideAt=0; cachedWinnerKind=null; }
 
 /* --- PHASE RENDER --- */
+let lastShownSinger='';
+
 function render(){
   setHeader();
 
@@ -213,22 +215,28 @@ function render(){
   const open = !!state?.voting?.open;
   const prep = (!open && (state?.voting?.prepUntil||0) > t);
   const endsAt = state?.voting?.endsAt || 0;
+  const hadResult = !!state?.voting?.lastResult;
 
-  // decide phase
-  let phase = 'idle';
-  if(prep) phase='prep';
+  // Phase decision with anti-flicker hold:
+  let phase='idle';
+  if(prep) { phase='prep'; phaseHoldUntil = Math.max(phaseHoldUntil, (state.voting.prepUntil||0) + 1200); }
   else if(open) phase='open';
-  else if(state?.voting?.lastResult) phase='result';
+  else if(hadResult) phase='result';
+  else {
+    // Small hold after prep to avoid bouncing to idle before open flag arrives
+    if(t < phaseHoldUntil) phase='prep';
+  }
 
-  // transitions
+  // Hide overlay if moving into prep/open OR when a new singer is set
   if((phase==='prep' || phase==='open') && $('#overlay').style.display==='flex'){ hideOverlay(); }
+  if(curName && curName !== lastShownSinger && $('#overlay').style.display==='flex'){ hideOverlay(); }
+
+  // entering open => reset columns once
   if(phase==='open' && prevPhase!=='open'){
-    // entering open -> clear columns and reset counters once
     ['#colE','#colA','#colM'].forEach(s=>$(s).innerHTML = '<div class="label">'+(s==='#colE'?'Encore!':s==='#colA'?'Another Shot!':'Maybe Next Time!')+'</div>');
     lastCounts={encore:0,another:0,maybe:0};
   }
 
-  // header & now singing visibility
   const header=$('#header'), nowBlock=$('#nowBlock'), votingArea=$('#votingArea');
   if(phase==='prep' || phase==='open'){
     header.style.display='none';
@@ -240,16 +248,15 @@ function render(){
     votingArea.style.display='none';
   }
 
-  // Now Singing label (cleared outside prep/open)
+  // Now Singing (show in idle if a singer exists)
   if(phase==='idle' || phase==='result'){
     $('#nowLbl').textContent = 'Now Singing';
-    setNow(''); // cleared between songs
+    setNow(curName); // keep showing current singer between rounds
   } else {
     $('#nowLbl').textContent = (phase==='prep') ? 'Get Ready' : 'Now Voting';
     setNow(curName);
   }
 
-  // overlay life
   if(overlayHideAt && Date.now()>overlayHideAt){ hideOverlay(); }
 
   if(phase==='prep'){
@@ -281,6 +288,7 @@ function render(){
   }
 
   prevPhase = phase;
+  lastShownSinger = curName;
 }
 </script>
 </body>
