@@ -7,21 +7,25 @@
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@700;800&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#2F0658;  /* LOCKED background */
+    --bg:#2F0658;
+    --deep1:#1B0930; --deep2:#16072A; /* column interior gradient source */
     --txt:#fff; --muted:#d8c7ff;
     --green:#25d366; --yellow:#f6c945;
   }
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--txt);font:18px/1.35 "Montserrat",system-ui}
   .wrap{min-height:100svh;display:grid;grid-template-columns:1fr 1fr;gap:24px;padding:24px}
-  .col{border:2px solid rgba(255,255,255,.15);border-radius:16px;padding:16px;display:flex;flex-direction:column;min-height:calc(100svh - 48px)}
-  .title{font-family:"Bebas Neue";font-size:84px;text-align:center;margin:6px 0 6px}
+  .col{
+    border:2px solid rgba(255,255,255,.15);border-radius:16px;padding:16px;
+    display:flex;flex-direction:column;min-height:calc(100svh - 48px);
+    background:linear-gradient(180deg,var(--deep1),var(--deep2)); /* deep interior */
+  }
+  .title{font-family:"Bebas Neue";font-size:112px; text-align:center;margin:6px 0 6px}
   .enc{color:var(--green); text-shadow:0 0 24px rgba(37,211,102,.35)}
   .ano{color:var(--yellow); text-shadow:0 0 24px rgba(246,201,69,.35)}
   .list{flex:1;display:flex;flex-direction:column;gap:14px;overflow:hidden}
-  .row{font-size:40px;padding:10px 14px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1)}
+  .row{font-size:44px;padding:10px 14px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1)}
 
-  /* Heartbeat to deter TV sleep */
   #heartbeat{position:fixed;width:1px;height:1px;left:-10px;top:-10px;background:transparent;transform:translateX(0);will-change:transform;animation:hb 2s linear infinite}
   @keyframes hb{0%{transform:translateX(0)}50%{transform:translateX(1px)}100%{transform:translateX(0)}}
 </style>
@@ -44,18 +48,15 @@
 const GET_URL='/assets/get_state.php';
 const $=s=>document.querySelector(s);
 
-/* Wake Lock */
 let wakeLock=null;
 async function requestWakeLock(){ try{ if('wakeLock' in navigator){ wakeLock=await navigator.wakeLock.request('screen'); } }catch(e){} }
 document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') requestWakeLock(); });
 window.addEventListener('focus', requestWakeLock);
 requestWakeLock();
 
-/* Tiny RAF loop (extra insurance) */
 let rafId; function tick(){ if (performance.now()%3000 < 16){ document.body.style.setProperty('--nudge', String(Math.random())); } rafId=requestAnimationFrame(tick); }
 rafId=requestAnimationFrame(tick);
 
-/* Render */
 async function fetchState(){
   try{
     const r=await fetch(GET_URL,{cache:'no-store'});
