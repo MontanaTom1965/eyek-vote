@@ -7,7 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;800&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bgDeep1:#1B0930; --bgDeep2:#16072A; /* NEW */
+    --bgDeep1:#1B0930; --bgDeep2:#16072A;
     --txt:#fff; --sub:#d8c7ff;
     --green:#25d366; --yellow:#f6c945; --red:#ff5e6c;
   }
@@ -28,13 +28,22 @@
   .enc{background:var(--green);color:#072a14}
   .ano{background:var(--yellow);color:#352600}
   .may{background:var(--red);color:#2b0e12}
+
+  /* result overlay similar to screen but text-only & silent */
+  .overlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.8);z-index:50}
+  .ovCard{width:min(800px,92vw);text-align:center;border:3px solid rgba(255,255,255,.18);border-radius:22px;padding:26px}
+  .ovTitle{font-size:74px;margin:0}
+  .ovSub{font-size:28px;margin:10px 0 0}
+  .ov-enc{background:rgba(37,211,102,.08); border-color: rgba(37,211,102,.55)}
+  .ov-ano{background:rgba(246,201,69,.08); border-color: rgba(246,201,69,.55)}
+  .ov-may{background:rgba(255,94,108,.08); border-color: rgba(255,94,108,.55)}
 </style>
 </head>
 <body>
 <div class="wrap">
   <div>
     <h1 id="welcome">Welcome to <span id="venue">—</span></h1>
-    <div class="sub" id="now">Now voting for: —</div>
+    <div class="sub" id="now">—</div>
   </div>
 
   <div id="gate">
@@ -60,11 +69,21 @@
   </div>
 </div>
 
+<!-- results overlay -->
+<div id="overlay" class="overlay">
+  <div id="ovCard" class="ovCard">
+    <div id="ovTitle" class="ovTitle">Encore!</div>
+    <p id="ovSub" class="ovSub">Congratulations, —</p>
+  </div>
+</div>
+
 <script>
 const GET_URL='/assets/get_state.php';
 const VOTE_URL='/assets/vote.php';
 const $=s=>document.querySelector(s);
 let state=null, clockOffset=0;
+let overlayTimer=null, lastResultShown=null;
+
 function nowMs(){return Date.now()+clockOffset}
 function smoothOffset(o){ if(!isFinite(o)) return; clockOffset=0.9*clockOffset+0.1*o; }
 function deviceId(){ let id=localStorage.getItem('eyek_device_id'); if(!id){ id=crypto.randomUUID(); localStorage.setItem('eyek_device_id', id);} return id; }
@@ -80,8 +99,11 @@ function render(){
   $('#venue').textContent = (state?.event?.venuePublic||'—');
   const open = !!state?.voting?.open;
   const t=nowMs(); const prep = (!open && (state?.voting?.prepUntil||0) > t);
-  const name = (state?.current?.name||'').trim() || '—';
-  $('#now').textContent = open||prep ? `Now voting for: ${name}` : '—';
+  const name = (state?.current?.name||'').trim();
+
+  $('#now').textContent = prep ? (name?`Get ready to vote for: ${name}`:'Get ready to vote…')
+                      : open ? (name?`Now voting for: ${name}`:'Now voting!')
+                      : '—';
 
   $('#gate').style.display = (open || prep) ? 'none':'block';
   $('#vote').style.display = (open || prep) ? 'block':'none';
@@ -89,6 +111,28 @@ function render(){
   $('#cE').textContent = state?.voting?.counts?.encore||0;
   $('#cA').textContent = state?.voting?.counts?.another||0;
   $('#cM').textContent = state?.voting?.counts?.maybe||0;
+
+  // results overlay (silent)
+  if(!open && !prep && state?.voting?.lastResult){
+    const kind=state.voting.lastResult;
+    if(kind!==lastResultShown){
+      const title = kind==='encore'?'Encore!':(kind==='another'?'Another Shot!':'Maybe Next Time!');
+      const nm = (name||'').replace(/\.\s*$/,'') || '';
+      const sub = kind==='maybe' ? (nm?`Thanks, ${nm}!`:'Thanks for singing!')
+                                 : (nm?`Congratulations, ${nm}!`:'Congratulations!');
+      showOverlay(kind, title, sub);
+      lastResultShown=kind;
+    }
+  }
+}
+function showOverlay(kind, title, sub){
+  const ov=$('#overlay'), card=$('#ovCard');
+  document.getElementById('ovTitle').textContent=title;
+  document.getElementById('ovSub').textContent=sub;
+  card.className='ovCard '+(kind==='encore'?'ov-enc':kind==='another'?'ov-ano':'ov-may');
+  ov.style.display='flex';
+  clearTimeout(overlayTimer);
+  overlayTimer=setTimeout(()=>{ ov.style.display='none'; }, 15000);
 }
 
 $('#unlock').onclick = async ()=>{
@@ -102,7 +146,10 @@ $('#unlock').onclick = async ()=>{
 async function send(choice){
   if(!(state?.voting?.open)) return;
   const res=await fetch(VOTE_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({choice,deviceId:deviceId()})});
-  if(!res.ok){ const e=await res.json().catch(()=>({error:'vote_failed'})); if(e.error==='already_voted'){ alert('You already voted this round.'); } }
+  if(!res.ok){
+    const e=await res.json().catch(()=>({error:'vote_failed'}));
+    if(e.error==='already_voted'){ alert('You already voted this round.'); }
+  }
 }
 $('#vE').onclick=()=>send('encore'); $('#vA').onclick=()=>send('another'); $('#vM').onclick=()=>send('maybe');
 </script>
